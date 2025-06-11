@@ -78,39 +78,44 @@ async function populateCanchas() {
 // Población dinámica de la lista de lados en cancha.html
 async function populateLados() {
   const params = getQueryParams();
-  const locId = params.loc, canId = params.can;
+  const locId = params.loc;
+  const canId = params.can;
   const res = await fetch("data/config_locations.json");
   const config = await res.json();
+
   const loc = config.locaciones.find(l => l.id === locId);
   if (!loc) return;
-  const can = loc.cancha.find(c => c.id === canId);
-  if (!can) {
-    document.getElementById("lados-lista").innerHTML = "<li>Cancha no encontrada</li>";
-    return;
-  }
 
-  document.getElementById("nombre-cancha").textContent = can.nombre;
+  const cancha = loc.cancha.find(c => c.id === canId);
+  if (!cancha) return;
+
+  document.getElementById("nombre-cancha").textContent = cancha.nombre;
   const ul = document.getElementById("lados-lista");
-  can.lados.forEach(lado => {
+
+  cancha.lados.forEach(lado => {
     const li = document.createElement("li");
     li.classList.add("fade-in");
     li.style.marginBottom = "10px";
     const a = document.createElement("a");
-    a.href = `lado.html?loc=${locId}&can=${canId}&lado=${lado}`;
-    a.textContent = lado;
+
+    a.href = `lado.html?loc=${locId}&can=${canId}&lado=${lado.id}`;
+    a.textContent = lado.nombre || lado.id;
     a.style.color = "#ffffff";
     a.style.fontSize = "1.2rem";
     a.style.textDecoration = "none";
+
     a.addEventListener("mouseover", () => {
-      a.style.color = "#55c1e7"; // celeste
+      a.style.color = "#55c1e7";
     });
     a.addEventListener("mouseout", () => {
       a.style.color = "#ffffff";
     });
+
     li.appendChild(a);
     ul.appendChild(li);
   });
 }
+
 
 // Mostrar listado de videos en lado.html
 async function populateVideos() {
