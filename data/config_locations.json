@@ -8,16 +8,40 @@
           "id": "Cancha1",
           "nombre": "Cancha 1",
           "lados": [
-            "LadoA",
-            "LadoB"
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "folder_id": "RELLENAR",
+              "rlkey": "RELLENAR",
+              "st": "RELLENAR"
+            },
+            {
+              "id": "LadoB",
+              "nombre": "Lado B",
+              "folder_id": "RELLENAR",
+              "rlkey": "RELLENAR",
+              "st": "RELLENAR"
+            }
           ]
         },
         {
           "id": "Cancha2",
           "nombre": "Cancha 2",
           "lados": [
-            "LadoX",
-            "LadoY"
+            {
+              "id": "LadoX",
+              "nombre": "Lado X",
+              "folder_id": "RELLENAR",
+              "rlkey": "RELLENAR",
+              "st": "RELLENAR"
+            },
+            {
+              "id": "LadoY",
+              "nombre": "Lado Y",
+              "folder_id": "RELLENAR",
+              "rlkey": "RELLENAR",
+              "st": "RELLENAR"
+            }
           ]
         }
       ]
@@ -30,8 +54,20 @@
           "id": "Principal",
           "nombre": "Cancha Principal",
           "lados": [
-            "LadoN",
-            "LadoS"
+            {
+              "id": "LadoN",
+              "nombre": "Lado Norte",
+              "folder_id": "RELLENAR",
+              "rlkey": "RELLENAR",
+              "st": "RELLENAR"
+            },
+            {
+              "id": "LadoS",
+              "nombre": "Lado Sur",
+              "folder_id": "RELLENAR",
+              "rlkey": "RELLENAR",
+              "st": "RELLENAR"
+            }
           ]
         }
       ]
@@ -44,7 +80,13 @@
           "id": "Cancha4",
           "nombre": "Cancha 4",
           "lados": [
-            "LadoN"
+            {
+              "id": "LadoN",
+              "nombre": "Lado Norte",
+              "folder_id": "RELLENAR",
+              "rlkey": "RELLENAR",
+              "st": "RELLENAR"
+            }
           ]
         }
       ]
@@ -57,7 +99,13 @@
           "id": "TestCancha",
           "nombre": "Cancha de Prueba",
           "lados": [
-            "TestLado"
+            {
+              "id": "TestLado",
+              "nombre": "Lado de Prueba",
+              "folder_id": "nmadc9v7o4yjjgajbd3gq",
+              "rlkey": "h1g4ddj7n0gb9wil3lriihely",
+              "st": "72schal4"
+            }
           ]
         }
       ]
