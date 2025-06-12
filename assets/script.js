@@ -1,3 +1,123 @@
+// assets/script.js
+
+// Función para parsear parámetros de query string
+function getQueryParams() {
+  const params = {};
+  window.location.search
+    .substring(1)
+    .split("&")
+    .forEach(pair => {
+      const [key, value] = pair.split("=");
+      if (key) params[decodeURIComponent(key)] = decodeURIComponent(value || "");
+    });
+  return params;
+}
+
+// Población dinámica de la lista de locaciones en index.html
+async function populateLocaciones() {
+  const res = await fetch("data/config_locations.json");
+  const config = await res.json();
+  const ul = document.getElementById("locaciones-lista");
+  config.locaciones.forEach(loc => {
+    const li = document.createElement("li");
+    li.classList.add("fade-in");
+    li.style.marginBottom = "10px";
+    const a = document.createElement("a");
+    a.href = `locacion.html?loc=${loc.id}`;
+    a.textContent = loc.nombre;
+    a.style.color = "#ffffff";
+    a.style.fontSize = "1.2rem";
+    a.style.textDecoration = "none";
+    a.addEventListener("mouseover", () => {
+      a.style.color = "#55c1e7"; // celeste
+    });
+    a.addEventListener("mouseout", () => {
+      a.style.color = "#ffffff";
+    });
+    li.appendChild(a);
+    ul.appendChild(li);
+  });
+}
+
+// Población dinámica de la lista de canchas en locacion.html
+async function populateCanchas() {
+  const params = getQueryParams();
+  const locId = params.loc;
+  const res = await fetch("data/config_locations.json");
+  const config = await res.json();
+  const loc = config.locaciones.find(l => l.id === locId);
+
+  if (!loc) {
+    document.getElementById("canchas-lista").innerHTML = "<li>Locación no encontrada</li>";
+    return;
+  }
+
+  document.getElementById("nombre-locacion").textContent = loc.nombre;
+  const ul = document.getElementById("canchas-lista");
+  loc.cancha.forEach(can => {
+    const li = document.createElement("li");
+    li.classList.add("fade-in");
+    li.style.marginBottom = "10px";
+    const a = document.createElement("a");
+    a.href = `cancha.html?loc=${locId}&can=${can.id}`;
+    a.textContent = can.nombre;
+    a.style.color = "#ffffff";
+    a.style.fontSize = "1.2rem";
+    a.style.textDecoration = "none";
+    a.addEventListener("mouseover", () => {
+      a.style.color = "#55c1e7"; // celeste
+    });
+    a.addEventListener("mouseout", () => {
+      a.style.color = "#ffffff";
+    });
+    li.appendChild(a);
+    ul.appendChild(li);
+  });
+}
+
+// Población dinámica de la lista de lados en cancha.html
+async function populateLados() {
+  const params = getQueryParams();
+  const locId = params.loc;
+  const canId = params.can;
+  const res = await fetch("data/config_locations.json");
+  const config = await res.json();
+
+  const loc = config.locaciones.find(l => l.id === locId);
+  if (!loc) return;
+
+  const cancha = loc.cancha.find(c => c.id === canId);
+  if (!cancha) return;
+
+  document.getElementById("nombre-cancha").textContent = cancha.nombre;
+  const ul = document.getElementById("lados-lista");
+
+  cancha.lados.forEach(lado => {
+    const li = document.createElement("li");
+    li.classList.add("fade-in");
+    li.style.marginBottom = "10px";
+    const a = document.createElement("a");
+
+    a.href = `lado.html?loc=${locId}&can=${canId}&lado=${lado.id}`;
+    a.textContent = lado.nombre || lado.id;
+    a.style.color = "#ffffff";
+    a.style.fontSize = "1.2rem";
+    a.style.textDecoration = "none";
+
+    a.addEventListener("mouseover", () => {
+      a.style.color = "#55c1e7";
+    });
+    a.addEventListener("mouseout", () => {
+      a.style.color = "#ffffff";
+    });
+
+    li.appendChild(a);
+    ul.appendChild(li);
+  });
+}
+
+
+// Mostrar listado de videos en lado.html
 // Mostrar listado de videos en lado.html
 async function populateVideos() {
   const params = getQueryParams();
@@ -67,3 +187,18 @@ async function populateVideos() {
       "<p style='color:#fff;'>No hay videos disponibles.</p>";
   }
 }
+
+
+// Detectar en qué página estamos y llamar a la función correspondiente
+document.addEventListener("DOMContentLoaded", () => {
+  const path = window.location.pathname;
+  if (path.endsWith("index.html") || path.endsWith("/")) {
+    populateLocaciones();
+  } else if (path.endsWith("locacion.html")) {
+    populateCanchas();
+  } else if (path.endsWith("cancha.html")) {
+    populateLados();
+  } else if (path.endsWith("lado.html")) {
+    populateVideos();
+  }
+});
