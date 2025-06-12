@@ -138,7 +138,6 @@ async function populateVideos() {
     return;
   }
 
-  // Construir la URL final RAW del JSON de videos_recientes
   const jsonUrl = `https://dl.dropboxusercontent.com/scl/fi/${ladoObj.folder_id}/videos_recientes.json?rlkey=${ladoObj.rlkey}&st=${ladoObj.st}&raw=1`;
 
   try {
@@ -152,9 +151,10 @@ async function populateVideos() {
     document.getElementById("nombre-cancha-lado").textContent = `${canId.toUpperCase()} – ${ladoId.toUpperCase()}`;
 
     data.videos
-      .filter(v => v.url) // Evita errores con videos mal formateados
+      .filter(v => v.url)
       .forEach(entry => {
         const rawUrl = entry.url;
+        const downloadUrl = rawUrl.replace("raw=1", "dl=1");
 
         const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
         const displayTime = m ? `${m[1]}:${m[2]}:${m[3]}` : entry.nombre;
@@ -176,7 +176,7 @@ async function populateVideos() {
         const btn = document.createElement("a");
         btn.className = "btn-download";
         btn.textContent = "Descargar";
-        btn.href = rawUrl;
+        btn.href = downloadUrl;
         btn.download = entry.nombre;
         card.appendChild(btn);
 
@@ -188,6 +188,7 @@ async function populateVideos() {
       "<p style='color:#fff;'>No hay videos disponibles.</p>";
   }
 }
+
 
 // ✅ También actualiza cada lado en config_locations.json agregando esto:
 // "json_url": "https://www.dropbox.com/scl/fi/…/videos_recientes.json?rlkey=…&st=…&raw=1"
