@@ -116,8 +116,6 @@ async function populateLados() {
   });
 }
 
-
-// Mostrar listado de videos en lado.html
 // Mostrar listado de videos en lado.html
 async function populateVideos() {
   const params = getQueryParams();
@@ -151,10 +149,8 @@ async function populateVideos() {
     document.getElementById("nombre-cancha-lado").textContent = `${canId.toUpperCase()} – ${ladoId.toUpperCase()}`;
 
     data.videos.forEach(entry => {
-      const match = entry.url.match(/\/scl\/fi\/([^/]+)\/([^?]+)/);
-      const rawUrl = match
-        ? `https://dl.dropboxusercontent.com/s/${match[1]}/${match[2]}`
-        : entry.url;
+      // Ya no hacemos regex ni convertimos el link
+      const rawUrl = entry.url; // Usamos el enlace tal cual
 
       const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
       const displayTime = m ? `${m[1]}:${m[2]}:${m[3]}` : entry.nombre;
@@ -169,6 +165,7 @@ async function populateVideos() {
 
       const video = document.createElement("video");
       video.controls = true;
+      video.playsInline = true; // Importante para móviles
       video.src = rawUrl;
       card.appendChild(video);
 
@@ -187,7 +184,6 @@ async function populateVideos() {
       "<p style='color:#fff;'>No hay videos disponibles.</p>";
   }
 }
-
 
 // Detectar en qué página estamos y llamar a la función correspondiente
 document.addEventListener("DOMContentLoaded", () => {
