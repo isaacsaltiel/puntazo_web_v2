@@ -117,6 +117,8 @@ async function populateLados() {
 }
 
 // Mostrar listado de videos en lado.html
+// ✅ Reemplaza `populateVideos()` en assets/script.js por esta versión:
+
 async function populateVideos() {
   const params = getQueryParams();
   const locId = params.loc;
@@ -136,11 +138,11 @@ async function populateVideos() {
     return;
   }
 
-  // Usa el link tal cual, no lo modifiques ni le hagas regex
-  const url = `https://dl.dropboxusercontent.com/s/i6rntnulr9gi4mixhgsbi/videos_recientes.json?rlkey=jo5jrls3lru9hoxar3bzzwpb6&st=yycfxiny&dl=0`;
+  // Construir la URL final RAW del JSON de videos_recientes
+  const jsonUrl = `https://www.dropbox.com/scl/fi/${ladoObj.folder_id}/videos_recientes.json?rlkey=${ladoObj.rlkey}&st=${ladoObj.st}&raw=1`;
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(jsonUrl);
     if (!res.ok) throw new Error("No se pudo acceder al JSON de videos.");
     const data = await res.json();
     const container = document.getElementById("videos-container");
@@ -149,41 +151,48 @@ async function populateVideos() {
     document.getElementById("nombre-club").textContent = locId.toUpperCase();
     document.getElementById("nombre-cancha-lado").textContent = `${canId.toUpperCase()} – ${ladoId.toUpperCase()}`;
 
-    data.videos.forEach(entry => {
-      const rawUrl = entry.url; // usa el url tal como viene en el JSON
+    data.videos
+      .filter(v => v.url) // Evita errores con videos mal formateados
+      .forEach(entry => {
+        const rawUrl = entry.url;
 
-      const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
-      const displayTime = m ? `${m[1]}:${m[2]}:${m[3]}` : entry.nombre;
+        const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
+        const displayTime = m ? `${m[1]}:${m[2]}:${m[3]}` : entry.nombre;
 
-      const card = document.createElement("div");
-      card.className = "video-card";
+        const card = document.createElement("div");
+        card.className = "video-card";
 
-      const title = document.createElement("div");
-      title.className = "video-title";
-      title.textContent = displayTime;
-      card.appendChild(title);
+        const title = document.createElement("div");
+        title.className = "video-title";
+        title.textContent = displayTime;
+        card.appendChild(title);
 
-      const video = document.createElement("video");
-      video.controls = true;
-      video.playsInline = true; // importante para móviles
-      video.src = rawUrl;
-      card.appendChild(video);
+        const video = document.createElement("video");
+        video.controls = true;
+        video.playsInline = true;
+        video.src = rawUrl;
+        card.appendChild(video);
 
-      const btn = document.createElement("a");
-      btn.className = "btn-download";
-      btn.textContent = "Descargar";
-      btn.href = rawUrl;
-      btn.download = entry.nombre;
-      card.appendChild(btn);
+        const btn = document.createElement("a");
+        btn.className = "btn-download";
+        btn.textContent = "Descargar";
+        btn.href = rawUrl;
+        btn.download = entry.nombre;
+        card.appendChild(btn);
 
-      container.appendChild(card);
-    });
+        container.appendChild(card);
+      });
   } catch (err) {
     console.error("Error en populateVideos():", err);
     document.getElementById("videos-container").innerHTML =
       "<p style='color:#fff;'>No hay videos disponibles.</p>";
   }
 }
+
+// ✅ También actualiza cada lado en config_locations.json agregando esto:
+// "json_url": "https://www.dropbox.com/scl/fi/…/videos_recientes.json?rlkey=…&st=…&raw=1"
+// (aunque ahora lo construimos dinámicamente para no duplicar info)
+
 
 // Detectar en qué página estamos y llamar a la función correspondiente
 document.addEventListener("DOMContentLoaded", () => {
