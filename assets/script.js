@@ -139,7 +139,7 @@ async function populateVideos() {
   }
 
   // Construir la URL final RAW del JSON de videos_recientes
-  const jsonUrl = `https://www.dropbox.com/scl/fi/${ladoObj.folder_id}/videos_recientes.json?rlkey=${ladoObj.rlkey}&st=${ladoObj.st}&raw=1`;
+  const jsonUrl = `https://dl.dropboxusercontent.com/scl/fi/${ladoObj.folder_id}/videos_recientes.json?rlkey=${ladoObj.rlkey}&st=${ladoObj.st}&raw=1`;
 
   try {
     const res = await fetch(jsonUrl);
