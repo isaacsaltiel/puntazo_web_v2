@@ -136,6 +136,7 @@ async function populateVideos() {
     return;
   }
 
+  // Usa el link tal cual, no lo modifiques ni le hagas regex
   const url = `https://dl.dropboxusercontent.com/s/i6rntnulr9gi4mixhgsbi/videos_recientes.json?rlkey=jo5jrls3lru9hoxar3bzzwpb6&st=yycfxiny&dl=0`;
 
   try {
@@ -149,8 +150,7 @@ async function populateVideos() {
     document.getElementById("nombre-cancha-lado").textContent = `${canId.toUpperCase()} – ${ladoId.toUpperCase()}`;
 
     data.videos.forEach(entry => {
-      // Ya no hacemos regex ni convertimos el link
-      const rawUrl = entry.url; // Usamos el enlace tal cual
+      const rawUrl = entry.url; // usa el url tal como viene en el JSON
 
       const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
       const displayTime = m ? `${m[1]}:${m[2]}:${m[3]}` : entry.nombre;
@@ -165,7 +165,7 @@ async function populateVideos() {
 
       const video = document.createElement("video");
       video.controls = true;
-      video.playsInline = true; // Importante para móviles
+      video.playsInline = true; // importante para móviles
       video.src = rawUrl;
       card.appendChild(video);
 
