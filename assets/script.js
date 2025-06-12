@@ -138,7 +138,7 @@ async function populateVideos() {
     return;
   }
 
-  const url = `https://dl.dropboxusercontent.com/s/${ladoObj.folder_id}/videos_recientes.json?rlkey=${ladoObj.rlkey}&st=${ladoObj.st}&dl=1`;
+  const url = `https://dl.dropboxusercontent.com/s/${ladoObj.folder_id}/videos_recientes.json?rlkey=${ladoObj.rlkey}&st=${ladoObj.st}&dl=0`;
 
   try {
     const res = await fetch(url);
