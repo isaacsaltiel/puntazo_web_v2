@@ -38,6 +38,61 @@
         }
       ]
     },
-    /* … resto de clubes igual … */
+    {
+      "id": "ClubOtro",
+      "nombre": "Club Otro",
+      "cancha": [
+        {
+          "id": "Principal",
+          "nombre": "Cancha Principal",
+          "lados": [
+            {
+              "id": "LadoN",
+              "nombre": "Lado Norte",
+              "json_url": "https://isaacsaltiel.github.io/puntazo_web_v2/data/raspberry-pis/ClubOtro/Principal/LadoN/videos_recientes.json"
+            },
+            {
+              "id": "LadoS",
+              "nombre": "Lado Sur",
+              "json_url": "https://isaacsaltiel.github.io/puntazo_web_v2/data/raspberry-pis/ClubOtro/Principal/LadoS/videos_recientes.json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Escorpion",
+      "nombre": "Escorpion",
+      "cancha": [
+        {
+          "id": "Cancha4",
+          "nombre": "Cancha 4",
+          "lados": [
+            {
+              "id": "LadoN",
+              "nombre": "Lado Norte",
+              "json_url": "https://isaacsaltiel.github.io/puntazo_web_v2/data/raspberry-pis/Escorpion/Cancha4/LadoN/videos_recientes.json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TestClub",
+      "nombre": "Club de Prueba",
+      "cancha": [
+        {
+          "id": "TestCancha",
+          "nombre": "Cancha de Prueba",
+          "lados": [
+            {
+              "id": "TestLado",
+              "nombre": "Lado de Prueba",
+              "json_url": "https://isaacsaltiel.github.io/puntazo_web_v2/data/raspberry-pis/TestClub/TestCancha/TestLado/videos_recientes.json"
+            }
+          ]
+        }
+      ]
+    }
   ]
 }
