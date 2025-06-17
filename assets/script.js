@@ -28,12 +28,8 @@ async function populateLocaciones() {
     a.style.color = "#ffffff";
     a.style.fontSize = "1.2rem";
     a.style.textDecoration = "none";
-    a.addEventListener("mouseover", () => {
-      a.style.color = "#55c1e7"; // celeste
-    });
-    a.addEventListener("mouseout", () => {
-      a.style.color = "#ffffff";
-    });
+    a.addEventListener("mouseover", () => a.style.color = "#55c1e7");
+    a.addEventListener("mouseout",  () => a.style.color = "#ffffff");
     li.appendChild(a);
     ul.appendChild(li);
   });
@@ -64,12 +60,8 @@ async function populateCanchas() {
     a.style.color = "#ffffff";
     a.style.fontSize = "1.2rem";
     a.style.textDecoration = "none";
-    a.addEventListener("mouseover", () => {
-      a.style.color = "#55c1e7"; // celeste
-    });
-    a.addEventListener("mouseout", () => {
-      a.style.color = "#ffffff";
-    });
+    a.addEventListener("mouseover", () => a.style.color = "#55c1e7");
+    a.addEventListener("mouseout",  () => a.style.color = "#ffffff");
     li.appendChild(a);
     ul.appendChild(li);
   });
@@ -97,48 +89,39 @@ async function populateLados() {
     li.classList.add("fade-in");
     li.style.marginBottom = "10px";
     const a = document.createElement("a");
-
     a.href = `lado.html?loc=${locId}&can=${canId}&lado=${lado.id}`;
     a.textContent = lado.nombre || lado.id;
     a.style.color = "#ffffff";
     a.style.fontSize = "1.2rem";
     a.style.textDecoration = "none";
-
-    a.addEventListener("mouseover", () => {
-      a.style.color = "#55c1e7";
-    });
-    a.addEventListener("mouseout", () => {
-      a.style.color = "#ffffff";
-    });
-
+    a.addEventListener("mouseover", () => a.style.color = "#55c1e7");
+    a.addEventListener("mouseout",  () => a.style.color = "#ffffff");
     li.appendChild(a);
     ul.appendChild(li);
   });
 }
 
 // Mostrar listado de videos en lado.html
-// ✅ Reemplaza `populateVideos()` en assets/script.js por esta versión:
-
 async function populateVideos() {
   const params = getQueryParams();
   const locId = params.loc;
   const canId = params.can;
   const ladoId = params.lado;
 
-  const res = await fetch("data/config_locations.json");
-  const config = await res.json();
-
+  const resCfg = await fetch("data/config_locations.json");
+  const config = await resCfg.json();
   const ladoObj = config.locaciones
     .find(l => l.id === locId)?.cancha
     .find(c => c.id === canId)?.lados
     .find(l => l.id === ladoId);
 
-  if (!ladoObj) {
-    document.getElementById("videos-container").innerHTML = "<p style='color:#fff;'>Lado no encontrado.</p>";
+  if (!ladoObj || !ladoObj.json_url) {
+    document.getElementById("videos-container").innerHTML =
+      "<p style='color:#fff;'>Lado no encontrado.</p>";
     return;
   }
 
-  const jsonUrl = `https://dl.dropboxusercontent.com/scl/fi/${ladoObj.folder_id}/videos_recientes.json?rlkey=${ladoObj.rlkey}&st=${ladoObj.st}&raw=1`;
+  const jsonUrl = ladoObj.json_url;
 
   try {
     const res = await fetch(jsonUrl);
@@ -148,52 +131,45 @@ async function populateVideos() {
     container.innerHTML = "";
 
     document.getElementById("nombre-club").textContent = locId.toUpperCase();
-    document.getElementById("nombre-cancha-lado").textContent = `${canId.toUpperCase()} – ${ladoId.toUpperCase()}`;
+    document.getElementById("nombre-cancha-lado").textContent =
+      `${canId.toUpperCase()} – ${ladoId.toUpperCase()}`;
 
-    data.videos
-      .filter(v => v.url)
-      .forEach(entry => {
-        const rawUrl = entry.url;
-        const downloadUrl = rawUrl.replace("raw=1", "dl=1");
+    data.videos.forEach(entry => {
+      const rawUrl = entry.url;
+      const downloadUrl = rawUrl.replace("raw=1", "dl=1");
 
-        const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
-        const displayTime = m ? `${m[1]}:${m[2]}:${m[3]}` : entry.nombre;
+      const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
+      const displayTime = m ? `${m[1]}:${m[2]}:${m[3]}` : entry.nombre;
 
-        const card = document.createElement("div");
-        card.className = "video-card";
+      const card = document.createElement("div");
+      card.className = "video-card";
 
-        const title = document.createElement("div");
-        title.className = "video-title";
-        title.textContent = displayTime;
-        card.appendChild(title);
+      const title = document.createElement("div");
+      title.className = "video-title";
+      title.textContent = displayTime;
+      card.appendChild(title);
 
-        const video = document.createElement("video");
-        video.controls = true;
-        video.playsInline = true;
-        video.src = rawUrl;
-        card.appendChild(video);
+      const video = document.createElement("video");
+      video.controls = true;
+      video.playsInline = true;
+      video.src = rawUrl;
+      card.appendChild(video);
 
-        const btn = document.createElement("a");
-        btn.className = "btn-download";
-        btn.textContent = "Descargar";
-        btn.href = downloadUrl;
-        btn.download = entry.nombre;
-        card.appendChild(btn);
+      const btn = document.createElement("a");
+      btn.className = "btn-download";
+      btn.textContent = "Descargar";
+      btn.href = downloadUrl;
+      btn.download = entry.nombre;
+      card.appendChild(btn);
 
-        container.appendChild(card);
-      });
+      container.appendChild(card);
+    });
   } catch (err) {
     console.error("Error en populateVideos():", err);
     document.getElementById("videos-container").innerHTML =
       "<p style='color:#fff;'>No hay videos disponibles.</p>";
   }
 }
-
-
-// ✅ También actualiza cada lado en config_locations.json agregando esto:
-// "json_url": "https://www.dropbox.com/scl/fi/…/videos_recientes.json?rlkey=…&st=…&raw=1"
-// (aunque ahora lo construimos dinámicamente para no duplicar info)
-
 
 // Detectar en qué página estamos y llamar a la función correspondiente
 document.addEventListener("DOMContentLoaded", () => {
