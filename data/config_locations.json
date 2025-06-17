@@ -1,114 +1,98 @@
 {
-  "locaciones": [
-    {
-      "id": "ClubEjemplo",
-      "nombre": "Club Ejemplo",
-      "cancha": [
-        {
-          "id": "Cancha1",
-          "nombre": "Cancha 1",
-          "lados": [
-            {
-              "id": "LadoA",
-              "nombre": "Lado A",
-              "folder_id": "RELLENAR",
-              "rlkey": "RELLENAR",
-              "st": "RELLENAR"
-            },
-            {
-              "id": "LadoB",
-              "nombre": "Lado B",
-              "folder_id": "RELLENAR",
-              "rlkey": "RELLENAR",
-              "st": "RELLENAR"
-            }
-          ]
-        },
-        {
-          "id": "Cancha2",
-          "nombre": "Cancha 2",
-          "lados": [
-            {
-              "id": "LadoX",
-              "nombre": "Lado X",
-              "folder_id": "RELLENAR",
-              "rlkey": "RELLENAR",
-              "st": "RELLENAR"
-            },
-            {
-              "id": "LadoY",
-              "nombre": "Lado Y",
-              "folder_id": "RELLENAR",
-              "rlkey": "RELLENAR",
-              "st": "RELLENAR"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "ClubOtro",
-      "nombre": "Club Otro",
-      "cancha": [
-        {
-          "id": "Principal",
-          "nombre": "Cancha Principal",
-          "lados": [
-            {
-              "id": "LadoN",
-              "nombre": "Lado Norte",
-              "folder_id": "RELLENAR",
-              "rlkey": "RELLENAR",
-              "st": "RELLENAR"
-            },
-            {
-              "id": "LadoS",
-              "nombre": "Lado Sur",
-              "folder_id": "RELLENAR",
-              "rlkey": "RELLENAR",
-              "st": "RELLENAR"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "Escorpion",
-      "nombre": "Escorpion",
-      "cancha": [
-        {
-          "id": "Cancha4",
-          "nombre": "Cancha 4",
-          "lados": [
-            {
-              "id": "LadoN",
-              "nombre": "Lado Norte",
-              "folder_id": "RELLENAR",
-              "rlkey": "RELLENAR",
-              "st": "RELLENAR"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "TestClub",
-      "nombre": "Club de Prueba",
-      "cancha": [
-        {
-          "id": "TestCancha",
-          "nombre": "Cancha de Prueba",
-          "lados": [
-            {
-              "id": "TestLado",
-              "nombre": "Lado de Prueba",
-              "folder_id": "sh2m50zu1eris6o52bhk5",
-              "rlkey": "0lwif38kzva70ez3exswtz90d",
-              "st": "kenislbv"
-            }
-          ]
-        }
-      ]
-    }
-  ]
+"locaciones": \[
+{
+"id": "ClubEjemplo",
+"nombre": "Club Ejemplo",
+"cancha": \[
+{
+"id": "Cancha1",
+"nombre": "Cancha 1",
+"lados": \[
+{
+"id": "LadoA",
+"nombre": "Lado A",
+"json\_url": "[https://isaacsaltiel.github.io/puntazo\_web\_v2/data/raspberry-pis/ClubEjemplo/Cancha1/LadoA/videos\_recientes.json](https://isaacsaltiel.github.io/puntazo_web_v2/data/raspberry-pis/ClubEjemplo/Cancha1/LadoA/videos_recientes.json)"
+},
+{
+"id": "LadoB",
+"nombre": "Lado B",
+"json\_url": "[https://isaacsaltiel.github.io/puntazo\_web\_v2/data/raspberry-pis/ClubEjemplo/Cancha1/LadoB/videos\_recientes.json](https://isaacsaltiel.github.io/puntazo_web_v2/data/raspberry-pis/ClubEjemplo/Cancha1/LadoB/videos_recientes.json)"
+}
+]
+},
+{
+"id": "Cancha2",
+"nombre": "Cancha 2",
+"lados": \[
+{
+"id": "LadoX",
+"nombre": "Lado X",
+"json\_url": "[https://isaacsaltiel.github.io/puntazo\_web\_v2/data/raspberry-pis/ClubEjemplo/Cancha2/LadoX/videos\_recientes.json](https://isaacsaltiel.github.io/puntazo_web_v2/data/raspberry-pis/ClubEjemplo/Cancha2/LadoX/videos_recientes.json)"
+},
+{
+"id": "LadoY",
+"nombre": "Lado Y",
+"json\_url": "[https://isaacsaltiel.github.io/puntazo\_web\_v2/data/raspberry-pis/ClubEjemplo/Cancha2/LadoY/videos\_recientes.json](https://isaacsaltiel.github.io/puntazo_web_v2/data/raspberry-pis/ClubEjemplo/Cancha2/LadoY/videos_recientes.json)"
+}
+]
+}
+]
+},
+{
+"id": "ClubOtro",
+"nombre": "Club Otro",
+"cancha": \[
+{
+"id": "Principal",
+"nombre": "Cancha Principal",
+"lados": \[
+{
+"id": "LadoN",
+"nombre": "Lado Norte",
+"json\_url": "[https://isaacsaltiel.github.io/puntazo\_web\_v2/data/raspberry-pis/ClubOtro/Principal/LadoN/videos\_recientes.json](https://isaacsaltiel.github.io/puntazo_web_v2/data/raspberry-pis/ClubOtro/Principal/LadoN/videos_recientes.json)"
+},
+{
+"id": "LadoS",
+"nombre": "Lado Sur",
+"json\_url": "[https://isaacsaltiel.github.io/puntazo\_web\_v2/data/raspberry-pis/ClubOtro/Principal/LadoS/videos\_recientes.json](https://isaacsaltiel.github.io/puntazo_web_v2/data/raspberry-pis/ClubOtro/Principal/LadoS/videos_recientes.json)"
+}
+]
+}
+]
+},
+{
+"id": "Escorpion",
+"nombre": "Escorpion",
+"cancha": \[
+{
+"id": "Cancha4",
+"nombre": "Cancha 4",
+"lados": \[
+{
+"id": "LadoN",
+"nombre": "Lado Norte",
+"json\_url": "[https://isaacsaltiel.github.io/puntazo\_web\_v2/data/raspberry-pis/Escorpion/Cancha4/LadoN/videos\_recientes.json](https://isaacsaltiel.github.io/puntazo_web_v2/data/raspberry-pis/Escorpion/Cancha4/LadoN/videos_recientes.json)"
+}
+]
+}
+]
+},
+{
+"id": "TestClub",
+"nombre": "Club de Prueba",
+"cancha": \[
+{
+"id": "TestCancha",
+"nombre": "Cancha de Prueba",
+"lados": \[
+{
+"id": "TestLado",
+"nombre": "Lado de Prueba",
+"json\_url": "[https://isaacsaltiel.github.io/puntazo\_web\_v2/data/raspberry-pis/TestClub/TestCancha/TestLado/videos\_recientes.json](https://isaacsaltiel.github.io/puntazo_web_v2/data/raspberry-pis/TestClub/TestCancha/TestLado/videos_recientes.json)"
+}
+]
+}
+]
+}
+]
 }
