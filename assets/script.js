@@ -121,7 +121,9 @@ async function populateVideos() {
     return;
   }
 
-  const jsonUrl = ladoObj.json_url;
+  // colocar un parámetro único para bustear caché (query string)
+const cacheBuster = Date.now();
+const jsonUrl = `${ladoObj.json_url}?cb=${cacheBuster}`;
 
   try {
     const res = await fetch(jsonUrl);
