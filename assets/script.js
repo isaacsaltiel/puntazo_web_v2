@@ -1,7 +1,6 @@
 // assets/script.js
 
-// Función para parsear parámetros de query string
-function getQueryParams() {
+// Función para parsear parámetros de query stringunction getQueryParams() {
   const params = {};
   window.location.search
     .substring(1)
@@ -15,7 +14,7 @@ function getQueryParams() {
 
 // Población dinámica de la lista de locaciones en index.html
 async function populateLocaciones() {
-  const res = await fetch("data/config_locations.json");
+  const res = await fetch("data/config_locations.json?cb=" + Date.now(), { cache: "no-store" });
   const config = await res.json();
   const ul = document.getElementById("locaciones-lista");
   config.locaciones.forEach(loc => {
@@ -39,7 +38,7 @@ async function populateLocaciones() {
 async function populateCanchas() {
   const params = getQueryParams();
   const locId = params.loc;
-  const res = await fetch("data/config_locations.json");
+  const res = await fetch("data/config_locations.json?cb=" + Date.now(), { cache: "no-store" });
   const config = await res.json();
   const loc = config.locaciones.find(l => l.id === locId);
 
@@ -72,14 +71,17 @@ async function populateLados() {
   const params = getQueryParams();
   const locId = params.loc;
   const canId = params.can;
-  const res = await fetch("data/config_locations.json");
+  const res = await fetch("data/config_locations.json?cb=" + Date.now(), { cache: "no-store" });
   const config = await res.json();
 
-  const loc = config.locaciones.find(l => l.id === locId);
-  if (!loc) return;
+  const cancha = config.locaciones
+    .find(l => l.id === locId)?.cancha
+    .find(c => c.id === canId);
 
-  const cancha = loc.cancha.find(c => c.id === canId);
-  if (!cancha) return;
+  if (!cancha) {
+    document.getElementById("lados-lista").innerHTML = "<li>Lado no encontrado</li>";
+    return;
+  }
 
   document.getElementById("nombre-cancha").textContent = cancha.nombre;
   const ul = document.getElementById("lados-lista");
@@ -108,7 +110,7 @@ async function populateVideos() {
   const canId = params.can;
   const ladoId = params.lado;
 
-  const resCfg = await fetch("data/config_locations.json");
+  const resCfg = await fetch("data/config_locations.json?cb=" + Date.now(), { cache: "no-store" });
   const config = await resCfg.json();
   const ladoObj = config.locaciones
     .find(l => l.id === locId)?.cancha
@@ -121,12 +123,11 @@ async function populateVideos() {
     return;
   }
 
-  // colocar un parámetro único para bustear caché (query string)
-const cacheBuster = Date.now();
-const jsonUrl = `${ladoObj.json_url}?cb=${cacheBuster}`;
+  // cache busting al JSON de videos
+  const jsonUrl = `${ladoObj.json_url}?cb=${Date.now()}`;
 
   try {
-    const res = await fetch(jsonUrl);
+    const res = await fetch(jsonUrl, { cache: "no-store" });
     if (!res.ok) throw new Error("No se pudo acceder al JSON de videos.");
     const data = await res.json();
     const container = document.getElementById("videos-container");
@@ -173,7 +174,7 @@ const jsonUrl = `${ladoObj.json_url}?cb=${cacheBuster}`;
   }
 }
 
-// Detectar en qué página estamos y llamar a la función correspondiente
+// Inicialización según la página actual
 document.addEventListener("DOMContentLoaded", () => {
   const path = window.location.pathname;
   if (path.endsWith("index.html") || path.endsWith("/")) {
