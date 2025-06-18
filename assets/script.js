@@ -45,13 +45,13 @@ async function populateCanchas() {
   const res = await fetch(url, { cache: "no-store" });
   const config = await res.json();
   const loc = config.locaciones.find(l => l.id === locId);
+  const ul = document.getElementById("canchas-lista");
+  ul.innerHTML = "";
   if (!loc) {
-    document.getElementById("canchas-lista").innerHTML = "<li>Locación no encontrada</li>";
+    ul.innerHTML = "<li>Locación no encontrada</li>";
     return;
   }
   document.getElementById("nombre-locacion").textContent = loc.nombre;
-  const ul = document.getElementById("canchas-lista");
-  ul.innerHTML = "";
   loc.cancha.forEach(can => {
     const li = document.createElement("li");
     li.classList.add("fade-in");
@@ -80,13 +80,13 @@ async function populateLados() {
   const cancha = config.locaciones
     .find(l => l.id === locId)?.cancha
     .find(c => c.id === canId);
+  const ul = document.getElementById("lados-lista");
+  ul.innerHTML = "";
   if (!cancha) {
-    document.getElementById("lados-lista").innerHTML = "<li>Lado no encontrado</li>";
+    ul.innerHTML = "<li>Lado no encontrado</li>";
     return;
   }
   document.getElementById("nombre-cancha").textContent = cancha.nombre;
-  const ul = document.getElementById("lados-lista");
-  ul.innerHTML = "";
   cancha.lados.forEach(lado => {
     const li = document.createElement("li");
     li.classList.add("fade-in");
