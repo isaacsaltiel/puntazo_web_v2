@@ -85,4 +85,4 @@ Cuando hayas creado ese archivo y lo hayas guardado, ¡ya tendremos completa la 
 
 ¿Te gustaría que ahora hagamos pruebas (como correr `agregar_lado.py`) o pasamos a otra fase como automatizar Dropbox o hacer QR dinámicos?
 ```
-
+yuju
