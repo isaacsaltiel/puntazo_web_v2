@@ -2,7 +2,7 @@ name: Procesar videos nuevos
 
 on:
   schedule:
-    - cron: "*/5 * * * *"  # Cada 5 minutos
+    - cron: "*/1 * * * *"  # Cada 1 minuto
   workflow_dispatch:      # También puedes correrlo manualmente
 
 jobs:
