@@ -11,8 +11,8 @@ API_KEY       = os.environ["CLOUDINARY_API_KEY"]
 API_SECRET    = os.environ["CLOUDINARY_API_SECRET"]
 
 # === Rutas en Dropbox ===
-CARPETA_SIN_MARCA  = "/Locaciones/TestClub/TestCancha/TestLado/VideosSinMarca"
-CARPETA_CON_MARCA  = "/Locaciones/TestClub/TestCancha/TestLado/VideosConMarca"
+CARPETA_SIN_MARCA  = "/Puntazo/Locaciones/TestClub/TestCancha/TestLado/VideosSinMarca"
+CARPETA_CON_MARCA  = "/Puntazo/Locaciones/TestClub/TestCancha/TestLado/VideosConMarca"
 PROCESADOS_FILE    = "procesados.txt"
 
 # === Inicializa clientes ===
