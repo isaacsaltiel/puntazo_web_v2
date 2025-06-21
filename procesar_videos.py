@@ -11,7 +11,7 @@ DROPBOX_TOKEN  = os.environ["DROPBOX_TOKEN"]
 CLOUD_NAME     = os.environ["CLOUDINARY_CLOUD_NAME"]
 API_KEY        = os.environ["CLOUDINARY_API_KEY"]
 API_SECRET     = os.environ["CLOUDINARY_API_SECRET"]
-GITHUB_PAT     = os.environ["GITHUB_PAT"]
+GITHUB_PAT     = os.environ["PAT_GITHUB"]
 REPO           = "isaacsaltiel/puntazo_web_v2"
 
 # === Rutas en Dropbox ===
