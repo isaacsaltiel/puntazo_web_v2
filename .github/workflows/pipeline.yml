@@ -3,11 +3,13 @@ name: Procesar videos nuevos
 on:
   schedule:
     - cron: "*/1 * * * *"  # Cada 1 minuto
-  workflow_dispatch:      # También puedes correrlo manualmente
+  workflow_dispatch:        # También puedes correrlo manualmente
 
 jobs:
   ejecutar:
     runs-on: ubuntu-latest
+    env:
+      PAT_GITHUB: ${{ secrets.PAT_GITHUB }}  # 🔧 <- ESTA LÍNEA ES CLAVE
     steps:
       - name: Clonar repo
         uses: actions/checkout@v3
@@ -21,4 +23,5 @@ jobs:
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}  # 🔁 También aquí si el script lo espera en su propio entorno
         run: python procesar_videos.py
