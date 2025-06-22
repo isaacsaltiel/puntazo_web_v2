@@ -12,10 +12,11 @@ GITHUB_TOKEN = os.environ.get("PAT_GITHUB")
 
 VALID_SUFFIX = ".mp4"
 RETENTION_HOURS = 8
-JSON_LOCAL = "videos_recientes.json"
+JSON_LOCAL = "data/videos_recientes.json"
 DROPBOX_BASE = "/Puntazo/Locaciones"
-GITHUB_REPO = "isaacsaltiel/puntazo_web_v2"
+GITHUB_REPO = "puntazo/puntazo_web_v2"
 GITHUB_PATH = "data/videos_recientes.json"
+
 
 def connect_dropbox():
     print("[DEBUG] Conectando a Dropbox…")
@@ -24,6 +25,7 @@ def connect_dropbox():
         app_secret=DROPBOX_APP_SECRET,
         oauth2_refresh_token=DROPBOX_REFRESH_TOKEN
     )
+
 
 def generate_public_url(dbx, path):
     try:
@@ -42,6 +44,7 @@ def generate_public_url(dbx, path):
             return None
     return link.url.replace("www.dropbox.com", "dl.dropboxusercontent.com").split("?dl=")[0]
 
+
 def upload_to_github(json_data):
     if not GITHUB_TOKEN:
         print("[WARNING] No se encontró el PAT_GITHUB, omitiendo subida a GitHub.")
@@ -56,6 +59,7 @@ def upload_to_github(json_data):
         print("[OK] videos_recientes.json actualizado en GitHub")
     except Exception as e:
         print(f"[ERROR] No se pudo subir a GitHub: {e}")
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -97,6 +101,7 @@ def main():
         "generado_el": datetime.now(timezone.utc).isoformat()
     }
 
+    os.makedirs(os.path.dirname(JSON_LOCAL), exist_ok=True)
     with open(JSON_LOCAL, "w") as f:
         json.dump(output, f, indent=2)
     print(f"[DEBUG] JSON generado localmente con {len(videos)} videos")
@@ -106,6 +111,7 @@ def main():
     print("[OK] videos_recientes.json actualizado en Dropbox")
 
     upload_to_github(json.dumps(output, indent=2))
+
 
 if __name__ == "__main__":
     main()
