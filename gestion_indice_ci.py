@@ -2,7 +2,7 @@ import os
 import argparse
 import dropbox
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 DROPBOX_APP_KEY = os.environ["DROPBOX_APP_KEY"]
 DROPBOX_APP_SECRET = os.environ["DROPBOX_APP_SECRET"]
@@ -13,14 +13,12 @@ RETENTION_HOURS = 8
 JSON_LOCAL = "videos_recientes.json"
 DROPBOX_BASE = "/Puntazo/Locaciones"
 
-
 def connect_dropbox():
     return dropbox.Dropbox(
         app_key=DROPBOX_APP_KEY,
         app_secret=DROPBOX_APP_SECRET,
         oauth2_refresh_token=DROPBOX_REFRESH_TOKEN
     )
-
 
 def generate_public_url(dbx, path):
     try:
@@ -33,9 +31,9 @@ def generate_public_url(dbx, path):
             else:
                 return None
         else:
+            print(f"[ERROR] al generar URL pública: {e}")
             return None
     return link.url.replace("www.dropbox.com", "dl.dropboxusercontent.com").split("?dl=")[0]
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -54,7 +52,7 @@ def main():
         print("[ERROR] No se pudo acceder a la carpeta:", e)
         return
 
-    cutoff = datetime.utcnow() - timedelta(hours=RETENTION_HOURS)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=RETENTION_HOURS)
     videos = []
 
     for entry in result.entries:
@@ -69,7 +67,7 @@ def main():
 
     output = {
         "videos": videos,
-        "generado_el": datetime.utcnow().isoformat() + "Z"
+        "generado_el": datetime.now(timezone.utc).isoformat()
     }
 
     with open(JSON_LOCAL, "w") as f:
@@ -78,7 +76,6 @@ def main():
     with open(JSON_LOCAL, "rb") as f:
         dbx.files_upload(f.read(), folder_path + "/videos_recientes.json", mode=dropbox.files.WriteMode("overwrite"))
     print("[OK] videos_recientes.json actualizado en Dropbox")
-
 
 if __name__ == "__main__":
     main()
