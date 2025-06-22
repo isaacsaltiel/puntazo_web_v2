@@ -12,10 +12,8 @@ GITHUB_TOKEN = os.environ.get("PAT_GITHUB")
 
 VALID_SUFFIX = ".mp4"
 RETENTION_HOURS = 8
-JSON_LOCAL = "data/videos_recientes.json"
 DROPBOX_BASE = "/Puntazo/Locaciones"
 GITHUB_REPO = "isaacsaltiel/puntazo_web_v2"
-GITHUB_PATH = "data/videos_recientes.json"
 
 
 def connect_dropbox():
@@ -45,7 +43,7 @@ def generate_public_url(dbx, path):
     return link.url.replace("www.dropbox.com", "dl.dropboxusercontent.com").split("?dl=")[0]
 
 
-def upload_to_github(json_data):
+def upload_to_github(json_data, github_path):
     if not GITHUB_TOKEN:
         print("[WARNING] No se encontró el PAT_GITHUB, omitiendo subida a GitHub.")
         return
@@ -54,16 +52,16 @@ def upload_to_github(json_data):
     repo = g.get_repo(GITHUB_REPO)
 
     try:
-        contents = repo.get_contents(GITHUB_PATH)
-        repo.update_file(contents.path, "Actualizar videos_recientes.json desde CI", json_data, contents.sha, branch="main")
+        contents = repo.get_contents(github_path, ref="master")
+        repo.update_file(contents.path, "Actualizar videos_recientes.json desde CI", json_data, contents.sha, branch="master")
         print("[OK] videos_recientes.json actualizado en GitHub")
     except Exception as e:
         if "404" in str(e):
             try:
-                repo.create_file(GITHUB_PATH, "Crear videos_recientes.json desde CI", json_data, branch="main")
+                repo.create_file(github_path, "Crear videos_recientes.json desde CI", json_data, branch="master")
                 print("[OK] videos_recientes.json creado en GitHub")
-            except Exception as ce:
-                print(f"[ERROR] No se pudo crear el archivo en GitHub: {ce}")
+            except Exception as inner:
+                print(f"[ERROR] No se pudo crear el archivo en GitHub: {inner}")
         else:
             print(f"[ERROR] No se pudo subir a GitHub: {e}")
 
@@ -108,16 +106,18 @@ def main():
         "generado_el": datetime.now(timezone.utc).isoformat()
     }
 
-    os.makedirs(os.path.dirname(JSON_LOCAL), exist_ok=True)
-    with open(JSON_LOCAL, "w") as f:
+    local_path = f"data/Locaciones/{loc}/{can}/{lado}/videos_recientes.json"
+    os.makedirs(os.path.dirname(local_path), exist_ok=True)
+    with open(local_path, "w") as f:
         json.dump(output, f, indent=2)
     print(f"[DEBUG] JSON generado localmente con {len(videos)} videos")
 
-    with open(JSON_LOCAL, "rb") as f:
+    with open(local_path, "rb") as f:
         dbx.files_upload(f.read(), folder_path + "/videos_recientes.json", mode=dropbox.files.WriteMode("overwrite"))
     print("[OK] videos_recientes.json actualizado en Dropbox")
 
-    upload_to_github(json.dumps(output, indent=2))
+    github_path = f"data/Locaciones/{loc}/{can}/{lado}/videos_recientes.json"
+    upload_to_github(json.dumps(output, indent=2), github_path)
 
 
 if __name__ == "__main__":
