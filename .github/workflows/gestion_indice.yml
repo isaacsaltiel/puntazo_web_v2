@@ -17,7 +17,7 @@ jobs:
   ejecutar:
     runs-on: ubuntu-latest
     env:
-      DROPBOX_TOKEN_JSON: ${{ secrets.DROPBOX_TOKEN_JSON }}
+      DROPBOX_TOKEN_JSON: ${{ secrets.DROPBOX_TOKEN }}
 
     steps:
       - uses: actions/checkout@v3
