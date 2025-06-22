@@ -58,7 +58,14 @@ def upload_to_github(json_data):
         repo.update_file(contents.path, "Actualizar videos_recientes.json desde CI", json_data, contents.sha, branch="main")
         print("[OK] videos_recientes.json actualizado en GitHub")
     except Exception as e:
-        print(f"[ERROR] No se pudo subir a GitHub: {e}")
+        if "404" in str(e):
+            try:
+                repo.create_file(GITHUB_PATH, "Crear videos_recientes.json desde CI", json_data, branch="main")
+                print("[OK] videos_recientes.json creado en GitHub")
+            except Exception as ce:
+                print(f"[ERROR] No se pudo crear el archivo en GitHub: {ce}")
+        else:
+            print(f"[ERROR] No se pudo subir a GitHub: {e}")
 
 
 def main():
