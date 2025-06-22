@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import os
+import re
 import requests
 import dropbox
 import cloudinary
 import cloudinary.uploader
-import subprocess
-import time
 from base64 import b64encode
-from distribuir_videos import distribuir_videos
 
 # === Autenticación dinámica con refresh_token ===
 APP_KEY = os.environ["DROPBOX_APP_KEY"]
@@ -36,18 +34,33 @@ API_SECRET = os.environ["CLOUDINARY_API_SECRET"]
 cloudinary.config(cloud_name=CLOUD_NAME, api_key=API_KEY, api_secret=API_SECRET)
 
 # === Rutas en Dropbox ===
-CARPETA_SIN_MARCA = "/Puntazo/Entrantes"
-CARPETA_CON_MARCA = "/Puntazo/Procesados"
+CARPETA_ENTRANTES = "/Puntazo/Entrantes"
+CARPETA_RAIZ = "/Puntazo/Locaciones"
+
+# === Patrón para extraer loc, can, lado ===
+PATRON_VIDEO = re.compile(r"^(?P<loc>[^_]+)_(?P<can>[^_]+)_(?P<lado>[^_]+)_\d{8}_\d{6}\.mp4$")
 
 # === Lista de videos en Entrantes ===
-res = dbx.files_list_folder(CARPETA_SIN_MARCA)
+res = dbx.files_list_folder(CARPETA_ENTRANTES)
 videos_nuevos = [entry for entry in res.entries if entry.name.endswith(".mp4")]
+
+if not videos_nuevos:
+    print("✅ No hay videos nuevos por procesar.")
+    exit()
 
 # === Procesar videos ===
 for video in videos_nuevos:
     nombre = video.name
-    ruta_origen = f"{CARPETA_SIN_MARCA}/{nombre}"
-    ruta_destino = f"{CARPETA_CON_MARCA}/{nombre}"
+    match = PATRON_VIDEO.match(nombre)
+
+    if not match:
+        print(f"⚠️ Nombre no válido: {nombre}")
+        continue
+
+    loc, can, lado = match.group("loc"), match.group("can"), match.group("lado")
+    ruta_origen = f"{CARPETA_ENTRANTES}/{nombre}"
+    ruta_destino = f"{CARPETA_RAIZ}/{loc}/{can}/{lado}/{nombre}"
+
     print(f"🚀 Procesando: {nombre}")
 
     # 1. Link temporal de Dropbox
@@ -68,21 +81,12 @@ for video in videos_nuevos:
         overwrite=True
     )
 
-    # 4. Guardar procesado en Dropbox
+    # 4. Guardar procesado en carpeta final
     dbx.files_save_url(ruta_destino, url_cloudinary)
-    print(f"✅ Video procesado en: {ruta_destino}")
+    print(f"✅ Video guardado en carpeta final: {ruta_destino}")
 
     # 5. Eliminar original de Entrantes
     dbx.files_delete_v2(ruta_origen)
     print(f"🗑️ Eliminado de Entrantes: {ruta_origen}")
 
-print("🏁 Todos los videos fueron procesados.")
-
-# === Distribuir todos los videos que estén listos ===
-print("📦 Iniciando distribución de videos…")
-try:
-    time.sleep(10)
-    distribuir_videos(dbx)
-    print("✅ Distribución completada.")
-except Exception as e:
-    print(f"❌ Error al distribuir videos: {e}")
+print("🏁 Todos los videos fueron procesados y distribuidos.")
