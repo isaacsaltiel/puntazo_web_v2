@@ -31,7 +31,8 @@ jobs:
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
         run: |
-          python gestion_indice.py \
+          python gestion_indice_ci.py \
             --loc "${{ github.event.inputs.loc }}" \
             --can "${{ github.event.inputs.can }}" \
             --lado "${{ github.event.inputs.lado }}"
+
