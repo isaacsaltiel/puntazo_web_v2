@@ -14,7 +14,7 @@ VALID_SUFFIX = ".mp4"
 RETENTION_HOURS = 8
 JSON_LOCAL = "data/videos_recientes.json"
 DROPBOX_BASE = "/Puntazo/Locaciones"
-GITHUB_REPO = "puntazo/puntazo_web_v2"
+GITHUB_REPO = "isaacsaltiel/puntazo_web_v2"
 GITHUB_PATH = "data/videos_recientes.json"
 
 
