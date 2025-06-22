@@ -4,37 +4,18 @@ import re
 import subprocess
 import json
 import shutil
+import argparse
 from datetime import datetime, timedelta
 
 # —— CONFIGURACIÓN LOCAL ——
-CONFIG_PATH   = "/home/isaac/PaquetePi/codigo_base/mi_config.json"
 VIDEO_DIR     = "/home/isaac/PaquetePi/codigo_base/final_cam"
 REGISTRO_PATH = "/home/isaac/PaquetePi/codigo_base/subidos.txt"
 JSON_LOCAL    = "/home/isaac/PaquetePi/codigo_base/videos_recientes.json"
 DROPBOX_BASE  = "dropbox:Puntazo/Locaciones"
 REPO_PATH     = os.path.expanduser("~/puntazo_web_v2")
+
 VALID_PATTERN   = re.compile(r'^video_final_\d{8}_\d{6}\.mp4$')
 RETENTION_HOURS = 8
-
-
-# Lee config local
-cfg = json.load(open("/home/isaac/PaquetePi/codigo_base/mi_config.json"))
-loc, can, lado = cfg["loc"], cfg["can"], cfg["lado"]
-
-# Llama al workflow de GitHub
-url = "https://api.github.com/repos/isaacsaltiel/puntazo_web_v2/actions/workflows/gestion_indice.yml/dispatches"
-token = os.environ["GITHUB_PAT"]  # Token con scope repo+workflow
-headers = {
-    "Authorization": f"Bearer {token}",
-    "Accept": "application/vnd.github+json"
-}
-data = {"ref": "master", "inputs": {"loc": loc, "can": can, "lado": lado}}
-resp = requests.post(url, headers=headers, json=data)
-print(resp.status_code, resp.text)
-
-def load_config():
-    with open(CONFIG_PATH) as f:
-        return json.load(f)
 
 def rclone_copy(src, dst):
     return subprocess.run(["rclone", "copy", src, dst]).returncode == 0
@@ -80,9 +61,8 @@ def rclone_list_with_times(remote_folder):
         entries.append((fname, mtime))
     return entries
 
-def prune_old(cfg):
+def prune_old(loc, can, lado):
     cutoff = datetime.utcnow() - timedelta(hours=RETENTION_HOURS)
-    loc, can, lado = cfg["loc"], cfg["can"], cfg["lado"]
     remote_folder = f"{DROPBOX_BASE}/{loc}/{can}/{lado}"
     remote_entries = dict(rclone_list_with_times(remote_folder))
     all_names = set(remote_entries.keys()) | set(
@@ -119,15 +99,20 @@ def setup_ssh_agent(key_path):
     subprocess.run(["ssh-add", key_path])
 
 def main():
-    cfg = load_config()
-    loc, can, lado = cfg["loc"], cfg["can"], cfg["lado"]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--loc", required=True)
+    parser.add_argument("--can", required=True)
+    parser.add_argument("--lado", required=True)
+    args = parser.parse_args()
+
+    loc, can, lado = args.loc, args.can, args.lado
     remote_folder = f"{DROPBOX_BASE}/{loc}/{can}/{lado}"
 
     os.makedirs(VIDEO_DIR, exist_ok=True)
     if not os.path.exists(REGISTRO_PATH):
         open(REGISTRO_PATH, 'w').close()
 
-    prune_old(cfg)
+    prune_old(loc, can, lado)
 
     cutoff = datetime.utcnow() - timedelta(hours=RETENTION_HOURS)
     with open(REGISTRO_PATH) as f:
@@ -186,6 +171,7 @@ def main():
     target_file = os.path.join(target_dir, "videos_recientes.json")
     shutil.copy(JSON_LOCAL, target_file)
     print(f"[GIT] Copiado JSON al repo: {target_file}")
+
     os.utime(target_file, None)
 
     timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
