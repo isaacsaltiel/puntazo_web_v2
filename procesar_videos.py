@@ -80,6 +80,7 @@ print("🏁 Todos los videos fueron procesados.")
 # === Distribuir todos los videos que estén listos ===
 print("📦 Iniciando distribución de videos…")
 try:
+    time.sleep(10)
     distribuir_videos(dbx)
     print("✅ Distribución completada.")
 except Exception as e:
