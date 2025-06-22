@@ -21,13 +21,14 @@ jobs:
 
       - name: Instalar dependencias
         run: |
-          pip install dropbox
+          pip install dropbox PyGithub
 
       - name: Ejecutar gestión de índice
         env:
           DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
           DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
           DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
         run: |
           python gestion_indice_ci.py \
             --loc "${{ github.event.inputs.loc }}" \
