@@ -1,67 +1,41 @@
-#!/usr/bin/env python3
 import os
-import re
-import subprocess
-import json
-import shutil
 import argparse
+import dropbox
+import json
 from datetime import datetime, timedelta
 
-# === CONFIGURACION PARA GITHUB ACTIONS ===
-VIDEO_DIR     = "videos_temp"
-REGISTRO_PATH = "subidos_ci.txt"
-JSON_LOCAL    = "videos_recientes.json"
-DROPBOX_BASE  = "dropbox:Puntazo/Locaciones"
-REPO_PATH     = os.getcwd()
+DROPBOX_APP_KEY = os.environ["DROPBOX_APP_KEY"]
+DROPBOX_APP_SECRET = os.environ["DROPBOX_APP_SECRET"]
+DROPBOX_REFRESH_TOKEN = os.environ["DROPBOX_REFRESH_TOKEN"]
 
-VALID_PATTERN   = re.compile(r'^video_final_\d{8}_\d{6}\.mp4$')
+VALID_SUFFIX = ".mp4"
 RETENTION_HOURS = 8
+JSON_LOCAL = "videos_recientes.json"
+DROPBOX_BASE = "/Puntazo/Locaciones"
 
-def rclone_copy(src, dst):
-    return subprocess.run(["rclone", "copy", src, dst]).returncode == 0
 
-def rclone_copyto(src, dst):
-    result = subprocess.run(
-        ["rclone", "copyto", src, dst],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+def connect_dropbox():
+    return dropbox.Dropbox(
+        app_key=DROPBOX_APP_KEY,
+        app_secret=DROPBOX_APP_SECRET,
+        oauth2_refresh_token=DROPBOX_REFRESH_TOKEN
     )
-    print("[RCLONE COPYTO STDOUT]", result.stdout)
-    print("[RCLONE COPYTO STDERR]", result.stderr)
-    return result.returncode == 0
 
-def rclone_delete(remote_path):
-    return subprocess.run(["rclone", "delete", remote_path]).returncode == 0
 
-def rclone_link(remote_file):
-    res = subprocess.run(["rclone", "link", remote_file], capture_output=True, text=True)
-    if res.returncode != 0:
-        return None
-    link = res.stdout.strip()
-    link = link.replace("www.dropbox.com", "dl.dropboxusercontent.com")
-    return re.sub(r'([&?])dl=[^&]*', r'\\1raw=1', link)
+def generate_public_url(dbx, path):
+    try:
+        link = dbx.sharing_create_shared_link_with_settings(path)
+    except dropbox.exceptions.ApiError as e:
+        if e.error.is_shared_link_already_exists():
+            links = dbx.sharing_list_shared_links(path=path, direct_only=True).links
+            if links:
+                link = links[0]
+            else:
+                return None
+        else:
+            return None
+    return link.url.replace("www.dropbox.com", "dl.dropboxusercontent.com").split("?dl=")[0]
 
-def rclone_list_with_times(remote_folder):
-    res = subprocess.run(["rclone", "lsl", remote_folder], capture_output=True, text=True)
-    if res.returncode != 0:
-        return []
-    entries = []
-    for line in res.stdout.splitlines():
-        parts = line.split()
-        if len(parts) < 4:
-            continue
-        fname = parts[3]
-        if not VALID_PATTERN.match(fname):
-            continue
-        date_str, time_str = parts[1], parts[2]
-        try:
-            mtime = datetime.fromisoformat(f"{date_str}T{time_str}")
-        except ValueError:
-            try:
-                mtime = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M:%S")
-            except ValueError:
-                continue
-        entries.append((fname, mtime))
-    return entries
 
 def main():
     parser = argparse.ArgumentParser()
@@ -71,40 +45,40 @@ def main():
     args = parser.parse_args()
 
     loc, can, lado = args.loc, args.can, args.lado
-    remote_folder = f"{DROPBOX_BASE}/{loc}/{can}/{lado}"
+    folder_path = f"{DROPBOX_BASE}/{loc}/{can}/{lado}"
+    dbx = connect_dropbox()
 
-    os.makedirs(VIDEO_DIR, exist_ok=True)
-    if not os.path.exists(REGISTRO_PATH):
-        open(REGISTRO_PATH, 'w').close()
+    try:
+        result = dbx.files_list_folder(folder_path)
+    except dropbox.exceptions.ApiError as e:
+        print("[ERROR] No se pudo acceder a la carpeta:", e)
+        return
 
-    # 1. Generar listado de videos recientes
     cutoff = datetime.utcnow() - timedelta(hours=RETENTION_HOURS)
-    entries = {}
-    remote_entries = dict(rclone_list_with_times(remote_folder))
-    for fname, rtime in remote_entries.items():
-        if rtime < cutoff:
-            continue
-        url = rclone_link(f"{remote_folder}/{fname}")
-        if url:
-            entries[fname] = {"url": url, "time": rtime}
+    videos = []
 
-    sorted_items = sorted(entries.items(), key=lambda i: i[1]["time"], reverse=True)
-    data = {"videos": [], "generado_el": datetime.utcnow().isoformat() + "Z"}
-    for fname, info in sorted_items:
-        data["videos"].append({"nombre": fname, "url": info["url"]})
+    for entry in result.entries:
+        if isinstance(entry, dropbox.files.FileMetadata) and entry.name.endswith(VALID_SUFFIX):
+            mod_time = entry.client_modified
+            if mod_time > cutoff:
+                url = generate_public_url(dbx, entry.path_lower)
+                if url:
+                    videos.append({"nombre": entry.name, "url": url})
 
-    # 2. Guardar y subir JSON
-    with open(JSON_LOCAL, 'w') as jf:
-        json.dump(data, jf, indent=2)
-    print(f"[INFO] JSON generado: {JSON_LOCAL}")
+    videos.sort(key=lambda x: x["nombre"], reverse=True)
 
-    print(f"[DEBUG] Intentando subir a: {remote_folder}/videos_recientes.json")
-    print(f"[DEBUG] Archivo local existe? {os.path.exists(JSON_LOCAL)}")
+    output = {
+        "videos": videos,
+        "generado_el": datetime.utcnow().isoformat() + "Z"
+    }
 
-    if rclone_copyto(JSON_LOCAL, f"{remote_folder}/videos_recientes.json"):
-        print("[OK] JSON actualizado en Dropbox.")
-    else:
-        print("[ERROR] Fallo al actualizar JSON en Dropbox.")
+    with open(JSON_LOCAL, "w") as f:
+        json.dump(output, f, indent=2)
+
+    with open(JSON_LOCAL, "rb") as f:
+        dbx.files_upload(f.read(), folder_path + "/videos_recientes.json", mode=dropbox.files.WriteMode("overwrite"))
+    print("[OK] videos_recientes.json actualizado en Dropbox")
+
 
 if __name__ == "__main__":
     main()
