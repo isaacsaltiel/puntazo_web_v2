@@ -4,7 +4,9 @@ import requests
 import dropbox
 import cloudinary
 import cloudinary.uploader
+import subprocess
 from base64 import b64encode
+
 
 # === Autenticación dinámica con refresh_token ===
 APP_KEY = os.environ["DROPBOX_APP_KEY"]
@@ -78,3 +80,12 @@ for video in videos_nuevos:
     print(f"🗑️ Eliminado de Entrantes: {ruta_origen}")
 
 print("🏁 Todos los videos fueron procesados.")
+import subprocess
+
+print("📦 Iniciando distribución de videos…")
+try:
+    result = subprocess.run(["python", "distribuir_videos.py"], check=True)
+    print("✅ Distribución completada.")
+except subprocess.CalledProcessError as e:
+    print(f"❌ Error al ejecutar distribuir_videos.py: {e}")
+
