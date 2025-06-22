@@ -31,9 +31,11 @@ jobs:
       - name: Crear config de rclone
         run: |
           mkdir -p ~/.config/rclone
-          echo "[dropbox]" > ~/.config/rclone/rclone.conf
-          echo "type = dropbox" >> ~/.config/rclone/rclone.conf
-          echo "token = ${DROPBOX_TOKEN_JSON}" >> ~/.config/rclone/rclone.conf
+          cat > ~/.config/rclone/rclone.conf <<EOF
+          [dropbox]
+          type = dropbox
+          token = ${DROPBOX_TOKEN_JSON}
+          EOF
 
       - name: Verificar config rclone
         run: cat ~/.config/rclone/rclone.conf
