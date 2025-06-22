@@ -3,6 +3,34 @@ import os
 import dropbox
 import cloudinary
 import cloudinary.uploader
+import os
+import requests
+from base64 import b64encode
+
+# === Obtiene credenciales desde secrets (GitHub Actions) ===
+APP_KEY = os.environ["DROPBOX_APP_KEY"]
+APP_SECRET = os.environ["DROPBOX_APP_SECRET"]
+REFRESH_TOKEN = os.environ["DROPBOX_REFRESH_TOKEN"]
+
+# === Construye Authorization header (Base64) ===
+auth_header = b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()
+
+# === Solicita nuevo access_token a partir del refresh_token ===
+res = requests.post(
+    "https://api.dropbox.com/oauth2/token",
+    headers={"Authorization": f"Basic {auth_header}"},
+    data={
+        "grant_type": "refresh_token",
+        "refresh_token": REFRESH_TOKEN,
+    },
+)
+res.raise_for_status()
+ACCESS_TOKEN = res.json()["access_token"]
+
+# === Inicializa Dropbox con token renovado ===
+import dropbox
+dbx = dropbox.Dropbox(ACCESS_TOKEN)
+
 
 # === Configuración desde variables de entorno ===
 DROPBOX_TOKEN     = os.environ["DROPBOX_TOKEN"]
