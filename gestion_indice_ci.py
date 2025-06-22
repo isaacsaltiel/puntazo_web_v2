@@ -58,7 +58,7 @@ def main():
     for entry in result.entries:
         if isinstance(entry, dropbox.files.FileMetadata) and entry.name.endswith(VALID_SUFFIX):
             mod_time = entry.client_modified
-            if mod_time > cutoff:
+            if mod_time.replace(tzinfo=timezone.utc) > cutoff:
                 url = generate_public_url(dbx, entry.path_lower)
                 if url:
                     videos.append({"nombre": entry.name, "url": url})
