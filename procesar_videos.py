@@ -4,9 +4,8 @@ import requests
 import dropbox
 import cloudinary
 import cloudinary.uploader
-import subprocess
 from base64 import b64encode
-
+from distribuir_videos import distribuir_videos
 
 # === Autenticación dinámica con refresh_token ===
 APP_KEY = os.environ["DROPBOX_APP_KEY"]
@@ -44,48 +43,41 @@ videos_nuevos = [entry for entry in res.entries if entry.name.endswith(".mp4")]
 
 if not videos_nuevos:
     print("✅ No hay videos nuevos por procesar.")
-    exit()
+else:
+    # === Procesar videos ===
+    for video in videos_nuevos:
+        nombre = video.name
+        ruta_origen = f"{CARPETA_SIN_MARCA}/{nombre}"
+        ruta_destino = f"{CARPETA_CON_MARCA}/{nombre}"
+        print(f"🚀 Procesando: {nombre}")
 
-# === Procesar videos ===
-for video in videos_nuevos:
-    nombre = video.name
-    ruta_origen = f"{CARPETA_SIN_MARCA}/{nombre}"
-    ruta_destino = f"{CARPETA_CON_MARCA}/{nombre}"
-    print(f"🚀 Procesando: {nombre}")
+        # 1. Link temporal de Dropbox
+        temp_link = dbx.files_get_temporary_link(ruta_origen).link
 
-    # 1. Link temporal de Dropbox
-    temp_link = dbx.files_get_temporary_link(ruta_origen).link
+        # 2. URL Cloudinary con overlay
+        url_cloudinary = (
+            f"https://res.cloudinary.com/{CLOUD_NAME}/video/upload"
+            f"/l_puntazo_video,w_0.5/fl_layer_apply,g_north_west,x_10,y_10"
+            f"/q_auto,f_mp4/videos_con_marca/{os.path.splitext(nombre)[0]}.mp4"
+        )
 
-    # 2. URL Cloudinary con overlay
-    url_cloudinary = (
-        f"https://res.cloudinary.com/{CLOUD_NAME}/video/upload"
-        f"/l_puntazo_video,w_0.5/fl_layer_apply,g_north_west,x_10,y_10"
-        f"/q_auto,f_mp4/videos_con_marca/{os.path.splitext(nombre)[0]}.mp4"
-    )
+        # 3. Subir a Cloudinary
+        cloudinary.uploader.upload(
+            temp_link,
+            resource_type="video",
+            public_id=f"videos_con_marca/{os.path.splitext(nombre)[0]}",
+            overwrite=True
+        )
 
-    # 3. Subir a Cloudinary
-    cloudinary.uploader.upload(
-        temp_link,
-        resource_type="video",
-        public_id=f"videos_con_marca/{os.path.splitext(nombre)[0]}",
-        overwrite=True
-    )
+        # 4. Guardar procesado en Dropbox
+        dbx.files_save_url(ruta_destino, url_cloudinary)
+        print(f"✅ Video procesado en: {ruta_destino}")
 
-    # 4. Guardar procesado en Dropbox
-    dbx.files_save_url(ruta_destino, url_cloudinary)
-    print(f"✅ Video procesado en: {ruta_destino}")
+        # 5. Eliminar original de Entrantes
+        dbx.files_delete_v2(ruta_origen)
+        print(f"🗑️ Eliminado de Entrantes: {ruta_origen}")
 
-    # 5. Eliminar original de Entrantes
-    dbx.files_delete_v2(ruta_origen)
-    print(f"🗑️ Eliminado de Entrantes: {ruta_origen}")
-
-print("🏁 Todos los videos fueron procesados.")
-import subprocess
-
+# === Distribuir videos procesados ===
 print("📦 Iniciando distribución de videos…")
-try:
-    result = subprocess.run(["python", "distribuir_videos.py"], check=True)
-    print("✅ Distribución completada.")
-except subprocess.CalledProcessError as e:
-    print(f"❌ Error al ejecutar distribuir_videos.py: {e}")
-
+distribuir_videos(dbx)
+print("✅ Distribución completada.")
