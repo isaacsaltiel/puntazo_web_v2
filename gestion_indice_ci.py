@@ -35,17 +35,14 @@ def rclone_delete(remote_path):
 def rclone_link(remote_file):
     res = subprocess.run(["rclone", "link", remote_file], capture_output=True, text=True)
     if res.returncode != 0:
-        print(f"[DEBUG] rclone link falló para {remote_file}: {res.stderr}")
         return None
     link = res.stdout.strip()
-    print(f"[DEBUG] Enlace crudo para {remote_file}: {link}")
     link = link.replace("www.dropbox.com", "dl.dropboxusercontent.com")
-    return re.sub(r'([&?])dl=[^&]*', r'\1raw=1', link)
+    return re.sub(r'([&?])dl=[^&]*', r'\\1raw=1', link)
 
 def rclone_list_with_times(remote_folder):
     res = subprocess.run(["rclone", "lsl", remote_folder], capture_output=True, text=True)
     if res.returncode != 0:
-        print(f"[DEBUG] rclone lsl falló: {res.stderr}")
         return []
     entries = []
     for line in res.stdout.splitlines():
@@ -80,15 +77,14 @@ def main():
     if not os.path.exists(REGISTRO_PATH):
         open(REGISTRO_PATH, 'w').close()
 
+    # 1. Generar listado de videos recientes
     cutoff = datetime.utcnow() - timedelta(hours=RETENTION_HOURS)
     entries = {}
     remote_entries = dict(rclone_list_with_times(remote_folder))
-    print("[DEBUG] Archivos remotos encontrados (lsl):", list(remote_entries.keys()))
     for fname, rtime in remote_entries.items():
         if rtime < cutoff:
             continue
         url = rclone_link(f"{remote_folder}/{fname}")
-        print(f"[DEBUG] Enlace para {fname} => {url}")
         if url:
             entries[fname] = {"url": url, "time": rtime}
 
@@ -97,6 +93,7 @@ def main():
     for fname, info in sorted_items:
         data["videos"].append({"nombre": fname, "url": info["url"]})
 
+    # 2. Guardar y subir JSON
     with open(JSON_LOCAL, 'w') as jf:
         json.dump(data, jf, indent=2)
     print(f"[INFO] JSON generado: {JSON_LOCAL}")
