@@ -14,6 +14,7 @@ JSON_LOCAL = "videos_recientes.json"
 DROPBOX_BASE = "/Puntazo/Locaciones"
 
 def connect_dropbox():
+    print("[DEBUG] Conectando a Dropbox…")
     return dropbox.Dropbox(
         app_key=DROPBOX_APP_KEY,
         app_secret=DROPBOX_APP_SECRET,
@@ -22,6 +23,7 @@ def connect_dropbox():
 
 def generate_public_url(dbx, path):
     try:
+        print(f"[DEBUG] Generando URL pública para: {path}")
         link = dbx.sharing_create_shared_link_with_settings(path)
     except dropbox.exceptions.ApiError as e:
         if e.error.is_shared_link_already_exists():
@@ -29,6 +31,7 @@ def generate_public_url(dbx, path):
             if links:
                 link = links[0]
             else:
+                print(f"[DEBUG] No se encontraron links existentes para {path}")
                 return None
         else:
             print(f"[ERROR] al generar URL pública: {e}")
@@ -44,21 +47,26 @@ def main():
 
     loc, can, lado = args.loc, args.can, args.lado
     folder_path = f"{DROPBOX_BASE}/{loc}/{can}/{lado}"
+    print(f"[DEBUG] Carpeta objetivo: {folder_path}")
     dbx = connect_dropbox()
 
     try:
         result = dbx.files_list_folder(folder_path)
+        print(f"[DEBUG] Archivos encontrados: {[e.name for e in result.entries]}")
     except dropbox.exceptions.ApiError as e:
         print("[ERROR] No se pudo acceder a la carpeta:", e)
         return
 
     cutoff = datetime.now(timezone.utc) - timedelta(hours=RETENTION_HOURS)
+    print(f"[DEBUG] Umbral de retención: {cutoff.isoformat()}")
     videos = []
 
     for entry in result.entries:
         if isinstance(entry, dropbox.files.FileMetadata) and entry.name.endswith(VALID_SUFFIX):
             mod_time = entry.client_modified
-            if mod_time.replace(tzinfo=timezone.utc) > cutoff:
+            incluir = mod_time.replace(tzinfo=timezone.utc) > cutoff
+            print(f"[DEBUG] {entry.name} | modificado: {mod_time} | incluir: {incluir}")
+            if incluir:
                 url = generate_public_url(dbx, entry.path_lower)
                 if url:
                     videos.append({"nombre": entry.name, "url": url})
@@ -72,6 +80,7 @@ def main():
 
     with open(JSON_LOCAL, "w") as f:
         json.dump(output, f, indent=2)
+    print(f"[DEBUG] JSON generado localmente con {len(videos)} videos")
 
     with open(JSON_LOCAL, "rb") as f:
         dbx.files_upload(f.read(), folder_path + "/videos_recientes.json", mode=dropbox.files.WriteMode("overwrite"))
