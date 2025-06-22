@@ -1,0 +1,37 @@
+name: Gestionar índice remoto
+
+on:
+  workflow_dispatch:
+    inputs:
+      loc:
+        type: string
+        required: true
+      can:
+        type: string
+        required: true
+      lado:
+        type: string
+        required: true
+
+jobs:
+  ejecutar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Instalar dependencias
+        run: pip install dropbox cloudinary requests
+
+      - name: Ejecutar gestión de índice
+        env:
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+        run: |
+          python gestion_indice.py \
+            --loc "${{ github.event.inputs.loc }}" \
+            --can "${{ github.event.inputs.can }}" \
+            --lado "${{ github.event.inputs.lado }}"
