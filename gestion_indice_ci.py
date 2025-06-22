@@ -3,15 +3,20 @@ import argparse
 import dropbox
 import json
 from datetime import datetime, timedelta, timezone
+from github import Github
 
 DROPBOX_APP_KEY = os.environ["DROPBOX_APP_KEY"]
 DROPBOX_APP_SECRET = os.environ["DROPBOX_APP_SECRET"]
 DROPBOX_REFRESH_TOKEN = os.environ["DROPBOX_REFRESH_TOKEN"]
+GITHUB_TOKEN = os.environ.get("PAT_GITHUB")
 
 VALID_SUFFIX = ".mp4"
 RETENTION_HOURS = 8
 JSON_LOCAL = "videos_recientes.json"
 DROPBOX_BASE = "/Puntazo/Locaciones"
+GITHUB_REPO = "puntazo/puntazo_web_v2"
+GITHUB_PATH = "data/videos_recientes.json"
+
 
 def connect_dropbox():
     print("[DEBUG] Conectando a Dropbox…")
@@ -20,6 +25,7 @@ def connect_dropbox():
         app_secret=DROPBOX_APP_SECRET,
         oauth2_refresh_token=DROPBOX_REFRESH_TOKEN
     )
+
 
 def generate_public_url(dbx, path):
     try:
@@ -37,6 +43,23 @@ def generate_public_url(dbx, path):
             print(f"[ERROR] al generar URL pública: {e}")
             return None
     return link.url.replace("www.dropbox.com", "dl.dropboxusercontent.com").split("?dl=")[0]
+
+
+def upload_to_github(json_data):
+    if not GITHUB_TOKEN:
+        print("[WARNING] No se encontró el PAT_GITHUB, omitiendo subida a GitHub.")
+        return
+
+    g = Github(GITHUB_TOKEN)
+    repo = g.get_repo(GITHUB_REPO)
+
+    try:
+        contents = repo.get_contents(GITHUB_PATH)
+        repo.update_file(contents.path, "Actualizar videos_recientes.json desde CI", json_data, contents.sha, branch="main")
+        print("[OK] videos_recientes.json actualizado en GitHub")
+    except Exception as e:
+        print(f"[ERROR] No se pudo subir a GitHub: {e}")
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -85,6 +108,9 @@ def main():
     with open(JSON_LOCAL, "rb") as f:
         dbx.files_upload(f.read(), folder_path + "/videos_recientes.json", mode=dropbox.files.WriteMode("overwrite"))
     print("[OK] videos_recientes.json actualizado en Dropbox")
+
+    upload_to_github(json.dumps(output, indent=2))
+
 
 if __name__ == "__main__":
     main()
