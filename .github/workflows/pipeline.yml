@@ -19,9 +19,12 @@ jobs:
 
       - name: Ejecutar script de procesamiento
         env:
-          DROPBOX_TOKEN: ${{ secrets.DROPBOX_TOKEN }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
           CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}  # 🔁 También aquí si el script lo espera en su propio entorno
+          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
         run: python procesar_videos.py
+
