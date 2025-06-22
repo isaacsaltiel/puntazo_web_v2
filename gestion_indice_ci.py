@@ -21,7 +21,12 @@ def rclone_copy(src, dst):
     return subprocess.run(["rclone", "copy", src, dst]).returncode == 0
 
 def rclone_copyto(src, dst):
-    result = subprocess.run(["rclone", "copyto", src, dst], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    result = subprocess.run(
+        ["rclone", "copyto", src, dst],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    print("[RCLONE COPYTO STDOUT]", result.stdout)
+    print("[RCLONE COPYTO STDERR]", result.stderr)
     return result.returncode == 0
 
 def rclone_delete(remote_path):
@@ -33,7 +38,7 @@ def rclone_link(remote_file):
         return None
     link = res.stdout.strip()
     link = link.replace("www.dropbox.com", "dl.dropboxusercontent.com")
-    return re.sub(r'([&?])dl=[^&]*', r'\1raw=1', link)
+    return re.sub(r'([&?])dl=[^&]*', r'\\1raw=1', link)
 
 def rclone_list_with_times(remote_folder):
     res = subprocess.run(["rclone", "lsl", remote_folder], capture_output=True, text=True)
@@ -92,6 +97,7 @@ def main():
     with open(JSON_LOCAL, 'w') as jf:
         json.dump(data, jf, indent=2)
     print(f"[INFO] JSON generado: {JSON_LOCAL}")
+
     print(f"[DEBUG] Intentando subir a: {remote_folder}/videos_recientes.json")
     print(f"[DEBUG] Archivo local existe? {os.path.exists(JSON_LOCAL)}")
 
