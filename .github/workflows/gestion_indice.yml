@@ -29,6 +29,10 @@ jobs:
         run: |
           mkdir -p ~/.config/rclone
           echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
+      - name: Verificar config de rclone
+        run: |
+          echo "=== rclone.conf activo ==="
+          cat ~/.config/rclone/rclone.conf
 
       - name: Ejecutar gestión de índice
         env:
