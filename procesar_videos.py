@@ -5,6 +5,7 @@ import dropbox
 import cloudinary
 import cloudinary.uploader
 import subprocess
+import time
 from base64 import b64encode
 from distribuir_videos import distribuir_videos
 
