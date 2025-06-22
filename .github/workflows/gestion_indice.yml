@@ -16,6 +16,9 @@ on:
 jobs:
   ejecutar:
     runs-on: ubuntu-latest
+    env:
+      DROPBOX_TOKEN_JSON: ${{ secrets.DROPBOX_TOKEN_JSON }}
+
     steps:
       - uses: actions/checkout@v3
 
@@ -28,20 +31,14 @@ jobs:
       - name: Configurar rclone
         run: |
           mkdir -p ~/.config/rclone
-          echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
+          echo "[dropbox]" > ~/.config/rclone/rclone.conf
+          echo "type = dropbox" >> ~/.config/rclone/rclone.conf
+          echo "token = ${DROPBOX_TOKEN_JSON}" >> ~/.config/rclone/rclone.conf
+
       - name: Verificar config de rclone
-        run: |
-          echo "=== rclone.conf activo ==="
-          cat ~/.config/rclone/rclone.conf
+        run: cat ~/.config/rclone/rclone.conf
 
       - name: Ejecutar gestión de índice
-        env:
-          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
-          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
-          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
         run: |
           python gestion_indice_ci.py \
             --loc "${{ github.event.inputs.loc }}" \
