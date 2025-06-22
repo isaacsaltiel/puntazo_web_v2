@@ -16,31 +16,18 @@ on:
 jobs:
   ejecutar:
     runs-on: ubuntu-latest
-    env:
-      DROPBOX_TOKEN_JSON: ${{ secrets.DROPBOX_TOKEN }}
-
     steps:
       - uses: actions/checkout@v3
 
       - name: Instalar dependencias
         run: |
-          sudo apt update
-          sudo apt install -y rclone
-          pip install dropbox cloudinary requests
-
-      - name: Crear config de rclone
-        run: |
-          mkdir -p ~/.config/rclone
-          cat > ~/.config/rclone/rclone.conf <<EOF
-          [dropbox]
-          type = dropbox
-          token = ${DROPBOX_TOKEN_JSON}
-          EOF
-
-      - name: Verificar config rclone
-        run: cat ~/.config/rclone/rclone.conf
+          pip install dropbox
 
       - name: Ejecutar gestión de índice
+        env:
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
         run: |
           python gestion_indice_ci.py \
             --loc "${{ github.event.inputs.loc }}" \
