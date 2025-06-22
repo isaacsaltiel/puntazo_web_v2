@@ -28,14 +28,14 @@ jobs:
           sudo apt install -y rclone
           pip install dropbox cloudinary requests
 
-      - name: Configurar rclone
+      - name: Crear config de rclone
         run: |
           mkdir -p ~/.config/rclone
           echo "[dropbox]" > ~/.config/rclone/rclone.conf
           echo "type = dropbox" >> ~/.config/rclone/rclone.conf
           echo "token = ${DROPBOX_TOKEN_JSON}" >> ~/.config/rclone/rclone.conf
 
-      - name: Verificar config de rclone
+      - name: Verificar config rclone
         run: cat ~/.config/rclone/rclone.conf
 
       - name: Ejecutar gestión de índice
