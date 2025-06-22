@@ -3,84 +3,64 @@ import os
 import dropbox
 import cloudinary
 import cloudinary.uploader
-import json
-import requests
 
 # === Configuración desde variables de entorno ===
-DROPBOX_TOKEN  = os.environ["DROPBOX_TOKEN"]
-CLOUD_NAME     = os.environ["CLOUDINARY_CLOUD_NAME"]
-API_KEY        = os.environ["CLOUDINARY_API_KEY"]
-API_SECRET     = os.environ["CLOUDINARY_API_SECRET"]
-GITHUB_PAT     = os.environ["PAT_GITHUB"]
-REPO           = "isaacsaltiel/puntazo_web_v2"
+DROPBOX_TOKEN     = os.environ["DROPBOX_TOKEN"]
+CLOUD_NAME        = os.environ["CLOUDINARY_CLOUD_NAME"]
+API_KEY           = os.environ["CLOUDINARY_API_KEY"]
+API_SECRET        = os.environ["CLOUDINARY_API_SECRET"]
 
 # === Rutas en Dropbox ===
-CARPETA_ENTRADA   = "/Puntazo/Entrantes"
-CARPETA_SALIDA    = "/Puntazo/Procesados"
-PROCESADOS_FILE   = "procesados.txt"
+CARPETA_SIN_MARCA = "/Puntazo/Entrantes"
+CARPETA_CON_MARCA = "/Puntazo/Procesados"
 
 # === Inicializa clientes ===
 dbx = dropbox.Dropbox(DROPBOX_TOKEN)
 cloudinary.config(cloud_name=CLOUD_NAME, api_key=API_KEY, api_secret=API_SECRET)
 
-# === Lista de videos ya procesados ===
-if os.path.exists(PROCESADOS_FILE):
-    with open(PROCESADOS_FILE, "r") as f:
-        procesados = set(f.read().splitlines())
-else:
-    procesados = set()
-
-# === Obtener videos nuevos ===
-res = dbx.files_list_folder(CARPETA_ENTRADA)
+# === Obtener lista de videos en carpeta Entrantes ===
+res = dbx.files_list_folder(CARPETA_SIN_MARCA)
 videos_nuevos = [
     entry for entry in res.entries
-    if entry.name.endswith(".mp4") and entry.name not in procesados
+    if entry.name.endswith(".mp4")
 ]
 
 if not videos_nuevos:
     print("✅ No hay videos nuevos por procesar.")
     exit()
 
-# === Procesar videos ===
+# === Procesar cada video nuevo ===
 for video in videos_nuevos:
     nombre = video.name
-    ruta_origen  = f"{CARPETA_ENTRADA}/{nombre}"
-    ruta_destino = f"{CARPETA_SALIDA}/{nombre}"
+    ruta_origen  = f"{CARPETA_SIN_MARCA}/{nombre}"
+    ruta_destino = f"{CARPETA_CON_MARCA}/{nombre}"
 
     print(f"🚀 Procesando: {nombre}")
+
+    # === Paso 1: Obtener enlace temporal del video en Dropbox ===
     temp_link = dbx.files_get_temporary_link(ruta_origen).link
 
-    public_id = f"videos_con_marca/{os.path.splitext(nombre)[0]}"
+    # === Paso 2: Construir URL de Cloudinary con logo aplicado ===
     url_cloudinary = (
         f"https://res.cloudinary.com/{CLOUD_NAME}/video/upload"
         f"/l_puntazo_video,w_0.5/fl_layer_apply,g_north_west,x_10,y_10"
-        f"/q_auto,f_mp4/{public_id}.mp4"
+        f"/q_auto,f_mp4/videos_con_marca/{os.path.splitext(nombre)[0]}.mp4"
     )
 
+    # === Paso 3: Subir video temporal a Cloudinary ===
     cloudinary.uploader.upload(
         temp_link,
         resource_type="video",
-        public_id=public_id,
+        public_id=f"videos_con_marca/{os.path.splitext(nombre)[0]}",
         overwrite=True
     )
 
-    resp = dbx.files_save_url(ruta_destino, url_cloudinary)
-    print(f"✅ Video guardado en Dropbox: {ruta_destino}")
-    procesados.add(nombre)
+    # === Paso 4: Usar save_url para guardar versión con marca en Dropbox ===
+    dbx.files_save_url(ruta_destino, url_cloudinary)
+    print(f"✅ Video procesado y enviado a: {ruta_destino}")
 
-# === Guardar lista actualizada ===
-with open(PROCESADOS_FILE, "w") as f:
-    f.write("\n".join(procesados))
-
-# === Encadenar con distribución ===
-url = f"https://api.github.com/repos/{REPO}/actions/workflows/distribuir_videos.yml/dispatches"
-headers = {"Authorization": f"Bearer {GITHUB_PAT}"}
-payload = {"ref": "master"}
-
-resp = requests.post(url, headers=headers, json=payload)
-if resp.status_code == 204:
-    print("🔗 Se activó distribuir_videos.yml correctamente.")
-else:
-    print(f"⚠️ Error al activar workflow: {resp.status_code} - {resp.text}")
+    # === Paso 5: Borrar el original de Entrantes ===
+    dbx.files_delete_v2(ruta_origen)
+    print(f"🗑️ Eliminado original de Entrantes: {ruta_origen}")
 
 print("🏁 Todos los videos fueron procesados.")
