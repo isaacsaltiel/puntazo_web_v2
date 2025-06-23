@@ -51,8 +51,8 @@
     <main class="site-content fade-in">
       <!-- Bloque de título dinámico -->
       <div class="titulo-lado">
-        <div id="nombre-club" class="titulo-club">CLUBEJEMPLO</div>
-        <div id="nombre-cancha-lado" class="titulo-cancha">CANCHA 1 – LadoA</div>
+        <div id="nombre-club" class="titulo-club"></div>
+        <div id="nombre-cancha-lado" class="titulo-cancha"></div>
       </div>
       <div class="aviso">Recuerda que los videos se borran pasadas 8 horas.</div>
 
@@ -73,6 +73,26 @@
       <p class="footer-copy">© 2025 Puntazo</p>
     </footer>
 
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const params = new URLSearchParams(window.location.search);
+        const loc = params.get("loc");
+        const can = params.get("can");
+        const lado = params.get("lado");
+
+        const res = await fetch("data/config_locations.json");
+        const config = await res.json();
+
+        const locObj = config.locaciones.find(l => l.id === loc);
+        const canObj = locObj?.cancha.find(c => c.id === can);
+        const ladoObj = canObj?.lados.find(l => l.id === lado);
+
+        if (locObj && canObj && ladoObj) {
+          document.getElementById("nombre-club").textContent = locObj.nombre;
+          document.getElementById("nombre-cancha-lado").textContent = `${canObj.nombre} – ${ladoObj.nombre}`;
+        }
+      });
+    </script>
     <script src="assets/script.js"></script>
   </body>
 </html>
