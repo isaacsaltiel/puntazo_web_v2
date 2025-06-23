@@ -113,10 +113,9 @@ async function populateVideos() {
   const urlCfg = `data/config_locations.json?cb=${Date.now()}`;
   const resCfg = await fetch(urlCfg, { cache: "no-store" });
   const config = await resCfg.json();
-  const ladoObj = config.locaciones
-    .find(l => l.id === locId)?.cancha
-    .find(c => c.id === canId)?.lados
-    .find(l => l.id === ladoId);
+  const locObj = config.locaciones.find(l => l.id === locId);
+  const canObj = locObj?.cancha.find(c => c.id === canId);
+  const ladoObj = canObj?.lados.find(l => l.id === ladoId);
   if (!ladoObj || !ladoObj.json_url) {
     document.getElementById("videos-container").innerHTML =
       "<p style='color:#fff;'>Lado no encontrado.</p>";
@@ -129,9 +128,9 @@ async function populateVideos() {
     const data = await res.json();
     const container = document.getElementById("videos-container");
     container.innerHTML = "";
-    document.getElementById("nombre-club").textContent = locId.toUpperCase();
+    document.getElementById("nombre-club").textContent = locObj.nombre;
     document.getElementById("nombre-cancha-lado").textContent =
-      `${canId.toUpperCase()} – ${ladoId.toUpperCase()}`;
+      `${canObj.nombre} – ${ladoObj.nombre}`;
     data.videos.forEach(entry => {
       const rawUrl = entry.url;
       const downloadUrl = rawUrl.replace("raw=1", "dl=1");
