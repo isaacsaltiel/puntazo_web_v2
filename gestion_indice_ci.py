@@ -15,7 +15,6 @@ RETENTION_HOURS = 8
 DROPBOX_BASE = "/Puntazo/Locaciones"
 GITHUB_REPO = "isaacsaltiel/puntazo_web_v2"
 
-
 def connect_dropbox():
     print("[DEBUG] Conectando a Dropbox…")
     return dropbox.Dropbox(
@@ -23,7 +22,6 @@ def connect_dropbox():
         app_secret=DROPBOX_APP_SECRET,
         oauth2_refresh_token=DROPBOX_REFRESH_TOKEN
     )
-
 
 def generate_public_url(dbx, path):
     try:
@@ -41,7 +39,6 @@ def generate_public_url(dbx, path):
             print(f"[ERROR] al generar URL pública: {e}")
             return None
     return link.url.replace("www.dropbox.com", "dl.dropboxusercontent.com").split("?dl=")[0]
-
 
 def upload_to_github(json_data, github_path):
     if not GITHUB_TOKEN:
@@ -64,7 +61,6 @@ def upload_to_github(json_data, github_path):
                 print(f"[ERROR] No se pudo crear el archivo en GitHub: {inner}")
         else:
             print(f"[ERROR] No se pudo subir a GitHub: {e}")
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -92,12 +88,17 @@ def main():
     for entry in result.entries:
         if isinstance(entry, dropbox.files.FileMetadata) and entry.name.endswith(VALID_SUFFIX):
             mod_time = entry.client_modified
-            incluir = mod_time.replace(tzinfo=timezone.utc) > cutoff
-            print(f"[DEBUG] {entry.name} | modificado: {mod_time} | incluir: {incluir}")
-            if incluir:
+            mod_time_utc = mod_time.replace(tzinfo=timezone.utc)
+            if mod_time_utc > cutoff:
                 url = generate_public_url(dbx, entry.path_lower)
                 if url:
                     videos.append({"nombre": entry.name, "url": url})
+            else:
+                try:
+                    dbx.files_delete_v2(entry.path_lower)
+                    print(f"[INFO] Archivo eliminado por antigüedad: {entry.name}")
+                except Exception as e:
+                    print(f"[ERROR] No se pudo eliminar {entry.name}: {e}")
 
     videos.sort(key=lambda x: x["nombre"], reverse=True)
 
@@ -118,7 +119,6 @@ def main():
 
     github_path = f"data/Locaciones/{loc}/{can}/{lado}/videos_recientes.json"
     upload_to_github(json.dumps(output, indent=2), github_path)
-
 
 if __name__ == "__main__":
     main()
