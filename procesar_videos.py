@@ -70,8 +70,9 @@ for video in videos_nuevos:
 
     # 2. Preparar URL Cloudinary con overlays
     # Logo secundario dinámico según 'loc'
-    logo_public_id = f"media/{loc}"     # Carpeta/nombre del logo del club en Cloudinary
-    logo_overlay_id = f"media:{loc}"    # ID formateado para overlay (reemplazar '/' -> ':')
+    logo_public_id = loc
+    logo_overlay_id = loc
+
     segundo_logo_existe = True
     try:
         cloudinary.api.resource(logo_public_id)
