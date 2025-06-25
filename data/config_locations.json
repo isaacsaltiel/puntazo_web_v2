@@ -1,23 +1,6 @@
 {
   "locaciones": [
     {
-      "id": "TestClub",
-      "nombre": "Club de Prueba",
-      "cancha": [
-        {
-          "id": "TestCancha",
-          "nombre": "Cancha de Prueba",
-          "lados": [
-            {
-              "id": "TestLado",
-              "nombre": "Lado de Prueba",
-              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/TestClub/TestCancha/TestLado/videos_recientes.json"
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "Scorpion",
       "nombre": "Scorpion",
       "cancha": [
@@ -29,6 +12,39 @@
               "id": "LadoN",
               "nombre": "Lado Norte",
               "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/Scorpion/Cancha4/LadoN/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Principal",
+          "nombre": "Principal",
+          "lados": [
+            {
+              "id": "Fondo",
+              "nombre": "Lado Fondo",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/Scorpion/Principal/Fondo/videos_recientes.json"
+            },
+            {
+              "id": "Entrada",
+              "nombre": "Lado Entrada",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/Scorpion/Principal/Entrada/videos_recientes.json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TestClub",
+      "nombre": "Club de Prueba",
+      "cancha": [
+        {
+          "id": "TestCancha",
+          "nombre": "Cancha de Prueba",
+          "lados": [
+            {
+              "id": "TestLado",
+              "nombre": "Lado de Prueba",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/TestClub/TestCancha/TestLado/videos_recientes.json"
             }
           ]
         }
