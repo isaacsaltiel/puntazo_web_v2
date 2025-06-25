@@ -5,7 +5,8 @@ import requests
 import dropbox
 import cloudinary
 import cloudinary.uploader
-from base64 import b64encode
+import cloudinary.api       # ✅ Importamos cloudinary.api para consultar recursos
+import time                 # ✅ Importamos time para poder hacer pausas
 
 # === Autenticación dinámica con refresh_token ===
 APP_KEY = os.environ["DROPBOX_APP_KEY"]
@@ -66,26 +67,69 @@ for video in videos_nuevos:
     # 1. Link temporal de Dropbox
     temp_link = dbx.files_get_temporary_link(ruta_origen).link
 
-    # 2. URL Cloudinary con overlay
-    url_cloudinary = (
-        f"https://res.cloudinary.com/{CLOUD_NAME}/video/upload"
-        f"/l_puntazo_video,w_0.5/fl_layer_apply,g_north_west,x_10,y_10"
-        f"/q_auto,f_mp4/videos_con_marca/{os.path.splitext(nombre)[0]}.mp4"
-    )
+    # 2. Preparar URL Cloudinary con overlays
+    # Logo secundario dinámico según 'loc'
+    logo_public_id = f"media/{loc}"     # Carpeta/nombre del logo del club en Cloudinary
+    logo_overlay_id = f"media:{loc}"    # ID formateado para overlay (reemplazar '/' -> ':')
+    segundo_logo_existe = True
+    try:
+        cloudinary.api.resource(logo_public_id)
+    except Exception:
+        segundo_logo_existe = False
+        print(f"⚠️ Logo de \"{loc}\" no encontrado en Cloudinary. Se usará solo el logo principal.")
 
-    # 3. Subir a Cloudinary
+    # Construir URL de Cloudinary con uno o dos overlays según corresponda
+    base_name = os.path.splitext(nombre)[0]
+    url_cloudinary = f"https://res.cloudinary.com/{CLOUD_NAME}/video/upload"
+    url_cloudinary += f"/l_puntazo_video,w_0.5/fl_layer_apply,g_north_west,x_10,y_10"
+    if segundo_logo_existe:
+        url_cloudinary += f"/l_{logo_overlay_id},w_0.5/fl_layer_apply,g_north_east,x_10,y_10"
+    url_cloudinary += f"/q_auto,f_mp4/videos_con_marca/{base_name}.mp4"
+
+    # 3. Subir video a Cloudinary (recurso base sin procesar)
     cloudinary.uploader.upload(
         temp_link,
         resource_type="video",
-        public_id=f"videos_con_marca/{os.path.splitext(nombre)[0]}",
+        public_id=f"videos_con_marca/{base_name}",
         overwrite=True
     )
 
-    # 4. Guardar procesado en carpeta final
-    dbx.files_save_url(ruta_destino, url_cloudinary)
+    # 4. Guardar video procesado (con marca) en carpeta final de Dropbox
+    save_result = dbx.files_save_url(ruta_destino, url_cloudinary)
     print(f"✅ Video guardado en carpeta final: {ruta_destino}")
 
-    # 5. Eliminar original de Entrantes
+    # 4.1 Esperar finalización de la descarga si es asíncrona
+    if hasattr(save_result, "is_complete") and not save_result.is_complete():
+        # Obtener ID de job asíncrono y consultar hasta completar
+        job_id = None
+        try:
+            job_id = save_result.get_async_job_id()  # ID de la tarea de Dropbox
+        except Exception:
+            # En algunos casos SaveUrlResult puede exponer async_job_id directamente
+            job_id = getattr(save_result, "async_job_id", None)
+        if job_id:
+            # Polling del estado de la descarga
+            max_intentos = 180   # (hasta ~15 minutos)
+            intentos = 0
+            while intentos < max_intentos:
+                status = dbx.files_save_url_check_job_status(job_id)
+                if status.is_complete():
+                    break  # completó antes de 15 minutos
+                if status.is_failed():
+                    print(f"⚠️ Falló la descarga de {nombre} desde Cloudinary a Dropbox.")
+                    # Borrar video de Cloudinary aunque falló, para reintentar en el siguiente ciclo
+                    cloudinary.uploader.destroy(f"videos_con_marca/{base_name}", resource_type="video")
+                    print(f"🗑️ Eliminado de Cloudinary: videos_con_marca/{base_name}")
+                    # Nota: No borramos el original de Entrantes, para intentar reprocesarlo luego.
+                    continue  # saltar a próximo video
+                intentos += 1
+                time.sleep(5)
+            # (Si salió del while sin complete, se asume completado o agotado el tiempo)
+    # 5. Eliminar video de Cloudinary ya procesado
+    cloudinary.uploader.destroy(f"videos_con_marca/{base_name}", resource_type="video")
+    print(f"🗑️ Eliminado de Cloudinary: videos_con_marca/{base_name}")
+
+    # 6. Eliminar original de Entrantes en Dropbox
     dbx.files_delete_v2(ruta_origen)
     print(f"🗑️ Eliminado de Entrantes: {ruta_origen}")
 
