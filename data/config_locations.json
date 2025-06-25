@@ -1,25 +1,43 @@
 {
   "locaciones": [
     {
+      "id": "TestClub",
+      "nombre": "Club de Prueba",
+      "cancha": [
+        {
+          "id": "TestCancha",
+          "nombre": "Cancha de Prueba",
+          "lados": [
+            {
+              "id": "TestLado",
+              "nombre": "Lado de Prueba",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/TestClub/TestCancha/TestLado/videos_recientes.json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Scorpion",
+      "nombre": "Scorpion",
+      "cancha": [
+        {
+          "id": "Cancha4",
+          "nombre": "Cancha 4",
+          "lados": [
+            {
+              "id": "LadoN",
+              "nombre": "Lado Norte",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/Scorpion/Cancha4/LadoN/videos_recientes.json"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "VistaHorizonte",
       "nombre": "Vista Horizonte",
       "cancha": [
-        {
-          "id": "VistaDeLasLomas",
-          "nombre": "Vista de las lomas",
-          "lados": [
-            {
-              "id": "Casa8",
-              "nombre": "Casa 8",
-              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/VistaHorizonte/VistaDeLasLomas/Casa8/videos_recientes.json"
-            },
-            {
-              "id": "LadoB",
-              "nombre": "Lado B",
-              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/VistaHorizonte/VistaDeLasLomas/LadoB/videos_recientes.json"
-            }
-          ]
-        },
         {
           "id": "Cancha2",
           "nombre": "Cancha 2",
@@ -46,38 +64,20 @@
               "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/VistaHorizonte/Cancha8/LadoCafeteria/videos_recientes.json"
             }
           ]
-        }
-      ]
-    },
-    {
-      "id": "Scorpion",
-      "nombre": "Scorpion",
-      "cancha": [
+        },
         {
-          "id": "Cancha4",
-          "nombre": "Cancha 4",
+          "id": "VistaDeLasLomas",
+          "nombre": "Vista de las lomas",
           "lados": [
             {
-              "id": "LadoN",
-              "nombre": "Lado Norte",
-              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/Scorpion/Cancha4/LadoN/videos_recientes.json"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "TestClub",
-      "nombre": "Club de Prueba",
-      "cancha": [
-        {
-          "id": "TestCancha",
-          "nombre": "Cancha de Prueba",
-          "lados": [
+              "id": "Casa8",
+              "nombre": "Casa 8",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/VistaHorizonte/VistaDeLasLomas/Casa8/videos_recientes.json"
+            },
             {
-              "id": "TestLado",
-              "nombre": "Lado de Prueba",
-              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/TestClub/TestCancha/TestLado/videos_recientes.json"
+              "id": "LadoB",
+              "nombre": "Lado B",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/VistaHorizonte/VistaDeLasLomas/LadoB/videos_recientes.json"
             }
           ]
         }
