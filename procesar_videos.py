@@ -7,6 +7,7 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api       # ✅ Importamos cloudinary.api para consultar recursos
 import time                 # ✅ Importamos time para poder hacer pausas
+from base64 import b64encode
 
 # === Autenticación dinámica con refresh_token ===
 APP_KEY = os.environ["DROPBOX_APP_KEY"]
