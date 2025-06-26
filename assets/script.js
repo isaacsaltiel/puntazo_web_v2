@@ -136,7 +136,7 @@ async function populateVideos() {
       const downloadUrl = rawUrl.replace(
         /^https:\/\/dl\.dropboxusercontent\.com/,
         "https://www.dropbox.com"
-      ).replace("raw=1", "dl=1");
+      ).replace("dl=0", "dl=1");
 
       const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
       const displayTime = m ? `${m[1]}:${m[2]}:${m[3]}` : entry.nombre;
