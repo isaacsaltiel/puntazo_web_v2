@@ -133,10 +133,7 @@ async function populateVideos() {
       `${canObj.nombre} – ${ladoObj.nombre}`;
     data.videos.forEach(entry => {
       const rawUrl = entry.url;
-      const downloadUrl = rawUrl.replace(
-        /^https:\/\/dl\.dropboxusercontent\.com/,
-        "https://www.dropbox.com"
-      ).replace("dl=0", "dl=1");
+      const downloadUrl = rawUrl.replace("dl=0", "dl=1");
 
       const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
       const displayTime = m ? `${m[1]}:${m[2]}:${m[3]}` : entry.nombre;
@@ -179,5 +176,3 @@ document.addEventListener("DOMContentLoaded", () => {
     populateVideos();
   }
 });
-
-
