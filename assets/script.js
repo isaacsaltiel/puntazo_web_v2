@@ -86,7 +86,13 @@ async function populateLados() {
     ul.innerHTML = "<li>Lado no encontrado</li>";
     return;
   }
-  document.getElementById("nombre-cancha").textContent = cancha.nombre;
+  document.getElementById("link-club").textContent = loc.nombre;
+  document.getElementById("link-club").href = `locacion.html?loc=${locId}`;
+  document.getElementById("link-cancha").textContent = cancha.nombre;
+  document.getElementById("link-cancha").href = "#";
+  document.getElementById("breadcrumb-sep2").style.display = "none";
+  document.getElementById("nombre-lado").style.display = "none";
+
   cancha.lados.forEach(lado => {
     const li = document.createElement("li");
     li.classList.add("fade-in");
@@ -128,9 +134,12 @@ async function populateVideos() {
     const data = await res.json();
     const container = document.getElementById("videos-container");
     container.innerHTML = "";
-    document.getElementById("nombre-club").textContent = locObj.nombre;
-    document.getElementById("nombre-cancha-lado").textContent =
-      `${canObj.nombre} – ${ladoObj.nombre}`;
+    document.getElementById("link-club").textContent = locObj.nombre;
+    document.getElementById("link-club").href = `locacion.html?loc=${locId}`;
+    document.getElementById("link-cancha").textContent = canObj.nombre;
+    document.getElementById("link-cancha").href = `cancha.html?loc=${locId}&can=${canId}`;
+    document.getElementById("nombre-lado").textContent = ladoObj.nombre;
+
     data.videos.forEach(entry => {
       const rawUrl = entry.url;
       const downloadUrl = rawUrl.replace("dl=0", "dl=1");
