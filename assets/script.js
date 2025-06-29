@@ -80,6 +80,7 @@ async function populateLados() {
   const cancha = config.locaciones
     .find(l => l.id === locId)?.cancha
     .find(c => c.id === canId);
+  const loc = config.locaciones.find(l => l.id === locId);
   const ul = document.getElementById("lados-lista");
   ul.innerHTML = "";
   if (!cancha) {
