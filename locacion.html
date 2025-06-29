@@ -1,52 +1,59 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Puntazo - Locaciones</title>
+  <!-- templates/header.html -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Puntazo</title>
 
-    <!-- Favicons -->
-    <link rel="apple-touch-icon" sizes="57x57"   href="assets/icons/apple-icon-57x57.png" />
-    <link rel="apple-touch-icon" sizes="60x60"   href="assets/icons/apple-icon-60x60.png" />
-    <link rel="apple-touch-icon" sizes="72x72"   href="assets/icons/apple-icon-72x72.png" />
-    <link rel="apple-touch-icon" sizes="76x76"   href="assets/icons/apple-icon-76x76.png" />
-    <link rel="apple-touch-icon" sizes="114x114" href="assets/icons/apple-icon-114x114.png" />
-    <link rel="apple-touch-icon" sizes="120x120" href="assets/icons/apple-icon-120x120.png" />
-    <link rel="apple-touch-icon" sizes="144x144" href="assets/icons/apple-icon-144x144.png" />
-    <link rel="apple-touch-icon" sizes="152x152" href="assets/icons/apple-icon-152x152.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-icon-180x180.png" />
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="57x57"   href="assets/icons/apple-icon-57x57.png" />
+  <link rel="apple-touch-icon" sizes="60x60"   href="assets/icons/apple-icon-60x60.png" />
+  <link rel="apple-touch-icon" sizes="72x72"   href="assets/icons/apple-icon-72x72.png" />
+  <link rel="apple-touch-icon" sizes="76x76"   href="assets/icons/apple-icon-76x76.png" />
+  <link rel="apple-touch-icon" sizes="114x114" href="assets/icons/apple-icon-114x114.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="assets/icons/apple-icon-120x120.png" />
+  <link rel="apple-touch-icon" sizes="144x144" href="assets/icons/apple-icon-144x144.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="assets/icons/apple-icon-152x152.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-icon-180x180.png" />
 
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/android-icon-192x192.png" />
-    <link rel="icon" type="image/png" sizes="32x32"   href="assets/icons/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="96x96"   href="assets/icons/favicon-96x96.png" />
-    <link rel="icon" type="image/png" sizes="16x16"   href="assets/icons/favicon-16x16.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/android-icon-192x192.png" />
+  <link rel="icon" type="image/png" sizes="32x32"   href="assets/icons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="96x96"   href="assets/icons/favicon-96x96.png" />
+  <link rel="icon" type="image/png" sizes="16x16"   href="assets/icons/favicon-16x16.png" />
 
-    <link rel="manifest" href="assets/icons/manifest.json" />
-    <meta name="msapplication-TileColor" content="#ffffff" />
-    <meta name="msapplication-TileImage" content="assets/icons/ms-icon-144x144.png" />
-    <meta name="theme-color" content="#ffffff" />
+  <link rel="manifest" href="assets/icons/manifest.json" />
+  <meta name="msapplication-TileColor" content="#ffffff" />
+  <meta name="msapplication-TileImage" content="assets/icons/ms-icon-144x144.png" />
+  <meta name="theme-color" content="#ffffff" />
 
-    <!-- Estilos y fuentes -->
-    <link rel="stylesheet" href="assets/estilo.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <header class="site-header">
-      <a href="index.html">
-        <img src="assets/logo.png" alt="Logo Puntazo" class="logo" />
-      </a>
-      <h1 class="empresa-nombre">Puntazo</h1>
-      <nav class="navbar">
-        <a href="index.html">Inicio</a>
-        <a href="index.html#locaciones">Locaciones</a>
-        <a href="#contacto">Contáctanos</a>
-      </nav>
-    </header>
+  <!-- Estilos -->
+  <link rel="stylesheet" href="assets/estilo.css" />
+  <link rel="stylesheet" href="assets/inicio.css" />
+
+  <!-- Fuentes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+</head>
+<body>
+  <header class="site-header">
+    <a href="inicio.html" class="logo-link">
+      <img src="assets/logo.png" alt="Logo Puntazo" class="logo" />
+    </a>
+    <a href="inicio.html" class="empresa-nombre">Puntazo</a>
+    <nav class="navbar">
+      <a href="inicio.html#quienes-somos">Quiénes somos</a>
+      <a href="inicio.html#servicios">Servicios</a>
+      <a href="inicio.html#testimonios">Testimonios</a>
+      <a href="inicio.html#contacto">Contacto</a>
+    </nav>
+  </header>
+  <main class="site-content">
+
 
     <main class="site-content fade-in">
       <h2 id="nombre-locacion"></h2>
