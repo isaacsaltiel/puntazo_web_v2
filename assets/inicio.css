@@ -1,16 +1,12 @@
 body {
   font-family: 'Montserrat', sans-serif;
-  background: #1abc9c; /* Fallback */
-  background-image: radial-gradient(circle at top, #1abc9c 0%, #16a085 50%, #2980b9 100%);
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  background-position: center top;
+  background: url('/puntazo_web_v2/assets/bg-degradado-1920x3000.jpg') center top / cover no-repeat fixed;
   color: #222;
   line-height: 1.6;
   scroll-behavior: smooth;
   margin: 0;
 }
+
 
 
 /* HEADER */
