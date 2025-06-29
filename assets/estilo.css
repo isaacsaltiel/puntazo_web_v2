@@ -16,15 +16,15 @@
    ====================================== */
 html, body {
   font-family: 'Montserrat', sans-serif;
-  color: #222;
-  line-height: 1.6;
-  scroll-behavior: smooth;
-  margin: 0;
-  position: relative;
+  color: #ffffff;
+  height: auto;
   min-height: 100vh;
-};
-  /* Este degradado único va desde turquesa al azul, sin cortes visibles */
+  scroll-behavior: smooth;
+  position: relative;
+  margin: 0;
+  padding: 0;
 }
+
 
 /* ======================================
    3) Cabecera (header) y navegación
