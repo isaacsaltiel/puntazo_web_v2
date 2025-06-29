@@ -322,3 +322,38 @@ body::before {
   z-index: -1;
   pointer-events: none;
 }
+.lados-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0;
+  margin-top: 20px;
+  list-style: none;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.lados-lista li {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 12px 20px;
+  border-radius: 6px;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.lados-lista li:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.02);
+}
+
+.lados-lista li a {
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 500;
+  text-decoration: none;
+  display: block;
+}
+
+.lados-lista li a:hover {
+  color: #55c1e7;
+}
