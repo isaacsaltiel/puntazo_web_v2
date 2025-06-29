@@ -187,17 +187,17 @@ document.addEventListener("DOMContentLoaded", () => {
   } else if (path.endsWith("lado.html")) {
     populateVideos();
   }
-});
-const btnVolver = document.getElementById("btn-volver");
-if (btnVolver) {
-  const params = getQueryParams();
-  const path = window.location.pathname;
-  if (path.endsWith("lado.html")) {
-    btnVolver.href = `cancha.html?loc=${params.loc}&can=${params.can}`;
-  } else if (path.endsWith("cancha.html")) {
-    btnVolver.href = `locacion.html?loc=${params.loc}`;
-  } else if (path.endsWith("locacion.html")) {
-    btnVolver.href = "index.html";
-  }
-}
 
+  // ✅ Corregido: ahora sí garantizamos que el botón exista antes de modificarlo
+  const btnVolver = document.getElementById("btn-volver");
+  if (btnVolver) {
+    const params = getQueryParams();
+    if (path.endsWith("lado.html")) {
+      btnVolver.href = `cancha.html?loc=${params.loc}&can=${params.can}`;
+    } else if (path.endsWith("cancha.html")) {
+      btnVolver.href = `locacion.html?loc=${params.loc}`;
+    } else if (path.endsWith("locacion.html")) {
+      btnVolver.href = "index.html";
+    }
+  }
+});
