@@ -58,8 +58,10 @@ html, body {
   font-size: 1.8rem;
   font-weight: 700;
   color: #ffffff;
-  cursor: default;
+  cursor: pointer;
+  text-decoration: none; /* Esto remueve el subrayado */
 }
+
 
 .navbar a {
   color: #ffffff;
