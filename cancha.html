@@ -14,31 +14,6 @@
   <!-- Estilos -->
   <link rel="stylesheet" href="assets/estilo.css" />
   <link rel="stylesheet" href="assets/inicio.css" />
-  <style>
-    .breadcrumb-link {
-      color: #ffffff;
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .breadcrumb-link:hover {
-      color: #55c1e7;
-      text-decoration: underline;
-    }
-    .btn-back {
-      display: inline-block;
-      margin-top: 12px;
-      background: #3498db;
-      color: #ffffff;
-      padding: 10px 16px;
-      border-radius: 4px;
-      text-decoration: none;
-      font-weight: bold;
-      transition: background 0.3s ease;
-    }
-    .btn-back:hover {
-      background: #2980b9;
-    }
-  </style>
 
   <!-- Fuentes -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -66,12 +41,13 @@
         <span id="breadcrumb-sep1"> – </span>
         <span id="nombre-cancha"></span>
       </div>
-      <div style="margin-top: 15px;">
-        <a id="btn-volver" class="btn-volver" href="#">← Volver a la locación</a>
-      </div>
     </div>
 
-    <ul id="lados-lista"></ul>
+    <div class="btn-volver-container">
+      <a href="#" id="btn-volver" class="btn-volver">← Regresar a la locación</a>
+    </div>
+
+    <ul id="lados-lista" class="lados-lista"></ul>
   </main>
 
   <footer class="site-footer" id="contacto">
