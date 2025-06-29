@@ -392,3 +392,22 @@ body::before {
 .canchas-lista li a:hover {
   color: #55c1e7;
 }
+.btn-volver-container {
+  margin-bottom: 15px;
+}
+
+.btn-volver {
+  display: inline-block;
+  color: #ffffff;
+  background: rgba(0,0,0,0.5);
+  padding: 8px 16px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+.btn-volver:hover {
+  background: rgba(0,0,0,0.7);
+  color: #55c1e7;
+}
+
