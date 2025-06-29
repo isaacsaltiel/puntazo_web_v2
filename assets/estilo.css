@@ -15,15 +15,14 @@
    2) Fondo de la página (degradado único)
    ====================================== */
 html, body {
-  height: 100%;
   font-family: 'Montserrat', sans-serif;
-  color: #ffffff; /* Por defecto toda la letra será blanca */
-  background: linear-gradient(
-    to bottom,
-    #1abc9c 0%,
-    #16a085 40%,
-    #2980b9 80%
-  );
+  color: #222;
+  line-height: 1.6;
+  scroll-behavior: smooth;
+  margin: 0;
+  position: relative;
+  min-height: 100vh;
+};
   /* Este degradado único va desde turquesa al azul, sin cortes visibles */
 }
 
@@ -312,4 +311,14 @@ ul li a:hover {
   background: #16a085;
   transform: scale(1.05);
 }
-
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: url('/puntazo_web_v2/assets/bg-degradado-1920x3000.jpg') center top / cover no-repeat;
+  z-index: -1;
+  pointer-events: none;
+}
