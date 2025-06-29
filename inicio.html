@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Puntazo – Inicio</title>
+    <link rel="stylesheet" href="assets/estilo.css" />
+    <link rel="stylesheet" href="assets/inicio.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a href="index.html">
+        <img src="assets/logo.png" alt="Logo Puntazo" class="logo" />
+      </a>
+      <h1 class="empresa-nombre">Puntazo</h1>
+      <nav class="navbar">
+        <a href="#quienes-somos">Quiénes somos</a>
+        <a href="#servicios">Servicios</a>
+        <a href="#testimonios">Testimonios</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+    </header>
+
+    <!-- Hero principal -->
+    <section class="hero">
+      <div class="hero-content">
+        <h1>Transformamos cada jugada en una oportunidad</h1>
+        <p>La plataforma más eficaz para grabar, compartir y mejorar en tu club</p>
+        <a href="index.html" class="cta-btn">Explora los videos</a>
+      </div>
+    </section>
+
+    <!-- Sección Quiénes somos -->
+    <section id="quienes-somos" class="fade-section">
+      <h2>¿Quiénes somos?</h2>
+      <p>
+        En Puntazo creemos que cada momento en la cancha merece ser recordado. Nuestro sistema automatizado graba tus mejores jugadas y las pone al alcance de todos.
+      </p>
+    </section>
+
+    <!-- Servicios / Beneficios -->
+    <section id="servicios" class="features">
+      <h2>¿Qué ofrecemos?</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>Grabación inteligente</h3>
+          <p>Cada lado de la cancha es capturado en alta definición.</p>
+        </div>
+        <div class="card">
+          <h3>Acceso inmediato</h3>
+          <p>Consulta tus videos minutos después de jugar.</p>
+        </div>
+        <div class="card">
+          <h3>Difusión profesional</h3>
+          <p>Ideal para clubes, entrenadores y jugadores destacados.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonios -->
+    <section id="testimonios" class="fade-section">
+      <h2>Testimonios</h2>
+      <div class="testimonios">
+        <blockquote>“Ahora puedo ver mis partidos y corregir errores, ¡es increíble!” – Juan P.</blockquote>
+        <blockquote>“Mis alumnos mejoran más rápido gracias a los videos.” – Profe Laura</blockquote>
+        <blockquote>“Un plus enorme para mi club. ¡Recomendado!” – Club MasterPadel</blockquote>
+      </div>
+    </section>
+
+    <!-- Carrusel de imágenes -->
+    <section class="carrusel fade-section">
+      <h2>Nuestros espacios</h2>
+      <div class="carousel-container">
+        <img src="assets/carrusel1.jpg" alt="Cancha 1" />
+        <img src="assets/carrusel2.jpg" alt="Cancha 2" />
+        <img src="assets/carrusel3.jpg" alt="Club" />
+      </div>
+    </section>
+
+    <!-- Contacto -->
+    <section id="contacto" class="fade-section">
+      <h2>Contáctanos</h2>
+      <p>¿Te interesa que tu club forme parte? ¡Escríbenos!</p>
+      <a href="mailto:contacto@puntazo.com" class="cta-btn">Enviar email</a>
+    </section>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <p>© 2025 Puntazo – Todos los derechos reservados</p>
+      <div>
+        <a href="https://facebook.com/puntazo" target="_blank">Facebook</a>
+        <a href="https://instagram.com/puntazo" target="_blank">Instagram</a>
+        <a href="mailto:contacto@puntazo.com">Email</a>
+      </div>
+    </footer>
+
+    <script>
+      // Scroll animations
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.fade-section').forEach(sec => observer.observe(sec));
+    </script>
+  </body>
+</html>
