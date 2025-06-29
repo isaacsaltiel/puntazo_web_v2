@@ -123,17 +123,24 @@ async function populateVideos() {
   const locObj = config.locaciones.find(l => l.id === locId);
   const canObj = locObj?.cancha.find(c => c.id === canId);
   const ladoObj = canObj?.lados.find(l => l.id === ladoId);
+
   if (!ladoObj || !ladoObj.json_url) {
     document.getElementById("videos-container").innerHTML =
       "<p style='color:#fff;'>Lado no encontrado.</p>";
     return;
   }
+
   const jsonUrl = `${ladoObj.json_url}?cb=${Date.now()}`;
   try {
     const res = await fetch(jsonUrl, { cache: "no-store" });
     if (!res.ok) throw new Error("No se pudo acceder al JSON de videos.");
+
     const data = await res.json();
     const container = document.getElementById("videos-container");
+
+    // Mostrar el mensaje de carga
+    document.getElementById("loading").style.display = "block";
+
     container.innerHTML = "";
     document.getElementById("link-club").textContent = locObj.nombre;
     document.getElementById("link-club").href = `locacion.html?loc=${locId}`;
@@ -147,31 +154,40 @@ async function populateVideos() {
 
       const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
       const displayTime = m ? `${m[1]}:${m[2]}:${m[3]}` : entry.nombre;
+
       const card = document.createElement("div");
       card.className = "video-card";
+
       const title = document.createElement("div");
       title.className = "video-title";
       title.textContent = displayTime;
       card.appendChild(title);
+
       const video = document.createElement("video");
       video.controls = true;
       video.playsInline = true;
       video.preload = "metadata";
       video.src = rawUrl;
-
       card.appendChild(video);
+
       const btn = document.createElement("a");
       btn.className = "btn-download";
       btn.textContent = "Descargar";
       btn.href = downloadUrl;
       btn.download = entry.nombre;
       card.appendChild(btn);
+
       container.appendChild(card);
     });
+
+    // Ocultar el mensaje de carga
+    document.getElementById("loading").style.display = "none";
+
   } catch (err) {
     console.error("Error en populateVideos():", err);
     document.getElementById("videos-container").innerHTML =
       "<p style='color:#fff;'>No hay videos disponibles.</p>";
+    document.getElementById("loading").style.display = "none";
   }
 }
 
