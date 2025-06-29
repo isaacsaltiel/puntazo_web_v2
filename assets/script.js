@@ -146,7 +146,9 @@ async function populateVideos() {
       const video = document.createElement("video");
       video.controls = true;
       video.playsInline = true;
+      video.preload = "metadata";
       video.src = rawUrl;
+
       card.appendChild(video);
       const btn = document.createElement("a");
       btn.className = "btn-download";
