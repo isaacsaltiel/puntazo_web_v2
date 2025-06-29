@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-  <!-- templates/header.html -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -29,15 +28,11 @@
 
   <!-- Estilos -->
   <link rel="stylesheet" href="assets/estilo.css" />
-  <link rel="stylesheet" href="assets/inicio.css" />
 
   <!-- Fuentes -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap"
-    rel="stylesheet"
-  />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet" />
 </head>
 <body>
   <header class="site-header">
@@ -52,56 +47,30 @@
       <a href="inicio.html#contacto">Contacto</a>
     </nav>
   </header>
-  <main class="site-content">
 
+  <main class="site-content fade-in">
+    <div class="titulo-lado">
+      <div id="nombre-club" class="titulo-club"></div>
+      <div id="nombre-cancha-lado" class="titulo-cancha"></div>
+    </div>
 
-    <main class="site-content fade-in">
-  <!-- Bloque de título dinámico -->
-  <div class="titulo-lado">
-    <div id="nombre-club" class="titulo-club"></div>
-    <div id="nombre-cancha-lado" class="titulo-cancha"></div>
-  </div>
+    <div class="aviso">Selecciona el lado de la cancha para ver los videos disponibles.</div>
+    <ul id="lados-lista"></ul>
+  </main>
 
-  <div class="aviso">Recuerda que los videos se borran pasadas 8 horas.</div>
+  <footer class="site-footer" id="contacto">
+    <div class="footer-info">
+      <p>¿Te interesa que estemos en tu club? <a href="mailto:contacto@puntazo.com">Escríbenos</a></p>
+      <p>Recuerda que los videos se borran pasadas 8 horas.</p>
+    </div>
+    <div class="footer-redes">
+      <a href="https://facebook.com/puntazo" target="_blank">Facebook</a>
+      <a href="https://instagram.com/puntazo" target="_blank">Instagram</a>
+      <a href="mailto:contacto@puntazo.com">Email</a>
+    </div>
+    <p class="footer-copy">© 2025 Puntazo</p>
+  </footer>
 
-  <!-- Contenedor dinámico de tarjetas de video -->
-  <section id="videos-container" class="video-grid"></section>
-</main>
-
-
-    <footer class="site-footer" id="contacto">
-      <div class="footer-info">
-        <p>¿Te interesa que estemos en tu club? <a href="mailto:contacto@puntazo.com">Escríbenos</a></p>
-        <p>Recuerda que los videos se borran pasadas 8 horas.</p>
-      </div>
-      <div class="footer-redes">
-        <a href="https://facebook.com/puntazo" target="_blank">Facebook</a>
-        <a href="https://instagram.com/puntazo" target="_blank">Instagram</a>
-        <a href="mailto:contacto@puntazo.com">Email</a>
-      </div>
-      <p class="footer-copy">© 2025 Puntazo</p>
-    </footer>
-
-    <script>
-      document.addEventListener("DOMContentLoaded", async () => {
-        const params = new URLSearchParams(window.location.search);
-        const loc = params.get("loc");
-        const can = params.get("can");
-        const lado = params.get("lado");
-
-        const res = await fetch("data/config_locations.json");
-        const config = await res.json();
-
-        const locObj = config.locaciones.find(l => l.id === loc);
-        const canObj = locObj?.cancha.find(c => c.id === can);
-        const ladoObj = canObj?.lados.find(l => l.id === lado);
-
-        if (locObj && canObj && ladoObj) {
-          document.getElementById("nombre-club").textContent = locObj.nombre;
-          document.getElementById("nombre-cancha-lado").textContent = `${canObj.nombre} – ${ladoObj.nombre}`;
-        }
-      });
-    </script>
-    <script src="assets/script.js"></script>
-  </body>
+  <script src="assets/script.js"></script>
+</body>
 </html>
