@@ -410,4 +410,13 @@ body::before {
   background: rgba(0,0,0,0.7);
   color: #55c1e7;
 }
+.breadcrumb-link {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 700;
+}
+.breadcrumb-link:hover {
+  color: #55c1e7;
+  text-decoration: underline;
+}
 
