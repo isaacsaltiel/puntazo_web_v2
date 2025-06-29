@@ -1,10 +1,11 @@
 body {
   font-family: 'Montserrat', sans-serif;
-  background: url('/puntazo_web_v2/assets/bg-degradado-1920x3000.jpg') center top / cover no-repeat fixed;
   color: #222;
   line-height: 1.6;
   scroll-behavior: smooth;
   margin: 0;
+  position: relative;
+  min-height: 100vh;
 }
 
 
@@ -195,4 +196,15 @@ h2 {
   .hero p {
     font-size: 1rem;
   }
+}
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: url('/puntazo_web_v2/assets/bg-degradado-1920x3000.jpg') center top / cover no-repeat;
+  z-index: -1;
+  pointer-events: none;
 }
