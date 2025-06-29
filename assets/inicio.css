@@ -1,12 +1,17 @@
 body {
   font-family: 'Montserrat', sans-serif;
-  background: linear-gradient(to bottom, #1abc9c, #16a085, #2980b9);
+  background: #1abc9c; /* Fallback */
+  background-image: radial-gradient(circle at top, #1abc9c 0%, #16a085 50%, #2980b9 100%);
+  background-size: cover;
+  background-repeat: no-repeat;
   background-attachment: fixed;
+  background-position: center top;
   color: #222;
   line-height: 1.6;
   scroll-behavior: smooth;
   margin: 0;
 }
+
 
 /* HEADER */
 .site-header {
