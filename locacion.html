@@ -80,5 +80,17 @@
     </footer>
 
     <script src="assets/script.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const btn = document.querySelector('.menu-toggle');
+      const nav = document.querySelector('.navbar');
+      if (btn && nav) {
+        btn.addEventListener('click', () => {
+          nav.classList.toggle('show');
+        });
+      }
+    });
+  </script>
+
   </body>
 </html>
