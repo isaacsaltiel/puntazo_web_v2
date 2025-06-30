@@ -236,3 +236,42 @@ body::before {
   margin-top: 20px;
   display: inline-block;
 }
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: #fff;
+  cursor: pointer;
+}
+.navbar {
+  display: flex;
+  gap: 1.5rem;
+}
+.highlight-btn {
+  padding: 6px 12px;
+  background: #1abc9c;
+  color: #fff;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    display: none;
+    flex-direction: column;
+    background: rgba(25,25,25,0.9);
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 200px;
+    padding: 10px;
+  }
+  .navbar.show {
+    display: flex;
+  }
+  .menu-toggle {
+    display: block;
+  }
+}
+
