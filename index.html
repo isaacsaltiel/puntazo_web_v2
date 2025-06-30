@@ -3,6 +3,12 @@
   <!-- Incluimos el header -->
   <!-- templates/header.html -->
 <head>
+  <script>
+    if (document.referrer === "") {
+      window.location.href = "inicio.html";
+    }
+  </script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Puntazo</title>
