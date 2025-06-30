@@ -274,4 +274,29 @@ body::before {
     display: block;
   }
 }
+.empresa-nombre {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 1.8rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+}
+.logo-link, .empresa-nombre, .menu-toggle {
+  z-index: 1100;
+}
+#quienes-somos p,
+#contacto p {
+  font-weight: 600;
+  color: #111; /* mejora visibilidad */
+}
+#quienes-somos h2,
+#contacto h2 {
+  font-weight: 700;
+}
 
