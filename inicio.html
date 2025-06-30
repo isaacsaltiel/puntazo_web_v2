@@ -121,5 +121,11 @@
 
     document.querySelectorAll('.fade-section').forEach(sec => observer.observe(sec));
   </script>
+  <script>
+    const btn = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('.navbar');
+    btn.addEventListener('click', () => nav.classList.toggle('show'));
+  </script>
+
 </body>
 </html>
