@@ -88,8 +88,9 @@ for video in videos_nuevos:
 
     url_cloudinary += f"/q_auto,f_mp4/videos_con_marca/{base_name}.mp4"
 
-    result = None
+    # === Subida con fallback ===
     try:
+        configurar_cloudinary(CLOUD_NAME, API_KEY, API_SECRET)
         cloudinary.uploader.upload(
             temp_link,
             resource_type="video",
