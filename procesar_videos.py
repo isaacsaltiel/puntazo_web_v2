@@ -91,6 +91,12 @@ for video in videos_nuevos:
 
     # Subida con fallback
     try:
+    # 🔧 Simulación temporal de error por créditos agotados
+        class SimulatedCloudinaryQuotaError(Exception):
+            http_status = 420
+            def __str__(self): return "Simulando error de créditos agotados"
+        raise SimulatedCloudinaryQuotaError()
+
         cloudinary.uploader.upload(
             temp_link,
             resource_type="video",
