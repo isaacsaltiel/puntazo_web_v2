@@ -128,6 +128,8 @@ for video in videos_nuevos:
 
     if hasattr(save_result, "is_complete") and not save_result.is_complete():
         job_id = getattr(save_result, "async_job_id", None)
+        if callable(job_id):
+            job_id = job_id()
         if job_id:
             max_intentos = 180
             intentos = 0
