@@ -97,7 +97,7 @@ for video in videos_nuevos:
 
     # === Subida con fallback ===
     try:
-        # Simulación forzada de error (comentarlo cuando no se quiera probar fallback)
+        # Simulación de error (comentar para ejecución normal)
         class SimulatedCloudinaryQuotaError(Exception):
             http_status = 420
             def __str__(self): return "Simulando error de créditos agotados"
