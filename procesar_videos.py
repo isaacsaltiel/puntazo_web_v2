@@ -10,6 +10,8 @@ import time
 from base64 import b64encode
 from cloudinary.exceptions import Error as CloudinaryError
 
+print("🛫 Iniciando script...")
+
 # === Autenticación dinámica con refresh_token ===
 APP_KEY = os.environ["DROPBOX_APP_KEY"]
 APP_SECRET = os.environ["DROPBOX_APP_SECRET"]
@@ -26,9 +28,11 @@ res = requests.post(
 )
 res.raise_for_status()
 ACCESS_TOKEN = res.json()["access_token"]
+print("🔑 Token de Dropbox obtenido")
 
 # === Inicializa Dropbox con token renovado ===
 dbx = dropbox.Dropbox(ACCESS_TOKEN)
+print("📦 Cliente Dropbox inicializado")
 
 # === Configuración dinámica de Cloudinary ===
 CLOUD_NAME  = os.environ["CLOUDINARY_CLOUD_NAME"]
@@ -44,6 +48,7 @@ def configurar_cloudinary(cloud_name, api_key, api_secret):
 
 # Inicia con la cuenta principal
 configurar_cloudinary(CLOUD_NAME, API_KEY, API_SECRET)
+print("☁️ Cloudinary cuenta principal configurada")
 
 # === Rutas en Dropbox ===
 CARPETA_ENTRANTES = "/Puntazo/Entrantes"
@@ -52,9 +57,11 @@ CARPETA_RAIZ = "/Puntazo/Locaciones"
 # === Patrón para extraer loc, can, lado ===
 PATRON_VIDEO = re.compile(r"^(?P<loc>[^_]+)_(?P<can>[^_]+)_(?P<lado>[^_]+)_\d{8}_\d{6}\.mp4$")
 
-# === Lista de videos en Entrantes ===
+print("📂 Buscando videos en carpeta Entrantes...")
 res = dbx.files_list_folder(CARPETA_ENTRANTES)
+print("📋 Lista de videos obtenida")
 videos_nuevos = [entry for entry in res.entries if entry.name.endswith(".mp4")]
+print(f"🎞️ Videos nuevos encontrados: {len(videos_nuevos)}")
 
 if not videos_nuevos:
     print("✅ No hay videos nuevos por procesar.")
@@ -97,11 +104,12 @@ for video in videos_nuevos:
 
     # === Subida con fallback ===
     try:
-        # Simulación de error (comentar para ejecución normal)
+        # 🔧 COMENTAR esta sección después de probar la cuenta de respaldo
         class SimulatedCloudinaryQuotaError(Exception):
             http_status = 420
             def __str__(self): return "Simulando error de créditos agotados"
         raise SimulatedCloudinaryQuotaError()
+        # 🔧 FIN sección simulación — quitar al terminar prueba
 
         cloudinary.uploader.upload(
             temp_link,
