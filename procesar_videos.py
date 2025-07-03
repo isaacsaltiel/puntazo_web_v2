@@ -104,7 +104,7 @@ for video in videos_nuevos:
             overwrite=True,
         )
         print("☁️ Subido con cuenta principal")
-    except CloudinaryError as e:
+    except Exception as e:
         if e.http_status in (403, 420):
             print("⚠️ Créditos agotados. Cambiando a cuenta de respaldo...")
             configurar_cloudinary(CLOUD_NAME2, API_KEY2, API_SECRET2)
