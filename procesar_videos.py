@@ -30,9 +30,9 @@ ACCESS_TOKEN = res.json()["access_token"]
 dbx = dropbox.Dropbox(ACCESS_TOKEN)
 
 # === Configuración Cloudinary ===
-CLOUD_NAME = os.environ["CLOUDINARY_CLOUD_NAME2"]
-API_KEY = os.environ["CLOUDINARY_API_KEY2"]
-API_SECRET = os.environ["CLOUDINARY_API_SECRET2"]
+CLOUD_NAME = os.environ["CLOUDINARY_CLOUD_NAME"]
+API_KEY = os.environ["CLOUDINARY_API_KEY"]
+API_SECRET = os.environ["CLOUDINARY_API_SECRET"]
 cloudinary.config(cloud_name=CLOUD_NAME, api_key=API_KEY, api_secret=API_SECRET)
 
 # === Rutas en Dropbox ===
