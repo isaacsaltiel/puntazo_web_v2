@@ -97,6 +97,7 @@ for video in videos_nuevos:
 
     # === Subida con fallback ===
     try:
+        raise CloudinaryError("Simulando error de créditos agotados", http_status=420)
         cloudinary.uploader.upload(
             temp_link,
             resource_type="video",
