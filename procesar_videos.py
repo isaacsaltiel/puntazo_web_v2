@@ -118,21 +118,27 @@ for video in videos_nuevos:
             raise
 
     # Guardar en Dropbox
-    result = dbx.files_save_url(ruta_destino, url_cloudinary)
-    print(f"✅ Guardado en: {ruta_destino}")
+        if hasattr(result, "is_complete") and not result.is_complete():
+            job_id = None
+            try:
+                job_id = result.get_async_job_id()
+            except Exception:
+                try:
+                    job_id = result.async_job_id()
+                except Exception:
+                    job_id = None
+    
+            if job_id:
+                for i in range(60):
+                    status = dbx.files_save_url_check_job_status(job_id)
+                    if status.is_complete():
+                        break
+                    if status.is_failed():
+                        print(f"❌ Falló la descarga en Dropbox")
+                        cloudinary.uploader.destroy(f"videos_con_marca/{base_name}", resource_type="video")
+                        break
+                    time.sleep(5)
 
-    # Esperar si es async
-    if hasattr(result, "is_complete") and not result.is_complete():
-        job_id = getattr(result, "async_job_id", None)
-        for i in range(60):
-            status = dbx.files_save_url_check_job_status(job_id)
-            if status.is_complete():
-                break
-            if status.is_failed():
-                print(f"❌ Falló la descarga en Dropbox")
-                cloudinary.uploader.destroy(f"videos_con_marca/{base_name}", resource_type="video")
-                break
-            time.sleep(5)
 
     # Limpiar
     cloudinary.uploader.destroy(f"videos_con_marca/{base_name}", resource_type="video")
