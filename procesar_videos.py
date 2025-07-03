@@ -127,9 +127,15 @@ for video in videos_nuevos:
     print(f"✅ Video guardado en carpeta final: {ruta_destino}")
 
     if hasattr(save_result, "is_complete") and not save_result.is_complete():
-        job_id = getattr(save_result, "async_job_id", None)
-        if callable(job_id):
-            job_id = job_id()
+        job_id = None
+        try:
+            job_id = save_result.get_async_job_id()
+        except Exception:
+            try:
+                job_id = save_result.async_job_id
+            except Exception:
+                job_id = None
+
         if job_id:
             max_intentos = 180
             intentos = 0
