@@ -97,14 +97,12 @@ for video in videos_nuevos:
 
     # === Subida con fallback ===
     try:
-        from types import SimpleNamespace
+        # Simulación forzada de error
         class SimulatedCloudinaryQuotaError(Exception):
             http_status = 420
-            def __str__(self):
-                return "Simulando error de créditos agotados"
-        
+            def __str__(self): return "Simulando error de créditos agotados"
         raise SimulatedCloudinaryQuotaError()
-
+    
         cloudinary.uploader.upload(
             temp_link,
             resource_type="video",
@@ -112,8 +110,9 @@ for video in videos_nuevos:
             overwrite=True
         )
         print("☁️ Subido con cuenta principal")
-    except CloudinaryError as e:
-        if e.http_status in (403, 420):
+    
+    except Exception as e:
+        if hasattr(e, 'http_status') and e.http_status in (403, 420):
             print("⚠️ Créditos agotados en cuenta principal. Cambiando a cuenta de respaldo...")
             configurar_cloudinary(CLOUD_NAME2, API_KEY2, API_SECRET2)
             try:
@@ -130,6 +129,7 @@ for video in videos_nuevos:
                 raise e2
         else:
             raise
+
 
     save_result = dbx.files_save_url(ruta_destino, url_cloudinary)
     print(f"✅ Video guardado en carpeta final: {ruta_destino}")
