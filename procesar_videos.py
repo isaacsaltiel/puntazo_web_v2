@@ -1,34 +1,42 @@
 #!/usr/bin/env python3
 import os
 import requests
+import dropbox
 from base64 import b64encode
 
-print("🛫 Iniciando script mínimo...")
+print("🛫 Iniciando prueba Dropbox completa...")
 
-# Variables mínimas para prueba
 APP_KEY = os.environ.get("DROPBOX_APP_KEY")
 APP_SECRET = os.environ.get("DROPBOX_APP_SECRET")
 REFRESH_TOKEN = os.environ.get("DROPBOX_REFRESH_TOKEN")
 
-if not (APP_KEY and APP_SECRET and REFRESH_TOKEN):
-    print("❌ Faltan variables de entorno necesarias")
-    exit(1)
+print("🔐 Generando token...")
 
-print("🔐 Variables cargadas, generando token...")
+auth_header = b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()
+res = requests.post(
+    "https://api.dropbox.com/oauth2/token",
+    headers={"Authorization": f"Basic {auth_header}"},
+    data={
+        "grant_type": "refresh_token",
+        "refresh_token": REFRESH_TOKEN,
+    },
+)
+res.raise_for_status()
+ACCESS_TOKEN = res.json()["access_token"]
+print("✅ Token OK")
 
+# === Ahora prueba conexión con Dropbox SDK ===
+print("📦 Inicializando Dropbox client...")
+dbx = dropbox.Dropbox(ACCESS_TOKEN)
+print("📦 Cliente Dropbox inicializado correctamente.")
+
+# === Ahora probamos listar carpeta ===
+print("📂 Listando archivos en /Puntazo/Entrantes...")
 try:
-    auth_header = b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()
-    res = requests.post(
-        "https://api.dropbox.com/oauth2/token",
-        headers={"Authorization": f"Basic {auth_header}"},
-        data={
-            "grant_type": "refresh_token",
-            "refresh_token": REFRESH_TOKEN,
-        },
-    )
-    res.raise_for_status()
-    ACCESS_TOKEN = res.json()["access_token"]
-    print("✅ Token obtenido exitosamente")
+    carpeta = "/Puntazo/Entrantes"
+    res = dbx.files_list_folder(carpeta)
+    print(f"📋 Archivos encontrados: {len(res.entries)}")
+    for entry in res.entries:
+        print(f"  • {entry.name}")
 except Exception as e:
-    print(f"❌ Error al obtener token: {e}")
-    exit(1)
+    print(f"❌ Error al listar archivos de {carpeta}: {e}")
