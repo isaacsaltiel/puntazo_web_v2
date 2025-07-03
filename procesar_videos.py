@@ -73,7 +73,6 @@ for video in videos_nuevos:
 
     temp_link = dbx.files_get_temporary_link(ruta_origen).link
 
-    # Construir URL
     url_cloudinary = f"https://res.cloudinary.com/{CLOUD_NAME}/video/upload"
     url_cloudinary += f"/l_puntazo_video,w_0.40/fl_layer_apply,g_north_west,x_30,y_30"
 
@@ -89,16 +88,14 @@ for video in videos_nuevos:
 
     url_cloudinary += f"/q_auto,f_mp4/videos_con_marca/{base_name}.mp4"
 
-    # Subida con fallback
+    result = None
     try:
-    # 🔧 Simulación temporal de error por créditos agotados
-    # 🔧 Solo simular si nombre contiene "888899" para pruebas
+        # 🔧 Simulación: comentar después de probar fallback
         if "888899" in nombre:
             class SimulatedCloudinaryQuotaError(Exception):
                 http_status = 420
                 def __str__(self): return "Simulando error de créditos agotados"
             raise SimulatedCloudinaryQuotaError()
-
 
         cloudinary.uploader.upload(
             temp_link,
@@ -108,48 +105,44 @@ for video in videos_nuevos:
         )
         print("☁️ Subido con cuenta principal")
     except Exception as e:
-        if e.http_status in (403, 420):
+        if hasattr(e, 'http_status') and e.http_status in (403, 420):
             print("⚠️ Créditos agotados. Cambiando a cuenta de respaldo...")
             configurar_cloudinary(CLOUD_NAME2, API_KEY2, API_SECRET2)
-            try:
-                cloudinary.uploader.upload(
-                    temp_link,
-                    resource_type="video",
-                    public_id=f"videos_con_marca/{base_name}",
-                    overwrite=True,
-                )
-                print("☁️ Subido con cuenta de respaldo")
-                url_cloudinary = url_cloudinary.replace(CLOUD_NAME, CLOUD_NAME2)
-            except Exception as e2:
-                print("❌ Falló también la cuenta de respaldo")
-                raise e2
+            cloudinary.uploader.upload(
+                temp_link,
+                resource_type="video",
+                public_id=f"videos_con_marca/{base_name}",
+                overwrite=True,
+            )
+            print("☁️ Subido con cuenta de respaldo")
+            url_cloudinary = url_cloudinary.replace(CLOUD_NAME, CLOUD_NAME2)
         else:
             raise
 
-    # Guardar en Dropbox
-        if hasattr(result, "is_complete") and not result.is_complete():
-            job_id = None
+    result = dbx.files_save_url(ruta_destino, url_cloudinary)
+    print(f"✅ Guardado en: {ruta_destino}")
+
+    if hasattr(result, "is_complete") and not result.is_complete():
+        job_id = None
+        try:
+            job_id = result.get_async_job_id()
+        except Exception:
             try:
-                job_id = result.get_async_job_id()
+                job_id = result.async_job_id()
             except Exception:
-                try:
-                    job_id = result.async_job_id()
-                except Exception:
-                    job_id = None
-    
-            if job_id:
-                for i in range(60):
-                    status = dbx.files_save_url_check_job_status(job_id)
-                    if status.is_complete():
-                        break
-                    if status.is_failed():
-                        print(f"❌ Falló la descarga en Dropbox")
-                        cloudinary.uploader.destroy(f"videos_con_marca/{base_name}", resource_type="video")
-                        break
-                    time.sleep(5)
+                job_id = None
 
+        if job_id:
+            for i in range(60):
+                status = dbx.files_save_url_check_job_status(job_id)
+                if status.is_complete():
+                    break
+                if status.is_failed():
+                    print(f"❌ Falló la descarga en Dropbox")
+                    cloudinary.uploader.destroy(f"videos_con_marca/{base_name}", resource_type="video")
+                    break
+                time.sleep(5)
 
-    # Limpiar
     cloudinary.uploader.destroy(f"videos_con_marca/{base_name}", resource_type="video")
     dbx.files_delete_v2(ruta_origen)
     print(f"🗑️ Limpieza completada de {nombre}")
