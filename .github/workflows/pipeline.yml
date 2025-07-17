@@ -9,7 +9,8 @@ jobs:
   ejecutar:
     runs-on: ubuntu-latest
     env:
-      PAT_GITHUB: ${{ secrets.PAT_GITHUB }}  # 🔧 <- ESTA LÍNEA ES CLAVE
+      USE_SECOND_CLOUDINARY: "true"  # Cambia a "true" = Cuenta 2 | "false" = Cuenta 1 si quieres usar otra cuenta
+
     steps:
       - name: Clonar repo
         uses: actions/checkout@v3
@@ -23,13 +24,18 @@ jobs:
           DROPBOX_APP_SECRET:    ${{ secrets.DROPBOX_APP_SECRET }}
           DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
 
+          # Cuenta principal
           CLOUDINARY_CLOUD_NAME:     ${{ secrets.CLOUDINARY_CLOUD_NAME }}
           CLOUDINARY_API_KEY:        ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET:     ${{ secrets.CLOUDINARY_API_SECRET }}
 
+          # Cuenta secundaria
           CLOUDINARY_CLOUD_NAME2:    ${{ secrets.CLOUDINARY_CLOUD_NAME2 }}
           CLOUDINARY_API_KEY2:       ${{ secrets.CLOUDINARY_API_KEY2 }}
           CLOUDINARY_API_SECRET2:    ${{ secrets.CLOUDINARY_API_SECRET2 }}
+
+          # Control desde YAML
+          USE_SECOND_CLOUDINARY:     ${{ env.USE_SECOND_CLOUDINARY }}
 
           PAT_GITHUB:                ${{ secrets.PAT_GITHUB }}
 
