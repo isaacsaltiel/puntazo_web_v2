@@ -90,9 +90,9 @@ for video in videos_nuevos:
 
     base_name = os.path.splitext(nombre)[0]
     url_cloudinary = f"https://res.cloudinary.com/{CLOUD_NAME}/video/upload"
-    url_cloudinary += f"/l_puntazo_video,w_0.70/fl_layer_apply,g_north_west,x_30,y_30"
+    url_cloudinary += f"/l_puntazo_video,w_0.70/fl_layer_apply,g_north_west,x_15,y_15"
     if segundo_logo_existe:
-        url_cloudinary += f"/l_{logo_overlay_id},w_0.5/fl_layer_apply,g_north_east,x_50,y_50"
+        url_cloudinary += f"/l_{logo_overlay_id},w_0.5/fl_layer_apply,g_north_east,x_15,y_15"
     url_cloudinary += f"/q_auto,f_mp4/videos_con_marca/{base_name}.mp4"
 
     # 3. Subir video a Cloudinary
