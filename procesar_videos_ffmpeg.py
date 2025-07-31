@@ -1,17 +1,33 @@
 #!/usr/bin/env python3
 import os
 import re
+import requests
 import dropbox
 import subprocess
 import time
 
-# === Configuración de Dropbox ===
-DROPBOX_TOKEN = os.environ["DROPBOX_ACCESS_KEY"]
+# === Autenticación con refresh_token ===
+APP_KEY = os.environ["DROPBOX_APP_KEY"]
+APP_SECRET = os.environ["DROPBOX_APP_SECRET"]
+REFRESH_TOKEN = os.environ["DROPBOX_REFRESH_TOKEN"]
+
+auth_header = (f"{APP_KEY}:{APP_SECRET}").encode("utf-8")
+res = requests.post(
+    "https://api.dropbox.com/oauth2/token",
+    headers={"Authorization": f"Basic {auth_header.hex()}"},
+    data={"grant_type": "refresh_token", "refresh_token": REFRESH_TOKEN},
+)
+
+res.raise_for_status()
+ACCESS_TOKEN = res.json()["access_token"]
+
+# === Inicializa Dropbox ===
+dbx = dropbox.Dropbox(ACCESS_TOKEN)
+
+# === Configuración general ===
 CARPETA_ENTRANTES = "/Puntazo/Entrantes"
 CARPETA_RAIZ = "/Puntazo/Locaciones"
 PATRON_VIDEO = re.compile(r"^(?P<loc>[^_]+)_(?P<can>[^_]+)_(?P<lado>[^_]+)_\d{8}_\d{6}\.mp4$")
-
-dbx = dropbox.Dropbox(DROPBOX_TOKEN)
 
 # === Obtener lista de videos nuevos ===
 res = dbx.files_list_folder(CARPETA_ENTRANTES)
@@ -35,33 +51,49 @@ for video in videos_nuevos:
 
     print(f"🚀 Procesando {nombre}...")
 
-    # 1. Descargar archivo de Dropbox
+    # 1. Descargar video original
     _, response = dbx.files_download(ruta_origen)
     with open("input.mp4", "wb") as f:
         f.write(response.content)
 
-    # 2. Procesar con FFmpeg y ponerle el logo
-    # Asegúrate de que exista un archivo logo.png en el mismo repo
-    comando = [
-        "ffmpeg", "-y", "-i", "input.mp4", "-i", f"{loc}.png",
-        "-filter_complex", "overlay=10:10", "-c:a", "copy", "output.mp4"
-    ]
+    # 2. Verificar existencia de logos
+    existe_logo_loc = os.path.exists(f"{loc}.png")
+    if not existe_logo_loc:
+        print(f"⚠️ No se encontró logo para {loc}, se usará solo el de Puntazo.")
+
+    # 3. Generar comando FFmpeg con 1 o 2 logos
+    if existe_logo_loc:
+        comando = [
+            "ffmpeg", "-y", "-i", "input.mp4",
+            "-i", "puntazo.png",
+            "-i", f"{loc}.png",
+            "-filter_complex", "[0:v][1:v]overlay=30:30[tmp1];[tmp1][2:v]overlay=W-w-15:15",
+            "-c:a", "copy", "output.mp4"
+        ]
+    else:
+        comando = [
+            "ffmpeg", "-y", "-i", "input.mp4",
+            "-i", "puntazo.png",
+            "-filter_complex", "overlay=30:30",
+            "-c:a", "copy", "output.mp4"
+        ]
+
     try:
         subprocess.run(comando, check=True)
     except subprocess.CalledProcessError:
         print(f"❌ Error al procesar {nombre} con FFmpeg.")
         continue
 
-    # 3. Subir a Dropbox a carpeta final
+    # 4. Subir video procesado a Dropbox
     with open("output.mp4", "rb") as f:
         dbx.files_upload(f.read(), ruta_destino, mode=dropbox.files.WriteMode.overwrite)
-    print(f"✅ Video subido a {ruta_destino}")
+    print(f"✅ Subido a {ruta_destino}")
 
-    # 4. Eliminar archivo original
+    # 5. Eliminar video original de Entrantes
     dbx.files_delete_v2(ruta_origen)
-    print(f"🗑️ Original eliminado de Entrantes")
+    print(f"🗑️ Eliminado original de Entrantes")
 
-    # 5. Limpiar archivos locales
+    # 6. Limpiar archivos temporales
     os.remove("input.mp4")
     os.remove("output.mp4")
 
