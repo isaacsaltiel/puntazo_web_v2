@@ -61,9 +61,9 @@ for video in videos_nuevos:
         f.write(response.content)
 
     # 2. Verificar existencia de logos
-    existe_logo_loc = os.path.exists(f"{loc}.png")
+    existe_logo_loc = os.path.exists(f"logos/{loc}.png")
     if not existe_logo_loc:
-        print(f"⚠️ No se encontró logo para {loc}, se usará solo el de Puntazo.")
+        print(f"⚠️ No se encontró logo para logos{loc}, se usará solo el de Puntazo.")
 
 # 3. Generar comando FFmpeg con 1 o 2 logos escalados
     if existe_logo_loc:
@@ -71,7 +71,7 @@ for video in videos_nuevos:
             "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
             "-i", "input.mp4",
             "-i", "logos/puntazo.png",
-            "-i", "logos/{loc}.png",
+            "-i", f"logos/{loc}.png",
             "-filter_complex",
             "[1:v]scale=100:-1[logo1]; [2:v]scale=200:-1[logo2]; "
             "[0:v][logo1]overlay=30:30[tmp1]; [tmp1][logo2]overlay=W-w-15:15",
