@@ -6,20 +6,24 @@ import dropbox
 import subprocess
 import time
 
-# === Autenticación con refresh_token ===
+from base64 import b64encode
+
 APP_KEY = os.environ["DROPBOX_APP_KEY"]
 APP_SECRET = os.environ["DROPBOX_APP_SECRET"]
 REFRESH_TOKEN = os.environ["DROPBOX_REFRESH_TOKEN"]
 
-auth_header = (f"{APP_KEY}:{APP_SECRET}").encode("utf-8")
+auth_header = b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()
 res = requests.post(
     "https://api.dropbox.com/oauth2/token",
-    headers={"Authorization": f"Basic {auth_header.hex()}"},
-    data={"grant_type": "refresh_token", "refresh_token": REFRESH_TOKEN},
+    headers={"Authorization": f"Basic {auth_header}"},
+    data={
+        "grant_type": "refresh_token",
+        "refresh_token": REFRESH_TOKEN,
+    },
 )
-
 res.raise_for_status()
 ACCESS_TOKEN = res.json()["access_token"]
+
 
 # === Inicializa Dropbox ===
 dbx = dropbox.Dropbox(ACCESS_TOKEN)
