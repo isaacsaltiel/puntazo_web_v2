@@ -581,4 +581,124 @@ body::before {
   color: white;
   border-color: #55c1e7;
 }
+/* ========== AJUSTES PARA SCRIPT NUEVO ========== */
+
+/* 1. Botón de compartir redondo y consistente */
+.btn-share {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid #55c1e7;
+  color: #55c1e7;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  margin-left: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+.btn-share:hover {
+  background: #55c1e7;
+  color: white;
+}
+
+/* 2. Filtro de horarios */
+#filtro-horario {
+  display: none; /* se habilita en JS si hay datos */
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px auto;
+  max-width: 800px;
+  padding: 4px 0;
+}
+.btn-filtro {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+.btn-filtro:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.btn-filtro.activo {
+  background: #55c1e7;
+  color: #000;
+}
+.btn-filtro.quitar {
+  background: #aa3333;
+}
+.btn-filtro.quitar:hover {
+  background: #cc4444;
+}
+
+/* 3. Preview sobrepuesto: asegurarse que esté encima y se vea bien */
+.video-card {
+  position: relative; /* para stacking interno si es necesario */
+}
+.video-preview {
+  width: 100%;
+  border-radius: 6px;
+  object-fit: cover;
+  cursor: pointer;
+  display: block;
+  position: relative;
+  z-index: 1;
+  opacity: 0.95;
+  transition: opacity 0.3s ease;
+}
+.video-preview:hover {
+  opacity: 1;
+}
+/* El video real (.real) empieza oculto; JS lo muestra cuando toca. */
+video.real {
+  display: block;
+  position: relative;
+  z-index: 0;
+}
+
+/* 4. Botón “ir al primero” (scroll top) */
+.scroll-top {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  border: 1px solid white;
+  padding: 10px 12px;
+  font-size: 1.2rem;
+  border-radius: 50%;
+  cursor: pointer;
+  display: none;
+  transition: background 0.3s ease;
+}
+.scroll-top:hover {
+  background: #55c1e7;
+  border-color: #55c1e7;
+}
+
+/* 5. Ajuste móvil: garantizar visibilidad de botones y layout */
+@media (max-width: 768px) {
+  /* Si más adelante quieres un botón fijo en móvil, puedes descomentar: */
+  /* .btn-share { position: sticky; top: 10px; } */
+  /* Asegura que el preview y el video escalen bien */
+  .video-card {
+    padding: 12px;
+  }
+}
+
+/* 6. Pequeño refinamiento: separación de botones dentro de card */
+.video-card .btn-download,
+.video-card .btn-share {
+  margin-top: 12px;
+  vertical-align: middle;
+}
 
