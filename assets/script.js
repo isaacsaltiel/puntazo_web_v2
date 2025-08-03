@@ -263,19 +263,11 @@ async function crearBotonAccionCompartir(entry) {
           title: "Video Puntazo",
           text: "Mira este clip (se borra en 8 horas)",
         });
-        return;
       }
-      // si no soporta compartir archivo, solo copio link
-      const params = getQueryParams();
-      const url = `${location.origin}${location.pathname}?loc=${params.loc}&can=${params.can}&lado=${params.lado}&video=${entry.nombre}`;
-      navigator.clipboard.writeText(url);
-      alert("No se puede compartir directamente. Enlace copiado."); 
+      // si no se puede compartir, no hace nada más
     } catch (err) {
       console.warn("Share sheet falló:", err);
-      const params = getQueryParams();
-      const url = `${location.origin}${location.pathname}?loc=${params.loc}&can=${params.can}&lado=${params.lado}&video=${entry.nombre}`;
-      navigator.clipboard.writeText(url);
-      alert("No se puede compartir directamente. Enlace copiado.");
+      // no fallback ni alertas
     }
   });
 
@@ -313,7 +305,6 @@ async function populateVideos() {
     if (loading) loading.style.display = "block";
     container.innerHTML = "";
 
-    // encabezados / breadcrumbs
     const linkClub = document.getElementById("link-club");
     const linkCancha = document.getElementById("link-cancha");
     const nombreLado = document.getElementById("nombre-lado");
@@ -327,10 +318,8 @@ async function populateVideos() {
     }
     if (nombreLado) nombreLado.textContent = ladoObj?.nombre || "";
 
-    // UI de filtro
     createHourFilterUI(data.videos);
 
-    // aplicar filtro
     let videosToRender = data.videos;
     if (filtroHora) {
       videosToRender = data.videos.filter(v => {
@@ -379,7 +368,6 @@ async function populateVideos() {
       wrapper.appendChild(preview);
       card.appendChild(wrapper);
 
-      // botón único de acción
       const buttonsContainer = document.createElement("div");
       buttonsContainer.style.display = "flex";
       buttonsContainer.style.alignItems = "center";
