@@ -267,6 +267,51 @@ function setupMutualExclusion(videosList) {
   });
 }
 
+// share sheet / compartir directo (guardar/enviar)
+async function crearBtnCompartirDirecto(entry) {
+  const shareBtn = document.createElement("button");
+  shareBtn.className = "btn-share";
+  shareBtn.innerHTML = "↗";
+  shareBtn.title = "Compartir o guardar video";
+  shareBtn.setAttribute("aria-label", "Compartir o guardar video");
+
+  shareBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(entry.url);
+      const blob = await response.blob();
+      const file = new File([blob], entry.nombre, { type: blob.type });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "Video Puntazo",
+          text: "Mira este clip (se borra en 8 horas)",
+        });
+        return;
+      }
+    } catch (err) {
+      console.warn("Web Share API con archivo falló:", err);
+    }
+
+    // fallback: copiar link o descargar
+    const params = getQueryParams();
+    const url = `${location.origin}${location.pathname}?loc=${params.loc}&can=${params.can}&lado=${params.lado}&video=${entry.nombre}`;
+    const fallback = window.confirm("No se pudo compartir directamente. ¿Quieres copiar el link? (Cancelar hará descarga automática)");
+    if (fallback) {
+      navigator.clipboard.writeText(url);
+      alert("Link copiado. Puedes pegarlo donde quieras.");
+    } else {
+      const a = document.createElement("a");
+      a.href = entry.url.replace("dl=0", "dl=1");
+      a.download = entry.nombre;
+      a.click();
+    }
+  });
+
+  return shareBtn;
+}
+
 async function populateVideos() {
   const params = getQueryParams();
   const locId = params.loc;
@@ -325,7 +370,7 @@ async function populateVideos() {
     }
 
     allVideos = [];
-    videosToRender.forEach(entry => {
+    for (const entry of videosToRender) {
       const rawUrl = entry.url;
       const downloadUrl = rawUrl.replace("dl=0", "dl=1");
       const match = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
@@ -370,7 +415,7 @@ async function populateVideos() {
       wrapper.appendChild(preview);
       card.appendChild(wrapper);
 
-      // botones (descargar ancho completo y copiar pequeño)
+      // botones (descargar ancho completo, copiar link, compartir directo)
       const buttonsContainer = document.createElement("div");
       buttonsContainer.style.display = "flex";
       buttonsContainer.style.alignItems = "center";
@@ -385,14 +430,17 @@ async function populateVideos() {
       btnDownload.style.flex = "1"; // ocupa todo el ancho disponible
       buttonsContainer.appendChild(btnDownload);
 
-      const share = crearBtnCopiar(entry.nombre);
-      buttonsContainer.appendChild(share);
+      const copyBtn = crearBtnCopiar(entry.nombre);
+      buttonsContainer.appendChild(copyBtn);
+
+      const shareSheetBtn = await crearBtnCompartirDirecto(entry);
+      buttonsContainer.appendChild(shareSheetBtn);
 
       card.appendChild(buttonsContainer);
 
       container.appendChild(card);
       allVideos.push(realVideo);
-    });
+    }
 
     setupMutualExclusion(allVideos);
 
