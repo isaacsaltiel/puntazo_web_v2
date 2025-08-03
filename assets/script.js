@@ -1,6 +1,5 @@
 // assets/script.js
 
-// Función para parsear parámetros de query string
 function getQueryParams() {
   const params = {};
   window.location.search
@@ -13,7 +12,6 @@ function getQueryParams() {
   return params;
 }
 
-// Población dinámica de la lista de locaciones en index.html
 async function populateLocaciones() {
   try {
     const url = `data/config_locations.json?cb=${Date.now()}`;
@@ -38,7 +36,6 @@ async function populateLocaciones() {
   }
 }
 
-// Población dinámica de la lista de canchas en locacion.html
 async function populateCanchas() {
   try {
     const params = getQueryParams();
@@ -67,7 +64,6 @@ async function populateCanchas() {
   }
 }
 
-// Población dinámica de la lista de lados en cancha.html
 async function populateLados() {
   try {
     const params = getQueryParams();
@@ -103,13 +99,120 @@ async function populateLados() {
     console.error("Error en populateLados():", err);
   }
 }
+// ========== FUNCIONES ADICIONALES INTEGRADAS ==========
 
-// Mostrar listado de videos en lado.html
+let allVideos = []; // usado para control de reproducción
+let observer = null; // usado por scroll a primer video
+
+function createPreviewVideoElement(src, duration) {
+  const preview = document.createElement("video");
+  preview.muted = true;
+  preview.playsInline = true;
+  preview.preload = "auto";
+  preview.src = src;
+  preview.className = "video-preview";
+
+  preview.addEventListener("loadedmetadata", () => {
+    const previewStart = duration > 15 ? duration - 15 : 0;
+    preview.currentTime = previewStart;
+  });
+
+  preview.addEventListener("mouseenter", () => {
+    preview.play();
+  });
+  preview.addEventListener("mouseleave", () => {
+    preview.pause();
+  });
+
+  return preview;
+}
+
+function scrollToVideoById(id) {
+  const target = document.getElementById(id);
+  if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function formatAmPm(hour) {
+  const h = parseInt(hour);
+  const suffix = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 || 12;
+  return `${hour12} ${suffix}`;
+}
+
+function generateHourFilters(videos) {
+  const filtroDiv = document.getElementById("filtro-horario");
+  if (!filtroDiv) return;
+  filtroDiv.innerHTML = "";
+  const horasSet = new Set();
+
+  videos.forEach(v => {
+    const match = v.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
+    if (match) horasSet.add(match[1]);
+  });
+
+  const horas = [...horasSet].sort();
+  horas.forEach(h => {
+    const btn = document.createElement("button");
+    btn.textContent = `${formatAmPm(h)} - ${formatAmPm((+h + 1) % 24)}`;
+    btn.className = "btn-filtro";
+    btn.dataset.hora = h;
+    filtroDiv.appendChild(btn);
+  });
+
+  const quitarBtn = document.createElement("button");
+  quitarBtn.textContent = "Quitar filtro";
+  quitarBtn.className = "btn-filtro quitar";
+  quitarBtn.addEventListener("click", () => populateVideos());
+  filtroDiv.appendChild(quitarBtn);
+
+  filtroDiv.style.display = "block";
+}
+
+function crearBtnCopiar(nombre, rawUrl) {
+  const shareBtn = document.createElement("button");
+  shareBtn.className = "btn-share";
+  shareBtn.innerHTML = "🔗";
+  shareBtn.title = "Copiar enlace";
+
+  shareBtn.addEventListener("click", () => {
+    const params = getQueryParams();
+    const url = `${location.origin}${location.pathname}?loc=${params.loc}&can=${params.can}&lado=${params.lado}&video=${nombre}`;
+    navigator.clipboard.writeText(url);
+    alert("Enlace copiado. Recuerda que el video se borra pasadas 8 horas. Si deseas guardarlo, descárgalo.");
+  });
+
+  return shareBtn;
+}
+
+function createScrollToTopBtn() {
+  const btn = document.createElement("button");
+  btn.textContent = "↑";
+  btn.className = "scroll-top";
+  btn.style.display = "none";
+  btn.addEventListener("click", () => {
+    const firstCard = document.querySelector(".video-card");
+    if (firstCard) firstCard.scrollIntoView({ behavior: "smooth" });
+  });
+  document.body.appendChild(btn);
+
+  let lastScrollY = 0;
+  window.addEventListener("scroll", () => {
+    const scrollY = window.scrollY;
+    if (scrollY > 100 && scrollY < lastScrollY && document.querySelectorAll(".video-card").length > 3) {
+      btn.style.display = "block";
+    } else {
+      btn.style.display = "none";
+    }
+    lastScrollY = scrollY;
+  });
+}
 async function populateVideos() {
   const params = getQueryParams();
   const locId = params.loc;
   const canId = params.can;
   const ladoId = params.lado;
+  const targetVideoId = params.video;
+
   const urlCfg = `data/config_locations.json?cb=${Date.now()}`;
   try {
     const resCfg = await fetch(urlCfg, { cache: "no-store" });
@@ -129,7 +232,8 @@ async function populateVideos() {
     const data = await res.json();
 
     const container = document.getElementById("videos-container");
-    document.getElementById("loading").style.display = "block";
+    const loading = document.getElementById("loading");
+    if (loading) loading.style.display = "block";
     container.innerHTML = "";
     document.getElementById("link-club").textContent = locObj.nombre;
     document.getElementById("link-club").href = `locacion.html?loc=${locId}`;
@@ -137,22 +241,31 @@ async function populateVideos() {
     document.getElementById("link-cancha").href = `cancha.html?loc=${locId}&can=${canId}`;
     document.getElementById("nombre-lado").textContent = ladoObj.nombre;
 
-    const allVideos = [];
+    const filtroHora = params.filtro;
+    const filtrados = filtroHora
+      ? data.videos.filter(v => v.nombre.includes(`_${filtroHora}`))
+      : data.videos;
 
-    data.videos.forEach(entry => {
+    generateHourFilters(data.videos);
+
+    allVideos = [];
+    filtrados.forEach(entry => {
       const rawUrl = entry.url;
       const downloadUrl = rawUrl.replace("dl=0", "dl=1");
-
-      const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
-      const displayTime = m ? `${m[1]}:${m[2]}` : entry.nombre.replace(".mp4", "");
+      const match = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
+      const displayTime = match ? `${parseInt(match[1]) % 12 || 12}:${match[2]} ${match[1] >= 12 ? 'PM' : 'AM'}` : entry.nombre.replace(".mp4", "");
 
       const card = document.createElement("div");
       card.className = "video-card";
+      card.id = entry.nombre;
 
       const title = document.createElement("div");
       title.className = "video-title";
       title.textContent = displayTime;
       card.appendChild(title);
+
+      const preview = createPreviewVideoElement(rawUrl, entry.duracion || 60);
+      card.appendChild(preview);
 
       const video = document.createElement("video");
       video.controls = true;
@@ -169,10 +282,12 @@ async function populateVideos() {
       btn.download = entry.nombre;
       card.appendChild(btn);
 
+      const share = crearBtnCopiar(entry.nombre, rawUrl);
+      card.appendChild(share);
+
       container.appendChild(card);
     });
 
-    // Solo permitir que un video se reproduzca a la vez
     allVideos.forEach(v => {
       v.addEventListener("play", () => {
         allVideos.forEach(o => {
@@ -181,16 +296,16 @@ async function populateVideos() {
       });
     });
 
-    document.getElementById("loading").style.display = "none";
+    if (loading) loading.style.display = "none";
+    if (targetVideoId) scrollToVideoById(targetVideoId);
   } catch (err) {
     console.error("Error en populateVideos():", err);
     document.getElementById("videos-container").innerHTML =
       "<p style='color:#fff;'>No hay videos disponibles.</p>";
-    document.getElementById("loading").style.display = "none";
+    if (document.getElementById("loading")) document.getElementById("loading").style.display = "none";
   }
 }
 
-// Detectar en qué página estamos y llamar a la función correspondiente
 document.addEventListener("DOMContentLoaded", () => {
   const path = window.location.pathname;
   if (path.endsWith("index.html") || path.endsWith("/")) {
@@ -201,6 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
     populateLados();
   } else if (path.endsWith("lado.html")) {
     populateVideos();
+    createScrollToTopBtn();
   }
 
   const btnVolver = document.getElementById("btn-volver");
@@ -215,3 +331,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
+
