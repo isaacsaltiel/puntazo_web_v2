@@ -133,24 +133,6 @@ let allVideos = [];
 let visibilityMap = new Map();
 let currentPreviewActive = null;
 
-function crearBtnCopiar(nombre) {
-  const shareBtn = document.createElement("button");
-  shareBtn.className = "btn-share";
-  shareBtn.innerHTML = "🔗";
-  shareBtn.title = "Copiar enlace";
-  shareBtn.setAttribute("aria-label", "Copiar enlace del video");
-
-  shareBtn.addEventListener("click", () => {
-    const params = getQueryParams();
-    const url = `${location.origin}${location.pathname}?loc=${params.loc}&can=${params.can}&lado=${params.lado}&video=${nombre}`;
-    navigator.clipboard.writeText(url).then(() => {
-      alert("Enlace copiado. Recuerda que el video se borra pasadas 8 horas. Si deseas guardarlo, descárgalo.");
-    });
-  });
-
-  return shareBtn;
-}
-
 function createHourFilterUI(videos) {
   const params = getQueryParams();
   const filtroHoraActivo = params.filtro;
@@ -197,7 +179,6 @@ function createPreviewOverlay(videoSrc, duration, parentCard) {
   preview.className = "video-preview";
   preview.setAttribute("aria-label", "Vista previa");
 
-  // calcular inicio (15s antes del final), loop 5s
   let startTime = duration > 15 ? duration - 15 : 0;
   const previewLen = 5;
   const endTime = startTime + previewLen;
@@ -207,18 +188,15 @@ function createPreviewOverlay(videoSrc, duration, parentCard) {
   };
   preview.addEventListener("loadedmetadata", onLoaded);
 
-  // loop manual
   preview.addEventListener("timeupdate", () => {
     if (preview.currentTime >= endTime) {
       preview.currentTime = startTime;
     }
   });
 
-  // visibilidad: solo el más visible en móvil/scroll obtiene play
   const io = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       visibilityMap.set(preview, entry.intersectionRatio);
-      // decidir cuál tiene prioridad
       let maxRatio = 0;
       let winner = null;
       visibilityMap.forEach((ratio, node) => {
@@ -243,7 +221,6 @@ function createPreviewOverlay(videoSrc, duration, parentCard) {
 
   io.observe(preview);
 
-  // click: muestra video real
   preview.addEventListener("click", () => {
     const realVideo = parentCard.querySelector("video.real");
     if (realVideo) {
@@ -267,21 +244,20 @@ function setupMutualExclusion(videosList) {
   });
 }
 
-// share sheet / compartir directo (guardar/enviar)
-async function crearBtnCompartirDirecto(entry) {
-  const shareBtn = document.createElement("button");
-  shareBtn.className = "btn-share";
-  shareBtn.innerHTML = "↗";
-  shareBtn.title = "Compartir o guardar video";
-  shareBtn.setAttribute("aria-label", "Compartir o guardar video");
+async function crearBotonAccionCompartir(entry) {
+  const button = document.createElement("button");
+  button.className = "btn-share-large";
+  button.textContent = "Compartir / Descargar";
+  button.title = "Compartir o descargar video";
+  button.setAttribute("aria-label", "Compartir o descargar video");
 
-  shareBtn.addEventListener("click", async (e) => {
+  button.addEventListener("click", async (e) => {
     e.preventDefault();
+    // intentar share sheet con archivo
     try {
       const response = await fetch(entry.url);
       const blob = await response.blob();
       const file = new File([blob], entry.nombre, { type: blob.type });
-
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -294,22 +270,15 @@ async function crearBtnCompartirDirecto(entry) {
       console.warn("Web Share API con archivo falló:", err);
     }
 
-    // fallback: copiar link o descargar
-    const params = getQueryParams();
-    const url = `${location.origin}${location.pathname}?loc=${params.loc}&can=${params.can}&lado=${params.lado}&video=${entry.nombre}`;
-    const fallback = window.confirm("No se pudo compartir directamente. ¿Quieres copiar el link? (Cancelar hará descarga automática)");
-    if (fallback) {
-      navigator.clipboard.writeText(url);
-      alert("Link copiado. Puedes pegarlo donde quieras.");
-    } else {
-      const a = document.createElement("a");
-      a.href = entry.url.replace("dl=0", "dl=1");
-      a.download = entry.nombre;
-      a.click();
-    }
+    // fallback: descarga automática
+    const downloadUrl = entry.url.replace("dl=0", "dl=1");
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = entry.nombre;
+    a.click();
   });
 
-  return shareBtn;
+  return button;
 }
 
 async function populateVideos() {
@@ -372,7 +341,6 @@ async function populateVideos() {
     allVideos = [];
     for (const entry of videosToRender) {
       const rawUrl = entry.url;
-      const downloadUrl = rawUrl.replace("dl=0", "dl=1");
       const match = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
       const hour = match ? parseInt(match[1], 10) : null;
       const minute = match ? match[2] : "";
@@ -381,23 +349,19 @@ async function populateVideos() {
         ? `${hour % 12 || 12}:${minute} ${ampm}`
         : entry.nombre.replace(".mp4", "");
 
-      // card
       const card = document.createElement("div");
       card.className = "video-card";
       card.id = entry.nombre;
 
-      // título
       const title = document.createElement("div");
       title.className = "video-title";
       title.textContent = displayTime;
       card.appendChild(title);
 
-      // wrapper visual
       const wrapper = document.createElement("div");
       wrapper.style.position = "relative";
       wrapper.style.width = "100%";
 
-      // video real (oculto)
       const realVideo = document.createElement("video");
       realVideo.classList.add("real");
       realVideo.controls = true;
@@ -408,36 +372,23 @@ async function populateVideos() {
       realVideo.style.width = "100%";
       realVideo.style.borderRadius = "6px";
 
-      // preview (superpuesto)
       const preview = createPreviewOverlay(rawUrl, entry.duracion || 60, card);
 
       wrapper.appendChild(realVideo);
       wrapper.appendChild(preview);
       card.appendChild(wrapper);
 
-      // botones (descargar ancho completo, copiar link, compartir directo)
+      // botón único de acción
       const buttonsContainer = document.createElement("div");
       buttonsContainer.style.display = "flex";
       buttonsContainer.style.alignItems = "center";
-      buttonsContainer.style.gap = "8px";
       buttonsContainer.style.marginTop = "12px";
 
-      const btnDownload = document.createElement("a");
-      btnDownload.className = "btn-download";
-      btnDownload.textContent = "Descargar";
-      btnDownload.href = downloadUrl;
-      btnDownload.download = entry.nombre;
-      btnDownload.style.flex = "1"; // ocupa todo el ancho disponible
-      buttonsContainer.appendChild(btnDownload);
-
-      const copyBtn = crearBtnCopiar(entry.nombre);
-      buttonsContainer.appendChild(copyBtn);
-
-      const shareSheetBtn = await crearBtnCompartirDirecto(entry);
-      buttonsContainer.appendChild(shareSheetBtn);
+      const actionBtn = await crearBotonAccionCompartir(entry);
+      actionBtn.style.flex = "1";
+      buttonsContainer.appendChild(actionBtn);
 
       card.appendChild(buttonsContainer);
-
       container.appendChild(card);
       allVideos.push(realVideo);
     }
