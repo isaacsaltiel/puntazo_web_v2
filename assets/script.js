@@ -248,12 +248,11 @@ async function crearBotonAccionCompartir(entry) {
   const button = document.createElement("button");
   button.className = "btn-share-large";
   button.textContent = "Compartir / Descargar";
-  button.title = "Compartir o descargar video";
-  button.setAttribute("aria-label", "Compartir o descargar video");
+  button.title = "Compartir video";
+  button.setAttribute("aria-label", "Compartir video");
 
   button.addEventListener("click", async (e) => {
     e.preventDefault();
-    // intentar share sheet con archivo
     try {
       const response = await fetch(entry.url);
       const blob = await response.blob();
@@ -266,16 +265,18 @@ async function crearBotonAccionCompartir(entry) {
         });
         return;
       }
+      // si no soporta compartir archivo, solo copio link
+      const params = getQueryParams();
+      const url = `${location.origin}${location.pathname}?loc=${params.loc}&can=${params.can}&lado=${params.lado}&video=${entry.nombre}`;
+      navigator.clipboard.writeText(url);
+      alert("No se puede compartir directamente. Enlace copiado."); 
     } catch (err) {
-      console.warn("Web Share API con archivo falló:", err);
+      console.warn("Share sheet falló:", err);
+      const params = getQueryParams();
+      const url = `${location.origin}${location.pathname}?loc=${params.loc}&can=${params.can}&lado=${params.lado}&video=${entry.nombre}`;
+      navigator.clipboard.writeText(url);
+      alert("No se puede compartir directamente. Enlace copiado.");
     }
-
-    // fallback: descarga automática
-    const downloadUrl = entry.url.replace("dl=0", "dl=1");
-    const a = document.createElement("a");
-    a.href = downloadUrl;
-    a.download = entry.nombre;
-    a.click();
   });
 
   return button;
