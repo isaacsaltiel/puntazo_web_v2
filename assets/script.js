@@ -261,7 +261,7 @@ async function crearBotonAccionCompartir(entry) {
         await navigator.share({
           files: [file],
           title: "Video Puntazo",
-          text: "Mira este clip (se borra en 8 horas)",
+          text: "Mira este Puntazo",
         });
       }
       // si no se puede compartir, no hace nada más
