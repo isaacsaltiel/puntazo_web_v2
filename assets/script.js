@@ -261,7 +261,7 @@ async function crearBotonAccionCompartir(entry) {
         await navigator.share({
           files: [file],
           title: "Video Puntazo",
-          text: "Mira este Puntazo",
+          text: "Mira este _*PUNTAZO*_ \n www.puntazoclips.com",
         });
       }
       // si no se puede compartir, no hace nada más
