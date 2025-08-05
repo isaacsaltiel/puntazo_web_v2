@@ -24,7 +24,6 @@ res = requests.post(
 res.raise_for_status()
 ACCESS_TOKEN = res.json()["access_token"]
 
-
 # === Inicializa Dropbox ===
 dbx = dropbox.Dropbox(ACCESS_TOKEN)
 
@@ -65,7 +64,7 @@ for video in videos_nuevos:
     if not existe_logo_loc:
         print(f"⚠️ No se encontró logo para logos{loc}, se usará solo el de Puntazo.")
 
-# 3. Generar comando FFmpeg con 1 o 2 logos escalados
+    # 3. Generar comando FFmpeg con 1 o 2 logos escalados
     if existe_logo_loc:
         comando = [
             "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
@@ -87,24 +86,42 @@ for video in videos_nuevos:
             "-c:a", "copy", "output.mp4"
         ]
 
-
     try:
         subprocess.run(comando, check=True)
     except subprocess.CalledProcessError:
         print(f"❌ Error al procesar {nombre} con FFmpeg.")
         continue
 
-    # 4. Subir video procesado a Dropbox
+    # 4. Concatenar animación si existe (DESPUÉS del contenido principal)
+    if os.path.exists("logos/puntazo.mp4"):
+        print("➕ Concatenando animación al final...")
+        with open("list.txt", "w") as f:
+            f.write("file 'output.mp4'\n")
+            f.write("file 'logos/puntazo.mp4'\n")
+        comando_concat = [
+            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+            "-f", "concat", "-safe", "0", "-i", "list.txt",
+            "-c", "copy", "final_output.mp4"
+        ]
+        try:
+            subprocess.run(comando_concat, check=True)
+            os.replace("final_output.mp4", "output.mp4")
+        except subprocess.CalledProcessError:
+            print("❌ Error concatenando la intro. Se usará solo output.mp4")
+
+    # 5. Subir video procesado a Dropbox
     with open("output.mp4", "rb") as f:
         dbx.files_upload(f.read(), ruta_destino, mode=dropbox.files.WriteMode.overwrite)
     print(f"✅ Subido a {ruta_destino}")
 
-    # 5. Eliminar video original de Entrantes
+    # 6. Eliminar video original de Entrantes
     dbx.files_delete_v2(ruta_origen)
     print(f"🗑️ Eliminado original de Entrantes")
 
-    # 6. Limpiar archivos temporales
+    # 7. Limpiar archivos temporales
     os.remove("input.mp4")
     os.remove("output.mp4")
+    if os.path.exists("list.txt"):
+        os.remove("list.txt")
 
-print("🏁 Todos los videos han sido procesados.")
+print("🌟 Todos los videos han sido procesados.")
