@@ -5,9 +5,9 @@ import requests
 import dropbox
 import subprocess
 import time
-
 from base64 import b64encode
 
+# === Autenticación Dropbox ===
 APP_KEY = os.environ["DROPBOX_APP_KEY"]
 APP_SECRET = os.environ["DROPBOX_APP_SECRET"]
 REFRESH_TOKEN = os.environ["DROPBOX_REFRESH_TOKEN"]
@@ -92,22 +92,36 @@ for video in videos_nuevos:
         print(f"❌ Error al procesar {nombre} con FFmpeg.")
         continue
 
-    # 4. Concatenar animación si existe (DESPUÉS del contenido principal)
-    if os.path.exists("logos/puntazo.mp4"):
+    # 4. Concatenar animación al final
+    animacion_path = "logos/puntazo.mp4"
+    if os.path.exists(animacion_path):
         print("➕ Concatenando animación al final...")
-        with open("list.txt", "w") as f:
-            f.write("file 'output.mp4'\n")
-            f.write("file 'logos/puntazo.mp4'\n")
-        comando_concat = [
-            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-            "-f", "concat", "-safe", "0", "-i", "list.txt",
+
+        subprocess.run([
+            "ffmpeg", "-y", "-i", "output.mp4", "-vf", "scale=1366:768,fps=30",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+            "-c:a", "aac", "-strict", "experimental", "video_temp_1.mp4"
+        ], check=True)
+
+        subprocess.run([
+            "ffmpeg", "-y", "-i", animacion_path, "-vf", "scale=1366:768,fps=30",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+            "-c:a", "aac", "-strict", "experimental", "video_temp_2.mp4"
+        ], check=True)
+
+        with open("concat_list.txt", "w") as f:
+            f.write("file 'video_temp_1.mp4'\n")
+            f.write("file 'video_temp_2.mp4'\n")
+
+        subprocess.run([
+            "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "concat_list.txt",
             "-c", "copy", "final_output.mp4"
-        ]
-        try:
-            subprocess.run(comando_concat, check=True)
-            os.replace("final_output.mp4", "output.mp4")
-        except subprocess.CalledProcessError:
-            print("❌ Error concatenando la intro. Se usará solo output.mp4")
+        ], check=True)
+
+        os.replace("final_output.mp4", "output.mp4")
+        os.remove("video_temp_1.mp4")
+        os.remove("video_temp_2.mp4")
+        os.remove("concat_list.txt")
 
     # 5. Subir video procesado a Dropbox
     with open("output.mp4", "rb") as f:
@@ -121,7 +135,5 @@ for video in videos_nuevos:
     # 7. Limpiar archivos temporales
     os.remove("input.mp4")
     os.remove("output.mp4")
-    if os.path.exists("list.txt"):
-        os.remove("list.txt")
 
 print("🌟 Todos los videos han sido procesados.")
