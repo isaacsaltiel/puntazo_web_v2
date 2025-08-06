@@ -273,7 +273,7 @@ async function crearBotonAccionCompartir(entry) {
       const blob = await response.blob();
       const file = new File([blob], entry.nombre, { type: blob.type });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Video Puntazo", text: "Mira este clip (se borra en 8 horas)" });
+        await navigator.share({ files: [file], title: "Video Puntazo", text: "Mira este _*PUNTAZO*_ \n www.puntazoclips.com" });
       }
     } catch (err) {
       console.warn("Share sheet falló:", err);
