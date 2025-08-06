@@ -1,8 +1,10 @@
+#!/usr/bin/env python3
 import os
 import re
 import requests
 import dropbox
 import subprocess
+import time
 
 from base64 import b64encode
 
@@ -62,7 +64,7 @@ for video in videos_nuevos:
     if not existe_logo_loc:
         print(f"⚠️ No se encontró logo para logos/{loc}, se usará solo el de Puntazo.")
 
-    # 3. Generar video con logos en output.mp4
+    # 3. Generar comando FFmpeg con logos (video intermedio)
     if existe_logo_loc:
         comando_logos = [
             "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
@@ -70,9 +72,15 @@ for video in videos_nuevos:
             "-i", "logos/puntazo.png",
             "-i", f"logos/{loc}.png",
             "-filter_complex",
-            "[1:v]scale=200:-1[logo1]; [2:v]scale=300:-1[logo2]; "
-            "[0:v][logo1]overlay=30:30[tmp1]; [tmp1][logo2]overlay=W-w-15:15",
-            "-c:a", "aac", "output.mp4"
+            "[1:v]scale=200:-1[logo1];"
+            "[2:v]scale=300:-1[logo2];"
+            "[0:v][logo1]overlay=30:30[tmp1];"
+            "[tmp1][logo2]overlay=W-w-15:15",
+            "-map", "0:a?",  # Incluir audio si existe
+            "-c:v", "libx264",
+            "-c:a", "aac",
+            "-shortest",
+            "output_con_logo.mp4"
         ]
     else:
         comando_logos = [
@@ -81,41 +89,51 @@ for video in videos_nuevos:
             "-i", "logos/puntazo.png",
             "-filter_complex",
             "[1:v]scale=200:-1[logo]; [0:v][logo]overlay=30:30",
-            "-c:a", "aac", "output.mp4"
+            "-map", "0:a?",  # Incluir audio si existe
+            "-c:v", "libx264",
+            "-c:a", "aac",
+            "-shortest",
+            "output_con_logo.mp4"
         ]
 
     try:
         subprocess.run(comando_logos, check=True)
     except subprocess.CalledProcessError:
-        print(f"❌ Error al aplicar logos a {nombre}.")
+        print(f"❌ Error al aplicar logos a {nombre}")
         continue
 
-    # 4. Concatenar animacion
+    # 4. Concatenar video con animación de intro
+    with open("concat.txt", "w") as f:
+        f.write("file 'logos/puntazo.mp4'\n")
+        f.write("file 'output_con_logo.mp4'\n")
+
+    comando_concat = [
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-f", "concat",
+        "-safe", "0",
+        "-i", "concat.txt",
+        "-c", "copy",
+        "output.mp4"
+    ]
+
     try:
-        comando_concat = [
-            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-            "-i", "output.mp4",
-            "-i", "logos/puntazo.mp4",
-            "-filter_complex",
-            "[0:v:0][0:a:0][1:v:0][1:a:0]concat=n=2:v=1:a=1[outv][outa]",
-            "-map", "[outv]", "-map", "[outa]",
-            "final.mp4"
-        ]
         subprocess.run(comando_concat, check=True)
     except subprocess.CalledProcessError:
-        print(f"❌ Error al concatenar animación con {nombre}.")
+        print(f"❌ Error al concatenar intro en {nombre}")
         continue
 
-    # 5. Subir video procesado
-    with open("final.mp4", "rb") as f:
+    # 5. Subir video final a Dropbox
+    with open("output.mp4", "rb") as f:
         dbx.files_upload(f.read(), ruta_destino, mode=dropbox.files.WriteMode.overwrite)
     print(f"✅ Subido a {ruta_destino}")
 
-    # 6. Eliminar original y temporales
+    # 6. Eliminar original
     dbx.files_delete_v2(ruta_origen)
     print("🗑️ Eliminado original de Entrantes")
-    os.remove("input.mp4")
-    os.remove("output.mp4")
-    os.remove("final.mp4")
+
+    # 7. Limpiar temporales
+    for archivo in ["input.mp4", "output_con_logo.mp4", "output.mp4", "concat.txt"]:
+        if os.path.exists(archivo):
+            os.remove(archivo)
 
 print("🏁 Todos los videos han sido procesados.")
