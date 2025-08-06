@@ -4,9 +4,9 @@ import re
 import requests
 import dropbox
 import subprocess
-
 from base64 import b64encode
 
+# === Autenticación Dropbox ===
 APP_KEY = os.environ["DROPBOX_APP_KEY"]
 APP_SECRET = os.environ["DROPBOX_APP_SECRET"]
 REFRESH_TOKEN = os.environ["DROPBOX_REFRESH_TOKEN"]
@@ -23,12 +23,15 @@ res = requests.post(
 res.raise_for_status()
 ACCESS_TOKEN = res.json()["access_token"]
 
+# === Inicializa Dropbox ===
 dbx = dropbox.Dropbox(ACCESS_TOKEN)
 
+# === Configuración general ===
 CARPETA_ENTRANTES = "/Puntazo/Entrantes"
 CARPETA_RAIZ = "/Puntazo/Locaciones"
 PATRON_VIDEO = re.compile(r"^(?P<loc>[^_]+)_(?P<can>[^_]+)_(?P<lado>[^_]+)_\d{8}_\d{6}\.mp4$")
 
+# === Obtener lista de videos nuevos ===
 res = dbx.files_list_folder(CARPETA_ENTRANTES)
 videos_nuevos = [entry for entry in res.entries if entry.name.endswith(".mp4")]
 
@@ -36,6 +39,7 @@ if not videos_nuevos:
     print("✅ No hay videos nuevos por procesar.")
     exit()
 
+# === Procesar cada video ===
 for video in videos_nuevos:
     nombre = video.name
     match = PATRON_VIDEO.match(nombre)
@@ -57,7 +61,7 @@ for video in videos_nuevos:
     # 2. Verificar existencia de logos
     existe_logo_loc = os.path.exists(f"logos/{loc}.png")
     if not existe_logo_loc:
-        print(f"⚠️ No se encontró logo para logos/{loc}, se usará solo el de Puntazo.")
+        print(f"⚠️ No se encontró logo para logos/{loc}.png, se usará solo el de Puntazo.")
 
     # 3. Generar comando FFmpeg con 1 o 2 logos escalados
     if existe_logo_loc:
@@ -87,13 +91,15 @@ for video in videos_nuevos:
         print(f"❌ Error al procesar {nombre} con FFmpeg.")
         continue
 
-    # 🔄 CORREGIDO: Concatenar animación con sonido
+    # 4. Concatenar animación con sonido
     print("➕ Concatenando animación al final...")
     try:
         concat_cmd = [
             "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
             "-i", "output.mp4", "-i", "logos/puntazo.mp4",
-            "-filter_complex", "[0:v][1:v]concat=n=2:v=1:a=0[outv]",
+            "-filter_complex",
+            "[1:v]scale=1366:768[anim_scaled]; "
+            "[0:v][anim_scaled]concat=n=2:v=1:a=0[outv]",
             "-map", "[outv]", "-map", "1:a:0", "-shortest",
             "final_output.mp4"
         ]
@@ -102,18 +108,18 @@ for video in videos_nuevos:
         print(f"❌ Error al concatenar animación para {nombre}.")
         continue
 
-    # 4. Subir video procesado a Dropbox
+    # 5. Subir video procesado a Dropbox
     with open("final_output.mp4", "rb") as f:
         dbx.files_upload(f.read(), ruta_destino, mode=dropbox.files.WriteMode.overwrite)
     print(f"✅ Subido a {ruta_destino}")
 
-    # 5. Eliminar video original de Entrantes
+    # 6. Eliminar video original de Entrantes
     dbx.files_delete_v2(ruta_origen)
     print(f"🗑️ Eliminado original de Entrantes")
 
-    # 6. Limpiar archivos temporales
-    os.remove("input.mp4")
-    os.remove("output.mp4")
-    os.remove("final_output.mp4")
+    # 7. Limpiar archivos temporales
+    for file in ["input.mp4", "output.mp4", "final_output.mp4"]:
+        if os.path.exists(file):
+            os.remove(file)
 
 print("🌟 Todos los videos han sido procesados.")
