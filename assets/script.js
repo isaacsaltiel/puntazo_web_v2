@@ -128,7 +128,6 @@ async function populateLados() {
 }
 
 // ----------------------- video + filtros -----------------------
-
 let allVideos = [];
 let visibilityMap = new Map();
 let currentPreviewActive = null;
@@ -174,7 +173,7 @@ function createPreviewOverlay(videoSrc, duration, parentCard) {
   const preview = document.createElement("video");
   preview.muted = true;
   preview.playsInline = true;
-  preview.preload = "auto";
+  preview.preload = "none"; // cambiado a none para carga secuencial
   preview.src = videoSrc;
   preview.className = "video-preview";
   preview.setAttribute("aria-label", "Vista previa");
@@ -205,8 +204,10 @@ function createPreviewOverlay(videoSrc, duration, parentCard) {
           winner = node;
         }
       });
-      if (winner === preview) {
-        if (entry.isIntersecting) {
+      if (winner === preview && entry.isIntersecting) {
+        // no reproducir preview si video real está activo
+        const realPlaying = parentCard.querySelector("video.real")?.paused === false;
+        if (!realPlaying) {
           if (currentPreviewActive && currentPreviewActive !== preview) {
             currentPreviewActive.pause();
           }
@@ -244,6 +245,17 @@ function setupMutualExclusion(videosList) {
   });
 }
 
+// carga previews en serie para ahorrar ancho de banda
+async function loadPreviewsSequentially(previews) {
+  for (const v of previews) {
+    v.preload = "auto";
+    await new Promise(resolve => {
+      v.addEventListener("loadedmetadata", resolve, { once: true });
+      v.load();
+    });
+  }
+}
+
 async function crearBotonAccionCompartir(entry) {
   const button = document.createElement("button");
   button.className = "btn-share-large";
@@ -253,21 +265,21 @@ async function crearBotonAccionCompartir(entry) {
 
   button.addEventListener("click", async (e) => {
     e.preventDefault();
+    const originalText = button.textContent;
+    button.textContent = "Espera un momento...";
+    button.disabled = true;
     try {
       const response = await fetch(entry.url);
       const blob = await response.blob();
       const file = new File([blob], entry.nombre, { type: blob.type });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "Video Puntazo",
-          text: "Mira este _*PUNTAZO*_ \n www.puntazoclips.com",
-        });
+        await navigator.share({ files: [file], title: "Video Puntazo", text: "Mira este clip (se borra en 8 horas)" });
       }
-      // si no se puede compartir, no hace nada más
     } catch (err) {
       console.warn("Share sheet falló:", err);
-      // no fallback ni alertas
+    } finally {
+      button.textContent = originalText;
+      button.disabled = false;
     }
   });
 
@@ -290,8 +302,7 @@ async function populateVideos() {
     const canObj = locObj?.cancha.find(c => c.id === canId);
     const ladoObj = canObj?.lados.find(l => l.id === ladoId);
     if (!ladoObj || !ladoObj.json_url) {
-      document.getElementById("videos-container").innerHTML =
-        "<p style='color:#fff;'>Lado no encontrado.</p>";
+      document.getElementById("videos-container").innerHTML = "<p style='color:#fff;'>Lado no encontrado.</p>";
       return;
     }
 
@@ -313,136 +324,4 @@ async function populateVideos() {
       linkClub.href = `locacion.html?loc=${locId}`;
     }
     if (linkCancha) {
-      linkCancha.textContent = canObj?.nombre || "";
-      linkCancha.href = `cancha.html?loc=${locId}&can=${canId}`;
-    }
-    if (nombreLado) nombreLado.textContent = ladoObj?.nombre || "";
-
-    createHourFilterUI(data.videos);
-
-    let videosToRender = data.videos;
-    if (filtroHora) {
-      videosToRender = data.videos.filter(v => {
-        const match = v.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
-        return match && match[1] === filtroHora;
-      });
-    }
-
-    allVideos = [];
-    for (const entry of videosToRender) {
-      const rawUrl = entry.url;
-      const match = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
-      const hour = match ? parseInt(match[1], 10) : null;
-      const minute = match ? match[2] : "";
-      const ampm = hour !== null ? (hour >= 12 ? "PM" : "AM") : "";
-      const displayTime = hour !== null
-        ? `${hour % 12 || 12}:${minute} ${ampm}`
-        : entry.nombre.replace(".mp4", "");
-
-      const card = document.createElement("div");
-      card.className = "video-card";
-      card.id = entry.nombre;
-
-      const title = document.createElement("div");
-      title.className = "video-title";
-      title.textContent = displayTime;
-      card.appendChild(title);
-
-      const wrapper = document.createElement("div");
-      wrapper.style.position = "relative";
-      wrapper.style.width = "100%";
-
-      const realVideo = document.createElement("video");
-      realVideo.classList.add("real");
-      realVideo.controls = true;
-      realVideo.playsInline = true;
-      realVideo.preload = "metadata";
-      realVideo.src = rawUrl;
-      realVideo.style.display = "none";
-      realVideo.style.width = "100%";
-      realVideo.style.borderRadius = "6px";
-
-      const preview = createPreviewOverlay(rawUrl, entry.duracion || 60, card);
-
-      wrapper.appendChild(realVideo);
-      wrapper.appendChild(preview);
-      card.appendChild(wrapper);
-
-      const buttonsContainer = document.createElement("div");
-      buttonsContainer.style.display = "flex";
-      buttonsContainer.style.alignItems = "center";
-      buttonsContainer.style.marginTop = "12px";
-
-      const actionBtn = await crearBotonAccionCompartir(entry);
-      actionBtn.style.flex = "1";
-      buttonsContainer.appendChild(actionBtn);
-
-      card.appendChild(buttonsContainer);
-      container.appendChild(card);
-      allVideos.push(realVideo);
-    }
-
-    setupMutualExclusion(allVideos);
-
-    if (loading) loading.style.display = "none";
-    if (targetVideoId) scrollToVideoById(targetVideoId);
-  } catch (err) {
-    console.error("Error en populateVideos():", err);
-    const vc = document.getElementById("videos-container");
-    if (vc) vc.innerHTML = "<p style='color:#fff;'>No hay videos disponibles.</p>";
-    const loading = document.getElementById("loading");
-    if (loading) loading.style.display = "none";
-  }
-}
-
-// ----------------------- scroll-top -----------------------
-function createScrollToTopBtn() {
-  const btn = document.createElement("button");
-  btn.textContent = "↑";
-  btn.className = "scroll-top";
-  btn.style.display = "none";
-  btn.setAttribute("aria-label", "Ir arriba");
-  btn.addEventListener("click", () => {
-    scrollToTop();
-  });
-  document.body.appendChild(btn);
-
-  let lastScrollY = window.scrollY;
-  window.addEventListener("scroll", () => {
-    const scrollY = window.scrollY;
-    const videoCards = document.querySelectorAll(".video-card");
-    if (scrollY > 100 && scrollY < lastScrollY && videoCards.length > 3) {
-      btn.style.display = "block";
-    } else {
-      btn.style.display = "none";
-    }
-    lastScrollY = scrollY;
-  });
-}
-
-// ----------------------- arranque -----------------------
-document.addEventListener("DOMContentLoaded", () => {
-  const path = window.location.pathname;
-  if (path.endsWith("index.html") || path.endsWith("/")) {
-    populateLocaciones();
-  } else if (path.endsWith("locacion.html")) {
-    populateCanchas();
-  } else if (path.endsWith("cancha.html")) {
-    populateLados();
-  } else if (path.endsWith("lado.html")) {
-    populateVideos();
-    createScrollToTopBtn();
-  }
-
-  const btnVolver = document.getElementById("btn-volver");
-  if (btnVolver) {
-    const params = getQueryParams();
-    if (path.endsWith("lado.html")) {
-      btnVolver.href = `cancha.html?loc=${params.loc}&can=${params.can}`;
-    } else if (path.endsWith("cancha.html")) {
-      btnVolver.href = `locacion.html?loc=${params.loc}`;
-    } else if (path.endsWith("locacion.html")) {
-      btnVolver.href = "index.html";
-    }
-  }
-});
+      linkCancha.textContent = can
