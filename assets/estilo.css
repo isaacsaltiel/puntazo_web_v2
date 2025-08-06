@@ -47,7 +47,7 @@ body::before {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: url('assets/bg-degradado-1920x3000.jpg') center top / cover no-repeat;
+  background: url('/assets/bg-degradado-1920x3000.jpg') center top / cover no-repeat;
   z-index: -1;
   pointer-events: none;
 }
