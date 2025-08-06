@@ -4,21 +4,19 @@ import re
 import requests
 import dropbox
 import subprocess
-
+import time
 from base64 import b64encode
 
 APP_KEY = os.environ["DROPBOX_APP_KEY"]
 APP_SECRET = os.environ["DROPBOX_APP_SECRET"]
 REFRESH_TOKEN = os.environ["DROPBOX_REFRESH_TOKEN"]
 
+# === Obtener nuevo access token ===
 auth_header = b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()
 res = requests.post(
     "https://api.dropbox.com/oauth2/token",
     headers={"Authorization": f"Basic {auth_header}"},
-    data={
-        "grant_type": "refresh_token",
-        "refresh_token": REFRESH_TOKEN,
-    },
+    data={"grant_type": "refresh_token", "refresh_token": REFRESH_TOKEN},
 )
 res.raise_for_status()
 ACCESS_TOKEN = res.json()["access_token"]
@@ -61,11 +59,11 @@ for video in videos_nuevos:
     # 2. Verificar existencia de logos
     existe_logo_loc = os.path.exists(f"logos/{loc}.png")
     if not existe_logo_loc:
-        print(f"⚠️ No se encontró logo para {loc}, se usará solo el de Puntazo.")
+        print(f"⚠️ No se encontró logo para logos/{loc}, se usará solo el de Puntazo.")
 
     # 3. Generar comando FFmpeg con 1 o 2 logos escalados
     if existe_logo_loc:
-        comando_logo = [
+        comando = [
             "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
             "-i", "input.mp4",
             "-i", "logos/puntazo.png",
@@ -73,52 +71,53 @@ for video in videos_nuevos:
             "-filter_complex",
             "[1:v]scale=200:-1[logo1]; [2:v]scale=300:-1[logo2]; "
             "[0:v][logo1]overlay=30:30[tmp1]; [tmp1][logo2]overlay=W-w-15:15",
-            "-an", "output.mp4"
+            "-c:a", "copy", "output.mp4"
         ]
     else:
-        comando_logo = [
+        comando = [
             "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
             "-i", "input.mp4",
             "-i", "logos/puntazo.png",
             "-filter_complex",
             "[1:v]scale=200:-1[logo]; [0:v][logo]overlay=30:30",
-            "-an", "output.mp4"
+            "-c:a", "copy", "output.mp4"
         ]
 
     try:
-        subprocess.run(comando_logo, check=True)
+        subprocess.run(comando, check=True)
     except subprocess.CalledProcessError:
-        print(f"❌ Error al aplicar logos a {nombre}.")
+        print(f"❌ Error al procesar {nombre} con FFmpeg.")
         continue
 
-    # 4. Concatenar con animación
+    # 4. Concatenar animación al final
     print("➕ Concatenando animación al final...")
     try:
         subprocess.run([
-            "ffmpeg", "-y",
+            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
             "-i", "output.mp4",
             "-i", "logos/puntazo.mp4",
             "-filter_complex",
-            "[0:v:0][1:v:0]scale2ref=oh=ih:ow=ow[scaled1][scaled2]; \
-            [scaled1][scaled2]concat=n=2:v=1:a=0[outv]",
-            "-map", "[outv]", "final_output.mp4"
+            "[0:v:0]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2[main];"
+            "[1:v:0]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2[anim];"
+            "[main][anim]concat=n=2:v=1:a=0[outv]",
+            "-map", "[outv]", "final_video.mp4"
         ], check=True)
     except subprocess.CalledProcessError:
         print(f"❌ Error al concatenar animación para {nombre}.")
         continue
 
     # 5. Subir video procesado a Dropbox
-    with open("final_output.mp4", "rb") as f:
+    with open("final_video.mp4", "rb") as f:
         dbx.files_upload(f.read(), ruta_destino, mode=dropbox.files.WriteMode.overwrite)
     print(f"✅ Subido a {ruta_destino}")
 
     # 6. Eliminar video original de Entrantes
     dbx.files_delete_v2(ruta_origen)
-    print(f"🗑️ Eliminado original de Entrantes")
+    print("🗑️ Eliminado original de Entrantes")
 
     # 7. Limpiar archivos temporales
-    for archivo in ["input.mp4", "output.mp4", "final_output.mp4"]:
-        if os.path.exists(archivo):
-            os.remove(archivo)
+    os.remove("input.mp4")
+    os.remove("output.mp4")
+    os.remove("final_video.mp4")
 
 print("🌟 Todos los videos han sido procesados.")
