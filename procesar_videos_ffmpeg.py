@@ -1,123 +1,100 @@
-#!/usr/bin/env python3
 import os
-import re
-import requests
-import dropbox
 import subprocess
-import time
-from base64 import b64encode
+import json
+import re
 
-APP_KEY = os.environ["DROPBOX_APP_KEY"]
-APP_SECRET = os.environ["DROPBOX_APP_SECRET"]
-REFRESH_TOKEN = os.environ["DROPBOX_REFRESH_TOKEN"]
+# --------------- CONFIGURACIÓN LOCAL ---------------
+CONFIG_PATH = "/home/isaac/PUNTAZO/mi_config.json"
+VIDEO_DIR = "final_cam"
+REGISTRO_PATH = "subidos.txt"
+DROPBOX_BASE = "dropbox:Puntazo/Locaciones"
+ANIMACION_PATH = "logos/puntazo.mp4"
 
-# === Obtener nuevo access token ===
-auth_header = b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()
-res = requests.post(
-    "https://api.dropbox.com/oauth2/token",
-    headers={"Authorization": f"Basic {auth_header}"},
-    data={"grant_type": "refresh_token", "refresh_token": REFRESH_TOKEN},
-)
-res.raise_for_status()
-ACCESS_TOKEN = res.json()["access_token"]
+# --------------- FUNCIONES AUXILIARES ---------------
+def load_config():
+    with open(CONFIG_PATH, "r") as f:
+        conf = json.load(f)
+    return conf["loc"], conf["can"], conf["lado"]
 
-# === Inicializa Dropbox ===
-dbx = dropbox.Dropbox(ACCESS_TOKEN)
+def ya_esta_subido(nombre_archivo):
+    if not os.path.exists(REGISTRO_PATH):
+        return False
+    with open(REGISTRO_PATH, "r") as f:
+        return nombre_archivo in f.read()
 
-# === Configuración general ===
-CARPETA_ENTRANTES = "/Puntazo/Entrantes"
-CARPETA_RAIZ = "/Puntazo/Locaciones"
-PATRON_VIDEO = re.compile(r"^(?P<loc>[^_]+)_(?P<can>[^_]+)_(?P<lado>[^_]+)_\d{8}_\d{6}\.mp4$")
+def marcar_como_subido(nombre_archivo):
+    with open(REGISTRO_PATH, "a") as f:
+        f.write(nombre_archivo + "\n")
 
-# === Obtener lista de videos nuevos ===
-res = dbx.files_list_folder(CARPETA_ENTRANTES)
-videos_nuevos = [entry for entry in res.entries if entry.name.endswith(".mp4")]
+# --------------- FLUJO PRINCIPAL ---------------
+loc, can, lado = load_config()
+print(f"🚀 Procesando videos en {VIDEO_DIR}...")
 
-if not videos_nuevos:
-    print("✅ No hay videos nuevos por procesar.")
-    exit()
-
-# === Procesar cada video ===
-for video in videos_nuevos:
-    nombre = video.name
-    match = PATRON_VIDEO.match(nombre)
-    if not match:
-        print(f"⚠️ Nombre inválido: {nombre}")
+for archivo in os.listdir(VIDEO_DIR):
+    if not archivo.endswith(".mp4"):
         continue
 
-    loc, can, lado = match.group("loc"), match.group("can"), match.group("lado")
-    ruta_origen = f"{CARPETA_ENTRANTES}/{nombre}"
-    ruta_destino = f"{CARPETA_RAIZ}/{loc}/{can}/{lado}/{nombre}"
+    if ya_esta_subido(archivo):
+        continue
 
-    print(f"🚀 Procesando {nombre}...")
+    ruta_entrada = os.path.join(VIDEO_DIR, archivo)
+    print(f"🚀 Procesando {archivo}...")
 
-    # 1. Descargar video original
-    _, response = dbx.files_download(ruta_origen)
-    with open("input.mp4", "wb") as f:
-        f.write(response.content)
-
-    # 2. Verificar existencia de logos
+    # 1. Aplicar logos si existen
     existe_logo_loc = os.path.exists(f"logos/{loc}.png")
-    if not existe_logo_loc:
-        print(f"⚠️ No se encontró logo para logos/{loc}, se usará solo el de Puntazo.")
-
-    # 3. Generar comando FFmpeg con 1 o 2 logos escalados
     if existe_logo_loc:
         comando = [
-            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-            "-i", "input.mp4",
+            "ffmpeg", "-y", "-i", ruta_entrada,
             "-i", "logos/puntazo.png",
             "-i", f"logos/{loc}.png",
             "-filter_complex",
-            "[1:v]scale=200:-1[logo1]; [2:v]scale=300:-1[logo2]; "
-            "[0:v][logo1]overlay=30:30[tmp1]; [tmp1][logo2]overlay=W-w-15:15",
-            "-c:a", "copy", "output.mp4"
+            "[0:v][1:v]overlay=30:30[tmp1];[tmp1][2:v]overlay=W-w-15:15",
+            "-c:a", "copy", "with_logos.mp4"
         ]
     else:
         comando = [
-            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-            "-i", "input.mp4",
+            "ffmpeg", "-y", "-i", ruta_entrada,
             "-i", "logos/puntazo.png",
-            "-filter_complex",
-            "[1:v]scale=200:-1[logo]; [0:v][logo]overlay=30:30",
-            "-c:a", "copy", "output.mp4"
+            "-filter_complex", "overlay=30:30",
+            "-c:a", "copy", "with_logos.mp4"
         ]
+    subprocess.run(comando, check=True)
 
-    try:
-        subprocess.run(comando, check=True)
-    except subprocess.CalledProcessError:
-        print(f"❌ Error al procesar {nombre} con FFmpeg.")
-        continue
+    # 2. Asegurar que tenga audio silencioso (si no tiene pista de audio)
+    subprocess.run([
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-i", "with_logos.mp4",
+        "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+        "-c:v", "copy", "-c:a", "aac", "-shortest",
+        "with_logos_audio_silencioso.mp4"
+    ], check=True)
 
-    # 4. Concatenar animación al final
+    # 3. Concatenar con animacion al final (que tiene audio)
     print("➕ Concatenando animación al final...")
     try:
         subprocess.run([
             "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-            "-i", "output.mp4",
-            "-i", "logos/puntazo.mp4",
+            "-i", "with_logos_audio_silencioso.mp4",
+            "-i", ANIMACION_PATH,
             "-filter_complex",
-            "[0:v:0]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2[main];"
-            "[1:v:0]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2[anim];"
-            "[main][anim]concat=n=2:v=1:a=0[outv]",
-            "-map", "[outv]", "final_video.mp4"
+            "[0:v][0:a][1:v][1:a]concat=n=2:v=1:a=1[outv][outa]",
+            "-map", "[outv]", "-map", "[outa]",
+            "-c:v", "libx264", "-c:a", "aac", "-shortest",
+            "output_final.mp4"
         ], check=True)
     except subprocess.CalledProcessError:
-        print(f"❌ Error al concatenar animación para {nombre}.")
+        print(f"❌ Error al concatenar animación para {archivo}.")
         continue
 
-    # 5. Subir video procesado a Dropbox
-    with open("final_video.mp4", "rb") as f:
-        dbx.files_upload(f.read(), ruta_destino, mode=dropbox.files.WriteMode.overwrite)
-    print(f"✅ Subido a {ruta_destino}")
+    # 4. Subir a Dropbox
+    dropbox_destino = f"{DROPBOX_BASE}/{loc}/{can}/{lado}/{archivo}"
+    subprocess.run(["rclone", "copyto", "output_final.mp4", dropbox_destino], check=True)
+    print(f"✅ Subido a {dropbox_destino}")
 
-    # 6. Eliminar video original de Entrantes
-    dbx.files_delete_v2(ruta_origen)
-    print("🗑️ Eliminado original de Entrantes")
-
-    # 7. Limpiar archivos temporales
-    os.remove("input.mp4")
-    os.remove("output.mp4")
-    os.remove("final_video.mp4")
+    # 5. Limpiar y registrar
+    os.remove(ruta_entrada)
+    print(f"🗑️ Eliminado original de Entrantes")
+    marcar_como_subido(archivo)
 
 print("🌟 Todos los videos han sido procesados.")
+
