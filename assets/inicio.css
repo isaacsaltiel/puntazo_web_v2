@@ -22,7 +22,7 @@ body {
 /* HERO */
 .hero {
   height: 100vh;
-  background: url('/puntazo_web_v2/assets/hero-bg.jpg') center/cover no-repeat;
+  background: url('assets/hero-bg.jpg') center/cover no-repeat;
   color: #fff;
   display: flex;
   justify-content: center;
@@ -204,7 +204,7 @@ body::before {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: url('/puntazo_web_v2/assets/bg-degradado-1920x3000.jpg') center top / cover no-repeat;
+  background: url('assets/bg-degradado-1920x3000.jpg') center top / cover no-repeat;
   z-index: -1;
   pointer-events: none;
 }
