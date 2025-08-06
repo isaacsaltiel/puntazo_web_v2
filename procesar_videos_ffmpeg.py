@@ -60,16 +60,28 @@ for archivo in os.listdir(VIDEO_DIR):
         ]
     subprocess.run(comando, check=True)
 
-    # 2. Asegurar que tenga audio silencioso (si no tiene pista de audio)
-    subprocess.run([
-        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-        "-i", "with_logos.mp4",
-        "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
-        "-c:v", "copy", "-c:a", "aac", "-shortest",
-        "with_logos_audio_silencioso.mp4"
-    ], check=True)
+    # 2. Asegurar que tenga pista de audio silenciosa (si no tiene audio)
+    print("🔇 Asegurando pista de audio silenciosa si es necesario...")
+    result = subprocess.run([
+        "ffprobe", "-v", "error", "-select_streams", "a",
+        "-show_entries", "stream=codec_type", "-of", "default=noprint_wrappers=1:nokey=1",
+        "with_logos.mp4"
+    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-    # 3. Concatenar con animacion al final (que tiene audio)
+    tiene_audio = any("audio" in line for line in result.stdout.splitlines())
+
+    if not tiene_audio:
+        subprocess.run([
+            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+            "-i", "with_logos.mp4",
+            "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+            "-c:v", "copy", "-c:a", "aac", "-shortest",
+            "with_logos_audio_silencioso.mp4"
+        ], check=True)
+    else:
+        os.rename("with_logos.mp4", "with_logos_audio_silencioso.mp4")
+
+    # 3. Concatenar con animación al final (que tiene audio)
     print("➕ Concatenando animación al final...")
     try:
         subprocess.run([
@@ -97,4 +109,3 @@ for archivo in os.listdir(VIDEO_DIR):
     marcar_como_subido(archivo)
 
 print("🌟 Todos los videos han sido procesados.")
-
