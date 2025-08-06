@@ -72,8 +72,8 @@ for video in videos_nuevos:
             "-i", "logos/puntazo.png",
             "-i", f"logos/{loc}.png",
             "-filter_complex",
-            "[1:v]scale=200:-1[logo1];"
-            "[2:v]scale=300:-1[logo2];"
+            "[1:v]scale=300:-1[logo1];"
+            "[2:v]scale=200:-1[logo2];"
             "[0:v][logo1]overlay=30:30[tmp1];"
             "[tmp1][logo2]overlay=W-w-15:15",
             "-map", "0:a?",  # Incluir audio si existe
@@ -88,7 +88,7 @@ for video in videos_nuevos:
             "-i", "input.mp4",
             "-i", "logos/puntazo.png",
             "-filter_complex",
-            "[1:v]scale=200:-1[logo]; [0:v][logo]overlay=30:30",
+            "[1:v]scale=300:-1[logo]; [0:v][logo]overlay=30:30",
             "-map", "0:a?",  # Incluir audio si existe
             "-c:v", "libx264",
             "-c:a", "aac",
