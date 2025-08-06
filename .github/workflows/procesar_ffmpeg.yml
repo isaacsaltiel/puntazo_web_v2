@@ -5,6 +5,11 @@ on:
     types: [procesar_video_ffmpeg]
   workflow_dispatch:
 
+# Evita ejecuciones paralelas: nuevas ejecuciones esperan a que termine la anterior
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   ejecutar:
     runs-on: ubuntu-latest
@@ -19,7 +24,8 @@ jobs:
           python-version: '3.10'
 
       - name: Instalar librerías necesarias
-        run: pip install dropbox requests
+        run: |
+          pip install dropbox requests
 
       - name: Instalar FFmpeg
         uses: AnimMouse/setup-ffmpeg@v1
@@ -29,4 +35,5 @@ jobs:
           DROPBOX_APP_KEY:       ${{ secrets.DROPBOX_APP_KEY }}
           DROPBOX_APP_SECRET:    ${{ secrets.DROPBOX_APP_SECRET }}
           DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
-        run: python procesar_videos_ffmpeg.py
+        run: |
+          python procesar_videos_ffmpeg.py
