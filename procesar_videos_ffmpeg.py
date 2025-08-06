@@ -76,7 +76,7 @@ for video in videos_nuevos:
             "[2:v]scale=300:-1[logo2];"
             "[0:v][logo1]overlay=30:30[tmp1];"
             "[tmp1][logo2]overlay=W-w-15:15",
-            "-map", "0:a?",  # Incluir audio si existe
+            "-map", "0:a?",
             "-c:v", "libx264",
             "-c:a", "aac",
             "-shortest",
@@ -89,7 +89,7 @@ for video in videos_nuevos:
             "-i", "logos/puntazo.png",
             "-filter_complex",
             "[1:v]scale=200:-1[logo]; [0:v][logo]overlay=30:30",
-            "-map", "0:a?",  # Incluir audio si existe
+            "-map", "0:a?",
             "-c:v", "libx264",
             "-c:a", "aac",
             "-shortest",
@@ -102,10 +102,10 @@ for video in videos_nuevos:
         print(f"❌ Error al aplicar logos a {nombre}")
         continue
 
-    # 4. Concatenar video con animación de intro
+    # 4. Concatenar video con animación de salida
     with open("concat.txt", "w") as f:
-        f.write("file 'logos/puntazo.mp4'\n")
         f.write("file 'output_con_logo.mp4'\n")
+        f.write("file 'logos/puntazo.mp4'\n")
 
     comando_concat = [
         "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
@@ -136,4 +136,4 @@ for video in videos_nuevos:
         if os.path.exists(archivo):
             os.remove(archivo)
 
-print("🏁 Todos los videos han sido procesados.")
+print("🏑 Todos los videos han sido procesados.")
