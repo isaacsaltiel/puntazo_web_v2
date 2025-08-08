@@ -29,6 +29,79 @@ function scrollToVideoById(id) {
   if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+// ----------------------- GATE POR CANCHA -----------------------
+// Archivo: data/passwords.json
+// Estructura esperada: { canchas: [{ loc, can, enabled, sha256, remember_hours }] }
+// Seguridad: filtro ligero del lado del cliente. No sustituye auth del servidor.
+
+async function sha256Hex(text) {
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function loadPasswords() {
+  try {
+    const url = `data/passwords.json?cb=${Date.now()}`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    return await res.json();
+  } catch (e) {
+    console.warn('[gate] No se pudo cargar passwords.json:', e);
+    return null; // si no carga, no aplicamos gate (filtro ligero)
+  }
+}
+
+function findCanchaRule(pwCfg, locId, canId) {
+  if (!pwCfg?.canchas?.length) return null;
+  return pwCfg.canchas.find(x => x.loc === locId && x.can === canId) || null;
+}
+
+function getAuthKey(locId, canId) {
+  return `gate:${locId}:${canId}`;
+}
+
+function isAuthorized(rule) {
+  if (!rule) return true; // si no hay regla, no requiere contraseña
+  if (!rule.enabled) return true; // desactivada
+  const k = getAuthKey(rule.loc || '', rule.can || '');
+  try {
+    const raw = localStorage.getItem(k);
+    if (!raw) return false;
+    const obj = JSON.parse(raw);
+    if (!obj?.ok || typeof obj.exp !== 'number') return false;
+    return Date.now() < obj.exp;
+  } catch { return false; }
+}
+
+function setAuthorized(rule) {
+  const remember = (Number(rule.remember_hours) > 0 ? Number(rule.remember_hours) : 24) * 3600 * 1000;
+  const exp = Date.now() + remember;
+  const k = getAuthKey(rule.loc, rule.can);
+  localStorage.setItem(k, JSON.stringify({ ok: true, exp }));
+}
+
+async function requireCanchaPassword(locId, canId) {
+  const pwCfg = await loadPasswords();
+  const rule = findCanchaRule(pwCfg, locId, canId);
+  if (!rule || !rule.enabled) return true; // no protegida
+
+  if (isAuthorized(rule)) return true; // ya autorizado vigente
+
+  // Hasta 3 intentos. Cancelar devuelve false.
+  for (let i = 0; i < 3; i++) {
+    const input = window.prompt('Esta cancha requiere contraseña.');
+    if (input === null) return false; // canceló
+    const h = await sha256Hex(input);
+    if (h === rule.sha256) {
+      setAuthorized(rule);
+      return true;
+    }
+    alert('Contraseña incorrecta. Inténtalo de nuevo.');
+  }
+  return false;
+}
+
 // ----------------------- navegación -----------------------
 async function populateLocaciones() {
   try {
@@ -106,7 +179,8 @@ async function populateLados() {
       linkCancha.textContent = cancha.nombre;
       linkCancha.href = "#";
     }
-    document.getElementById("breadcrumb-sep2").style.display = "none";
+    const sep2 = document.getElementById("breadcrumb-sep2");
+    if (sep2) sep2.style.display = "none";
     const nombreLado = document.getElementById("nombre-lado");
     if (nombreLado) nombreLado.style.display = "none";
 
@@ -279,8 +353,8 @@ async function populateVideos() {
     const canObj = locObj?.cancha.find(c => c.id === can);
     const ladoObj = canObj?.lados.find(l => l.id === lado);
     if (!ladoObj?.json_url) {
-      document.getElementById("videos-container").innerHTML =
-        "<p style='color:#fff;'>Lado no encontrado.</p>";
+      const el = document.getElementById("videos-container");
+      if (el) el.innerHTML = "<p style='color:#fff;'>Lado no encontrado.</p>";
       return;
     }
 
@@ -408,20 +482,44 @@ function createScrollToTopBtn() {
 // ----------------------- arranque -----------------------
 document.addEventListener("DOMContentLoaded", () => {
   const path = window.location.pathname;
-  if (path.endsWith("index.html") || path.endsWith("/")) {
-    populateLocaciones();
-  } else if (path.endsWith("locacion.html")) {
-    populateCanchas();
-  } else if (path.endsWith("cancha.html")) {
-    populateLados();
-  } else if (path.endsWith("lado.html")) {
-    populateVideos();
-    createScrollToTopBtn();
-  }
+  const p = getQueryParams();
+
+  (async () => {
+    if (path.endsWith("index.html") || path.endsWith("/")) {
+      populateLocaciones();
+      return;
+    }
+
+    if (path.endsWith("locacion.html")) {
+      populateCanchas();
+      return;
+    }
+
+    if (path.endsWith("cancha.html")) {
+      const ok = await requireCanchaPassword(p.loc, p.can);
+      if (!ok) {
+        // si canceló o falló, regresar al listado de canchas del club
+        window.location.href = `locacion.html?loc=${p.loc}`;
+        return;
+      }
+      populateLados();
+      return;
+    }
+
+    if (path.endsWith("lado.html")) {
+      const ok = await requireCanchaPassword(p.loc, p.can);
+      if (!ok) {
+        window.location.href = `cancha.html?loc=${p.loc}&can=${p.can}`;
+        return;
+      }
+      populateVideos();
+      createScrollToTopBtn();
+      return;
+    }
+  })();
 
   const btnVolver = document.getElementById("btn-volver");
   if (btnVolver) {
-    const p = getQueryParams();
     if (path.endsWith("lado.html")) {
       btnVolver.href = `cancha.html?loc=${p.loc}&can=${p.can}`;
     } else if (path.endsWith("cancha.html")) {
