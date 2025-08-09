@@ -311,7 +311,7 @@ async function loadPreviewsSequentially(previews) {
 async function crearBotonAccionCompartir(entry) {
   const btn = document.createElement("button");
   btn.className = "btn-share-large";
-  btn.textContent = "Compartir / Descargar";
+  btn.textContent = "Compartir | Descargar";
   btn.title = "Compartir video";
   btn.setAttribute("aria-label", "Compartir video");
 
