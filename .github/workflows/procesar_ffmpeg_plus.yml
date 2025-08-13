@@ -20,10 +20,10 @@ jobs:
       DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
 
       # --- Control de marcas/recursos ---
-      THIRD_LOGO_ENABLED: ${{ vars.THIRD_LOGO_ENABLED || 'false' }}
+      THIRD_LOGO_ENABLED: ${{ vars.THIRD_LOGO_ENABLED || 'true' }}
       LOGO1_PATH: logos/puntazo.png      # <── AJUSTA AQUÍ SI TU RUTA ES OTRA
       CLUBS_ROOT: clubs
-      DEBUG: ${{ vars.DEBUG || 'true' }}
+      DEBUG: ${{ vars.DEBUG || 'false' }}
 
     steps:
       - name: Clonar el repositorio (con LFS si aplica)
