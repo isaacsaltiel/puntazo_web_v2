@@ -206,14 +206,18 @@ def main():
 
             filter_complex = ";".join(filters)
 
+            # Elegir la salida de video: el último label construido en 'current'
+            # (p.ej., [v1], [v2], etc.)
             cmd_logos = inputs + [
                 "-filter_complex", filter_complex,
-                "-map", "0:a?",              # incluir audio si existe
+                "-map", current,          # <<< mapear la salida de video filtrada
+                "-map", "0:a?",           # incluir audio si existe
                 "-c:v", "libx264",
                 "-c:a", "aac",
                 "-shortest",
                 str(workdir / "output_con_logo.mp4"),
             ]
+
 
             try:
                 run_cmd(cmd_logos)
