@@ -5,7 +5,6 @@ on:
     types: [procesar_video_ffmpeg_plus]
   workflow_dispatch:
 
-# Evita ejecuciones paralelas: nuevas ejecuciones esperan a que termine la anterior
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -15,20 +14,31 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # --- Dropbox (usa tus secrets existentes) ---
+      # --- Dropbox ---
       DROPBOX_APP_KEY:       ${{ secrets.DROPBOX_APP_KEY }}
       DROPBOX_APP_SECRET:    ${{ secrets.DROPBOX_APP_SECRET }}
       DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
 
       # --- Control de marcas/recursos ---
       THIRD_LOGO_ENABLED: ${{ vars.THIRD_LOGO_ENABLED || 'false' }}
-      LOGO1_PATH: assets/logos/puntazo.png
+      LOGO1_PATH: logos/puntazo.png      # <── AJUSTA AQUÍ SI TU RUTA ES OTRA
       CLUBS_ROOT: clubs
       DEBUG: ${{ vars.DEBUG || 'false' }}
 
     steps:
-      - name: Clonar el repositorio
+      - name: Clonar el repositorio (con LFS si aplica)
         uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Mostrar estructura para depuración
+        run: |
+          echo "Contenido del repo:"
+          ls -la
+          echo "----"
+          echo "Árbol de logos (si existe):"
+          (ls -la logos || true)
+          (ls -la assets || true)
 
       - name: Configurar Python
         uses: actions/setup-python@v4
@@ -47,6 +57,9 @@ jobs:
         run: |
           if [ ! -f "$LOGO1_PATH" ]; then
             echo "❌ No se encontró $LOGO1_PATH (logo de Puntazo)."
+            echo "Revisa ruta exacta y mayúsculas/minúsculas."
+            echo "Listado de 'logos/':"
+            (ls -la logos || true)
             exit 1
           fi
 
