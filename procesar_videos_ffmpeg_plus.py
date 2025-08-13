@@ -65,7 +65,7 @@ def safe_unlink(p: Path):
         pass
 
 def ffprobe_dims(p: Path):
-    """Devuelve (w,h) del primer stream de video."""
+    """Devuelve (w,h) del primer stream de video (fallback 1920x1080)."""
     try:
         out = subprocess.check_output(
             ["ffprobe","-v","error","-select_streams","v:0",
@@ -76,7 +76,7 @@ def ffprobe_dims(p: Path):
         w,h = out.split(",")
         return int(w), int(h)
     except Exception:
-        return 1920,1080  # fallback
+        return 1920,1080
 
 def has_audio(p: Path) -> bool:
     try:
@@ -116,6 +116,7 @@ def main():
     if DRY_RUN:
         nombre = LOCAL_INPUT.name
         if not PATRON_VIDEO.match(nombre):
+            # Simula un nombre válido si el local no lo cumple
             nombre = "Scorpion_Cancha1_LadoA_20250812_101010.mp4"
         entries = [{"name": nombre, "local": True}]
     else:
@@ -128,7 +129,7 @@ def main():
         while result.has_more:
             result = dbx.files_list_folder_continue(result.cursor)
             videos.extend([e for e in result.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")])
-        entries = [{"name": e.name, "id": e.id} for e in videos]
+        entries = [{"name": e.name} for e in videos]
 
     if not entries:
         print("✅ No hay videos nuevos por procesar.")
@@ -240,7 +241,7 @@ def main():
                 print(f"❌ Error aplicando logos a {nombre}: {e}")
                 continue
 
-            # 4) Concat con FILTER (normaliza PTS/dimensiones)
+            # 4) Concat con FILTER (normaliza PTS y dimensiones)
             body = workdir / "output_con_logo.mp4"
             segs = []
             if existe_intro: segs.append(intro)
@@ -257,23 +258,36 @@ def main():
                 # ¿todos los segmentos tienen audio?
                 all_audio = all(has_audio(p) for p in segs)
 
-                # Entradas
+                # Entradas para concat filter
                 cmd = ["ffmpeg","-y","-hide_banner","-loglevel","error","-fflags","+genpts"]
                 if DEBUG:
                     cmd.append("-report")
                 for p in segs:
                     cmd.extend(["-i", str(p)])
 
-                # Construir filter_complex
+                # Construir filter_complex con scale+pad y reset de PTS
                 fparts = []
                 vlabels = []
                 alabels = []
 
                 for i,_p in enumerate(segs):
-                    fparts.append(f"[{i}:v]scale={W}:{H}:force_original_aspect_ratio=decrease,setsar=1,setpts=PTS-STARTTIME[v{i}]")
+                    # Video: igualar a W×H exactos con escala + pad centrado, SAR=1 y reset PTS
+                    fparts.append(
+                        f"[{i}:v]"
+                        f"scale={W}:{H}:force_original_aspect_ratio=decrease,"
+                        f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2,"
+                        f"setsar=1,setpts=PTS-STARTPTS[v{i}]"
+                    )
                     vlabels.append(f"[v{i}]")
+
+                    # Audio: solo si todos los segmentos traen audio; normaliza y resetea PTS
                     if all_audio:
-                        fparts.append(f"[{i}:a]aresample=async=1:first_pts=0[a{i}]")
+                        fparts.append(
+                            f"[{i}:a]"
+                            f"aformat=channel_layouts=stereo,"
+                            f"aresample=async=1:first_pts=0,"
+                            f"asetpts=PTS-STARTPTS[a{i}]"
+                        )
                         alabels.append(f"[a{i}]")
 
                 if all_audio:
@@ -289,7 +303,13 @@ def main():
                     cmd += ["-map", "[a]", "-c:a", "aac"]
                 else:
                     cmd += ["-an"]
-                cmd += ["-c:v","libx264","-pix_fmt","yuv420p","-movflags","+faststart", str(workdir / "output.mp4")]
+
+                cmd += [
+                    "-c:v","libx264",
+                    "-pix_fmt","yuv420p",
+                    "-movflags","+faststart",
+                    str(workdir / "output.mp4")
+                ]
 
                 try:
                     run_cmd(cmd)
