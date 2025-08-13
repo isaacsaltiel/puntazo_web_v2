@@ -23,7 +23,7 @@ jobs:
       THIRD_LOGO_ENABLED: ${{ vars.THIRD_LOGO_ENABLED || 'false' }}
       LOGO1_PATH: logos/puntazo.png      # <── AJUSTA AQUÍ SI TU RUTA ES OTRA
       CLUBS_ROOT: clubs
-      DEBUG: ${{ vars.DEBUG || 'false' }}
+      DEBUG: ${{ vars.DEBUG || 'true' }}
 
     steps:
       - name: Clonar el repositorio (con LFS si aplica)
