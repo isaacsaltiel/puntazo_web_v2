@@ -20,7 +20,7 @@ jobs:
       DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
 
       # --- Control de marcas/recursos ---
-      THIRD_LOGO_ENABLED: ${{ vars.THIRD_LOGO_ENABLED || 'true' }}
+      THIRD_LOGO_ENABLED: ${{ vars.THIRD_LOGO_ENABLED || 'true' }}  # <── AJUSTA AQUÍ EL TERCER LOGO
       LOGO1_PATH: logos/puntazo.png      # <── AJUSTA AQUÍ SI TU RUTA ES OTRA
       CLUBS_ROOT: clubs
       DEBUG: ${{ vars.DEBUG || 'false' }}
