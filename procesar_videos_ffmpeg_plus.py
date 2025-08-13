@@ -231,7 +231,7 @@ def main():
             cmd_logos = inputs + [
                 "-filter_complex", filter_complex,
                 "-map", current,          # salida de video filtrado
-                "-map", "0:a?",           # audio si existe
+                "-map", "0:a?",           # audio si existe (del body)
                 "-c:v", "libx264",
                 "-c:a", "aac",
                 "-movflags", "+faststart",
@@ -255,7 +255,7 @@ def main():
                 final_path = workdir / "output.mp4"
                 shutil.move(body, final_path)
             else:
-                # dimensiones del body para igualar intro/outro
+                # Dimensiones del body para igualar intro/outro
                 W,H = ffprobe_dims(body)
 
                 # Entradas para concat filter
@@ -265,42 +265,42 @@ def main():
                 for p in segs:
                     cmd.extend(["-i", str(p)])
 
-                # Detecta audio por tramo y duración (para inyectar silencio si hace falta)
+                # Detecta audio y duración (para inyectar silencio si falta)
                 seg_has_audio = [has_audio(p) for p in segs]
                 seg_durations = [get_duration(p) or 0.0 for p in segs]
 
                 fparts = []
-                vlabels = []
-                alabels = []
+                pairs = []   # <- aquí iremos intercalando [vi][ai] por tramo
 
                 for i, p in enumerate(segs):
-                    # VIDEO: igualar a W×H con scale+pad, SAR=1, reset PTS
+                    # VIDEO: scale+pad → W×H, SAR=1, reset PTS
                     fparts.append(
                         f"[{i}:v]"
                         f"scale={W}:{H}:force_original_aspect_ratio=decrease,"
                         f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2,"
                         f"setsar=1,setpts=PTS-STARTPTS[v{i}]"
                     )
-                    vlabels.append(f"[v{i}]")
 
-                    # AUDIO por tramo: normaliza o inyecta silencio si no hay
+                    # AUDIO por tramo: normaliza o genera silencio con misma duración
                     if seg_has_audio[i]:
                         fparts.append(
                             f"[{i}:a]"
                             f"aformat=channel_layouts=stereo,"
-                            f"aresample=async=1:first_pts=0,"
+                            f"aresample=sample_rate=48000:async=1:first_pts=0,"
                             f"asetpts=PTS-STARTPTS[a{i}]"
                         )
-                        alabels.append(f"[a{i}]")
                     else:
                         dur = max(seg_durations[i], 0.01)  # evita duración cero
                         fparts.append(
                             f"anullsrc=r=48000:cl=stereo,atrim=0:{dur},asetpts=PTS-STARTPTS[a{i}]"
                         )
-                        alabels.append(f"[a{i}]")
 
-                # Concat con audio unificado (a=1)
-                concat_line = "".join(vlabels + alabels) + f"concat=n={len(segs)}:v=1:a=1[v][a]"
+                    # Intercala el par de este tramo en orden v,a
+                    pairs.append(f"[v{i}]")
+                    pairs.append(f"[a{i}]")
+
+                # Concat con audio (pares intercalados)
+                concat_line = "".join(pairs) + f"concat=n={len(segs)}:v=1:a=1[v][a]"
                 fparts.append(concat_line)
                 fgraph = ";".join(fparts)
 
