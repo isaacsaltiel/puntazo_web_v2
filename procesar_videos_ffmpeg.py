@@ -4,7 +4,6 @@
 import os
 import re
 import sys
-import json
 import shutil
 import tempfile
 import subprocess
@@ -57,13 +56,6 @@ def run_cmd(cmd: list, cwd: Path = None) -> None:
         print("[CMD]", " ".join(map(str, cmd)))
     subprocess.run(cmd, check=True, cwd=cwd)
 
-def safe_unlink(p: Path):
-    try:
-        if p.exists():
-            p.unlink()
-    except Exception:
-        pass
-
 def ffprobe_dims(p: Path):
     """Devuelve (w,h) del primer stream de video (fallback 1920x1080)."""
     try:
@@ -88,6 +80,18 @@ def has_audio(p: Path) -> bool:
         return bool(out)
     except Exception:
         return False
+
+def get_duration(p: Path):
+    """Duración en segundos (float) del medio; None si no se puede leer."""
+    try:
+        out = subprocess.check_output(
+            ["ffprobe","-v","error","-show_entries","format=duration",
+             "-of","default=noprint_wrappers=1:nokey=1", str(p)],
+            text=True, stderr=subprocess.STDOUT, timeout=30
+        ).strip()
+        return float(out) if out else None
+    except Exception:
+        return None
 
 # =========================
 #  Flujo principal
@@ -116,7 +120,6 @@ def main():
     if DRY_RUN:
         nombre = LOCAL_INPUT.name
         if not PATRON_VIDEO.match(nombre):
-            # Simula un nombre válido si el local no lo cumple
             nombre = "Scorpion_Cancha1_LadoA_20250812_101010.mp4"
         entries = [{"name": nombre, "local": True}]
     else:
@@ -228,7 +231,7 @@ def main():
             cmd_logos = inputs + [
                 "-filter_complex", filter_complex,
                 "-map", current,          # salida de video filtrado
-                "-map", "0:a?",           # audio si existe
+                "-map", "0:a?",           # audio si existe (del body)
                 "-c:v", "libx264",
                 "-c:a", "aac",
                 "-movflags", "+faststart",
@@ -241,7 +244,7 @@ def main():
                 print(f"❌ Error aplicando logos a {nombre}: {e}")
                 continue
 
-            # 4) Concat con FILTER (normaliza PTS y dimensiones)
+            # 4) Concat con FILTER (normaliza PTS y dimensiones) + audio robusto
             body = workdir / "output_con_logo.mp4"
             segs = []
             if existe_intro: segs.append(intro)
@@ -252,11 +255,8 @@ def main():
                 final_path = workdir / "output.mp4"
                 shutil.move(body, final_path)
             else:
-                # dimensiones del body para igualar intro/outro
+                # Dimensiones del body para igualar intro/outro
                 W,H = ffprobe_dims(body)
-
-                # ¿todos los segmentos tienen audio?
-                all_audio = all(has_audio(p) for p in segs)
 
                 # Entradas para concat filter
                 cmd = ["ffmpeg","-y","-hide_banner","-loglevel","error","-fflags","+genpts"]
@@ -265,48 +265,50 @@ def main():
                 for p in segs:
                     cmd.extend(["-i", str(p)])
 
-                # Construir filter_complex con scale+pad y reset de PTS
-                fparts = []
-                vlabels = []
-                alabels = []
+                # Detecta audio y duración (para inyectar silencio si falta)
+                seg_has_audio = [has_audio(p) for p in segs]
+                seg_durations = [get_duration(p) or 0.0 for p in segs]
 
-                for i,_p in enumerate(segs):
-                    # Video: igualar a W×H exactos con escala + pad centrado, SAR=1 y reset PTS
+                fparts = []
+                pairs = []   # <- aquí iremos intercalando [vi][ai] por tramo
+
+                for i, p in enumerate(segs):
+                    # VIDEO: scale+pad → W×H, SAR=1, reset PTS
                     fparts.append(
                         f"[{i}:v]"
                         f"scale={W}:{H}:force_original_aspect_ratio=decrease,"
                         f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2,"
                         f"setsar=1,setpts=PTS-STARTPTS[v{i}]"
                     )
-                    vlabels.append(f"[v{i}]")
 
-                    # Audio: solo si todos los segmentos traen audio; normaliza y resetea PTS
-                    if all_audio:
+                    # AUDIO por tramo: normaliza o genera silencio con misma duración
+                    if seg_has_audio[i]:
                         fparts.append(
                             f"[{i}:a]"
                             f"aformat=channel_layouts=stereo,"
-                            f"aresample=async=1:first_pts=0,"
+                            f"aresample=sample_rate=48000:async=1:first_pts=0,"
                             f"asetpts=PTS-STARTPTS[a{i}]"
                         )
-                        alabels.append(f"[a{i}]")
+                    else:
+                        dur = max(seg_durations[i], 0.01)  # evita duración cero
+                        fparts.append(
+                            f"anullsrc=r=48000:cl=stereo,atrim=0:{dur},asetpts=PTS-STARTPTS[a{i}]"
+                        )
 
-                if all_audio:
-                    concat_line = "".join(vlabels + alabels) + f"concat=n={len(segs)}:v=1:a=1[v][a]"
-                else:
-                    concat_line = "".join(vlabels) + f"concat=n={len(segs)}:v=1:a=0[v]"
+                    # Intercala el par de este tramo en orden v,a
+                    pairs.append(f"[v{i}]")
+                    pairs.append(f"[a{i}]")
 
+                # Concat con audio (pares intercalados)
+                concat_line = "".join(pairs) + f"concat=n={len(segs)}:v=1:a=1[v][a]"
                 fparts.append(concat_line)
                 fgraph = ";".join(fparts)
 
-                cmd += ["-filter_complex", fgraph, "-map", "[v]"]
-                if all_audio:
-                    cmd += ["-map", "[a]", "-c:a", "aac"]
-                else:
-                    cmd += ["-an"]
-
                 cmd += [
-                    "-c:v","libx264",
-                    "-pix_fmt","yuv420p",
+                    "-filter_complex", fgraph,
+                    "-map", "[v]", "-map", "[a]",
+                    "-c:v","libx264", "-pix_fmt","yuv420p",
+                    "-c:a","aac",
                     "-movflags","+faststart",
                     str(workdir / "output.mp4")
                 ]
