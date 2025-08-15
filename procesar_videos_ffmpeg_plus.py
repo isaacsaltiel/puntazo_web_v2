@@ -10,6 +10,7 @@ import subprocess
 from pathlib import Path
 from base64 import b64encode
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Optional, Tuple
 
 import requests
 import dropbox
@@ -31,6 +32,9 @@ MAX_PARALLEL         = int(os.environ.get("MAX_PARALLEL", "2"))
 THREADS_PER_FFMPEG   = int(os.environ.get("THREADS_PER_FFMPEG", "2"))
 BATCH_LIMIT          = int(os.environ.get("BATCH_LIMIT", "20"))
 
+# Orden: true => primero los más recientes; false => primero los más antiguos
+NEWEST_FIRST         = os.environ.get("NEWEST_FIRST", "true").lower() in ("1", "true", "yes")
+
 # Opcional: pruebas locales sin Dropbox
 DRY_RUN        = os.environ.get("DRY_RUN", "false").lower() in ("1", "true", "yes")
 LOCAL_INPUT    = Path(os.environ.get("LOCAL_INPUT", "input_demo.mp4")).resolve()
@@ -41,7 +45,9 @@ CARPETA_ENTRANTES = os.environ.get("ENTRANTES", "/Puntazo/Entrantes")
 CARPETA_RAIZ      = os.environ.get("DESTINO_RAIZ", "/Puntazo/Locaciones")
 
 # Patrón de nombre de archivo: loc_can_lado_YYYYMMDD_HHMMSS.mp4
-PATRON_VIDEO = re.compile(r"^(?P<loc>[^_]+)_(?P<can>[^_]+)_(?P<lado>[^_]+)_(\d{8})_(\d{6})\.mp4$")
+PATRON_VIDEO = re.compile(
+    r"^(?P<loc>[^_]+)_(?P<can>[^_]+)_(?P<lado>[^_]+)_(?P<date>\d{8})_(?P<time>\d{6})\.mp4$"
+)
 
 # =========================
 #  Utilidades
@@ -96,6 +102,22 @@ def get_duration(p: Path):
             text=True, stderr=subprocess.STDOUT, timeout=30
         ).strip()
         return float(out) if out else None
+    except Exception:
+        return None
+
+def parse_ts_from_name(name: str) -> Optional[Tuple[int,int,int,int,int,int]]:
+    """
+    Extrae (YYYY,MM,DD,hh,mm,ss) del nombre con PATRON_VIDEO.
+    Devuelve None si no matchea.
+    """
+    m = PATRON_VIDEO.match(name)
+    if not m:
+        return None
+    d = m.group("date")  # YYYYMMDD
+    t = m.group("time")  # hhmmss
+    try:
+        return (int(d[0:4]), int(d[4:6]), int(d[6:8]),
+                int(t[0:2]), int(t[2:4]), int(t[4:6]))
     except Exception:
         return None
 
@@ -269,6 +291,7 @@ def procesar_uno(nombre: str, ACCESS_TOKEN: str | None) -> tuple[str, bool, str]
         # 5) Subir / Guardar
         final_path = workdir / "output.mp4"
         if DRY_RUN:
+            loc, can, lado = m.group("loc"), m.group("can"), m.group("lado")
             dest = LOCAL_OUTDIR / loc / can / lado
             dest.mkdir(parents=True, exist_ok=True)
             shutil.copy2(final_path, dest / nombre)
@@ -313,7 +336,7 @@ def main():
             print(f"❌ Error autenticando con Dropbox: {e}")
             sys.exit(1)
 
-    # ¿Archivo único (compatibilidad con futuros usos)?
+    # ¿Archivo único?
     only = os.environ.get("FILE_NAME")
     if only:
         nombres = [only]
@@ -335,7 +358,35 @@ def main():
                 while res.has_more:
                     res = dbx.files_list_folder_continue(res.cursor)
                     files += [e.name for e in res.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
-                nombres = sorted(files)[:BATCH_LIMIT]
+
+                # ---- Orden por timestamp del nombre ----
+                def sort_key(n):
+                    ts = parse_ts_from_name(n)
+                    # Si no tiene ts válido, lo mandamos al final
+                    return (0, 0, 0, 0, 0, 0) if ts is None else ts
+
+                files_with_ts = [f for f in files if parse_ts_from_name(f) is not None]
+                files_no_ts   = [f for f in files if parse_ts_from_name(f) is None]
+
+                # Orden cronológico ascendente y luego invertimos si NEWEST_FIRST
+                files_sorted = sorted(files_with_ts, key=sort_key)
+                if NEWEST_FIRST:
+                    files_sorted.reverse()  # más recientes primero
+
+                # Los sin timestamp al final
+                nombres = (files_sorted + files_no_ts)[:BATCH_LIMIT]
+
+                # Mensaje de diagnóstico
+                order_txt = "más recientes primero" if NEWEST_FIRST else "más antiguos primero"
+                if nombres:
+                    first = nombres[0]
+                    fts = parse_ts_from_name(first)
+                    ts_str = f"{fts[0]:04d}-{fts[1]:02d}-{fts[2]:02d} {fts[3]:02d}:{fts[4]:02d}:{fts[5]:02d}" if fts else "N/A"
+                    print(f"🗂️  Orden de procesamiento: {order_txt}. Primero: {first} (ts={ts_str})")
+                else:
+                    print(f"🗂️  Orden de procesamiento: {order_txt}. (sin archivos)")
+                # ----------------------------------------
+
             except Exception as e:
                 print(f"❌ No se pudo listar {CARPETA_ENTRANTES}: {e}")
                 sys.exit(1)
@@ -349,7 +400,6 @@ def main():
     fail_count = 0
 
     # Pool de hilos para orquestar varios ffmpeg en paralelo
-    # (cada ffmpeg es un proceso externo; los hilos aquí sólo coordinan)
     with ThreadPoolExecutor(max_workers=MAX_PARALLEL) as ex:
         futs = {ex.submit(procesar_uno, n, ACCESS_TOKEN): n for n in nombres}
         for fut in as_completed(futs):
@@ -367,7 +417,6 @@ def main():
 
     print(f"\n🏁 Terminado. OK={ok_count}  FALLIDOS={fail_count}")
 
-    # Devuelve exit code !=0 si todo falló
     if ok_count == 0 and fail_count > 0:
         sys.exit(1)
 
@@ -380,3 +429,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n⏹️ Cancelado por el usuario.")
         sys.exit(130)
+
