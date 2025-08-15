@@ -9,6 +9,7 @@ import tempfile
 import subprocess
 from pathlib import Path
 from base64 import b64encode
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 import dropbox
@@ -25,8 +26,10 @@ CLUBS_ROOT      = Path(os.environ.get("CLUBS_ROOT", "clubs")).resolve()
 DEBUG           = os.environ.get("DEBUG", "false").lower() in ("1", "true", "yes")
 THIRD_LOGO_ON   = os.environ.get("THIRD_LOGO_ENABLED", "false").lower() in ("1", "true", "yes")
 
-# Paralelismo cooperativo (hilos por proceso ffmpeg)
-THREADS_PER_FFMPEG = int(os.environ.get("THREADS_PER_FFMPEG", "2"))
+# Paralelismo
+MAX_PARALLEL         = int(os.environ.get("MAX_PARALLEL", "2"))
+THREADS_PER_FFMPEG   = int(os.environ.get("THREADS_PER_FFMPEG", "2"))
+BATCH_LIMIT          = int(os.environ.get("BATCH_LIMIT", "20"))
 
 # Opcional: pruebas locales sin Dropbox
 DRY_RUN        = os.environ.get("DRY_RUN", "false").lower() in ("1", "true", "yes")
@@ -34,8 +37,8 @@ LOCAL_INPUT    = Path(os.environ.get("LOCAL_INPUT", "input_demo.mp4")).resolve()
 LOCAL_OUTDIR   = Path(os.environ.get("LOCAL_OUTDIR", "_out")).resolve()
 
 # Rutas en Dropbox
-CARPETA_ENTRANTES = "/Puntazo/Entrantes"
-CARPETA_RAIZ      = "/Puntazo/Locaciones"
+CARPETA_ENTRANTES = os.environ.get("ENTRANTES", "/Puntazo/Entrantes")
+CARPETA_RAIZ      = os.environ.get("DESTINO_RAIZ", "/Puntazo/Locaciones")
 
 # Patrón de nombre de archivo: loc_can_lado_YYYYMMDD_HHMMSS.mp4
 PATRON_VIDEO = re.compile(r"^(?P<loc>[^_]+)_(?P<can>[^_]+)_(?P<lado>[^_]+)_(\d{8})_(\d{6})\.mp4$")
@@ -99,11 +102,15 @@ def get_duration(p: Path):
 # =========================
 #  Procesamiento de un archivo
 # =========================
-def procesar_uno(dbx, nombre: str) -> None:
+def procesar_uno(nombre: str, ACCESS_TOKEN: str | None) -> tuple[str, bool, str]:
+    """
+    Procesa un archivo y devuelve (nombre, ok, msg).
+    """
+    dbx = None if DRY_RUN else dropbox.Dropbox(ACCESS_TOKEN)
+
     m = PATRON_VIDEO.match(nombre)
     if not m:
-        print(f"⚠️ Nombre inválido, se omite: {nombre}")
-        return
+        return nombre, False, "nombre inválido"
 
     loc  = m.group("loc")
     can  = m.group("can")
@@ -112,23 +119,21 @@ def procesar_uno(dbx, nombre: str) -> None:
     ruta_origen  = f"{CARPETA_ENTRANTES}/{nombre}"
     ruta_destino = f"{CARPETA_RAIZ}/{loc}/{can}/{lado}/{nombre}"
 
-    print(f"\n🚀 Procesando: {nombre}")
-    print(f"   → loc={loc}  can={can}  lado={lado}")
-
+    print(f"\n🚀 Procesando: {nombre}  →  loc={loc} can={can} lado={lado}")
     workdir = Path(tempfile.mkdtemp(prefix="ffmpeg_plus_")).resolve()
 
     try:
         # 1) Obtener input
         if DRY_RUN:
+            if not LOCAL_INPUT.exists():
+                return nombre, False, f"LOCAL_INPUT no existe: {LOCAL_INPUT}"
             shutil.copy2(LOCAL_INPUT, workdir / "input.mp4")
-            ruta_origen = f"[local]{LOCAL_INPUT}"
         else:
             try:
                 md, resp = dbx.files_download(ruta_origen)
                 (workdir / "input.mp4").write_bytes(resp.content)
             except Exception as e:
-                print(f"❌ Error descargando {ruta_origen}: {e}")
-                return
+                return nombre, False, f"descarga falló: {e}"
 
         # 2) Recursos por club
         club_dir = CLUBS_ROOT / loc
@@ -143,9 +148,8 @@ def procesar_uno(dbx, nombre: str) -> None:
         existe_intro = intro.exists()
         existe_outro = outro.exists()
 
-        print(f"   • Logo1: OK  | Logo2(club): {'OK' if existe_logo2 else 'NO'}")
-        print(f"   • Tercer logo: {'ON' if THIRD_LOGO_ON else 'OFF'} | archivo: {'OK' if logo3.exists() else 'NO'} | aplicado: {'SÍ' if existe_logo3 else 'NO'}")
-        print(f"   • Intro: {'OK' if existe_intro else 'NO'} | Outro: {'OK' if existe_outro else 'NO'}")
+        print(f"   • Logo1 OK | Logo2 {'OK' if existe_logo2 else 'NO'} | 3erLogo {'ON' if THIRD_LOGO_ON else 'OFF'}→{'OK' if logo3.exists() else 'NO'} aplicado={'SÍ' if existe_logo3 else 'NO'}")
+        print(f"   • Intro {'OK' if existe_intro else 'NO'} | Outro {'OK' if existe_outro else 'NO'}")
 
         # 3) Overlays → output_con_logo.mp4
         inputs = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-fflags", "+genpts"]
@@ -202,8 +206,7 @@ def procesar_uno(dbx, nombre: str) -> None:
         try:
             run_cmd(cmd_logos)
         except subprocess.CalledProcessError as e:
-            print(f"❌ Error aplicando logos a {nombre}: {e}")
-            return
+            return nombre, False, f"ffmpeg(logo) falló: {e}"
 
         # 4) Concat con FILTER (normaliza PTS y dimensiones) + audio robusto
         body = workdir / "output_con_logo.mp4"
@@ -216,33 +219,22 @@ def procesar_uno(dbx, nombre: str) -> None:
             final_path = workdir / "output.mp4"
             shutil.move(body, final_path)
         else:
-            # Dimensiones del body para igualar intro/outro
             W,H = ffprobe_dims(body)
-
-            # Entradas para concat filter
             cmd = ["ffmpeg","-y","-hide_banner","-loglevel","error","-fflags","+genpts"]
-            if DEBUG:
-                cmd.append("-report")
-            for p in segs:
-                cmd.extend(["-i", str(p)])
+            if DEBUG: cmd.append("-report")
+            for p in segs: cmd.extend(["-i", str(p)])
 
-            # Detecta audio y duración (para inyectar silencio si falta)
             seg_has_audio = [has_audio(p) for p in segs]
             seg_durations = [get_duration(p) or 0.0 for p in segs]
 
-            fparts = []
-            pairs = []   # ← intercalar [vi][ai] por tramo
-
-            for i, p in enumerate(segs):
-                # VIDEO: scale+pad → W×H, SAR=1, reset PTS
+            fparts = []; pairs = []
+            for i,_ in enumerate(segs):
                 fparts.append(
                     f"[{i}:v]"
                     f"scale={W}:{H}:force_original_aspect_ratio=decrease,"
                     f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2,"
                     f"setsar=1,setpts=PTS-STARTPTS[v{i}]"
                 )
-
-                # AUDIO por tramo
                 if seg_has_audio[i]:
                     fparts.append(
                         f"[{i}:a]"
@@ -252,13 +244,9 @@ def procesar_uno(dbx, nombre: str) -> None:
                     )
                 else:
                     dur = max(seg_durations[i], 0.01)
-                    fparts.append(
-                        f"anullsrc=r=48000:cl=stereo,atrim=0:{dur},asetpts=PTS-STARTPTS[a{i}]"
-                    )
-
+                    fparts.append(f"anullsrc=r=48000:cl=stereo,atrim=0:{dur},asetpts=PTS-STARTPTS[a{i}]")
                 pairs.append(f"[v{i}]"); pairs.append(f"[a{i}]")
 
-            # Concat con audio (pares intercalados)
             concat_line = "".join(pairs) + f"concat=n={len(segs)}:v=1:a=1[v][a]"
             fparts.append(concat_line)
             fgraph = ";".join(fparts)
@@ -276,8 +264,7 @@ def procesar_uno(dbx, nombre: str) -> None:
             try:
                 run_cmd(cmd)
             except subprocess.CalledProcessError as e:
-                print(f"❌ Error al concatenar intro/outro en {nombre}: {e}")
-                return
+                return nombre, False, f"ffmpeg(concat) falló: {e}"
 
         # 5) Subir / Guardar
         final_path = workdir / "output.mp4"
@@ -292,14 +279,15 @@ def procesar_uno(dbx, nombre: str) -> None:
                     dbx.files_upload(f.read(), ruta_destino, mode=dropbox.files.WriteMode.overwrite)
                 print(f"✅ Subido a {ruta_destino}")
             except Exception as e:
-                print(f"❌ Error subiendo a {ruta_destino}: {e}")
-                return
+                return nombre, False, f"upload falló: {e}"
             # 6) Borrar original
             try:
                 dbx.files_delete_v2(ruta_origen)
                 print("🗑️  Eliminado original de Entrantes")
             except Exception as e:
                 print(f"⚠️ No se pudo borrar el original {ruta_origen}: {e}")
+
+        return nombre, True, "ok"
 
     finally:
         try:
@@ -315,62 +303,73 @@ def main():
         print(f"❌ Falta el logo base (Puntazo): {LOGO1_PATH}")
         sys.exit(1)
 
-    # Autenticación Dropbox si no es DRY_RUN
+    ACCESS_TOKEN = None
     dbx = None
     if not DRY_RUN:
         try:
             ACCESS_TOKEN = get_access_token()
+            dbx = dropbox.Dropbox(ACCESS_TOKEN)
         except Exception as e:
             print(f"❌ Error autenticando con Dropbox: {e}")
             sys.exit(1)
-        dbx = dropbox.Dropbox(ACCESS_TOKEN)
 
-    # ¿Procesar sólo un archivo?
+    # ¿Archivo único (compatibilidad con futuros usos)?
     only = os.environ.get("FILE_NAME")
     if only:
-        print(f"🔎 Modo archivo único: {only}")
-        if DRY_RUN:
-            # en DRY_RUN se ignora FILE_NAME y se usa LOCAL_INPUT
-            pass
-        elif dbx:
-            # Validar que exista en Entrantes
-            try:
-                dbx.files_get_metadata(f"{CARPETA_ENTRANTES}/{only}")
-            except Exception as e:
-                print(f"❌ El archivo '{only}' no existe en {CARPETA_ENTRANTES}: {e}")
-                sys.exit(1)
-        # Procesar ese único
-        procesar_uno(dbx, only)
-        print("\n🏁 Proceso finalizado (archivo único).")
-        return
-
-    # Modo listado (como tu script original)
-    entries = []
-    if DRY_RUN:
-        nombre = LOCAL_INPUT.name
-        if not PATRON_VIDEO.match(nombre):
-            nombre = "Scorpion_Cancha1_LadoA_20250812_101010.mp4"
-        entries = [nombre]
+        nombres = [only]
     else:
-        try:
-            result = dbx.files_list_folder(CARPETA_ENTRANTES)
-        except Exception as e:
-            print(f"❌ No se pudo listar {CARPETA_ENTRANTES}: {e}")
-            sys.exit(1)
-        videos = [e.name for e in result.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
-        while result.has_more:
-            result = dbx.files_list_folder_continue(result.cursor)
-            videos.extend([e.name for e in result.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")])
-        entries = sorted(videos)
+        # Descubrir lote desde Entrantes
+        if DRY_RUN:
+            if LOCAL_INPUT.exists():
+                nombre = LOCAL_INPUT.name
+                if not PATRON_VIDEO.match(nombre):
+                    nombre = "Scorpion_Cancha1_LadoA_20250812_101010.mp4"
+                nombres = [nombre]
+            else:
+                print("✅ DRY_RUN sin input local.")
+                return
+        else:
+            try:
+                res = dbx.files_list_folder(CARPETA_ENTRANTES)
+                files = [e.name for e in res.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
+                while res.has_more:
+                    res = dbx.files_list_folder_continue(res.cursor)
+                    files += [e.name for e in res.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
+                nombres = sorted(files)[:BATCH_LIMIT]
+            except Exception as e:
+                print(f"❌ No se pudo listar {CARPETA_ENTRANTES}: {e}")
+                sys.exit(1)
 
-    if not entries:
+    if not nombres:
         print("✅ No hay videos nuevos por procesar.")
         return
 
-    for nombre in entries:
-        procesar_uno(dbx, nombre)
+    print(f"📦 Lote: {len(nombres)} archivos. Paralelo={MAX_PARALLEL}, hilos/ffmpeg={THREADS_PER_FFMPEG}")
+    ok_count = 0
+    fail_count = 0
 
-    print("\n🏁 Todos los videos han sido procesados.")
+    # Pool de hilos para orquestar varios ffmpeg en paralelo
+    # (cada ffmpeg es un proceso externo; los hilos aquí sólo coordinan)
+    with ThreadPoolExecutor(max_workers=MAX_PARALLEL) as ex:
+        futs = {ex.submit(procesar_uno, n, ACCESS_TOKEN): n for n in nombres}
+        for fut in as_completed(futs):
+            nombre = futs[fut]
+            try:
+                _, ok, msg = fut.result()
+                if ok:
+                    ok_count += 1
+                else:
+                    fail_count += 1
+                    print(f"❌ {nombre}: {msg}")
+            except Exception as e:
+                fail_count += 1
+                print(f"❌ {nombre}: excepción no controlada: {e}")
+
+    print(f"\n🏁 Terminado. OK={ok_count}  FALLIDOS={fail_count}")
+
+    # Devuelve exit code !=0 si todo falló
+    if ok_count == 0 and fail_count > 0:
+        sys.exit(1)
 
 if __name__ == "__main__":
     try:
