@@ -1,7 +1,7 @@
 name: Procesar videos con FFmpeg (parallel, sin tocar código)
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 concurrency:
   group: procesador-videos-parallel
@@ -9,8 +9,8 @@ concurrency:
 
 env:
   # --- Dropbox ---
-  DROPBOX_APP_KEY:       ${{ secrets.DROPBOX_APP_KEY }}
-  DROPBOX_APP_SECRET:    ${{ secrets.DROPBOX_APP_SECRET }}
+  DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+  DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
   DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
 
   # --- Config que tu script ya usa ---
@@ -19,21 +19,21 @@ env:
   CLUBS_ROOT: clubs
   DEBUG: ${{ vars.DEBUG || 'false' }}
 
-  # --- Rutas en Dropbox usadas por el flujo ---
+  # --- Rutas en Dropbox ---
   ENTRANTES: /Puntazo/Entrantes
   LOCKS_ROOT: /Puntazo/Locks
 
-  # --- Paralelismo (ajústalo a 2–4 en runners estándar) ---
+  # --- Paralelismo (ajústalo con Repository Variables) ---
   MAX_PARALLEL: ${{ vars.MAX_PARALLEL || '4' }}
 
 jobs:
   reservar:
     runs-on: ubuntu-latest
     outputs:
-      batch: ${{ steps.pick.outputs.batch }}  # JSON: [{"file": "...", "lock_dir": "..."}, ...]
+      batch: ${{ steps.pick.outputs.batch }}
     steps:
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
@@ -43,70 +43,73 @@ jobs:
           pip install requests dropbox
 
       - id: pick
-        name: Seleccionar y mover archivos a "corrales"
+        name: Seleccionar y mover archivos a corrales
+        shell: bash
         run: |
-          BATCH_JSON=$(python - <<'PY'
-          import os, json, sys
-          import requests, dropbox
-          from base64 import b64encode
+          set -euo pipefail
 
-          APP_KEY=os.environ["DROPBOX_APP_KEY"]
-          APP_SECRET=os.environ["DROPBOX_APP_SECRET"]
-          REFRESH_TOKEN=os.environ["DROPBOX_REFRESH_TOKEN"]
-          ENTRANTES=os.environ["ENTRANTES"]
-          LOCKS_ROOT=os.environ["LOCKS_ROOT"]
-          MAX_PARALLEL=int(os.environ["MAX_PARALLEL"])
-          RUN_ID=os.environ["GITHUB_RUN_ID"]
+          BATCH_JSON="$(python - <<'PY'
+import os, json, sys
+import requests, dropbox
+from base64 import b64encode
 
-          def token():
-              r=requests.post(
-                "https://api.dropbox.com/oauth2/token",
-                headers={"Authorization":"Basic "+b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()},
-                data={"grant_type":"refresh_token","refresh_token":REFRESH_TOKEN}, timeout=60
-              ); r.raise_for_status(); return r.json()["access_token"]
+APP_KEY=os.environ["DROPBOX_APP_KEY"]
+APP_SECRET=os.environ["DROPBOX_APP_SECRET"]
+REFRESH_TOKEN=os.environ["DROPBOX_REFRESH_TOKEN"]
+ENTRANTES=os.environ["ENTRANTES"]
+LOCKS_ROOT=os.environ["LOCKS_ROOT"]
+MAX_PARALLEL=int(os.environ["MAX_PARALLEL"])
+RUN_ID=os.environ["GITHUB_RUN_ID"]
 
-          dbx=dropbox.Dropbox(token())
+def token():
+    r=requests.post(
+        "https://api.dropbox.com/oauth2/token",
+        headers={"Authorization":"Basic "+b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()},
+        data={"grant_type":"refresh_token","refresh_token":REFRESH_TOKEN}, timeout=60
+    )
+    r.raise_for_status()
+    return r.json()["access_token"]
 
-          # Crea carpeta del batch /Locks/<run-id>
-          batch_root=f"{LOCKS_ROOT}/{RUN_ID}"
-          try:
-              dbx.files_create_folder_v2(batch_root)
-          except dropbox.exceptions.ApiError:
-              pass
+dbx=dropbox.Dropbox(token())
 
-          # Listar mp4 en Entrantes
-          res=dbx.files_list_folder(ENTRANTES)
-          files=[e.name for e in res.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
-          while res.has_more:
-              res=dbx.files_list_folder_continue(res.cursor)
-              files += [e.name for e in res.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
-          files=sorted(files)
+batch_root=f"{LOCKS_ROOT}/{RUN_ID}"
+try:
+    dbx.files_create_folder_v2(batch_root)
+except dropbox.exceptions.ApiError:
+    pass
 
-          if not files:
-              print("::notice::No hay videos en Entrantes.", file=sys.stderr)
-              sys.stdout.write("[]")
-              sys.exit(0)
+res=dbx.files_list_folder(ENTRANTES)
+files=[e.name for e in res.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
+while res.has_more:
+    res=dbx.files_list_folder_continue(res.cursor)
+    files += [e.name for e in res.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
+files=sorted(files)
 
-          seleccion=files[:MAX_PARALLEL]
-          batch=[]
-          for fname in seleccion:
-              lock_dir=f"{batch_root}/{fname}"
-              try:
-                  dbx.files_create_folder_v2(lock_dir)
-              except dropbox.exceptions.ApiError:
-                  pass
-              src=f"{ENTRANTES}/{fname}"
-              dst=f"{lock_dir}/{fname}"
-              try:
-                  dbx.files_move_v2(src, dst, autorename=False)
-              except dropbox.exceptions.ApiError as e:
-                  print(f"::warning::No se pudo mover {fname}: {e}", file=sys.stderr)
-                  continue
-              batch.append({"file": fname, "lock_dir": lock_dir})
+if not files:
+    sys.stdout.write("[]")
+    sys.exit(0)
 
-          sys.stdout.write(json.dumps(batch))
-          PY
-          )
+seleccion=files[:MAX_PARALLEL]
+batch=[]
+for fname in seleccion:
+    lock_dir=f"{batch_root}/{fname}"
+    try:
+        dbx.files_create_folder_v2(lock_dir)
+    except dropbox.exceptions.ApiError:
+        pass
+    src=f"{ENTRANTES}/{fname}"
+    dst=f"{lock_dir}/{fname}"
+    try:
+        dbx.files_move_v2(src, dst, autorename=False)
+    except dropbox.exceptions.ApiError:
+        # si alguien lo tomó, lo saltamos
+        continue
+    batch.append({"file": fname, "lock_dir": lock_dir})
+
+sys.stdout.write(json.dumps(batch))
+PY
+          )"
+
           echo "batch=${BATCH_JSON}" >> "$GITHUB_OUTPUT"
 
   procesar:
@@ -115,12 +118,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: ${{ env.MAX_PARALLEL }}
+      # forzamos a número con fromJSON
+      max-parallel: ${{ fromJSON(env.MAX_PARALLEL) }}
       matrix:
         item: ${{ fromJson(needs.reservar.outputs.batch) }}
-    env:
-      FILE_NAME: ${{ matrix.item.file }}
-      LOCK_DIR:  ${{ matrix.item.lock_dir }}
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -128,33 +130,40 @@ jobs:
           lfs: true
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
       - name: Instalar dependencias y FFmpeg
+        shell: bash
         run: |
+          set -euo pipefail
           python -m pip install --upgrade pip
           pip install dropbox requests
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
-      - name: Parche efímero del path de ENTRANTES (solo en este runner)
+      - name: Parche efímero de CARPETA_ENTRANTES (solo en este runner)
+        shell: bash
+        env:
+          LOCK_DIR: ${{ matrix.item.lock_dir }}
         run: |
+          set -euo pipefail
           python - <<'PY'
-          import os, re, pathlib, sys
-          lock = os.environ["LOCK_DIR"]
-          p = pathlib.Path("procesar_videos_ffmpeg.py")
-          s = p.read_text(encoding="utf-8")
-          s2 = re.sub(r'CARPETA_ENTRANTES\s*=\s*"(?:[^"]*)"', f'CARPETA_ENTRANTES = "{lock}"', s, count=1)
-          if s == s2:
-              print("No se pudo parchear CARPETA_ENTRANTES en procesar_videos_ffmpeg.py", file=sys.stderr)
-              sys.exit(1)
-          p.write_text(s2, encoding="utf-8")
-          print(f"Patch aplicado. El script mirará: {lock}")
-          PY
+import os, re, pathlib, sys
+lock = os.environ["LOCK_DIR"]
+p = pathlib.Path("procesar_videos_ffmpeg.py")
+s = p.read_text(encoding="utf-8")
+s2 = re.sub(r'CARPETA_ENTRANTES\s*=\s*"(?:[^"]*)"', f'CARPETA_ENTRANTES = "{lock}"', s, count=1)
+if s == s2:
+    print("No se pudo parchear CARPETA_ENTRANTES en procesar_videos_ffmpeg.py", file=sys.stderr)
+    sys.exit(1)
+p.write_text(s2, encoding="utf-8")
+print(f"Patch aplicado → {lock}")
+PY
 
       - name: Ejecutar procesado (1 archivo en su corral)
+        shell: bash
         env:
           DROPBOX_APP_KEY:       ${{ env.DROPBOX_APP_KEY }}
           DROPBOX_APP_SECRET:    ${{ env.DROPBOX_APP_SECRET }}
@@ -164,48 +173,67 @@ jobs:
           CLUBS_ROOT:            ${{ env.CLUBS_ROOT }}
           DEBUG:                 ${{ env.DEBUG }}
         run: |
+          set -euo pipefail
           python procesar_videos_ffmpeg.py
 
-      - name: Limpieza: borrar carpeta del corral si quedó vacía
+      - name: Limpieza: borrar el corral si quedó vacío
         if: always()
+        shell: bash
+        env:
+          LOCK_DIR: ${{ matrix.item.lock_dir }}
         run: |
+          set -euo pipefail
           python - <<'PY'
-          import os, requests, dropbox
-          from base64 import b64encode
-          APP_KEY=os.environ["DROPBOX_APP_KEY"]; APP_SECRET=os.environ["DROPBOX_APP_SECRET"]; REFRESH_TOKEN=os.environ["DROPBOX_REFRESH_TOKEN"]
-          LOCK_DIR=os.environ["LOCK_DIR"]
-          def token():
-              r=requests.post("https://api.dropbox.com/oauth2/token",
-                headers={"Authorization":"Basic "+b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()},
-                data={"grant_type":"refresh_token","refresh_token":REFRESH_TOKEN}, timeout=60)
-              r.raise_for_status(); return r.json()["access_token"]
-          dbx=dropbox.Dropbox(token())
-          try:
-              res=dbx.files_list_folder(LOCK_DIR)
-              if not res.entries:
-                  dbx.files_delete_v2(LOCK_DIR)
-          except Exception:
-              pass
-          PY
+import os, requests, dropbox
+from base64 import b64encode
+APP_KEY=os.environ["DROPBOX_APP_KEY"]
+APP_SECRET=os.environ["DROPBOX_APP_SECRET"]
+REFRESH_TOKEN=os.environ["DROPBOX_REFRESH_TOKEN"]
+LOCK_DIR=os.environ["LOCK_DIR"]
+def token():
+    r=requests.post(
+        "https://api.dropbox.com/oauth2/token",
+        headers={"Authorization":"Basic "+b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()},
+        data={"grant_type":"refresh_token","refresh_token":REFRESH_TOKEN}, timeout=60
+    ); r.raise_for_status(); return r.json()["access_token"]
+dbx=dropbox.Dropbox(token())
+try:
+    res=dbx.files_list_folder(LOCK_DIR)
+    if not res.entries:
+        dbx.files_delete_v2(LOCK_DIR)
+except Exception:
+    pass
+PY
 
       - name: En caso de fallo: devolver el archivo a Entrantes
         if: failure()
+        shell: bash
+        env:
+          FILE_NAME: ${{ matrix.item.file }}
+          LOCK_DIR:  ${{ matrix.item.lock_dir }}
+          ENTRANTES: ${{ env.ENTRANTES }}
         run: |
+          set -euo pipefail
           python - <<'PY'
-          import os, requests, dropbox
-          from base64 import b64encode
-          APP_KEY=os.environ["DROPBOX_APP_KEY"]; APP_SECRET=os.environ["DROPBOX_APP_SECRET"]; REFRESH_TOKEN=os.environ["DROPBOX_REFRESH_TOKEN"]
-          ENTRANTES=os.environ["ENTRANTES"]; LOCK_DIR=os.environ["LOCK_DIR"]; FILE_NAME=os.environ["FILE_NAME"]
-          def token():
-              r=requests.post("https://api.dropbox.com/oauth2/token",
-                headers={"Authorization":"Basic "+b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()},
-                data={"grant_type":"refresh_token","refresh_token":REFRESH_TOKEN}, timeout=60)
-              r.raise_for_status(); return r.json()["access_token"]
-          dbx=dropbox.Dropbox(token())
-          src=f"{LOCK_DIR}/{FILE_NAME}"
-          dst=f"{ENTRANTES}/{FILE_NAME}"
-          try:
-              dbx.files_move_v2(src, dst, autorename=False)
-          except Exception as e:
-              print(f"No se pudo devolver {FILE_NAME} a Entrantes: {e}")
-          PY
+import os, requests, dropbox
+from base64 import b64encode
+APP_KEY=os.environ["DROPBOX_APP_KEY"]
+APP_SECRET=os.environ["DROPBOX_APP_SECRET"]
+REFRESH_TOKEN=os.environ["DROPBOX_REFRESH_TOKEN"]
+ENTRANTES=os.environ["ENTRANTES"]
+LOCK_DIR=os.environ["LOCK_DIR"]
+FILE_NAME=os.environ["FILE_NAME"]
+def token():
+    r=requests.post(
+        "https://api.dropbox.com/oauth2/token",
+        headers={"Authorization":"Basic "+b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()},
+        data={"grant_type":"refresh_token","refresh_token":REFRESH_TOKEN}, timeout=60
+    ); r.raise_for_status(); return r.json()["access_token"]
+dbx=dropbox.Dropbox(token())
+src=f"{LOCK_DIR}/{FILE_NAME}"
+dst=f"{ENTRANTES}/{FILE_NAME}"
+try:
+    dbx.files_move_v2(src, dst, autorename=False)
+except Exception as e:
+    print(f"No se pudo devolver {FILE_NAME} a Entrantes: {e}")
+PY
