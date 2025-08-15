@@ -2,95 +2,47 @@ name: Procesar videos con FFmpeg Plus
 
 on:
   workflow_dispatch:
+    inputs:
+      max_parallel:
+        description: "Procesos ffmpeg simultáneos"
+        required: false
+        default: "2"
+      batch_limit:
+        description: "Máximo de videos por ejecución"
+        required: false
+        default: "20"
+      threads_per_ffmpeg:
+        description: "Hilos por proceso ffmpeg"
+        required: false
+        default: "2"
+      dry_run:
+        description: "DRY_RUN (true/false)"
+        required: false
+        default: "false"
 
 concurrency:
   group: ffmpeg-plus
   cancel-in-progress: false
 
 env:
-  # --- Dropbox ---
+  # --- Secrets de Dropbox ---
   DROPBOX_APP_KEY:       ${{ secrets.DROPBOX_APP_KEY }}
   DROPBOX_APP_SECRET:    ${{ secrets.DROPBOX_APP_SECRET }}
   DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
 
-  # --- Config que tu script ya usa ---
+  # --- Config que ya usa tu script ---
   THIRD_LOGO_ENABLED: ${{ vars.THIRD_LOGO_ENABLED || 'true' }}
   LOGO1_PATH: logos/puntazo.png
   CLUBS_ROOT: clubs
   DEBUG: ${{ vars.DEBUG || 'false' }}
 
-  # --- Rutas en Dropbox ---
+  # --- Rutas constantes en Dropbox ---
   ENTRANTES: /Puntazo/Entrantes
-
-  # --- Paralelismo (ajústalo en Repository Variables si quieres) ---
-  MAX_PARALLEL: ${{ vars.MAX_PARALLEL || '2' }}     # cuántos archivos a la vez
-  BATCH_LIMIT:  ${{ vars.BATCH_LIMIT  || '20' }}    # cuántos archivos como máximo por ejecución
-  THREADS_PER_FFMPEG: ${{ vars.THREADS_PER_FFMPEG || '2' }}  # hilos por proceso ffmpeg
+  DESTINO_RAIZ: /Puntazo/Locaciones
 
 jobs:
-  discover:
+  run:
     runs-on: ubuntu-latest
-    outputs:
-      files: ${{ steps.collect.outputs.files }}
-    steps:
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Instalar dependencias de Python
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests dropbox
-
-      - id: collect
-        name: Listar videos en Dropbox (Entrantes)
-        shell: bash
-        run: |
-          set -euo pipefail
-          FILES_JSON="$(python - <<'PY'
-import os, json, requests, dropbox
-from base64 import b64encode
-
-APP_KEY=os.environ["DROPBOX_APP_KEY"]
-APP_SECRET=os.environ["DROPBOX_APP_SECRET"]
-REFRESH_TOKEN=os.environ["DROPBOX_REFRESH_TOKEN"]
-ENTRANTES=os.environ["ENTRANTES"]
-BATCH_LIMIT=int(os.environ.get("BATCH_LIMIT","20"))
-
-def token():
-    r=requests.post(
-        "https://api.dropbox.com/oauth2/token",
-        headers={"Authorization":"Basic "+b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()},
-        data={"grant_type":"refresh_token","refresh_token":REFRESH_TOKEN},
-        timeout=60
-    ); r.raise_for_status(); return r.json()["access_token"]
-
-dbx=dropbox.Dropbox(token())
-
-# Listar .mp4 en Entrantes
-res=dbx.files_list_folder(ENTRANTES)
-files=[e.name for e in res.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
-while res.has_more:
-    res=dbx.files_list_folder_continue(res.cursor)
-    files += [e.name for e in res.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
-files=sorted(files)[:BATCH_LIMIT]
-
-print(json.dumps(files))
-PY
-          )"
-          echo "files=${FILES_JSON}" >> "$GITHUB_OUTPUT"
-
-  transcode:
-    needs: discover
-    if: ${{ needs.discover.outputs.files != '' && needs.discover.outputs.files != '[]' }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      max-parallel: ${{ fromJson(env.MAX_PARALLEL) }}
-      matrix:
-        file: ${{ fromJson(needs.discover.outputs.files) }}
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -103,47 +55,27 @@ PY
           python-version: '3.10'
 
       - name: Instalar dependencias y FFmpeg
-        shell: bash
         run: |
-          set -euo pipefail
           python -m pip install --upgrade pip
           pip install dropbox requests
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
       - name: Validar LOGO1_PATH
-        shell: bash
         run: |
-          set -euo pipefail
           if [ ! -f "$LOGO1_PATH" ]; then
             echo "❌ No se encontró $LOGO1_PATH (logo de Puntazo)."
             echo "Listado de 'logos/':"; (ls -la logos || true)
             exit 1
           fi
 
-      - name: Procesar 1 archivo con FFmpeg Plus
+      - name: Ejecutar procesado paralelo (Plus)
         env:
-          FILE_NAME: ${{ matrix.file }}
-          DROPBOX_APP_KEY:       ${{ env.DROPBOX_APP_KEY }}
-          DROPBOX_APP_SECRET:    ${{ env.DROPBOX_APP_SECRET }}
-          DROPBOX_REFRESH_TOKEN: ${{ env.DROPBOX_REFRESH_TOKEN }}
-          THIRD_LOGO_ENABLED:    ${{ env.THIRD_LOGO_ENABLED }}
-          LOGO1_PATH:            ${{ env.LOGO1_PATH }}
-          CLUBS_ROOT:            ${{ env.CLUBS_ROOT }}
-          DEBUG:                 ${{ env.DEBUG }}
-          THREADS_PER_FFMPEG:    ${{ env.THREADS_PER_FFMPEG }}
-        shell: bash
+          # Variables desde inputs con fallback a Repository Variables
+          MAX_PARALLEL: ${{ github.event.inputs.max_parallel || vars.MAX_PARALLEL || '2' }}
+          BATCH_LIMIT: ${{ github.event.inputs.batch_limit || vars.BATCH_LIMIT || '20' }}
+          THREADS_PER_FFMPEG: ${{ github.event.inputs.threads_per_ffmpeg || vars.THREADS_PER_FFMPEG || '2' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
-          set -euo pipefail
-          echo "🎯 Archivo objetivo: $FILE_NAME"
+          echo "⚙️  MAX_PARALLEL=$MAX_PARALLEL  BATCH_LIMIT=$BATCH_LIMIT  THREADS_PER_FFMPEG=$THREADS_PER_FFMPEG  DRY_RUN=$DRY_RUN"
           python procesar_ffmpeg_plus.py
-
-      - name: Subir artefactos de depuración (si falla)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ffmpeg-debug
-          path: |
-            ffmpeg*.log
-            concat.txt
-          if-no-files-found: ignore
