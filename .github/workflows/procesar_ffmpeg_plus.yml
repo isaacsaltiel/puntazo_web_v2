@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       max_parallel:
-        description: "prcesos ffmpeg simultáneos"
+        description: "Procesos ffmpeg simultáneos"
         required: false
         default: "2"
       batch_limit:
@@ -15,6 +15,10 @@ on:
         description: "Hilos por proceso ffmpeg"
         required: false
         default: "2"
+      newest_first:
+        description: "Más recientes primero (true/false)"
+        required: false
+        default: "true"
       dry_run:
         description: "DRY_RUN (true/false)"
         required: false
@@ -69,13 +73,72 @@ jobs:
             exit 1
           fi
 
+      - name: Previsualizar plan (lista y orden a procesar)
+        env:
+          NEWEST_FIRST: ${{ github.event.inputs.newest_first || vars.NEWEST_FIRST || 'true' }}
+          BATCH_LIMIT:  ${{ github.event.inputs.batch_limit  || vars.BATCH_LIMIT  || '20' }}
+        run: |
+          python - <<'PY'
+          import os, re, requests, dropbox, json
+          from base64 import b64encode
+
+          APP_KEY=os.environ["DROPBOX_APP_KEY"]
+          APP_SECRET=os.environ["DROPBOX_APP_SECRET"]
+          REFRESH_TOKEN=os.environ["DROPBOX_REFRESH_TOKEN"]
+          ENTRANTES=os.environ["ENTRANTES"]
+          BATCH_LIMIT=int(os.environ.get("BATCH_LIMIT","20"))
+          NEWEST_FIRST=os.environ.get("NEWEST_FIRST","true").lower() in ("1","true","yes")
+
+          PATRON=re.compile(r"^(?P<loc>[^_]+)_(?P<can>[^_]+)_(?P<lado>[^_]+)_(?P<date>\d{8})_(?P<time>\d{6})\.mp4$")
+
+          def token():
+              r=requests.post(
+                "https://api.dropbox.com/oauth2/token",
+                headers={"Authorization":"Basic "+b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()},
+                data={"grant_type":"refresh_token","refresh_token":REFRESH_TOKEN}, timeout=60
+              ); r.raise_for_status(); return r.json()["access_token"]
+
+          dbx=dropbox.Dropbox(token())
+
+          res=dbx.files_list_folder(ENTRANTES)
+          files=[e.name for e in res.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
+          while res.has_more:
+              res=dbx.files_list_folder_continue(res.cursor)
+              files += [e.name for e in res.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
+
+          def ts(name):
+              m=PATRON.match(name)
+              if not m: return None
+              d=m.group("date"); t=m.group("time")
+              try: return (int(d[0:4]),int(d[4:6]),int(d[6:8]),int(t[0:2]),int(t[2:4]),int(t[4:6]))
+              except: return None
+
+          with_ts=[f for f in files if ts(f) is not None]
+          no_ts=[f for f in files if ts(f) is None]
+
+          with_ts=sorted(with_ts, key=lambda n: ts(n))
+          if NEWEST_FIRST:
+              with_ts=list(reversed(with_ts))
+
+          plan=(with_ts+no_ts)[:BATCH_LIMIT]
+
+          print(f"🔭 Encontrados: {len(files)} en {ENTRANTES}")
+          print(f"🗂️  Orden: {'más recientes primero' if NEWEST_FIRST else 'más antiguos primero'}  |  Límite lote: {BATCH_LIMIT}")
+          if not plan:
+              print("✅ Nada que procesar.")
+          else:
+              print("📋 Plan de procesamiento (en orden):")
+              for i,f in enumerate(plan,1):
+                  print(f"  {i:02d}. {f}")
+          PY
+
       - name: Ejecutar procesado paralelo (Plus)
         env:
-          # Variables desde inputs con fallback a Repository Variables
-          MAX_PARALLEL: ${{ github.event.inputs.max_parallel || vars.MAX_PARALLEL || '2' }}
-          BATCH_LIMIT: ${{ github.event.inputs.batch_limit || vars.BATCH_LIMIT || '20' }}
-          THREADS_PER_FFMPEG: ${{ github.event.inputs.threads_per_ffmpeg || vars.THREADS_PER_FFMPEG || '2' }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          MAX_PARALLEL:        ${{ github.event.inputs.max_parallel        || vars.MAX_PARALLEL        || '2' }}
+          BATCH_LIMIT:         ${{ github.event.inputs.batch_limit         || vars.BATCH_LIMIT         || '20' }}
+          THREADS_PER_FFMPEG:  ${{ github.event.inputs.threads_per_ffmpeg  || vars.THREADS_PER_FFMPEG  || '2' }}
+          NEWEST_FIRST:        ${{ github.event.inputs.newest_first        || vars.NEWEST_FIRST        || 'true' }}
+          DRY_RUN:             ${{ github.event.inputs.dry_run             || 'false' }}
         run: |
-          echo "⚙️  MAX_PARALLEL=$MAX_PARALLEL  BATCH_LIMIT=$BATCH_LIMIT  THREADS_PER_FFMPEG=$THREADS_PER_FFMPEG  DRY_RUN=$DRY_RUN"
-          python procesar_videos_ffmpeg.py
+          echo "⚙️  MAX_PARALLEL=$MAX_PARALLEL  BATCH_LIMIT=$BATCH_LIMIT  THREADS_PER_FFMPEG=$THREADS_PER_FFMPEG  NEWEST_FIRST=$NEWEST_FIRST  DRY_RUN=$DRY_RUN"
+          python procesar_ffmpeg_plus.py
