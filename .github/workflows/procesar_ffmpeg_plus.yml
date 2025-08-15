@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       max_parallel:
-        description: "Procesos ffmpeg simultáneos"
+        description: "prcesos ffmpeg simultáneos"
         required: false
         default: "2"
       batch_limit:
@@ -78,4 +78,4 @@ jobs:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
           echo "⚙️  MAX_PARALLEL=$MAX_PARALLEL  BATCH_LIMIT=$BATCH_LIMIT  THREADS_PER_FFMPEG=$THREADS_PER_FFMPEG  DRY_RUN=$DRY_RUN"
-          python procesar_ffmpeg_plus.py
+          python procesar_videos_ffmpeg.py
