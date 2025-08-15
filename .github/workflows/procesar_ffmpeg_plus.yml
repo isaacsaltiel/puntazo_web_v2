@@ -1,71 +1,142 @@
 name: Procesar videos con FFmpeg Plus
 
 on:
-  repository_dispatch:
-    types: [procesar_video_ffmpeg_plus]
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ffmpeg-plus
   cancel-in-progress: false
 
+env:
+  # --- Dropbox ---
+  DROPBOX_APP_KEY:       ${{ secrets.DROPBOX_APP_KEY }}
+  DROPBOX_APP_SECRET:    ${{ secrets.DROPBOX_APP_SECRET }}
+  DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+
+  # --- Config que tu script ya usa ---
+  THIRD_LOGO_ENABLED: ${{ vars.THIRD_LOGO_ENABLED || 'true' }}
+  LOGO1_PATH: logos/puntazo.png
+  CLUBS_ROOT: clubs
+  DEBUG: ${{ vars.DEBUG || 'false' }}
+
+  # --- Rutas en Dropbox ---
+  ENTRANTES: /Puntazo/Entrantes
+
+  # --- Paralelismo (ajústalo en Repository Variables si quieres) ---
+  MAX_PARALLEL: ${{ vars.MAX_PARALLEL || '2' }}     # cuántos archivos a la vez
+  BATCH_LIMIT:  ${{ vars.BATCH_LIMIT  || '20' }}    # cuántos archivos como máximo por ejecución
+  THREADS_PER_FFMPEG: ${{ vars.THREADS_PER_FFMPEG || '2' }}  # hilos por proceso ffmpeg
+
 jobs:
-  ejecutar:
+  discover:
     runs-on: ubuntu-latest
-
-    env:
-      # --- Dropbox ---
-      DROPBOX_APP_KEY:       ${{ secrets.DROPBOX_APP_KEY }}
-      DROPBOX_APP_SECRET:    ${{ secrets.DROPBOX_APP_SECRET }}
-      DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
-
-      # --- Control de marcas/recursos ---
-      THIRD_LOGO_ENABLED: ${{ vars.THIRD_LOGO_ENABLED || 'true' }}  # <── AJUSTA AQUÍ EL TERCER LOGO
-      LOGO1_PATH: logos/puntazo.png      # <── AJUSTA AQUÍ SI TU RUTA ES OTRA
-      CLUBS_ROOT: clubs
-      DEBUG: ${{ vars.DEBUG || 'false' }}
-
+    outputs:
+      files: ${{ steps.collect.outputs.files }}
     steps:
-      - name: Clonar el repositorio (con LFS si aplica)
-        uses: actions/checkout@v4
-        with:
-          lfs: true
-
-      - name: Mostrar estructura para depuración
-        run: |
-          echo "Contenido del repo:"
-          ls -la
-          echo "----"
-          echo "Árbol de logos (si existe):"
-          (ls -la logos || true)
-          (ls -la assets || true)
-
-      - name: Configurar Python
-        uses: actions/setup-python@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - name: Instalar dependencias de Python
         run: |
-          pip install --upgrade pip
-          pip install dropbox requests
+          python -m pip install --upgrade pip
+          pip install requests dropbox
 
-      - name: Instalar FFmpeg
-        uses: AnimMouse/setup-ffmpeg@v1
+      - id: collect
+        name: Listar videos en Dropbox (Entrantes)
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILES_JSON="$(python - <<'PY'
+import os, json, requests, dropbox
+from base64 import b64encode
+
+APP_KEY=os.environ["DROPBOX_APP_KEY"]
+APP_SECRET=os.environ["DROPBOX_APP_SECRET"]
+REFRESH_TOKEN=os.environ["DROPBOX_REFRESH_TOKEN"]
+ENTRANTES=os.environ["ENTRANTES"]
+BATCH_LIMIT=int(os.environ.get("BATCH_LIMIT","20"))
+
+def token():
+    r=requests.post(
+        "https://api.dropbox.com/oauth2/token",
+        headers={"Authorization":"Basic "+b64encode(f"{APP_KEY}:{APP_SECRET}".encode()).decode()},
+        data={"grant_type":"refresh_token","refresh_token":REFRESH_TOKEN},
+        timeout=60
+    ); r.raise_for_status(); return r.json()["access_token"]
+
+dbx=dropbox.Dropbox(token())
+
+# Listar .mp4 en Entrantes
+res=dbx.files_list_folder(ENTRANTES)
+files=[e.name for e in res.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
+while res.has_more:
+    res=dbx.files_list_folder_continue(res.cursor)
+    files += [e.name for e in res.entries if isinstance(e, dropbox.files.FileMetadata) and e.name.endswith(".mp4")]
+files=sorted(files)[:BATCH_LIMIT]
+
+print(json.dumps(files))
+PY
+          )"
+          echo "files=${FILES_JSON}" >> "$GITHUB_OUTPUT"
+
+  transcode:
+    needs: discover
+    if: ${{ needs.discover.outputs.files != '' && needs.discover.outputs.files != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ fromJson(env.MAX_PARALLEL) }}
+      matrix:
+        file: ${{ fromJson(needs.discover.outputs.files) }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Instalar dependencias y FFmpeg
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install dropbox requests
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
 
       - name: Validar LOGO1_PATH
+        shell: bash
         run: |
+          set -euo pipefail
           if [ ! -f "$LOGO1_PATH" ]; then
             echo "❌ No se encontró $LOGO1_PATH (logo de Puntazo)."
-            echo "Revisa ruta exacta y mayúsculas/minúsculas."
-            echo "Listado de 'logos/':"
-            (ls -la logos || true)
+            echo "Listado de 'logos/':"; (ls -la logos || true)
             exit 1
           fi
 
-      - name: Ejecutar script de procesamiento (Plus)
+      - name: Procesar 1 archivo con FFmpeg Plus
+        env:
+          FILE_NAME: ${{ matrix.file }}
+          DROPBOX_APP_KEY:       ${{ env.DROPBOX_APP_KEY }}
+          DROPBOX_APP_SECRET:    ${{ env.DROPBOX_APP_SECRET }}
+          DROPBOX_REFRESH_TOKEN: ${{ env.DROPBOX_REFRESH_TOKEN }}
+          THIRD_LOGO_ENABLED:    ${{ env.THIRD_LOGO_ENABLED }}
+          LOGO1_PATH:            ${{ env.LOGO1_PATH }}
+          CLUBS_ROOT:            ${{ env.CLUBS_ROOT }}
+          DEBUG:                 ${{ env.DEBUG }}
+          THREADS_PER_FFMPEG:    ${{ env.THREADS_PER_FFMPEG }}
+        shell: bash
         run: |
-          python procesar_videos_ffmpeg_plus.py
+          set -euo pipefail
+          echo "🎯 Archivo objetivo: $FILE_NAME"
+          python procesar_ffmpeg_plus.py
 
       - name: Subir artefactos de depuración (si falla)
         if: failure()
