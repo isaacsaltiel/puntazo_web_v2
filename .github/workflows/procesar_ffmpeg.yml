@@ -5,40 +5,59 @@ on:
     types: [procesar_video_ffmpeg]
   workflow_dispatch:
 
+concurrency:
+  group: procesar-videos-ffmpeg
+  cancel-in-progress: false
+
 jobs:
   ejecutar:
     runs-on: ubuntu-latest
-
     env:
+      # Dropbox
       DROPBOX_APP_KEY:       ${{ secrets.DROPBOX_APP_KEY }}
       DROPBOX_APP_SECRET:    ${{ secrets.DROPBOX_APP_SECRET }}
       DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
 
-      THIRD_LOGO_ENABLED: ${{ vars.THIRD_LOGO_ENABLED || 'true' }}
+      # Defaults fijos
+      BATCH_LIMIT: "20"
+      MAX_PARALLEL: "2"
+      THREADS_PER_FFMPEG: "2"
+      NEWEST_FIRST: "true"
+      DRY_RUN: "false"
+
+      # Rutas estándar
       LOGO1_PATH: logos/puntazo.png
       CLUBS_ROOT: clubs
+      ENTRANTES: /Puntazo/Entrantes
+      DESTINO_RAIZ: /Puntazo/Locaciones
+      THIRD_LOGO_ENABLED: ${{ vars.THIRD_LOGO_ENABLED || 'true' }}
       DEBUG: ${{ vars.DEBUG || 'false' }}
 
+      # Hook por video → dispara “gestionar índice”
+      POST_HOOK_PATH: scripts/dispatch_gestionar_indice.py
+      POST_HOOK_ALWAYS: "false"
+      PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
+
     steps:
-      - name: Clonar el repositorio
-        uses: actions/checkout@v4
-        with:
-          lfs: true
+      - uses: actions/checkout@v4
+        with: { lfs: true }
 
-      - name: Configurar Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.10" }
 
-      - name: Instalar dependencias
+      - name: Dependencias y FFmpeg
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install dropbox requests
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
 
-      - name: Instalar FFmpeg
-        uses: AnimMouse/setup-ffmpeg@v1
+      - name: Validar LOGO1_PATH
+        run: |
+          [ -f "$LOGO1_PATH" ] || { echo "❌ Falta $LOGO1_PATH"; exit 1; }
 
-      - name: Ejecutar script de procesamiento
+      - name: Procesar (20, 2×2, newest, sin dry-run)
         run: |
           python procesar_videos_ffmpeg.py
+
 
