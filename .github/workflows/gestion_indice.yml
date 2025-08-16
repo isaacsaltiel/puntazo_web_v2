@@ -1,36 +1,99 @@
-name: Gestionar índice remoto
+name: Gestionar índice
 
 on:
+  repository_dispatch:
+    types: [gestionar_indice]
+  schedule:
+    - cron: "0 */8 * * *"
   workflow_dispatch:
     inputs:
-      loc:
-        type: string
-        required: true
-      can:
-        type: string
-        required: true
-      lado:
-        type: string
-        required: true
+      loc:  { type: string, required: false }
+      can:  { type: string, required: false }
+      lado: { type: string, required: false }
+
+concurrency:
+  group: gestionar-indice
+  cancel-in-progress: false
 
 jobs:
-  ejecutar:
+  run:
     runs-on: ubuntu-latest
+    env:
+      DROPBOX_APP_KEY:       ${{ secrets.DROPBOX_APP_KEY }}
+      DROPBOX_APP_SECRET:    ${{ secrets.DROPBOX_APP_SECRET }}
+      DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+      PAT_GITHUB:            ${{ secrets.PAT_GITHUB }}
+
+      # Script existente y ruta del JSON
+      GESTION_SCRIPT: gestion_indice_ci.py
+      LOCATIONS_JSON: data/config_locations.json
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with: { lfs: true }
 
-      - name: Instalar dependencias
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.10" }
+
+      - name: Dependencias
         run: |
-          pip install dropbox PyGithub
+          python -m pip install --upgrade pip
+          pip install dropbox PyGithub requests
 
-      - name: Ejecutar gestión de índice
+      # A) llamado per-video (repository_dispatch)
+      - name: Gestionar índice (payload)
+        if: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'gestionar_indice' }}
         env:
-          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
-          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
-          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
-          PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
+          LOC:  ${{ github.event.client_payload.loc }}
+          CAN:  ${{ github.event.client_payload.can }}
+          LADO: ${{ github.event.client_payload.lado }}
         run: |
-          python gestion_indice_ci.py \
-            --loc "${{ github.event.inputs.loc }}" \
-            --can "${{ github.event.inputs.can }}" \
-            --lado "${{ github.event.inputs.lado }}"
+          echo "📌 Gestionar índice → $LOC/$CAN/$LADO (payload)"
+          python "$GESTION_SCRIPT" --loc "$LOC" --can "$CAN" --lado "$LADO"
+
+      # B1) manual con inputs específicos
+      - name: Gestionar índice (manual puntual)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.loc != '' && github.event.inputs.can != '' && github.event.inputs.lado != '' }}
+        run: |
+          python "$GESTION_SCRIPT" --loc "${{ github.event.inputs.loc }}" --can "${{ github.event.inputs.can }}" --lado "${{ github.event.inputs.lado }}"
+
+      # B2) schedule (o manual sin inputs) → barrido de todas las locaciones
+      - name: Gestionar índice (barrido 8h)
+        if: ${{ (github.event_name == 'schedule') || (github.event_name == 'workflow_dispatch' && (github.event.inputs.loc == '' || github.event.inputs.loc == null)) }}
+        run: |
+          python - <<'PY'
+          import os, json, subprocess, sys
+          cfg_path = os.environ["LOCATIONS_JSON"]
+          script   = os.environ["GESTION_SCRIPT"]
+          try:
+              with open(cfg_path, "r", encoding="utf-8") as f:
+                  data = json.load(f)
+          except Exception as e:
+              print(f"❌ No se pudo leer {cfg_path}: {e}"); sys.exit(1)
+
+          # Tu JSON de ejemplo usa "locaciones" → "cancha" → "lados"
+          items = []
+          try:
+              for loc in data.get("locaciones", []):
+                  loc_id = loc.get("id") or loc.get("nombre")
+                  for cancha in loc.get("cancha", []):
+                      can_id = cancha.get("id") or cancha.get("nombre")
+                      for lado in cancha.get("lados", []):
+                          lado_id = lado.get("id") or lado.get("nombre")
+                          if loc_id and can_id and lado_id:
+                              items.append((loc_id, can_id, lado_id))
+          except Exception as e:
+              print(f"❌ Formato inesperado: {e}"); sys.exit(1)
+
+          ok=fail=0
+          for loc_id, can_id, lado_id in items:
+              print(f"▶️  {loc_id}/{can_id}/{lado_id}")
+              try:
+                  subprocess.run([sys.executable, script, "--loc", loc_id, "--can", can_id, "--lado", lado_id], check=True)
+                  ok+=1
+              except subprocess.CalledProcessError as e:
+                  print(f"❌ Falló {loc_id}/{can_id}/{lado_id}: {e}"); fail+=1
+
+          print(f"\n🏁 Barrido: OK={ok} FALLIDOS={fail}")
+          if ok==0 and fail>0: sys.exit(1)
+          PY
