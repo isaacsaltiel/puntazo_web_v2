@@ -3,23 +3,53 @@ name: Supervisor Puntazo
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 */6 * * *"   # Relanzar cada 6 horas (el job vive ~5h50m)
 
 concurrency:
   group: supervisor-puntazo
-  cancel-in-progress: true
+  cancel-in-progress: true  # Si arranca otro, cancela el anterior (solo 1 vivo)
 
 jobs:
   supervise:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 350   # ~5h50m para quedar por debajo del límite de runner
+
+    env:
+      # --- Dropbox (mismos que ya usas en tus workflows) ---
+      DROPBOX_APP_KEY:       ${{ secrets.DROPBOX_APP_KEY }}
+      DROPBOX_APP_SECRET:    ${{ secrets.DROPBOX_APP_SECRET }}
+      DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+
+      # --- GitHub para disparar Procesar videos por repository_dispatch ---
+      PAT_GITHUB:            ${{ secrets.PAT_GITHUB }}
+      GITHUB_REPOSITORY:     ${{ github.repository }}
+
+      # --- Heartbeat compartido ---
+      HB_PATH: "/PUNTAZO/ENTRANTES/heartbeats.txt"
+      HB_TTL_SECONDS: "300"        # 5 min: si nadie late, el supervisor se apaga
+
+      # --- Nombres clave ---
+      PROC_WORKFLOW_NAME: "Procesar videos con FFmpeg"  # nombre visible del workflow
+      GESTION_SCRIPT: "gestion_indice_ci.py"            # tu script de gestión
+
+      # --- Ciclo supervisor ---
+      LOOP_SLEEP_SECONDS: "60"       # cada minuto
+      MAX_RUNTIME_SECONDS:  "34800"  # ~5h48m (un poco menos que timeout)
 
     steps:
-      - name: Tick loop
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Dependencias
         run: |
-          echo "⏱️ Iniciando supervisor de prueba..."
-          for i in {1..5}; do
-            echo "Tick $i at $(date -u)"
-            sleep 60
-          done
-          echo "✅ Supervisor de prueba terminado"
+          python -m pip install --upgrade pip
+          pip install dropbox requests PyGithub
+
+      - name: Ejecutar supervisor
+        run: |
+          python supervisor_core.py
