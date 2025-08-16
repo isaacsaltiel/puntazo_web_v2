@@ -3,137 +3,23 @@ name: Supervisor Puntazo
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"   # re-lanzar cada 6h
+    - cron: "0 */6 * * *"
 
 concurrency:
   group: supervisor-puntazo
-  cancel-in-progress: true   # si arranca otro (cron/manual), cancela el anterior
+  cancel-in-progress: true
 
 jobs:
   supervise:
     runs-on: ubuntu-latest
-    timeout-minutes: 350   # ~5h50m
-    env:
-      # Dropbox (mismos secrets que ya usas)
-      DROPBOX_APP_KEY:       ${{ secrets.DROPBOX_APP_KEY }}
-      DROPBOX_APP_SECRET:    ${{ secrets.DROPBOX_APP_SECRET }}
-      DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
-
-      # GitHub (para disparar Procesar videos)
-      PAT_GITHUB:            ${{ secrets.PAT_GITHUB }}
-      REPO:                  ${{ github.repository }}
-
-      # Nombre EXACTO del workflow que procesa videos
-      PROC_WORKFLOW_NAME:    "Procesar videos con FFmpeg"
-
-      # Heartbeat
-      HB_PATH: "/PUNTAZO/ENTRANTES/heartbeats.txt"
-      HB_TTL_SECONDS: "300"    # 5 minutos
-
-      # Config Procesar (por si tu flujo requiere envs; no tocamos el workflow ts)
-      # (tu procesar_videos_ffmpeg.yml ya tiene defaults fijos)
+    timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
-        with: { lfs: true }
-
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.10" }
-
-      - name: Dependencias supervisor
+      - name: Tick loop
         run: |
-          python -m pip install --upgrade pip
-          pip install dropbox requests PyGithub
-
-      - name: Loop supervisor (cada minuto)
-        shell: bash
-        run: |
-          set -euo pipefail
-          END=$((SECONDS + 350*60 - 60))  # margen de 1 minuto
-          while [ $SECONDS -lt $END ]; do
-            echo "⏱️  $(date -u) supervisor tick"
-
-            python - <<'PY' || true
-import os, json, datetime, requests, time, sys, dropbox
-from base64 import b64encode
-
-HB_PATH = os.environ["HB_PATH"]
-HB_TTL  = int(os.environ.get("HB_TTL_SECONDS","300"))
-REPO    = os.environ["REPO"]
-PAT     = os.environ.get("PAT_GITHUB")
-
-# Dropbox client via refresh token (como en tus otros scripts)
-dbx = dropbox.Dropbox(
-    app_key=os.environ["DROPBOX_APP_KEY"],
-    app_secret=os.environ["DROPBOX_APP_SECRET"],
-    oauth2_refresh_token=os.environ["DROPBOX_REFRESH_TOKEN"]
-)
-
-# 1) Heartbeat fresco?
-active = False
-try:
-    md, resp = dbx.files_download(HB_PATH)
-    content = resp.content.decode("utf-8").strip()
-    data = json.loads(content) if content else {}
-    pis = (data.get("pis") or {})
-    now = datetime.datetime.utcnow()
-    for k, v in pis.items():
-        last = v.get("last")
-        if not last: 
-            continue
-        try:
-            dt = datetime.datetime.fromisoformat(last.replace("Z",""))
-            if (now - dt).total_seconds() <= HB_TTL:
-                active = True
-                break
-        except:
-            pass
-except dropbox.exceptions.ApiError:
-    # si no hay archivo, tratamos como inactivo
-    active = False
-except Exception as e:
-    print("⚠️ Error leyendo HB:", e)
-    active = False
-
-print("HB active:", active)
-
-if not active:
-    print("🛑 No hay latidos recientes; supervisor termina.")
-    sys.exit(0)
-
-# 2) ¿Procesar videos corriendo? si no, disparar
-if PAT:
-    # localizar workflow por nombre y ver si hay runs in_progress
-    h = {"Authorization": f"Bearer {PAT}", "Accept": "application/vnd.github+json"}
-    base = f"https://api.github.com/repos/{REPO}/actions"
-    r = requests.get(f"{base}/workflows", headers=h, timeout=20)
-    r.raise_for_status()
-    wf_name = os.environ["PROC_WORKFLOW_NAME"]
-    w = next((x for x in r.json().get("workflows",[]) if x.get("name")==wf_name), None)
-    if w:
-        rr = requests.get(f"{base}/workflows/{w['id']}/runs?status=in_progress&per_page=1", headers=h, timeout=20)
-        rr.raise_for_status()
-        if rr.json().get("total_count",0) == 0:
-            # dispara por dispatches (repository_dispatch)
-            d = requests.post(f"https://api.github.com/repos/{REPO}/dispatches",
-                              headers=h, json={"event_type":"procesar_video_ffmpeg"}, timeout=20)
-            if d.status_code >= 300:
-                print("⚠️ No se pudo disparar Procesar videos:", d.status_code, d.text)
-            else:
-                print("🎬 Disparado: Procesar videos con FFmpeg")
-    else:
-        print("⚠️ Workflow de procesar NO encontrado por nombre.")
-
-# 3) Ejecutar gestión de índice (una vez por minuto) — dentro del mismo run (sin ruido extra)
-#    Llamamos tu script gestion_indice_ci.py con un barrido rápido (usa tus propias reglas internas)
-print("🗂️  Ejecutando gestión de índice (ciclo)")
-# Nota: si tu script está en la raíz del repo, este call es directo:
-os.system(f"{sys.executable} gestion_indice_ci.py --loc Scorpion --can Cancha1 --lado LadoA || true")
-# Si prefieres barrido completo por data/config_locations.json cada minuto, puedes reemplazar por:
-# os.system(f"{sys.executable} - <<'PYY'\nimport json,os,subprocess,sys\np='data/config_locations.json'\nd=json.load(open(p))\nfor loc in d['locaciones']:\n  lid=loc['id']\n  for can in loc['cancha']:\n    cid=can['id']\n    for lado in can['lados']:\n      sid=lado['id']\n      print(f'▶️  {lid}/{cid}/{sid}')\n      subprocess.run([sys.executable,'gestion_indice_ci.py','--loc',lid,'--can',cid,'--lado',sid], check=False)\nPYY")
-
-PY
-            echo "— ciclo listo —"
+          echo "⏱️ Iniciando supervisor de prueba..."
+          for i in {1..5}; do
+            echo "Tick $i at $(date -u)"
             sleep 60
           done
-          echo "⏹️  Fin de ventana del supervisor"
+          echo "✅ Supervisor de prueba terminado"
