@@ -102,6 +102,76 @@ async function requireCanchaPassword(locId, canId) {
   return false;
 }
 
+/* ===================== NUEVO: Helpers de asociación (3.1) ===================== */
+/**
+ * Parsea nombres tipo:
+ * Loc_Can_Lado_YYYYMMDD_HHMMSS.mp4
+ */
+function parseFromName(name) {
+  const re = /^(.+?)_(.+?)_(.+?)_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})\.mp4$/;
+  const m = name.match(re);
+  if (!m) return null;
+  const [, loc, can, lado, Y, M, D, h, mi, s] = m;
+  const date = new Date(
+    Number(Y), Number(M) - 1, Number(D),
+    Number(h), Number(mi), Number(s)
+  );
+  return { loc, can, lado, date, ymd: `${Y}${M}${D}`, h: Number(h), mi: Number(mi), s: Number(s) };
+}
+function absSeconds(a, b) { return Math.abs((a - b) / 1000); }
+
+async function findOppositeConfig(cfg, locId, canId, ladoId) {
+  const loc = cfg.locaciones.find(l => l.id === locId);
+  const can = loc?.cancha.find(c => c.id === canId);
+  const lado = can?.lados.find(l => l.id === ladoId);
+  if (!loc || !can || !lado) return null;
+  const oppId = lado.opuesto;
+  if (!oppId) return null;
+  const opp = can.lados.find(l => l.id === oppId);
+  if (!opp) return null;
+  return { oppId, oppUrl: opp.json_url, oppName: opp.nombre || oppId };
+}
+
+/**
+ * Busca el clip del lado opuesto con marca de tiempo más cercana (±15s).
+ * Devuelve { lado, nombre, url } o null.
+ */
+async function findOppositeVideo(entry, cfg, locId, canId, ladoId) {
+  const meta = parseFromName(entry.nombre);
+  if (!meta) return null;
+
+  const oppCfg = await findOppositeConfig(cfg, locId, canId, ladoId);
+  if (!oppCfg || !oppCfg.oppUrl) return null;
+
+  try {
+    const res = await fetch(`${oppCfg.oppUrl}?cb=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const dataOpp = await res.json();
+    const sameDay = dataOpp.videos?.filter(v => {
+      const m = parseFromName(v.nombre);
+      return m && m.ymd === meta.ymd;
+    }) || [];
+
+    let best = null;
+    let bestDelta = Infinity;
+
+    sameDay.forEach(v => {
+      const mv = parseFromName(v.nombre);
+      if (!mv) return;
+      const delta = absSeconds(mv.date, meta.date);
+      if (delta <= 15 && delta < bestDelta) {
+        best = v;
+        bestDelta = delta;
+      }
+    });
+
+    return best ? { lado: oppCfg.oppId, nombre: best.nombre, url: best.url } : null;
+  } catch {
+    return null;
+  }
+}
+/* =================== FIN Helpers de asociación (3.1) =================== */
+
 // ----------------------- navegación -----------------------
 async function populateLocaciones() {
   try {
@@ -437,6 +507,25 @@ async function populateVideos() {
       const actionBtn = await crearBotonAccionCompartir(entry);
       actionBtn.style.flex = "1";
       btnContainer.appendChild(actionBtn);
+
+      /* ===== NUEVO (3.2): botón "Ver otra perspectiva" por tarjeta ===== */
+      (async () => {
+        try {
+          const opposite = await findOppositeVideo(entry, cfg, loc, can, lado);
+          if (opposite && opposite.nombre) {
+            const btnAlt = document.createElement("a");
+            btnAlt.className = "btn-alt";
+            btnAlt.textContent = "Ver otra perspectiva";
+            btnAlt.title = "Cambiar a la otra cámara";
+            btnAlt.href = `lado.html?loc=${loc}&can=${can}&lado=${opposite.lado}&video=${encodeURIComponent(opposite.nombre)}`;
+            btnContainer.appendChild(btnAlt);
+          }
+        } catch (e) {
+          // silencioso
+        }
+      })();
+      /* ===== FIN NUEVO (3.2) ===== */
+
       card.appendChild(btnContainer);
 
       container.appendChild(card);
