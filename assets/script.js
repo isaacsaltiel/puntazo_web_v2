@@ -623,3 +623,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
+// Cierra navbar al scrollear o click fuera
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.querySelector('.menu-toggle');
+  const nav = document.querySelector('.navbar');
+
+  if (btn && nav) {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      nav.classList.toggle('show');
+    });
+
+    // cerrar al hacer click fuera
+    document.addEventListener('click', (e) => {
+      if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) {
+        nav.classList.remove('show');
+      }
+    });
+
+    // cerrar al scrollear
+    window.addEventListener('scroll', () => {
+      if (nav.classList.contains('show')) nav.classList.remove('show');
+    });
+  }
+});
