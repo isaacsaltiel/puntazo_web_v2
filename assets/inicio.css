@@ -131,3 +131,14 @@ h2{ font-size:2rem; text-align:center; margin-top:40px; color:#fff; }
   .hero p{ font-size:1rem; }
   .navbar{ display:none; } /* En móvil se controla por .show desde estilo.css */
 }
+/* CTA del hero: borde blanco un poco más grueso */
+.cta-hero { border-width: 2px; }
+
+/* CTA de contacto: una sola línea y centrado, puede hacerse más ancho */
+.cta-contacto {
+  white-space: nowrap;       /* fuerza una sola línea */
+  display: inline-block;     /* mantiene centrado con margin:auto */
+  margin: 20px auto;
+  max-width: none;           /* que no se achique */
+  text-align: center;
+}
