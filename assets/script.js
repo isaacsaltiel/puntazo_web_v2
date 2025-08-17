@@ -647,3 +647,35 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+// === NAVBAR: toggle + cerrar al scroll o click fuera ===
+function initNavbar(){
+  const btn = document.querySelector('.menu-toggle');
+  const nav = document.querySelector('.navbar');
+  if (!btn || !nav) return;
+
+  const close = () => nav.classList.remove('show');
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    nav.classList.toggle('show');
+  });
+
+  // Cerrar al click fuera
+  document.addEventListener('click', (e) => {
+    if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) {
+      close();
+    }
+  });
+
+  // Cerrar al scrollear o al cambiar de tamaño
+  window.addEventListener('scroll', close);
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) close();
+  });
+}
+
+// Llama al init junto con lo que ya tienes en DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+  initNavbar();
+});
+
