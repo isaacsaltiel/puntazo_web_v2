@@ -533,5 +533,57 @@ html, body{ overflow-x:hidden; }
   align-items: center;
   text-align: center;
 }
+/* ===== FIX DEFINITIVO DE BOTONES EN TARJETA ===== */
+
+/* Usa SIEMPRE el contenedor que genera tu script */
+.botones-container{
+  display:flex;
+  align-items:stretch;
+  gap:12px;
+  width:100%;
+}
+
+/* Normalizamos ambos (button y <a>) */
+.botones-container .btn-share-large,
+.botones-container .btn-alt{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  font-family:'Montserrat',sans-serif;
+  line-height:1;                 /* clave para centrar vertical */
+  white-space:nowrap;
+  min-height:42px;               /* tamaño compacto en móvil */
+  border:1px solid #fff;
+  border-radius:10px;
+  background:#27459d;
+  color:#fff;
+  text-decoration:none;
+  margin:0;                      /* elimina desajustes heredados */
+}
+
+/* Quita el pequeño empuje que tenías en .btn-alt */
+.botones-container .btn-alt{ margin-left:0 !important; }
+
+/* Jerarquía: compartir un poco más importante en desktop */
+@media (min-width:769px){
+  .botones-container .btn-share-large{ flex:1 1 66%; padding:12px 24px; font-size:1rem;  font-weight:700; }
+  .botones-container .btn-alt        { flex:0 0 auto;  padding:10px 18px; font-size:1rem;  font-weight:600; }
+}
+
+/* Móvil: apilar, 100% de ancho y MISMO look (sin desalineo) */
+@media (max-width:768px){
+  .botones-container{ flex-direction:column; gap:8px; }
+  .botones-container .btn-share-large,
+  .botones-container .btn-alt{
+    width:100%;
+    padding:9px 14px;
+    font-size:.95rem;
+  }
+}
+
+/* Cinturón anti-scroll horizontal (por si acaso) */
+html,body{ overflow-x:hidden; }
+
 
 
