@@ -102,7 +102,7 @@ async function requireCanchaPassword(locId, canId) {
   return false;
 }
 
-/* ===================== NUEVO: Helpers de asociación (3.1) ===================== */
+/* ===================== Helpers de asociación (opuesto automático) ===================== */
 /**
  * Parsea nombres tipo:
  * Loc_Can_Lado_YYYYMMDD_HHMMSS.mp4
@@ -120,16 +120,22 @@ function parseFromName(name) {
 }
 function absSeconds(a, b) { return Math.abs((a - b) / 1000); }
 
+/**
+ * En lugar de leer "opuesto" del config, lo deducimos:
+ * - Si la cancha tiene exactamente 2 lados, el opuesto es el otro.
+ * - Si hay 1 lado o más de 2, no definimos opuesto (null).
+ */
 async function findOppositeConfig(cfg, locId, canId, ladoId) {
   const loc = cfg.locaciones.find(l => l.id === locId);
   const can = loc?.cancha.find(c => c.id === canId);
-  const lado = can?.lados.find(l => l.id === ladoId);
-  if (!loc || !can || !lado) return null;
-  const oppId = lado.opuesto;
-  if (!oppId) return null;
-  const opp = can.lados.find(l => l.id === oppId);
-  if (!opp) return null;
-  return { oppId, oppUrl: opp.json_url, oppName: opp.nombre || oppId };
+  if (!can) return null;
+
+  const otros = (can.lados || []).filter(l => l.id !== ladoId);
+  if (otros.length === 1) {
+    const opp = otros[0];
+    return { oppId: opp.id, oppUrl: opp.json_url, oppName: opp.nombre || opp.id };
+  }
+  return null;
 }
 
 /**
@@ -170,7 +176,7 @@ async function findOppositeVideo(entry, cfg, locId, canId, ladoId) {
     return null;
   }
 }
-/* =================== FIN Helpers de asociación (3.1) =================== */
+/* =================== FIN Helpers de asociación =================== */
 
 // ----------------------- navegación -----------------------
 async function populateLocaciones() {
@@ -508,7 +514,7 @@ async function populateVideos() {
       actionBtn.style.flex = "1";
       btnContainer.appendChild(actionBtn);
 
-      /* ===== NUEVO (3.2): botón "Ver otra perspectiva" por tarjeta ===== */
+      // Botón "Ver otra perspectiva" (opuesto automático)
       (async () => {
         try {
           const opposite = await findOppositeVideo(entry, cfg, loc, can, lado);
@@ -524,7 +530,6 @@ async function populateVideos() {
           // silencioso
         }
       })();
-      /* ===== FIN NUEVO (3.2) ===== */
 
       card.appendChild(btnContainer);
 
