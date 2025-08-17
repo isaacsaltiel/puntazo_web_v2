@@ -1,556 +1,173 @@
-/* assets/estilo.css - versión organizada y deduplicada */
+/* assets/estilo.css – versión organizada, colores consistentes */
 
-/* ======================================
-   1) Reset y fuentes globales
-   ====================================== */
+/* 1) Reset y fuentes */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap');
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body {
-  font-family: 'Montserrat', sans-serif;
-  color: #fff;
-  min-height: 100vh;
-  scroll-behavior: smooth;
-  position: relative;
+:root{
+  --ink:#ffffff;
+  --ink-soft:#e1e1e1;
+  --muted:#9ca3af;
+  --bg-glass:rgba(0,0,0,.55);
+  --bg-glass-strong:rgba(0,0,0,.75);
+  --primary:#55c1e7;
+  --primary-hover:#2b9fc5;
+  --success:#1abc9c;
+  --shadow:0 4px 20px rgba(0,0,0,.3);
 }
-/* Botón de volver con estilo destacado como antes */
-.btn-volver {
-  display: inline-block;
-  color: #ffffff;
-  background: rgba(0,0,0,0.6);
-  padding: 10px 20px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-weight: 600;
-  transition: background 0.25s ease, transform 0.15s ease;
-}
-.btn-volver:hover {
-  background: rgba(0,0,0,0.8);
-  transform: translateY(-1px);
-  color: #55c1e7;
-}
-.titulo-club .breadcrumb-link {
-  font-weight: 700;
-  text-decoration: none;
-  margin-right: 6px;
-}
-.titulo-club span {
-  margin: 0 4px;
+*{margin:0; padding:0; box-sizing:border-box}
+html,body{
+  font-family:'Montserrat',sans-serif; color:var(--ink); min-height:100vh;
+  scroll-behavior:smooth; position:relative;
 }
 
-/* ======================================
-   2) Fondo general
-   ====================================== */
-body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: url('/assets/bg-degradado-1920x3000.jpg') center top / cover no-repeat;
-  z-index: -1;
-  pointer-events: none;
+/* 2) Fondo general (mismo asset que inicio.css) */
+body::before{
+  content:""; position:fixed; inset:0;
+  background:url('/assets/bg-degradado-1920x3000.jpg') center top/cover no-repeat;
+  z-index:-1; pointer-events:none;
 }
 
-/* ======================================
-   3) Header / navegación
-   ====================================== */
-.site-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(0,0,0,0.5);
-  padding: 10px 20px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  transition: background .3s ease;
+/* 3) Header / navegación */
+.site-header{
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--bg-glass); padding:10px 20px; position:sticky; top:0; z-index:1000;
+  transition:background .3s ease; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
 }
-.site-header:hover { background: rgba(0,0,0,0.7); }
-.site-header .logo { height: 50px; cursor: pointer; transition: transform .2s ease; }
-.site-header .logo:hover { transform: scale(1.1); }
-.empresa-nombre {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #fff;
-  cursor: pointer;
-  text-decoration: none;
-  text-transform: uppercase;
-  letter-spacing: 2px;
+.site-header:hover{background:var(--bg-glass-strong)}
+.site-header .logo{height:50px; cursor:pointer; transition:transform .2s ease}
+.site-header .logo:hover{transform:scale(1.06)}
+.empresa-nombre{
+  font-size:1.8rem; font-weight:700; color:#fff; cursor:pointer; text-decoration:none;
+  text-transform:uppercase; letter-spacing:2px;
 }
-.navbar {
-  display: flex;
-  gap: 1.5rem;
+.navbar{display:flex; gap:1.5rem}
+.navbar a{
+  color:#fff; margin-left:20px; text-decoration:none; font-weight:500; font-size:1rem; position:relative; transition:color .2s ease;
 }
-.navbar a {
-  color: #fff;
-  margin-left: 20px;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 1rem;
-  position: relative;
-  transition: color .2s ease;
+.navbar a::after{
+  content:''; position:absolute; width:0; height:2px; background:#fff; left:0; bottom:-4px; transition:width .25s ease;
 }
-.navbar a::after {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 2px;
-  background: #fff;
-  left: 0;
-  bottom: -4px;
-  transition: width .3s ease;
-}
-.navbar a:hover { color: #55c1e7; }
-.navbar a:hover::after { width: 100%; }
-.menu-toggle { display: none; background: none; border: none; font-size: 1.8rem; color: #fff; cursor: pointer; }
-.logo-link, .empresa-nombre, .menu-toggle { z-index: 1100; }
-.breadcrumb-link { color: #fff; text-decoration: none; font-weight: 700; }
-.breadcrumb-link:hover { color: #55c1e7; text-decoration: underline; }
+.navbar a:hover{color:var(--primary)}
+.navbar a:hover::after{width:100%}
+.menu-toggle{display:none; background:none; border:none; font-size:1.8rem; color:#fff; cursor:pointer}
+.logo-link,.empresa-nombre,.menu-toggle{z-index:1100}
+.breadcrumb-link{color:#fff; text-decoration:none; font-weight:700}
+.breadcrumb-link:hover{color:var(--primary); text-decoration:underline}
 
-@media (max-width: 768px) {
-  .navbar {
-    display: none;
-    flex-direction: column;
-    background: rgba(25,25,25,0.9);
-    position: absolute;
-    top: 100%;
-    right: 0;
-    width: 200px;
-    padding: 10px;
-  }
-  .navbar.show { display: flex; }
-  .menu-toggle { display: block; }
-}
-
-/* ======================================
-   4) Contenido general / estructura
-   ====================================== */
-.site-content { padding: 20px; min-height: calc(100vh - 140px); }
-h2 { color: #fff; margin-bottom: 12px; font-weight: 700; }
-.fade-in { animation: fadeIn .8s ease-in-out; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-/* ======================================
-   5) Bienvenida / índice
-   ====================================== */
-#bienvenida h2 { font-size: 2rem; font-weight: 700; text-align: center; margin-bottom: 8px; }
-#bienvenida p { font-size: 1.1rem; color: #f1f1f1; text-align: center; margin-bottom: 20px; }
-
-/* ======================================
-   6) Listas (locaciones, canchas, lados)
-   ====================================== */
-ul { list-style: none; padding-left: 0; }
-ul li { margin-bottom: 8px; }
-ul li a {
-  color: #fff;
-  font-size: 1.1rem;
-  text-decoration: none;
-  transition: color .2s ease;
-}
-ul li a:hover { color: #55c1e7; }
-
-.lados-lista,
-.canchas-lista {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 0;
-  margin-top: 20px;
-  list-style: none;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-}
-.lados-lista li,
-.canchas-lista li {
-  background: rgba(255,255,255,0.08);
-  padding: 12px 20px;
-  border-radius: 6px;
-  transition: background .3s ease, transform .2s ease;
-}
-.lados-lista li:hover,
-.canchas-lista li:hover {
-  background: rgba(255,255,255,0.12);
-  transform: scale(1.02);
-}
-.lados-lista li a,
-.canchas-lista li a {
-  color: #fff;
-  font-size: 1.2rem;
-  font-weight: 500;
-  text-decoration: none;
-  display: block;
-}
-.lados-lista li a:hover,
-.canchas-lista li a:hover { color: #55c1e7; }
-
-/* ======================================
-   7) Video / tarjetas
-   ====================================== */
-.video-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
-  margin-top: 30px;
-}
-.video-card {
-  background: rgba(0,0,0,0.5);
-  border-radius: 10px;
-  padding: 16px;
-  max-width: 1000px;
-  margin: 20px auto;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  position: relative;
-  animation: fadeIn .6s ease-in-out;
-}
-.video-card video {
-  width: 100%;
-  height: auto;
-  border-radius: 6px;
-  display: block;
-  margin-bottom: 12px;
-}
-.video-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 8px;
-  text-align: center;
-}
-
-/* ======================================
-   8) Botones
-   ====================================== */
-.btn-download {
-  display: block;
-  background: #1abc9c;
-  color: #fff;
-  padding: 10px 20px;
-  font-weight: 600;
-  border-radius: 4px;
-  text-decoration: none;
-  transition: background .3s ease, transform .2s ease;
-  width: 100%;
-  text-align: center;
-  margin-top: 12px;
-}
-.btn-download:hover {
-  background: #16a085;
-  transform: scale(1.05);
-}
-.btn-share {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid #55c1e7;
-  color: #55c1e7;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  margin-left: 10px;
-  cursor: pointer;
-  transition: all .3s ease;
-  padding: 0;
-}
-.btn-share:hover {
-  background: #55c1e7;
-  color: #000;
-}
-.video-card .btn-download,
-.video-card .btn-share {
-  margin-top: 12px;
-  vertical-align: middle;
-}
-
-/* ======================================
-   9) Filtros por hora
-   ====================================== */
-#filtro-horario {
-  display: none;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin: 20px auto;
-  max-width: 800px;
-  padding: 4px 0;
-}
-.btn-filtro {
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background .2s ease;
-}
-.btn-filtro:hover {
-  background: rgba(255,255,255,0.18);
-}
-.btn-filtro.activo {
-  background: #55c1e7;
-  color: #000;
-  box-shadow: 0 0 8px rgba(85,193,231,.7);
-}
-.btn-filtro.quitar {
-  background: #aa3333;
-}
-.btn-filtro.quitar:hover {
-  background: #cc4444;
-}
-
-/* ======================================
-   10) Preview y video real
-   ====================================== */
-.video-preview {
-  width: 100%;
-  border-radius: 6px;
-  object-fit: cover;
-  cursor: pointer;
-  display: block;
-  position: relative;
-  z-index: 1;
-  opacity: .95;
-  transition: opacity .3s ease;
-}
-.video-preview:hover {
-  opacity: 1;
-}
-video.real {
-  display: block;
-  position: relative;
-  z-index: 0;
-}
-
-/* ======================================
-   11) Scroll-top (ir arriba)
-   ====================================== */
-.scroll-top {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  z-index: 1000;
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-  border: 1px solid white;
-  padding: 10px 12px;
-  font-size: 1.2rem;
-  border-radius: 50%;
-  cursor: pointer;
-  display: none;
-  transition: background .3s ease;
-}
-.scroll-top:hover {
-  background: #55c1e7;
-  border-color: #55c1e7;
-}
-
-/* ======================================
-   12) Títulos y avisos específicos
-   ====================================== */
-.titulo-lado {
-  background: rgba(0,0,0,0.5);
-  padding: 20px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  text-align: center;
-}
-.titulo-club {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #fff;
-}
-.titulo-cancha {
-  font-size: 1.2rem;
-  font-weight: 500;
-  color: #fff;
-  margin-top: 6px;
-  text-transform: uppercase;
-}
-.aviso {
-  text-align: right;
-  font-style: italic;
-  color: #e1e1e1;
-  margin-bottom: 20px;
-}
-
-/* ======================================
-   13) Footer
-   ====================================== */
-.site-footer {
-  background: rgba(0,0,0,0.8);
-  color: #dddddd;
-  padding: 20px;
-  text-align: center;
-  margin-top: 40px;
-}
-.site-footer a {
-  color: #fff;
-  text-decoration: none;
-  margin: 0 10px;
-  transition: color .2s ease;
-}
-.site-footer a:hover {
-  color: #55c1e7;
-}
-.footer-copy {
-  font-size: .875rem;
-  margin-top: 15px;
-  color: #bbbbbb;
-}
-
-/* ======================================
-   14) Responsividad fina
-   ====================================== */
 @media (max-width:768px){
-  .video-card { padding: 12px; }
-}
-/* === Ajustes para mostrar un solo video grande en desktop === */
-.video-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 32px;
-  margin-top: 30px;
-  /* opcional: que el card no se estreche demasiado en pantallas muy grandes */
-  max-width: 1100px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* === Botón de compartir/guardar (share sheet) === */
-.btn-share {
-  background: #ffb400; /* color distintivo para diferenciarlo */
-  border: none;
-  color: #1f1f1f;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: transform .2s ease, box-shadow .2s ease;
-  padding: 0;
-}
-.btn-share:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 10px rgba(255, 180, 0, 0.7);
-}
-
-/* Si en algún momento quieres un botón más explícito “Compartir / Guardar” grande */
-.btn-share-large {
-  display: inline-block;
-  background: #1abc9c;
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  border: none;
-  transition: background .25s ease, transform .15s ease;
-}
-.btn-share-large:hover {
-  background: #16a085;
-  transform: translateY(-1px);
-}
-
-/* === Agrupamiento de botones dentro de cada tarjeta === */
-.video-card .btn-download,
-.video-card .btn-share,
-.video-card .btn-share-large {
-  margin-top: 12px;
-  vertical-align: middle;
-}
-
-/* === Breadcrumb / volver refinado (si quieres el estilo más destacado) === */
-.btn-volver {
-  display: inline-block;
-  color: #ffffff;
-  background: rgba(0,0,0,0.6);
-  padding: 10px 20px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-weight: 600;
-  transition: background .25s ease, transform .15s ease;
-}
-.btn-volver:hover {
-  background: rgba(0,0,0,0.8);
-  transform: translateY(-1px);
-  color: #55c1e7;
-}
-
-/* Mantener consistencia de breadcrumbs */
-.titulo-club .breadcrumb-link {
-  font-weight: 700;
-  text-decoration: none;
-  margin-right: 6px;
-}
-.titulo-club span { margin: 0 4px; }
-
-/* === Ajuste móvil ligero para video grande === */
-@media (max-width: 1024px) {
-  .video-grid {
-    padding: 0 10px;
+  .navbar{
+    display:none; flex-direction:column; background:var(--bg-glass-strong);
+    position:absolute; top:100%; right:0; width:80vw; max-width:280px; padding:14px;
+    border-radius:12px; margin:10px; box-shadow:var(--shadow); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
   }
-  .video-card {
-    padding: 14px;
-  }
-}
-/* === Botón único de acción: compartir / descargar === */
-.btn-share-large {
-  display: inline-block;
-  background: #1abc9c; /* verde destacado */
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  border: none;
-  transition: background .25s ease, transform .15s ease;
-  width: 100%;
-  text-align: center;
-}
-.btn-share-large:hover {
-  background: #16a085;
-  transform: translateY(-1px);
-}
-/* Botón para la segunda perspectiva */
-.btn-alt {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 12px;
-  margin-left: 10px;
-  border: 1px solid #4b5563;
-  border-radius: 8px;
-  background: transparent;
-  color: #e5e7eb;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.06s ease, background 0.2s ease, border-color 0.2s ease;
+  .navbar.show{display:flex}
+  .menu-toggle{display:block}
 }
 
-.btn-alt:hover { background: rgba(255,255,255,0.06); border-color: #9ca3af; }
-.btn-alt:active { transform: translateY(1px); }
+/* 4) Contenido */
+.site-content{padding:20px; min-height:calc(100vh - 140px)}
+h2{color:#fff; margin-bottom:12px; font-weight:700}
+.fade-in{animation:fadeIn .6s ease-in-out}
+@keyframes fadeIn{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)}}
 
-.btn-alt[disabled] {
-  opacity: 0.6;
-  cursor: default;
+/* 5) Bienvenida / índice */
+#bienvenida h2{font-size:2rem; font-weight:700; text-align:center; margin-bottom:8px}
+#bienvenida p{font-size:1.1rem; color:#f1f1f1; text-align:center; margin-bottom:20px}
+
+/* 6) Listas */
+ul{list-style:none; padding-left:0}
+ul li{margin-bottom:8px}
+ul li a{color:#fff; font-size:1.1rem; text-decoration:none; transition:color .2s ease}
+ul li a:hover{color:var(--primary)}
+
+.lados-lista,.canchas-lista{
+  display:flex; flex-direction:column; gap:16px; padding:0; margin-top:20px; max-width:800px; margin-inline:auto;
+}
+.lados-lista li,.canchas-lista li{
+  background:rgba(255,255,255,.08); padding:12px 20px; border-radius:10px; transition:background .25s ease, transform .2s ease;
+}
+.lados-lista li:hover,.canchas-lista li:hover{background:rgba(255,255,255,.12); transform:scale(1.02)}
+.lados-lista li a,.canchas-lista li a{color:#fff; font-size:1.2rem; font-weight:500; text-decoration:none; display:block}
+
+/* 7) Video / tarjetas */
+.video-grid{display:grid; grid-template-columns:1fr; gap:24px; margin-top:30px; max-width:1100px; margin-inline:auto}
+.video-card{
+  background:rgba(0,0,0,.5); border-radius:12px; padding:16px; margin:20px auto; box-shadow:var(--shadow); position:relative; animation:fadeIn .5s ease;
+}
+.video-card video{width:100%; height:auto; border-radius:8px; display:block; margin-bottom:12px}
+.video-title{font-size:1.25rem; font-weight:700; color:#fff; margin-bottom:8px; text-align:center}
+
+/* 8) Botones */
+.btn-download{
+  display:block; background:var(--success); color:#fff; padding:10px 20px; font-weight:600; border-radius:8px; text-decoration:none;
+  transition:transform .15s ease, background .25s ease; width:100%; text-align:center; margin-top:12px;
+}
+.btn-download:hover{background:#16a085; transform:translateY(-1px)}
+.btn-download:focus-visible{outline:2px solid #fff; outline-offset:2px}
+
+.btn-share{
+  display:none; /* oculto: usamos botón grande unificado */
 }
 
+.btn-share-large{
+  display:inline-block; background:var(--primary); color:#fff; padding:12px 24px; border-radius:10px; font-weight:700;
+  cursor:pointer; text-decoration:none; border:none; transition:background .25s ease, transform .15s ease; width:100%; text-align:center;
+}
+.btn-share-large:hover{background:var(--primary-hover); transform:translateY(-1px)}
+.btn-share-large:focus-visible{outline:2px solid #fff; outline-offset:2px}
 
-/* Asegura que el contenedor no apriete el botón demasiado */
-.video-card > div:last-child {
-  width: 100%;
+.btn-alt{
+  display:inline-flex; align-items:center; justify-content:center; padding:10px 12px; margin-left:10px;
+  border:1px solid #4b5563; border-radius:10px; background:transparent; color:#e5e7eb; font-weight:600; cursor:pointer;
+  transition:transform .06s ease, background .2s ease, border-color .2s ease;
+}
+.btn-alt:hover{background:rgba(255,255,255,.06); border-color:#9ca3af}
+.btn-alt:active{transform:translateY(1px)}
+.btn-alt[disabled]{opacity:.6; cursor:default}
+
+/* 9) Filtros por hora */
+#filtro-horario{
+  display:none; flex-wrap:wrap; justify-content:center; gap:10px; margin:20px auto; max-width:800px; padding:4px 0;
+}
+.btn-filtro{
+  background:rgba(255,255,255,.08); color:#fff; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600; transition:background .2s ease;
+}
+.btn-filtro:hover{background:rgba(255,255,255,.18)}
+.btn-filtro.activo{background:var(--primary); color:#000; box-shadow:0 0 8px rgba(85,193,231,.7)}
+.btn-filtro.quitar{background:#aa3333}
+.btn-filtro.quitar:hover{background:#cc4444}
+
+/* 10) Preview y video real */
+.video-preview{
+  width:100%; border-radius:8px; object-fit:cover; cursor:pointer; display:block; position:relative; z-index:1; opacity:.97; transition:opacity .25s ease;
+}
+.video-preview:hover{opacity:1}
+video.real{display:block; position:relative; z-index:0}
+
+/* 11) Scroll-top */
+.scroll-top{
+  position:fixed; bottom:30px; right:30px; z-index:1000; background:rgba(255,255,255,.1); color:#fff;
+  border:1px solid #fff; padding:10px 12px; font-size:1.2rem; border-radius:50%; cursor:pointer; display:none; transition:background .25s ease, border-color .25s ease;
+}
+.scroll-top:hover{background:var(--primary); border-color:var(--primary)}
+.scroll-top:focus-visible{outline:2px solid #fff; outline-offset:2px}
+
+/* 12) Títulos y avisos */
+.titulo-lado{background:rgba(0,0,0,.5); padding:20px; border-radius:12px; margin-bottom:20px; text-align:center}
+.titulo-club{font-size:2rem; font-weight:700; color:#fff}
+.titulo-cancha{font-size:1.2rem; font-weight:500; color:#fff; margin-top:6px; text-transform:uppercase}
+.aviso{text-align:right; font-style:italic; color:var(--ink-soft); margin-bottom:20px}
+
+/* 13) Footer */
+.site-footer{background:rgba(0,0,0,.8); color:#ddd; padding:20px; text-align:center; margin-top:40px}
+.site-footer a{color:#fff; text-decoration:none; margin:0 10px; transition:color .2s ease}
+.site-footer a:hover{color:var(--primary)}
+.footer-copy{font-size:.875rem; margin-top:15px; color:#bbb}
+
+/* 14) Responsivo fino */
+@media (max-width:1024px){
+  .video-grid{padding:0 10px}
+  .video-card{padding:14px}
 }
 
-/* Elimina visualmente el botón pequeño de compartir/links si estaba coexistiendo */
-.btn-share {
-  display: none;
-}
+/* Accesibilidad general */
+a:focus-visible, button:focus-visible{outline:2px solid #fff; outline-offset:2px}
