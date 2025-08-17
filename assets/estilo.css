@@ -303,4 +303,65 @@ a:focus-visible, button:focus-visible{ outline:2px solid #fff; outline-offset:2p
   .video-card .btn-share-large { flex: 1 1 auto; min-width: 60%; }
   .video-card .btn-alt { flex: 0 0 auto; }
 }
+/* --- 1) Quitar cualquier scroll horizontal accidental en móvil --- */
+html, body { overflow-x: hidden; }
+
+/* --- 2) Contenedor de botones dentro de cada tarjeta de video --- */
+/* Tu script crea ese contenedor como el último <div> dentro de .video-card */
+.video-card > div:last-child{
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Hacer que las sombras / bordes nunca empujen el ancho */
+.video-card,
+.video-card .btn-share-large,
+.video-card .btn-alt{
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- 3) Jerarquía y tamaños de botones: misma tipografía, share un poco más “fuerte” --- */
+.btn-share-large{ font-size: 1rem; font-weight: 700; }
+.btn-alt{ font-size: 1rem; font-weight: 600; }  /* mismo tamaño de letra, un poco menos de peso */
+
+/* Desktop: el de compartir ocupa más horizontal */
+@media (min-width: 769px){
+  .video-card .btn-share-large{ flex: 1 1 65%; }
+  .video-card .btn-alt{ flex: 0 0 auto; }
+}
+
+/* Móvil: que NO se desborden. Los apilamos verticalmente. */
+@media (max-width: 768px){
+  .video-card > div:last-child{
+    flex-direction: column;
+    gap: 10px;
+  }
+  .video-card .btn-share-large,
+  .video-card .btn-alt{
+    width: 100%;
+  }
+}
+
+/* --- 4) Por si algún video rompe el layout, lo contenemos --- */
+.video-card{ overflow: hidden; }
+.video-card video,
+.video-card .video-preview{ max-width: 100%; height: auto; }
+
+/* --- 5) (ya lo tenías) Botones azules con borde blanco --- */
+.btn-share-large{
+  background: #27459d;
+  border: 1px solid #fff;
+}
+.btn-share-large:hover{ background: #1f347a; }
+
+.btn-alt{
+  background: #27459d;
+  border: 1px solid #fff;
+}
+.btn-alt:hover{ background: #1f347a; }
+
 
