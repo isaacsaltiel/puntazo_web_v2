@@ -3,37 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/" />
   <title>Puntazo</title>
 
-  <!-- Favicons completos -->
-  <link rel="apple-touch-icon" sizes="57x57" href="assets/icons/apple-icon-57x57.png" />
-  <link rel="apple-touch-icon" sizes="60x60" href="assets/icons/apple-icon-60x60.png" />
-  <link rel="apple-touch-icon" sizes="72x72" href="assets/icons/apple-icon-72x72.png" />
-  <link rel="apple-touch-icon" sizes="76x76" href="assets/icons/apple-icon-76x76.png" />
-  <link rel="apple-touch-icon" sizes="114x114" href="assets/icons/apple-icon-114x114.png" />
-  <link rel="apple-touch-icon" sizes="120x120" href="assets/icons/apple-icon-120x120.png" />
-  <link rel="apple-touch-icon" sizes="144x144" href="assets/icons/apple-icon-144x144.png" />
-  <link rel="apple-touch-icon" sizes="152x152" href="assets/icons/apple-icon-152x152.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-icon-180x180.png" />
+  <!-- Favicon principal -->
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/android-icon-192x192.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="96x96" href="assets/icons/favicon-96x96.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png" />
-  <link rel="manifest" href="assets/icons/manifest.json" />
+  <!-- Favicons Apple -->
+  <link rel="apple-touch-icon" sizes="57x57" href="/assets/icons/apple-icon-57x57.png" />
+  <link rel="apple-touch-icon" sizes="60x60" href="/assets/icons/apple-icon-60x60.png" />
+  <link rel="apple-touch-icon" sizes="72x72" href="/assets/icons/apple-icon-72x72.png" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/assets/icons/apple-icon-76x76.png" />
+  <link rel="apple-touch-icon" sizes="114x114" href="/assets/icons/apple-icon-114x114.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/apple-icon-120x120.png" />
+  <link rel="apple-touch-icon" sizes="144x144" href="/assets/icons/apple-icon-144x144.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-icon-152x152.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+
+  <!-- Favicons Android / otros -->
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/android-icon-192x192.png" />
+  <link rel="icon" type="image/png" sizes="96x96" href="/assets/icons/favicon-96x96.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png" />
+
+  <!-- Manifest y color de tema -->
+  <link rel="manifest" href="/assets/icons/manifest.json" />
   <meta name="msapplication-TileColor" content="#ffffff" />
-  <meta name="msapplication-TileImage" content="assets/icons/ms-icon-144x144.png" />
+  <meta name="msapplication-TileImage" content="/assets/icons/ms-icon-144x144.png" />
   <meta name="theme-color" content="#ffffff" />
 
   <!-- Estilos -->
-  <link rel="stylesheet" href="assets/estilo.css" />
-  <link rel="stylesheet" href="assets/inicio.css" />
-
-  <!-- Fuentes -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/estilo.css" />
+  <link rel="stylesheet" href="/assets/inicio.css" />
 </head>
+
 <body>
   <header class="site-header">
     <a href="inicio.html" class="logo-link">
@@ -41,71 +44,93 @@
     </a>
     <a href="inicio.html" class="empresa-nombre">PUNTAZO</a>
 
-    <button class="menu-toggle" aria-label="Abrir menú">
-      ☰
-    </button>
+    <button class="menu-toggle" aria-label="Abrir menú">☰</button>
 
     <nav class="navbar">
       <a href="inicio.html#quienes-somos">Quiénes somos</a>
       <a href="inicio.html#servicios">Servicios</a>
-      <a href="inicio.html#testimonios">Testimonios</a>
+      <a href="inicio.html#ventajas">Ventajas</a>
       <a href="inicio.html#contacto">Contacto</a>
       <a href="index.html" class="highlight-btn">Encuentra tus clips</a>
     </nav>
   </header>
 
   <main class="site-content fade-in">
+    <!-- Breadcrumbs -->
     <div class="titulo-lado">
-    <div class="titulo-club">
-      <a id="link-club" class="breadcrumb-link" href="#"></a>
-      <span id="breadcrumb-sep1"> – </span>
-      <a id="link-cancha" class="breadcrumb-link" href="#"></a>
-      <span id="breadcrumb-sep2"> – </span>
-      <span id="nombre-lado"></span>
+      <div class="titulo-club">
+        <a id="link-club" class="breadcrumb-link" href="#"></a>
+        <span id="breadcrumb-sep1"> – </span>
+        <a id="link-cancha" class="breadcrumb-link" href="#"></a>
+        <span id="breadcrumb-sep2"> – </span>
+        <span id="nombre-lado"></span>
+      </div>
     </div>
-  </div>
-  
-  <div class="btn-volver-container">
-    <a href="#" id="btn-volver" class="btn-volver">← Regresar a la cancha</a>
-  </div>
-  
-  <!-- filtro -->
-  <div id="filtro-horario"></div>
-  
-  <!-- Mensaje de carga -->
-  <div id="loading" class="aviso" style="display: none;">Cargando videos...</div>
-  
-  <div class="aviso">Recuerda que los videos se borran pasadas 8 horas.</div>
-  
-  <section id="videos-container" class="video-grid"></section>
+
+    <!-- Regresar -->
+    <div class="btn-volver-container">
+      <a href="#" id="btn-volver" class="btn-volver">← Regresar a la cancha</a>
+    </div>
+
+    <!-- Filtro horario -->
+    <div id="filtro-horario"></div>
+
+    <!-- Mensaje de carga -->
+    <div id="loading" class="aviso" style="display:none;">Cargando videos...</div>
+
+    <!-- Aviso -->
+    <div class="aviso">Recuerda que los videos se borran pasadas 8 horas.</div>
+
+    <!-- Videos -->
+    <section id="videos-container" class="video-grid"></section>
   </main>
 
-
+  <!-- Footer interno (diferente al de inicio) -->
   <footer class="site-footer" id="contacto">
     <div class="footer-info">
-      <p>¿Te interesa que estemos en tu club? <a href="mailto:contacto@puntazoclips.com">Escríbenos</a></p>
+      <p>¿Te interesa que estemos en tu club? 
+        <a
+          href="mailto:contacto@puntazoclips.com?subject=Quiero%20información%20de%20Puntazo&body=Hola%20equipo%20Puntazo,%0D%0A%0D%0AMe%20interesa%20que%20mi%20club%20forme%20parte.%0D%0A%0D%0ANombre:%0D%0ATel%C3%A9fono:%0D%0A%0D%0A%C2%A1Gracias!"
+        >Escríbenos</a>
+      </p>
       <p>Recuerda que los videos se borran pasadas 8 horas.</p>
     </div>
     <div class="footer-redes">
-      <a href="https://tiktok.com/puntazoclips" target="_blank">TikTok</a>
-      <a href="https://instagram.com/puntazoclips" target="_blank">Instagram</a>
-      <a href="mailto:contacto@puntazoclips.com">Email</a>
+      <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
+      <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
+      <a
+        href="mailto:contacto@puntazoclips.com?subject=Quiero%20información%20de%20Puntazo&body=Hola%20equipo%20Puntazo,%0D%0A%0D%0AMe%20interesa%20que%20mi%20club%20forme%20parte.%0D%0A%0D%0ANombre:%0D%0ATel%C3%A9fono:%0D%0A%0D%0A%C2%A1Gracias!"
+      >Email</a>
     </div>
     <p class="footer-copy">© 2025 Puntazo</p>
   </footer>
 
+  <!-- JS principal (puebla listas, videos, botones, etc.) -->
   <script src="assets/script.js"></script>
+
+  <!-- Navbar: cerrar al scroll o click fuera -->
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener('DOMContentLoaded', () => {
       const btn = document.querySelector('.menu-toggle');
       const nav = document.querySelector('.navbar');
-      if (btn && nav) {
-        btn.addEventListener('click', () => {
-          nav.classList.toggle('show');
-        });
-      }
+
+      if (!btn || !nav) return;
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        nav.classList.toggle('show');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) {
+          nav.classList.remove('show');
+        }
+      });
+
+      window.addEventListener('scroll', () => {
+        if (nav.classList.contains('show')) nav.classList.remove('show');
+      });
     });
   </script>
-
 </body>
 </html>
