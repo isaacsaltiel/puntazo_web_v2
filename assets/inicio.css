@@ -243,6 +243,16 @@ h2{ font-size:2rem; text-align:center; margin-top:40px; color:#fff; }
   text-align:center;
   box-shadow:none;
 }
+/* ===== Centrar el BOTÓN completo ===== */
+#contacto{
+  text-align:center;   /* asegura que todo su contenido se centre */
+}
+
+#contacto .cta-btn{
+  display:inline-flex; /* ya lo tenías */
+  margin:22px auto 0;  /* auto a izquierda y derecha centra el botón */
+}
+
 
 
 
