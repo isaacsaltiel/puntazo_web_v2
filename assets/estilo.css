@@ -168,6 +168,92 @@ video.real{display:block; position:relative; z-index:0}
   .video-grid{padding:0 10px}
   .video-card{padding:14px}
 }
+/* === Ajustes pedidos === */
+
+/* Botón Compartir/Descargar */
+.btn-share-large {
+  display: inline-block;
+  background: #27459d;
+  color: #fff;
+  padding: 12px 28px; /* un poco más ancho */
+  border: 1px solid #fff;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .25s ease, transform .15s ease;
+  text-align: center;
+}
+.btn-share-large:hover {
+  background: #1f347a;
+  transform: translateY(-1px);
+}
+
+/* Botón Ver otra perspectiva */
+.btn-alt {
+  display: inline-block;
+  background: #27459d;
+  color: #fff;
+  padding: 10px 18px; /* más angosto */
+  border: 1px solid #fff;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .2s ease, transform .1s ease;
+}
+.btn-alt:hover { background: #1f347a; transform: translateY(-1px); }
+
+/* Botón "Encuentra tus clips" en navbar */
+.highlight-btn {
+  padding: 6px 14px;
+  background: #cc0000;
+  color: #fff;
+  border: 1px solid #fff;
+  border-radius: 6px;
+  font-weight: 700;
+}
+.highlight-btn:hover { background: #990000; }
+
+/* Botón CTA del hero */
+.cta-btn {
+  background: #cc0000;
+  border: 1px solid #fff;
+}
+.cta-btn:hover { background: #990000; }
+
+/* Botón "Lo quiero en mi cancha" */
+#contacto .cta-btn {
+  background: #27459d;
+  border: 1px solid #fff;
+  display: block;
+  margin: 20px auto; /* centrado */
+  max-width: 260px;
+}
+#contacto .cta-btn:hover { background: #1f347a; }
+
+/* Texto más visible */
+#quienes-somos p,
+#contacto p { color: #e6e6e6; }
+
+/* Fondo general */
+body::before {
+  background: url('/assets/degradado.jpg') center top / cover no-repeat;
+}
+
+/* Footer unificado */
+.site-footer {
+  background: #111;
+  color: #ccc;
+  padding: 25px;
+  text-align: center;
+}
+.site-footer a {
+  color: #55c1e7;
+  margin: 0 8px;
+  text-decoration: none;
+}
+.site-footer a:hover { text-decoration: underline; }
 
 /* Accesibilidad general */
 a:focus-visible, button:focus-visible{outline:2px solid #fff; outline-offset:2px}
