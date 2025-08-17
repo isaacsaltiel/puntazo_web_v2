@@ -364,4 +364,57 @@ html, body { overflow-x: hidden; }
 }
 .btn-alt:hover{ background: #1f347a; }
 
+/* === BOTONES DE LAS TARJETAS ====================================== */
+
+/* Compartir | Descargar: centrado vertical y ancho flexible */
+.btn-share-large{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;         /* alto consistente */
+  padding: 12px 28px;       /* simétrico */
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+/* Ver otra perspectiva: TEXTO CENTRADO y un poco más angosto */
+.btn-alt{
+  display: inline-flex;     /* <- centra perfecto el texto */
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 10px 18px;       /* más angosto que el de compartir */
+  white-space: nowrap;
+  box-sizing: border-box;
+  font-size: 1rem;          /* igual que compartir */
+  font-weight: 600;         /* un poco menor para jerarquía */
+  background: #27459d;
+  border: 1px solid #fff;
+}
+.btn-alt:hover{ background:#1f347a; }
+
+/* Evitar desbordes en móvil: apilados y 100% de ancho */
+.video-card > div:last-child{
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 769px){
+  .video-card .btn-share-large{ flex: 1 1 65%; }  /* más ancho en desktop */
+  .video-card .btn-alt{ flex: 0 0 auto; }
+}
+@media (max-width: 768px){
+  .video-card > div:last-child{ flex-direction: column; gap: 10px; }
+  .video-card .btn-share-large,
+  .video-card .btn-alt{ width: 100%; }
+}
+
+/* Cinturón de seguridad: nada puede causar scroll horizontal */
+html, body{ overflow-x:hidden; }
+.video-card,
+.video-card .btn-share-large,
+.video-card .btn-alt{ max-width:100%; box-sizing:border-box; }
 
