@@ -36,21 +36,6 @@
   <link rel="stylesheet" href="/assets/estilo.css" />
   <link rel="stylesheet" href="/assets/inicio.css" />
 
-  <!-- Overrides mínimos para esta página -->
-  <style>
-    /* Borde un poco más grueso en el CTA del hero */
-    .cta-hero { border-width: 2px !important; }
-
-    /* “Lo quiero en mi cancha”: una sola línea, centrado y sin límite de ancho */
-    #contacto .cta-btn {
-      white-space: nowrap;
-      max-width: none;
-      padding-left: 2.2rem;
-      padding-right: 2.2rem;
-      text-align: center;
-    }
-  </style>
-
   <!-- Fuente Montserrat -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -80,6 +65,7 @@
     <div class="hero-content">
       <h1>Revive tu mejor jugada. Una y otra vez.</h1>
       <p>Transformamos cada jugada en un recuerdo inolvidable, al alcance de tu club.</p>
+      <!-- Borde más grueso con clase extra -->
       <a href="index.html" class="cta-btn cta-hero">Explora videos</a>
     </div>
   </section>
@@ -99,4 +85,99 @@
     <div class="cards">
       <div class="card">
         <h3>🎥 Grabación inteligente</h3>
-        <p>Cada lado de la cancha es capturado en alta definición.</
+        <p>Cada lado de la cancha es capturado en alta definición.</p>
+      </div>
+      <div class="card">
+        <h3>⏱️ Acceso inmediato</h3>
+        <p>Consulta tus videos minutos después de jugar.</p>
+      </div>
+      <div class="card">
+        <h3>📡 Difusión profesional</h3>
+        <p>Ideal para clubes, entrenadores y jugadores destacados.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ventajas -->
+  <section id="ventajas" class="fade-section">
+    <h2>Ventajas</h2>
+    <div class="testimonios">
+      <blockquote><strong>Jugador:</strong> Guarda y comparte tus mejores jugadas al instante.</blockquote>
+      <blockquote><strong>Entrenador:</strong> Corrige errores fácilmente y acelera el progreso de tus alumnos.</blockquote>
+      <blockquote><strong>Club:</strong> Enriquece la experiencia y gana visibilidad con marcas de agua personalizadas.</blockquote>
+    </div>
+  </section>
+
+  <!-- Carrusel de imágenes -->
+  <section class="carrusel fade-section">
+    <h2>Nuestros espacios</h2>
+    <div class="carousel-container">
+      <img src="assets/carrusel1.jpg" alt="Cancha 1" />
+      <img src="assets/carrusel2.jpg" alt="Cancha 2" />
+      <img src="assets/carrusel3.jpg" alt="Club" />
+    </div>
+  </section>
+
+  <!-- Contacto -->
+  <section id="contacto" class="fade-section">
+    <h2>Contáctanos</h2>
+    <p>¿Te interesa que tu club forme parte? ¡Escríbenos!</p>
+
+    <!-- Botón centrado, azul, UNA sola línea -->
+    <a
+      class="cta-btn cta-contacto"
+      href="mailto:contacto@puntazoclips.com?subject=Quiero%20información%20de%20Puntazo&body=Hola%20equipo%20Puntazo,%0D%0A%0D%0AMe%20interesa%20que%20mi%20club%20forme%20parte.%0D%0A%0D%0ANombre:%0D%0ATel%C3%A9fono:%0D%0A%0D%0A%C2%A1Gracias!"
+      >Lo quiero en mi cancha</a
+    >
+  </section>
+
+  <!-- Footer (inicio) -->
+  <footer class="site-footer">
+    <p>© 2025 Puntazo – Todos los derechos reservados</p>
+    <div>
+      <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
+      <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
+      <a
+        href="mailto:contacto@puntazoclips.com?subject=Quiero%20información%20de%20Puntazo&body=Hola%20equipo%20Puntazo,%0D%0A%0D%0AMe%20interesa%20que%20mi%20club%20forme%20parte.%0D%0A%0D%0ANombre:%0D%0ATel%C3%A9fono:%0D%0A%0D%0A%C2%A1Gracias!"
+        >Email</a
+      >
+    </div>
+  </footer>
+
+  <!-- Fade-in -->
+  <script>
+    const observer = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+      { threshold: 0.1 }
+    );
+    document.querySelectorAll('.fade-section').forEach(sec => observer.observe(sec));
+  </script>
+
+  <!-- Navbar: abrir/cerrar + cerrar al scroll o click fuera -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.querySelector('.menu-toggle');
+      const nav = document.querySelector('.navbar');
+
+      if (!btn || !nav) return;
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        nav.classList.toggle('show');
+      });
+
+      // Cerrar al hacer click fuera
+      document.addEventListener('click', (e) => {
+        if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) {
+          nav.classList.remove('show');
+        }
+      });
+
+      // Cerrar al scrollear
+      window.addEventListener('scroll', () => {
+        if (nav.classList.contains('show')) nav.classList.remove('show');
+      });
+    });
+  </script>
+</body>
+</html>
