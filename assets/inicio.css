@@ -225,6 +225,25 @@ h2{ font-size:2rem; text-align:center; margin-top:40px; color:#fff; }
   color: white;
   text-decoration: none;
 }
+/* ===== CTA CONTACTO: CENTRADO PERFECTO ===== */
+#contacto .cta-btn{
+  display:inline-flex !important;         /* fuerza flex sobre estilos previos */
+  align-items:center;
+  justify-content:center;
+  height:50px;                            /* fija altura -> centra vertical */
+  padding:0 26px;                         /* laterales simétricos */
+  line-height:1;                          /* clave para que no “baje” */
+  border:1.5px solid #fff;
+  border-radius:28px;
+  background:#27459d;
+  color:#fff;
+  font-weight:700;
+  white-space:nowrap;                     /* una sola línea */
+  margin:22px auto 0;                     /* centrado del bloque */
+  text-align:center;
+  box-shadow:none;
+}
+
 
 
 /* CTA del hero con borde un poco más grueso */
