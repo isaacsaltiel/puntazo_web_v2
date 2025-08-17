@@ -520,6 +520,30 @@ video.real {
   background: #16a085;
   transform: translateY(-1px);
 }
+/* Botón para la segunda perspectiva */
+.btn-alt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  margin-left: 10px;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  background: transparent;
+  color: #e5e7eb;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.06s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-alt:hover { background: rgba(255,255,255,0.06); border-color: #9ca3af; }
+.btn-alt:active { transform: translateY(1px); }
+
+.btn-alt[disabled] {
+  opacity: 0.6;
+  cursor: default;
+}
+
 
 /* Asegura que el contenedor no apriete el botón demasiado */
 .video-card > div:last-child {
