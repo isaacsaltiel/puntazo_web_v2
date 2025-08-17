@@ -172,4 +172,26 @@ h2{ font-size:2rem; text-align:center; margin-top:40px; color:#fff; }
   text-align: center;
   box-sizing: border-box;
 }
+/* ======== CTA “Lo quiero en mi cancha” – centrado real ======== */
+/* (Sustituye cualquier regla previa de .cta-contacto si existiera) */
+.cta-contacto{
+  display: inline-flex;          /* centro perfecto del texto */
+  align-items: center;
+  justify-content: center;
+  padding: 12px 28px;            /* simétrico */
+  border: 1px solid #fff;
+  border-radius: 30px;
+  background: #27459d;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1;                /* evita que se “baje” la línea */
+  white-space: nowrap;           /* una sola línea */
+  margin: 20px auto;             /* centrado horizontal */
+  max-width: none;
+  box-sizing: border-box;
+}
+
+/* CTA del hero con borde un poco más grueso */
+.cta-hero{ border-width: 2px; }
+
 
