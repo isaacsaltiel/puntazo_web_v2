@@ -157,4 +157,19 @@ h2{ font-size:2rem; text-align:center; margin-top:40px; color:#fff; }
   text-align: center;
   letter-spacing: 0.2px;          /* microajuste visual */
 }
+/* CTA del hero: borde más grueso (ya lo tenías con .cta-hero) */
+.cta-hero{ border-width:2px; }
+
+/* CTA de contacto (azul) – centrado óptico */
+.cta-contacto{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 54px;          /* fija el alto para centrar vertical */
+  padding: 0 28px;       /* simétrico */
+  white-space: nowrap;   /* una sola línea */
+  max-width: none;
+  text-align: center;
+  box-sizing: border-box;
+}
 
