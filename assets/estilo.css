@@ -520,5 +520,18 @@ html, body{ overflow-x:hidden; }
 .video-card,
 .video-card .btn-share-large,
 .video-card .btn-alt{ max-width:100%; box-sizing:border-box; }
+.botones-container {
+  display: flex;
+  justify-content: center; /* centra horizontalmente */
+  align-items: center;     /* centra verticalmente */
+  gap: 15px;               /* espacio entre los botones */
+}
+
+.boton-compartir, .boton-perspectiva {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
 
 
