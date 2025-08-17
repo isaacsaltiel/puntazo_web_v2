@@ -505,20 +505,24 @@ async function populateVideos() {
       wrap.appendChild(preview);
       card.appendChild(wrap);
 
-      // Botón compartir/descargar
+      // Contenedor de botones (alineación fiable en móvil/desktop)
       const btnContainer = document.createElement("div");
+      btnContainer.className = "botones-container"; // << NUEVO contenedor con clase
       btnContainer.style.display = "flex";
       btnContainer.style.alignItems = "center";
       btnContainer.style.marginTop = "12px";
+
+      // Botón compartir/descargar
       const actionBtn = await crearBotonAccionCompartir(entry);
-      actionBtn.style.flex = "1";
+      // limpiar 'flex:1' inline para no vencer al CSS y evitar desalineo móvil
+      actionBtn.style.removeProperty('flex');
       btnContainer.appendChild(actionBtn);
 
       // Botón "Ver otra perspectiva" (opuesto automático)
       (async () => {
         try {
           const opposite = await findOppositeVideo(entry, cfg, loc, can, lado);
-          if (opposite && opposite.nombre) {
+        if (opposite && opposite.nombre) {
             const btnAlt = document.createElement("a");
             btnAlt.className = "btn-alt";
             btnAlt.textContent = "Ver otra perspectiva";
@@ -623,6 +627,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
+
 // Cierra navbar al scrollear o click fuera
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.querySelector('.menu-toggle');
@@ -647,6 +652,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
 // === NAVBAR: toggle + cerrar al scroll o click fuera ===
 function initNavbar(){
   const btn = document.querySelector('.menu-toggle');
@@ -678,4 +684,3 @@ function initNavbar(){
 document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
 });
-
