@@ -211,8 +211,24 @@ h2{ font-size:2rem; text-align:center; margin-top:40px; color:#fff; }
   text-rendering: geometricPrecision;
   box-shadow: none;           /* por si un shadow lo hacía ver corrido */
 }
+.boton-cta {
+  display: flex;
+  justify-content: center;
+  align-items: center; /* centra vertical */
+  height: 60px;        /* ponle un alto fijo para que siempre se centre */
+  padding: 0 30px;     /* horizontal */
+  font-weight: bold;
+  font-size: 18px;
+  border-radius: 30px;
+  border: 1px solid white;
+  background-color: #1e3a8a; /* azul */
+  color: white;
+  text-decoration: none;
+}
+
 
 /* CTA del hero con borde un poco más grueso */
 .cta-hero{ border-width: 2px; }
+
 
 
