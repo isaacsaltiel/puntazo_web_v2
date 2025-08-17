@@ -285,3 +285,22 @@ a:focus-visible, button:focus-visible{ outline:2px solid #fff; outline-offset:2p
   .video-grid{ padding:0 10px; }
   .video-card{ padding:14px; }
 }
+/* Asegurar jerarquía de importancia y anchos en ambos tamaños */
+.btn-share-large {
+  font-size: 1rem;
+  white-space: nowrap;
+}
+.btn-alt {
+  font-size: 0.95rem;     /* un poco más chico */
+  white-space: nowrap;
+}
+
+/* Cuando estén juntos dentro de la tarjeta de video, forzar proporciones */
+.video-card .btn-share-large { flex: 1 1 65%; }  /* más ancho */
+.video-card .btn-alt        { flex: 0 0 auto; }  /* se adapta a su texto */
+
+@media (max-width: 768px) {
+  .video-card .btn-share-large { flex: 1 1 auto; min-width: 60%; }
+  .video-card .btn-alt { flex: 0 0 auto; }
+}
+
