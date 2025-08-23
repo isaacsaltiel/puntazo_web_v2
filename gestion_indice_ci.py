@@ -14,7 +14,7 @@ GITHUB_TOKEN = os.environ.get("PAT_GITHUB")
 
 # Configuraciones globales
 VALID_SUFFIX = ".mp4"
-RETENTION_HOURS = 168
+RETENTION_HOURS = 24
 DROPBOX_BASE = "/Puntazo/Locaciones"
 GITHUB_REPO = "isaacsaltiel/puntazo_web_v2"
 
