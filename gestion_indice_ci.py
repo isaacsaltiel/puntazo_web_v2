@@ -126,7 +126,7 @@ def main():
             else:
                 # Archivo es antiguo → eliminar
                 try:
-                    dbx.files_delete_v2(entry.path_lower)
+                    #dbx.files_delete_v2(entry.path_lower)
                     print(f"[INFO] Archivo eliminado por antigüedad: {entry.name}")
                 except Exception as e:
                     print(f"[ERROR] No se pudo eliminar {entry.name}: {e}")
