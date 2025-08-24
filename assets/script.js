@@ -278,8 +278,8 @@ async function populateLados() {
 
 // ----------------------- video + filtros -----------------------
 let allVideos = [];
-let visibilityMap = new Map();
-let currentPreviewActive = null;
+let visibilityMap = new Map(); // (se mantiene aunque ya no se usa activamente)
+let currentPreviewActive = null; // (se mantiene para mínimo cambio)
 
 function createHourFilterUI(videos) {
   const params = getQueryParams();
@@ -317,72 +317,98 @@ function createHourFilterUI(videos) {
   filtroDiv.style.display = "flex";
 }
 
-function createPreviewOverlay(videoSrc, duration, parentCard) {
-  const preview = document.createElement("video");
-  preview.muted = true;
-  preview.playsInline = true;
-  preview.preload = "none"; // carga secuencial
-  preview.src = videoSrc;
-  preview.className = "video-preview";
-  preview.setAttribute("aria-label", "Vista previa");
+/* === NUEVO: preview estático (frame a 20 s del final) === */
+function createStaticPreviewImage(videoSrc, declaredDuration, parentCard, onClickShowReal) {
+  const img = document.createElement("img");
+  img.className = "video-preview-img";
+  img.alt = "Vista previa";
+  img.style.width = "100%";
+  img.style.borderRadius = "6px";
+  img.style.display = "block";
+  img.decoding = "async";
+  img.loading = "lazy";
 
-  let start = duration > 15 ? duration - 15 : 0;
-  const len = 5, end = start + len;
-  preview.addEventListener("loadedmetadata", () => preview.currentTime = start);
-  preview.addEventListener("timeupdate", () => {
-    if (preview.currentTime >= end) preview.currentTime = start;
-  });
+  const fallbackSVG =
+    'data:image/svg+xml;utf8,' +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+        <defs><style>
+          .bg{fill:#111}
+          .txt{fill:#fff;font: 48px sans-serif}
+          .tri{fill:#fff}
+        </style></defs>
+        <rect class="bg" width="1280" height="720" rx="24"/>
+        <polygon class="tri" points="520,360 520,260 720,360 520,460"/>
+        <text class="txt" x="50%" y="85%" text-anchor="middle">Toca para reproducir</text>
+      </svg>`
+    );
 
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      visibilityMap.set(preview, entry.intersectionRatio);
-      let max = 0, winner = null;
-      visibilityMap.forEach((ratio, node) => {
-        if (ratio > max) [max, winner] = [ratio, node];
+  // Intento de generar thumbnail real con <video> temporal + canvas
+  (async () => {
+    try {
+      const vid = document.createElement("video");
+      vid.crossOrigin = "anonymous";
+      vid.preload = "metadata";
+      vid.src = videoSrc;
+      vid.muted = true; // algunos navegadores requieren mute para manipular
+
+      const ensureMeta = new Promise((res, rej) => {
+        vid.addEventListener("loadedmetadata", () => res(), { once: true });
+        vid.addEventListener("error", () => rej(new Error("metadata error")), { once: true });
       });
-      if (winner === preview && entry.isIntersecting) {
-        const realPlaying = parentCard.querySelector("video.real")?.paused === false;
-        if (!realPlaying) {
-          if (currentPreviewActive && currentPreviewActive !== preview) currentPreviewActive.pause();
-          currentPreviewActive = preview;
-          preview.play().catch(() => {});
-        }
-      } else {
-        preview.pause();
+
+      // Cargar metadatos
+      await ensureMeta;
+
+      const dur = Number.isFinite(declaredDuration) && declaredDuration > 0
+        ? declaredDuration
+        : (isFinite(vid.duration) ? vid.duration : 60);
+
+      const target = Math.max(0, dur - 20);
+
+      const seeked = new Promise((res, rej) => {
+        vid.currentTime = Math.min(target, (vid.duration || target));
+        vid.addEventListener("seeked", () => res(), { once: true });
+        vid.addEventListener("error", () => rej(new Error("seek error")), { once: true });
+      });
+
+      await seeked;
+
+      const canvas = document.createElement("canvas");
+      const w = vid.videoWidth || 1280;
+      const h = vid.videoHeight || 720;
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(vid, 0, 0, w, h);
+
+      try {
+        img.src = canvas.toDataURL("image/jpeg", 0.7);
+      } catch {
+        img.src = fallbackSVG;
       }
-    });
-  }, { threshold: [0.25, 0.5, 0.75] });
 
-  io.observe(preview);
-
-  preview.addEventListener("click", () => {
-    const realVideo = parentCard.querySelector("video.real");
-    if (realVideo) {
-      preview.style.display = "none";
-      realVideo.style.display = "block";
-      realVideo.currentTime = 0;
-      realVideo.play();
+      // liberar
+      vid.src = "";
+    } catch {
+      img.src = fallbackSVG;
     }
-  });
+  })();
 
-  return preview;
+  img.addEventListener("click", onClickShowReal);
+  parentCard.appendChild(img);
+  return img;
 }
 
+/* (Se mantiene por compatibilidad: exclusión de reproducción entre reales) */
 function setupMutualExclusion(list) {
   list.forEach(v => v.addEventListener("play", () => {
     list.forEach(o => { if (o !== v) o.pause(); });
   }));
 }
 
-async function loadPreviewsSequentially(previews) {
-  for (const v of previews) {
-    v.preload = "auto";
-    await new Promise(res => {
-      v.addEventListener("loadedmetadata", res, { once: true });
-      v.load();
-    });
-  }
-}
+// (Ya no se usa la precarga de previews de video)
+// async function loadPreviewsSequentially(previews) { ... }  // eliminado
 
 async function crearBotonAccionCompartir(entry) {
   const btn = document.createElement("button");
@@ -498,31 +524,36 @@ async function populateVideos() {
       real.style.width = "100%";
       real.style.borderRadius = "6px";
 
-      // Preview
-      const preview = createPreviewOverlay(entry.url, entry.duracion||60, card);
+      // NUEVO: Preview estático (imagen de t = duración-20 s)
+      const onShowReal = () => {
+        const previewImg = wrap.querySelector("img.video-preview-img");
+        if (previewImg) previewImg.style.display = "none";
+        real.style.display = "block";
+        real.currentTime = 0;
+        real.play().catch(()=>{});
+      };
+      createStaticPreviewImage(entry.url, entry.duracion || 60, wrap, onShowReal);
 
       wrap.appendChild(real);
-      wrap.appendChild(preview);
       card.appendChild(wrap);
 
-      // Contenedor de botones (alineación fiable en móvil/desktop)
+      // Contenedor de botones
       const btnContainer = document.createElement("div");
-      btnContainer.className = "botones-container"; // << NUEVO contenedor con clase
+      btnContainer.className = "botones-container";
       btnContainer.style.display = "flex";
       btnContainer.style.alignItems = "center";
       btnContainer.style.marginTop = "12px";
 
       // Botón compartir/descargar
       const actionBtn = await crearBotonAccionCompartir(entry);
-      // limpiar 'flex:1' inline para no vencer al CSS y evitar desalineo móvil
       actionBtn.style.removeProperty('flex');
       btnContainer.appendChild(actionBtn);
 
-      // Botón "Ver otra perspectiva" (opuesto automático)
+      // Botón "Ver otra perspectiva"
       (async () => {
         try {
           const opposite = await findOppositeVideo(entry, cfg, loc, can, lado);
-        if (opposite && opposite.nombre) {
+          if (opposite && opposite.nombre) {
             const btnAlt = document.createElement("a");
             btnAlt.className = "btn-alt";
             btnAlt.textContent = "Ver otra perspectiva";
@@ -543,9 +574,7 @@ async function populateVideos() {
 
     setupMutualExclusion(allVideos);
 
-    // Carga previews en serie
-    const previews = Array.from(document.querySelectorAll("video.video-preview"));
-    loadPreviewsSequentially(previews);
+    // (Eliminado) Carga previews de video en serie: ya no hay elementos <video> de preview
 
     if (loading) loading.style.display = "none";
     if (targetId) scrollToVideoById(targetId);
