@@ -450,10 +450,9 @@ function setupMutualExclusion(list) {
 
 async function loadPreviewsSequentially(previews) {
   for (const v of previews) {
-    v.preload = "auto";
+    v.preload = "metadata"; // solo cabeceras; sin buffering pesado
     await new Promise(res => {
-      const onMeta = () => res();
-      v.addEventListener("loadedmetadata", onMeta, { once: true });
+      v.addEventListener("loadedmetadata", res, { once: true });
       v.load();
     });
   }
