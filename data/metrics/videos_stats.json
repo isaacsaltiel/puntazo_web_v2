@@ -4,56 +4,68 @@
       "loc": "Scorpion",
       "can": "Cancha1",
       "date": "2025-08-24",
-      "count": 32
+      "count": 60
     },
     {
       "loc": "Scorpion",
       "can": "Cancha1",
       "date": "2025-08-25",
-      "count": 2
+      "count": 3
     }
   ],
   "by_hour_per_cancha": [
     {
       "loc": "Scorpion",
       "can": "Cancha1",
-      "hour": "20",
-      "count": 5
+      "hour": "15",
+      "count": 10
     },
     {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "17",
-      "count": 5
-    },
-    {
-      "loc": "Scorpion",
-      "can": "Cancha1",
-      "hour": "15",
-      "count": 5
-    },
-    {
-      "loc": "Scorpion",
-      "can": "Cancha1",
-      "hour": "14",
-      "count": 5
+      "count": 9
     },
     {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "13",
-      "count": 5
+      "count": 9
+    },
+    {
+      "loc": "Scorpion",
+      "can": "Cancha1",
+      "hour": "20",
+      "count": 8
     },
     {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "16",
-      "count": 4
+      "count": 8
+    },
+    {
+      "loc": "Scorpion",
+      "can": "Cancha1",
+      "hour": "14",
+      "count": 6
+    },
+    {
+      "loc": "Scorpion",
+      "can": "Cancha1",
+      "hour": "19",
+      "count": 5
     },
     {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "18",
+      "count": 4
+    },
+    {
+      "loc": "Scorpion",
+      "can": "Cancha1",
+      "hour": "09",
       "count": 2
     },
     {
@@ -65,13 +77,7 @@
     {
       "loc": "Scorpion",
       "can": "Cancha1",
-      "hour": "09",
-      "count": 1
-    },
-    {
-      "loc": "Scorpion",
-      "can": "Cancha1",
-      "hour": "19",
+      "hour": "21",
       "count": 1
     }
   ],
@@ -79,21 +85,23 @@
     {
       "loc": "Scorpion",
       "can": "Cancha1",
-      "date": "2025-08-25",
+      "date": "2025-08-24",
       "counts_por_lado": {
-        "LadoA": 2
+        "LadoA": 32,
+        "LadoB": 28
       },
-      "diff": 0
+      "diff": 4
     },
     {
       "loc": "Scorpion",
       "can": "Cancha1",
-      "date": "2025-08-24",
+      "date": "2025-08-25",
       "counts_por_lado": {
-        "LadoA": 32
+        "LadoA": 2,
+        "LadoB": 1
       },
-      "diff": 0
+      "diff": 1
     }
   ],
-  "generated_at_utc": "2025-08-25T18:38:11.660252+00:00"
+  "generated_at_utc": "2025-08-25T18:38:53.668777+00:00"
 }
