@@ -278,21 +278,35 @@ async function populateLados() {
 
 // ----------------------- video + filtros -----------------------
 let allVideos = [];
-let visibilityMap = new Map(); // (se mantiene aunque ya no se usa activamente)
-let currentPreviewActive = null; // (se mantiene para mínimo cambio)
+let visibilityMap = new Map();
+let currentPreviewActive = null;
 
-function createHourFilterUI(videos) {
+// Estado para paginación
+const PAGE_SIZE = 10;
+let videosListaCompleta = [];      // lista final tras filtro horario
+let paginacionHabilitada = false;
+let paginaActual = 0;              // índice de página (0-based)
+let cfgGlobal = null;              // cache config_locations para enlaces opuestos
+let oppInfoCache = null;           // info de lado opuesto si existe {oppId, oppUrl, oppName}
+let contenedorVideos = null;       // #videos-container
+let contenedorControles = null;    // contenedor bajo la grilla para "ver más" + filtros abajo
+let btnVerMas = null;              // botón de paginado
+let contFiltroArriba = null;       // #filtro-horario (arriba)
+let contFiltroAbajo = null;        // #filtro-horario-bottom (abajo)
+
+// ---- Filtros (arriba y abajo sincronizados) ----
+function renderHourFilterIn(container, videos) {
+  if (!container) return;
   const params = getQueryParams();
   const filtroHoraActivo = params.filtro;
-  const filtroDiv = document.getElementById("filtro-horario");
-  if (!filtroDiv) return;
-  filtroDiv.innerHTML = "";
-  const horasSet = new Set();
 
+  container.innerHTML = "";
+  const horasSet = new Set();
   videos.forEach(v => {
     const m = v.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
     if (m) horasSet.add(m[1]);
   });
+
   [...horasSet].sort().forEach(h => {
     const btn = document.createElement("button");
     btn.textContent = `${formatAmPm(h)} - ${formatAmPm((+h + 1) % 24)}`;
@@ -302,7 +316,7 @@ function createHourFilterUI(videos) {
       const p = getQueryParams();
       window.location.href = `lado.html?loc=${p.loc}&can=${p.can}&lado=${p.lado}&filtro=${h}`;
     });
-    filtroDiv.appendChild(btn);
+    container.appendChild(btn);
   });
 
   const quitarBtn = document.createElement("button");
@@ -313,102 +327,137 @@ function createHourFilterUI(videos) {
     const p = getQueryParams();
     window.location.href = `lado.html?loc=${p.loc}&can=${p.can}&lado=${p.lado}`;
   });
-  filtroDiv.appendChild(quitarBtn);
-  filtroDiv.style.display = "flex";
+  container.appendChild(quitarBtn);
+  container.style.display = "flex";
 }
 
-/* === NUEVO: preview estático (frame a 20 s del final) === */
-function createStaticPreviewImage(videoSrc, declaredDuration, parentCard, onClickShowReal) {
-  const img = document.createElement("img");
-  img.className = "video-preview-img";
-  img.alt = "Vista previa";
-  img.style.width = "100%";
-  img.style.borderRadius = "6px";
-  img.style.display = "block";
-  img.decoding = "async";
-  img.loading = "lazy";
-
-  const fallbackSVG =
-    'data:image/svg+xml;utf8,' +
-    encodeURIComponent(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
-        <defs><style>
-          .bg{fill:#111}
-          .txt{fill:#fff;font: 48px sans-serif}
-          .tri{fill:#fff}
-        </style></defs>
-        <rect class="bg" width="1280" height="720" rx="24"/>
-        <polygon class="tri" points="520,360 520,260 720,360 520,460"/>
-        <text class="txt" x="50%" y="85%" text-anchor="middle">Toca para reproducir</text>
-      </svg>`
-    );
-
-  // Intento de generar thumbnail real con <video> temporal + canvas
-  (async () => {
-    try {
-      const vid = document.createElement("video");
-      vid.crossOrigin = "anonymous";
-      vid.preload = "metadata";
-      vid.src = videoSrc;
-      vid.muted = true; // algunos navegadores requieren mute para manipular
-
-      const ensureMeta = new Promise((res, rej) => {
-        vid.addEventListener("loadedmetadata", () => res(), { once: true });
-        vid.addEventListener("error", () => rej(new Error("metadata error")), { once: true });
-      });
-
-      // Cargar metadatos
-      await ensureMeta;
-
-      const dur = Number.isFinite(declaredDuration) && declaredDuration > 0
-        ? declaredDuration
-        : (isFinite(vid.duration) ? vid.duration : 60);
-
-      const target = Math.max(0, dur - 20);
-
-      const seeked = new Promise((res, rej) => {
-        vid.currentTime = Math.min(target, (vid.duration || target));
-        vid.addEventListener("seeked", () => res(), { once: true });
-        vid.addEventListener("error", () => rej(new Error("seek error")), { once: true });
-      });
-
-      await seeked;
-
-      const canvas = document.createElement("canvas");
-      const w = vid.videoWidth || 1280;
-      const h = vid.videoHeight || 720;
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(vid, 0, 0, w, h);
-
-      try {
-        img.src = canvas.toDataURL("image/jpeg", 0.7);
-      } catch {
-        img.src = fallbackSVG;
-      }
-
-      // liberar
-      vid.src = "";
-    } catch {
-      img.src = fallbackSVG;
+function ensureBottomControlsContainer() {
+  // Crea contenedor bajo la grilla si no existe: incluye botón "Ver más" + barra filtros de abajo
+  if (!contenedorControles) {
+    contenedorControles = document.getElementById("bottom-controls");
+    if (!contenedorControles) {
+      contenedorControles = document.createElement("div");
+      contenedorControles.id = "bottom-controls";
+      contenedorControles.style.margin = "24px 0 12px 0";
+      contenedorVideos.parentElement.insertBefore(contenedorControles, contenedorVideos.nextSibling);
     }
-  })();
+  }
 
-  img.addEventListener("click", onClickShowReal);
-  parentCard.appendChild(img);
-  return img;
+  // Botón "Ver más"
+  if (!btnVerMas) {
+    btnVerMas = document.createElement("button");
+    btnVerMas.id = "load-more-btn";
+    btnVerMas.className = "btn-ver-mas";
+    btnVerMas.textContent = "Ver más";
+    btnVerMas.style.display = "none";
+    btnVerMas.style.margin = "12px 0";
+    btnVerMas.style.padding = "10px 16px";
+    btnVerMas.style.borderRadius = "8px";
+    btnVerMas.style.border = "none";
+    btnVerMas.style.cursor = "pointer";
+    btnVerMas.addEventListener("click", () => {
+      // Avanza una página y renderiza, descargando la anterior
+      paginaActual += 1;
+      renderPaginaActual(true);
+    });
+    contenedorControles.appendChild(btnVerMas);
+  }
+
+  // Filtros abajo
+  contFiltroAbajo = document.getElementById("filtro-horario-bottom");
+  if (!contFiltroAbajo) {
+    contFiltroAbajo = document.createElement("div");
+    contFiltroAbajo.id = "filtro-horario-bottom";
+    contFiltroAbajo.style.marginTop = "12px";
+    contenedorControles.appendChild(contFiltroAbajo);
+  }
 }
 
-/* (Se mantiene por compatibilidad: exclusión de reproducción entre reales) */
+function createHourFilterUI(videos) {
+  // Arriba
+  const filtroDiv = document.getElementById("filtro-horario");
+  contFiltroArriba = filtroDiv || null;
+  renderHourFilterIn(contFiltroArriba, videos);
+
+  // Abajo (siempre visible arriba del footer)
+  ensureBottomControlsContainer();
+  renderHourFilterIn(contFiltroAbajo, videos);
+}
+
+// ---- Previews y videos ----
+function createPreviewOverlay(videoSrc, duration, parentCard) {
+  const preview = document.createElement("video");
+  preview.muted = true;
+  preview.playsInline = true;
+  preview.preload = "none"; // carga secuencial
+  preview.src = videoSrc;
+  preview.className = "video-preview";
+  preview.setAttribute("aria-label", "Vista previa");
+
+  let start = duration > 15 ? duration - 15 : 0;
+  const len = 5, end = start + len;
+  const onLoadedMeta = () => { try { preview.currentTime = start; } catch {} };
+  const onTimeUpdate = () => {
+    try { if (preview.currentTime >= end) preview.currentTime = start; } catch {}
+  };
+  preview.addEventListener("loadedmetadata", onLoadedMeta);
+  preview.addEventListener("timeupdate", onTimeUpdate);
+
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      visibilityMap.set(preview, entry.intersectionRatio);
+      let max = 0, winner = null;
+      visibilityMap.forEach((ratio, node) => {
+        if (ratio > max) [max, winner] = [ratio, node];
+      });
+      if (winner === preview && entry.isIntersecting) {
+        const realPlaying = parentCard.querySelector("video.real")?.paused === false;
+        if (!realPlaying) {
+          if (currentPreviewActive && currentPreviewActive !== preview) currentPreviewActive.pause();
+          currentPreviewActive = preview;
+          preview.play().catch(() => {});
+        }
+      } else {
+        preview.pause();
+      }
+    });
+  }, { threshold: [0.25, 0.5, 0.75] });
+
+  io.observe(preview);
+  // guardar referencias para depuración/limpieza de recursos
+  preview._observer = io;
+  preview._onLoadedMeta = onLoadedMeta;
+  preview._onTimeUpdate = onTimeUpdate;
+
+  preview.addEventListener("click", () => {
+    const realVideo = parentCard.querySelector("video.real");
+    if (realVideo) {
+      preview.style.display = "none";
+      realVideo.style.display = "block";
+      realVideo.currentTime = 0;
+      realVideo.play();
+    }
+  });
+
+  return preview;
+}
+
 function setupMutualExclusion(list) {
   list.forEach(v => v.addEventListener("play", () => {
     list.forEach(o => { if (o !== v) o.pause(); });
   }));
 }
 
-// (Ya no se usa la precarga de previews de video)
-// async function loadPreviewsSequentially(previews) { ... }  // eliminado
+async function loadPreviewsSequentially(previews) {
+  for (const v of previews) {
+    v.preload = "auto";
+    await new Promise(res => {
+      const onMeta = () => res();
+      v.addEventListener("loadedmetadata", onMeta, { once: true });
+      v.load();
+    });
+  }
+}
 
 async function crearBotonAccionCompartir(entry) {
   const btn = document.createElement("button");
@@ -444,43 +493,218 @@ async function crearBotonAccionCompartir(entry) {
   return btn;
 }
 
+// ---- Render de una página (10 máx) descargando completamente la anterior ----
+function limpiarRecursosDePagina() {
+  // Pausar preview activo
+  try { if (currentPreviewActive) currentPreviewActive.pause(); } catch {}
+  currentPreviewActive = null;
+
+  // Reiniciar mapa de visibilidad
+  visibilityMap = new Map();
+
+  // Descargar videos DOM actuales del contenedor
+  if (!contenedorVideos) return;
+  const cards = Array.from(contenedorVideos.children);
+  cards.forEach(card => {
+    const real = card.querySelector("video.real");
+    const prev = card.querySelector("video.video-preview");
+
+    // Pausar y cortar flujos
+    [real, prev].forEach(v => {
+      if (!v) return;
+      try { v.pause?.(); } catch {}
+      // Desconectar observers y eventos del preview
+      if (v === prev && v._observer) {
+        try { v._observer.disconnect(); } catch {}
+        v.removeEventListener?.("loadedmetadata", v._onLoadedMeta);
+        v.removeEventListener?.("timeupdate", v._onTimeUpdate);
+        v._observer = null;
+      }
+      // Cortar src y recargar para abortar cualquier descarga
+      try { v.removeAttribute("src"); v.load?.(); } catch {}
+    });
+  });
+
+  // Limpiar DOM
+  contenedorVideos.innerHTML = "";
+  allVideos = [];
+}
+
+function actualizarBotonVerMas(oppLinkHref) {
+  if (!btnVerMas) return;
+
+  const total = videosListaCompleta.length;
+  const start = paginaActual * PAGE_SIZE;
+  const quedan = total - (start + PAGE_SIZE);
+
+  if (!paginacionHabilitada) {
+    btnVerMas.style.display = "none";
+    return;
+  }
+
+  if (quedan > 0) {
+    btnVerMas.textContent = "Ver más";
+    btnVerMas.onclick = () => {
+      paginaActual += 1;
+      renderPaginaActual(true);
+    };
+    btnVerMas.style.display = "inline-block";
+  } else {
+    // No quedan más videos en esta lista
+    if (oppLinkHref) {
+      btnVerMas.textContent = "Ir al lado opuesto";
+      btnVerMas.onclick = () => { window.location.href = oppLinkHref; };
+      btnVerMas.style.display = "inline-block";
+    } else {
+      btnVerMas.style.display = "none";
+    }
+  }
+}
+
+async function renderPaginaActual(fueCambioDePagina = false) {
+  limpiarRecursosDePagina();
+
+  const params = getQueryParams();
+  const { loc, can, lado } = params;
+
+  // Sublista a mostrar
+  const start = paginaActual * PAGE_SIZE;
+  const end = Math.min(start + PAGE_SIZE, videosListaCompleta.length);
+  const pageSlice = videosListaCompleta.slice(start, end);
+
+  // Render de cards
+  for (const entry of pageSlice) {
+    // Calcula displayTime
+    const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
+    let displayTime = entry.nombre.replace(".mp4", "");
+    if (m) {
+      const hr = parseInt(m[1],10), mn = m[2], ap = hr>=12?"PM":"AM";
+      displayTime = `${hr%12||12}:${mn} ${ap}`;
+    }
+
+    // Card
+    const card = document.createElement("div");
+    card.className = "video-card";
+    card.id = entry.nombre;
+
+    const title = document.createElement("div");
+    title.className = "video-title";
+    title.textContent = displayTime;
+    card.appendChild(title);
+
+    // Wrapper
+    const wrap = document.createElement("div");
+    wrap.style.position = "relative";
+    wrap.style.width = "100%";
+
+    // Real video (oculto)
+    const real = document.createElement("video");
+    real.className = "real";
+    real.controls = true;
+    real.playsInline = true;
+    real.preload = "metadata";
+    real.src = entry.url;
+    real.style.display = "none";
+    real.style.width = "100%";
+    real.style.borderRadius = "6px";
+
+    // Preview
+    const preview = createPreviewOverlay(entry.url, entry.duracion||60, card);
+
+    wrap.appendChild(real);
+    wrap.appendChild(preview);
+    card.appendChild(wrap);
+
+    // Contenedor de botones
+    const btnContainer = document.createElement("div");
+    btnContainer.className = "botones-container";
+    btnContainer.style.display = "flex";
+    btnContainer.style.alignItems = "center";
+    btnContainer.style.marginTop = "12px";
+
+    // Botón compartir/descargar
+    const actionBtn = await crearBotonAccionCompartir(entry);
+    actionBtn.style.removeProperty('flex');
+    btnContainer.appendChild(actionBtn);
+
+    // Botón "Ver otra perspectiva" (opuesto automático)
+    (async () => {
+      try {
+        const opposite = await findOppositeVideo(entry, cfgGlobal, loc, can, lado);
+        if (opposite && opposite.nombre) {
+          const btnAlt = document.createElement("a");
+          btnAlt.className = "btn-alt";
+          btnAlt.textContent = "Ver otra perspectiva";
+          btnAlt.title = "Cambiar a la otra cámara";
+          btnAlt.href = `lado.html?loc=${loc}&can=${can}&lado=${opposite.lado}&video=${encodeURIComponent(opposite.nombre)}`;
+          btnContainer.appendChild(btnAlt);
+        }
+      } catch {
+        // silencioso
+      }
+    })();
+
+    card.appendChild(btnContainer);
+    contenedorVideos.appendChild(card);
+    allVideos.push(real);
+  }
+
+  setupMutualExclusion(allVideos);
+
+  // Carga previews en serie solo para la página actual
+  const previews = Array.from(contenedorVideos.querySelectorAll("video.video-preview"));
+  loadPreviewsSequentially(previews);
+
+  // Actualizar botón "Ver más" / "Ir al lado opuesto"
+  let oppHref = null;
+  if (oppInfoCache?.oppId) {
+    oppHref = `lado.html?loc=${params.loc}&can=${params.can}&lado=${oppInfoCache.oppId}`;
+  }
+  actualizarBotonVerMas(oppHref);
+
+  // Si fue cambio de página, desplazamos suavemente al inicio de las nuevas cards
+  if (fueCambioDePagina && contenedorVideos.firstElementChild) {
+    contenedorVideos.firstElementChild.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
 async function populateVideos() {
   const params = getQueryParams();
   const { loc, can, lado, filtro, video: targetId } = params;
   const urlCfg = `data/config_locations.json?cb=${Date.now()}`;
   try {
     const resCfg = await fetch(urlCfg, { cache: "no-store" });
-    const cfg = await resCfg.json();
-    const locObj = cfg.locaciones.find(l => l.id === loc);
+    cfgGlobal = await resCfg.json();
+
+    const locObj = cfgGlobal.locaciones.find(l => l.id === loc);
     const canObj = locObj?.cancha.find(c => c.id === can);
     const ladoObj = canObj?.lados.find(l => l.id === lado);
-    if (!ladoObj?.json_url) {
-      const el = document.getElementById("videos-container");
-      if (el) el.innerHTML = "<p style='color:#fff;'>Lado no encontrado.</p>";
+    contenedorVideos = document.getElementById("videos-container");
+    const loading = document.getElementById("loading");
+    if (!ladoObj?.json_url || !contenedorVideos) {
+      if (contenedorVideos) contenedorVideos.innerHTML = "<p style='color:#fff;'>Lado no encontrado.</p>";
       return;
     }
 
     const res = await fetch(`${ladoObj.json_url}?cb=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) throw new Error("No se pudo acceder al JSON.");
     const data = await res.json();
-    const container = document.getElementById("videos-container");
-    const loading = document.getElementById("loading");
     if (loading) loading.style.display = "block";
-    container.innerHTML = "";
+    contenedorVideos.innerHTML = "";
 
     // Breadcrumbs
     const linkClub = document.getElementById("link-club");
     const linkCancha = document.getElementById("link-cancha");
     const nombreLado = document.getElementById("nombre-lado");
-    if (linkClub) { linkClub.textContent = locObj.nombre; linkClub.href = `locacion.html?loc=${loc}`; }
-    if (linkCancha) { linkCancha.textContent = canObj.nombre; linkCancha.href = `cancha.html?loc=${loc}&can=${can}`; }
-    if (nombreLado) nombreLado.textContent = ladoObj.nombre;
+    if (linkClub) { linkClub.textContent = locObj?.nombre || loc; linkClub.href = `locacion.html?loc=${loc}`; }
+    if (linkCancha) { linkCancha.textContent = canObj?.nombre || can; linkCancha.href = `cancha.html?loc=${loc}&can=${can}`; }
+    if (nombreLado) nombreLado.textContent = ladoObj?.nombre || lado;
 
-    // Filtro horario
+    // Filtros arriba/abajo
     createHourFilterUI(data.videos);
 
     // Aplica filtro si existe
-    let list = data.videos;
+    let list = data.videos || [];
     if (filtro) {
       list = list.filter(v => {
         const m = v.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
@@ -488,95 +712,31 @@ async function populateVideos() {
       });
     }
 
-    allVideos = [];
-    for (const entry of list) {
-      // Calcula displayTime
-      const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
-      let displayTime = entry.nombre.replace(".mp4", "");
-      if (m) {
-        const hr = parseInt(m[1],10), mn = m[2], ap = hr>=12?"PM":"AM";
-        displayTime = `${hr%12||12}:${mn} ${ap}`;
+    // Guardar lista completa y estado de paginación
+    videosListaCompleta = list;
+    paginacionHabilitada = videosListaCompleta.length > 7;
+    paginaActual = 0;
+
+    // Preparar contenedor de controles al pie (Ver más + filtros abajo)
+    ensureBottomControlsContainer();
+
+    // Resolver info de lado opuesto (para "Ir al lado opuesto" al final)
+    oppInfoCache = await findOppositeConfig(cfgGlobal, loc, can, lado);
+
+    // Si hay parámetro ?video=..., tratar de arrancar en la página que lo contiene
+    if (targetId) {
+      const idx = videosListaCompleta.findIndex(v => v.nombre === targetId);
+      if (idx >= 0 && paginacionHabilitada) {
+        paginaActual = Math.floor(idx / PAGE_SIZE);
       }
-
-      // Card
-      const card = document.createElement("div");
-      card.className = "video-card";
-      card.id = entry.nombre;
-
-      const title = document.createElement("div");
-      title.className = "video-title";
-      title.textContent = displayTime;
-      card.appendChild(title);
-
-      // Wrapper
-      const wrap = document.createElement("div");
-      wrap.style.position = "relative";
-      wrap.style.width = "100%";
-
-      // Real video (oculto)
-      const real = document.createElement("video");
-      real.className = "real";
-      real.controls = true;
-      real.playsInline = true;
-      real.preload = "metadata";
-      real.src = entry.url;
-      real.style.display = "none";
-      real.style.width = "100%";
-      real.style.borderRadius = "6px";
-
-      // NUEVO: Preview estático (imagen de t = duración-20 s)
-      const onShowReal = () => {
-        const previewImg = wrap.querySelector("img.video-preview-img");
-        if (previewImg) previewImg.style.display = "none";
-        real.style.display = "block";
-        real.currentTime = 0;
-        real.play().catch(()=>{});
-      };
-      createStaticPreviewImage(entry.url, entry.duracion || 60, wrap, onShowReal);
-
-      wrap.appendChild(real);
-      card.appendChild(wrap);
-
-      // Contenedor de botones
-      const btnContainer = document.createElement("div");
-      btnContainer.className = "botones-container";
-      btnContainer.style.display = "flex";
-      btnContainer.style.alignItems = "center";
-      btnContainer.style.marginTop = "12px";
-
-      // Botón compartir/descargar
-      const actionBtn = await crearBotonAccionCompartir(entry);
-      actionBtn.style.removeProperty('flex');
-      btnContainer.appendChild(actionBtn);
-
-      // Botón "Ver otra perspectiva"
-      (async () => {
-        try {
-          const opposite = await findOppositeVideo(entry, cfg, loc, can, lado);
-          if (opposite && opposite.nombre) {
-            const btnAlt = document.createElement("a");
-            btnAlt.className = "btn-alt";
-            btnAlt.textContent = "Ver otra perspectiva";
-            btnAlt.title = "Cambiar a la otra cámara";
-            btnAlt.href = `lado.html?loc=${loc}&can=${can}&lado=${opposite.lado}&video=${encodeURIComponent(opposite.nombre)}`;
-            btnContainer.appendChild(btnAlt);
-          }
-        } catch (e) {
-          // silencioso
-        }
-      })();
-
-      card.appendChild(btnContainer);
-
-      container.appendChild(card);
-      allVideos.push(real);
     }
 
-    setupMutualExclusion(allVideos);
-
-    // (Eliminado) Carga previews de video en serie: ya no hay elementos <video> de preview
+    // Render inicial (con descarga total controlada entre páginas)
+    await renderPaginaActual(false);
 
     if (loading) loading.style.display = "none";
+
+    // Si venía ?video=..., hacemos scroll al card ya en la página correcta
     if (targetId) scrollToVideoById(targetId);
   } catch (err) {
     console.error("Error en populateVideos():", err);
