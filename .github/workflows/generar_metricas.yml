@@ -34,4 +34,4 @@ jobs:
           DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
           PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
         run: |
-          python scripts/generar_metricas.py
+          python generar_metricas.py
