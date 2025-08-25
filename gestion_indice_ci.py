@@ -5,20 +5,35 @@ import json
 import re
 from datetime import datetime, timedelta, timezone
 from github import Github
+from zoneinfo import ZoneInfo
+import hashlib
+import base64
 
-# Variables de entorno necesarias para autenticación
+# =========================
+# Variables de entorno
+# =========================
 DROPBOX_APP_KEY = os.environ["DROPBOX_APP_KEY"]
 DROPBOX_APP_SECRET = os.environ["DROPBOX_APP_SECRET"]
 DROPBOX_REFRESH_TOKEN = os.environ["DROPBOX_REFRESH_TOKEN"]
 GITHUB_TOKEN = os.environ.get("PAT_GITHUB")
 
+# =========================
 # Configuraciones globales
+# =========================
 VALID_SUFFIX = ".mp4"
 RETENTION_HOURS = 24
 DROPBOX_BASE = "/Puntazo/Locaciones"
 GITHUB_REPO = "isaacsaltiel/puntazo_web_v2"
 
-# Establece conexión con Dropbox
+# Rutas métricas (repo) y Dropbox
+METRICS_CSV_PATH = "data/metrics/videos_log.csv"  # SOLO columnas pedidas
+METRICS_JSON_PATH = "data/metrics/videos_stats.json"
+SEEN_IDS_PATH = "data/metrics/videos_seen_ids.txt"  # índice para evitar duplicados (no es columna)
+DROPBOX_METRICS_DIR = "/Puntazo/Entrantes/metrics"
+
+# =========================
+# Conexión Dropbox
+# =========================
 def connect_dropbox():
     print("[DEBUG] Conectando a Dropbox…")
     return dropbox.Dropbox(
@@ -27,7 +42,9 @@ def connect_dropbox():
         oauth2_refresh_token=DROPBOX_REFRESH_TOKEN
     )
 
-# Genera un link público de Dropbox, manejando duplicados de forma segura
+# =========================
+# Links públicos Dropbox
+# =========================
 def generate_public_url(dbx, path):
     try:
         print(f"[DEBUG] Generando URL pública para: {path}")
@@ -45,15 +62,28 @@ def generate_public_url(dbx, path):
             return None
     return link.url.replace("www.dropbox.com", "dl.dropboxusercontent.com").split("?dl=")[0]
 
-# Crea o actualiza un archivo JSON en GitHub con los datos de los videos recientes
+# =========================
+# Utilidades GitHub
+# =========================
+def github_get_text(repo, path):
+    try:
+        contents = repo.get_contents(path, ref="master")
+        return base64.b64decode(contents.content).decode("utf-8"), contents.sha
+    except Exception:
+        return None, None
+
+def github_put_text(repo, path, text, sha=None, message="Actualizar"):
+    if sha:
+        repo.update_file(path, message, text, sha, branch="master")
+    else:
+        repo.create_file(path, message, text, branch="master")
+
 def upload_to_github(json_data, github_path):
     if not GITHUB_TOKEN:
         print("[WARNING] No se encontró el PAT_GITHUB, omitiendo subida a GitHub.")
         return
-
     g = Github(GITHUB_TOKEN)
     repo = g.get_repo(GITHUB_REPO)
-
     try:
         contents = repo.get_contents(github_path, ref="master")
         repo.update_file(contents.path, "Actualizar videos_recientes.json desde CI", json_data, contents.sha, branch="master")
@@ -68,8 +98,131 @@ def upload_to_github(json_data, github_path):
         else:
             print(f"[ERROR] No se pudo subir a GitHub: {e}")
 
-# Función principal del script
+# =========================
+# Utilidades comunes
+# =========================
+def ensure_local_path(path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
 
+def dropbox_upload_bytes(dbx, content_bytes, path):
+    dbx.files_upload(content_bytes, path, mode=dropbox.files.WriteMode("overwrite"))
+
+def stable_id(loc, can, lado, nombre):
+    base = f"{loc}|{can}|{lado}|{nombre}".lower()
+    return hashlib.sha1(base.encode("utf-8")).hexdigest()[:16]
+
+def read_seen_ids_local_then_github():
+    # 1) Local
+    if os.path.exists(SEEN_IDS_PATH):
+        with open(SEEN_IDS_PATH, "r", encoding="utf-8") as f:
+            return set([ln.strip() for ln in f if ln.strip()])
+    # 2) GitHub
+    if GITHUB_TOKEN:
+        g = Github(GITHUB_TOKEN)
+        repo = g.get_repo(GITHUB_REPO)
+        txt, _ = github_get_text(repo, SEEN_IDS_PATH)
+        if txt is not None:
+            return set([ln.strip() for ln in txt.splitlines() if ln.strip()])
+    # 3) Vacío
+    return set()
+
+def write_seen_ids(dbx, ids_set):
+    text = "\n".join(sorted(ids_set)) + ("\n" if ids_set else "")
+    ensure_local_path(SEEN_IDS_PATH)
+    with open(SEEN_IDS_PATH, "w", encoding="utf-8") as f:
+        f.write(text)
+    # Dropbox
+    dropbox_upload_bytes(dbx, text.encode("utf-8"), f"{DROPBOX_METRICS_DIR}/videos_seen_ids.txt")
+    # GitHub
+    if GITHUB_TOKEN:
+        g = Github(GITHUB_TOKEN)
+        repo = g.get_repo(GITHUB_REPO)
+        _, sha = github_get_text(repo, SEEN_IDS_PATH)
+        github_put_text(repo, SEEN_IDS_PATH, text, sha, message="Actualizar videos_seen_ids.txt")
+
+def read_metrics_csv_local_then_github():
+    header = "loc,can,lado,local_date,local_hour\n"
+    # 1) Local
+    if os.path.exists(METRICS_CSV_PATH):
+        with open(METRICS_CSV_PATH, "r", encoding="utf-8") as f:
+            return f.read() or header
+    # 2) GitHub
+    if GITHUB_TOKEN:
+        g = Github(GITHUB_TOKEN)
+        repo = g.get_repo(GITHUB_REPO)
+        txt, _ = github_get_text(repo, METRICS_CSV_PATH)
+        if txt is not None:
+            return txt or header
+    # 3) Vacío
+    return header
+
+def write_metrics_csv(dbx, text):
+    ensure_local_path(METRICS_CSV_PATH)
+    with open(METRICS_CSV_PATH, "w", encoding="utf-8") as f:
+        f.write(text)
+    # Dropbox
+    dropbox_upload_bytes(dbx, text.encode("utf-8"), f"{DROPBOX_METRICS_DIR}/videos_log.csv")
+    # GitHub
+    if GITHUB_TOKEN:
+        g = Github(GITHUB_TOKEN)
+        repo = g.get_repo(GITHUB_REPO)
+        _, sha = github_get_text(repo, METRICS_CSV_PATH)
+        github_put_text(repo, METRICS_CSV_PATH, text, sha, message="Actualizar videos_log.csv")
+
+def compute_stats_from_csv(csv_text):
+    lines = [ln for ln in csv_text.splitlines() if ln.strip()]
+    if len(lines) <= 1:
+        return {
+            "by_day": {},
+            "by_hour": {},
+            "by_loc": {},
+            "by_can": {},
+            "by_lado": {},
+            "generated_at_utc": datetime.now(timezone.utc).isoformat()
+        }
+    header = lines[0].split(",")
+    idx = {name: i for i, name in enumerate(header)}
+
+    def inc(d, k): d[k] = d.get(k, 0) + 1
+
+    by_day, by_hour, by_loc, by_can, by_lado = {}, {}, {}, {}, {}
+    for ln in lines[1:]:
+        parts = ln.split(",")
+        try:
+            inc(by_day, parts[idx["local_date"]])
+            inc(by_hour, parts[idx["local_hour"]])
+            inc(by_loc, parts[idx["loc"]])
+            inc(by_can, parts[idx["can"]])
+            inc(by_lado, parts[idx["lado"]])
+        except Exception:
+            continue
+
+    return {
+        "by_day": by_day,
+        "by_hour": by_hour,
+        "by_loc": by_loc,
+        "by_can": by_can,
+        "by_lado": by_lado,
+        "generated_at_utc": datetime.now(timezone.utc).isoformat()
+    }
+
+def write_metrics_stats(dbx, stats_obj):
+    text = json.dumps(stats_obj, ensure_ascii=False, indent=2)
+    ensure_local_path(METRICS_JSON_PATH)
+    with open(METRICS_JSON_PATH, "w", encoding="utf-8") as f:
+        f.write(text)
+    # Dropbox
+    dropbox_upload_bytes(dbx, text.encode("utf-8"), f"{DROPBOX_METRICS_DIR}/videos_stats.json")
+    # GitHub
+    if GITHUB_TOKEN:
+        g = Github(GITHUB_TOKEN)
+        repo = g.get_repo(GITHUB_REPO)
+        _, sha = github_get_text(repo, METRICS_JSON_PATH)
+        github_put_text(repo, METRICS_JSON_PATH, text, sha, message="Actualizar videos_stats.json")
+
+# =========================
+# Script principal original + métricas
+# =========================
 def main():
     # Leer parámetros desde línea de comandos
     parser = argparse.ArgumentParser()
@@ -99,6 +252,7 @@ def main():
     videos = []
     nombres_base_vistos = set()  # Usado para detectar duplicados por nombre base
 
+    # --------- PASADA PRINCIPAL: mantener tu flujo -----------
     for entry in result.entries:
         if isinstance(entry, dropbox.files.FileMetadata) and entry.name.endswith(VALID_SUFFIX):
             mod_time = entry.client_modified
@@ -124,14 +278,14 @@ def main():
                     videos.append({"nombre": entry.name, "url": url})
                     nombres_base_vistos.add(nombre_base)
             else:
-                # Archivo es antiguo → eliminar
+                # Archivo es antiguo → eliminar (dejado en no-op para auditoría)
                 try:
-                    #dbx.files_delete_v2(entry.path_lower)
+                    # dbx.files_delete_v2(entry.path_lower)
                     print(f"[INFO] Archivo eliminado por antigüedad: {entry.name}")
                 except Exception as e:
                     print(f"[ERROR] No se pudo eliminar {entry.name}: {e}")
 
-    # Ordenar y guardar los videos en archivo JSON
+    # Ordenar y guardar los videos en archivo JSON de recientes
     videos.sort(key=lambda x: x["nombre"], reverse=True)
 
     output = {
@@ -141,9 +295,9 @@ def main():
 
     # Guardar JSON local
     local_path = f"data/Locaciones/{loc}/{can}/{lado}/videos_recientes.json"
-    os.makedirs(os.path.dirname(local_path), exist_ok=True)
-    with open(local_path, "w") as f:
-        json.dump(output, f, indent=2)
+    ensure_local_path(local_path)
+    with open(local_path, "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2, ensure_ascii=False)
     print(f"[DEBUG] JSON generado localmente con {len(videos)} videos")
 
     # Subir JSON a Dropbox
@@ -153,7 +307,68 @@ def main():
 
     # Subir JSON a GitHub
     github_path = f"data/Locaciones/{loc}/{can}/{lado}/videos_recientes.json"
-    upload_to_github(json.dumps(output, indent=2), github_path)
+    upload_to_github(json.dumps(output, indent=2, ensure_ascii=False), github_path)
+
+    # =========================
+    #   MÉTRICAS (solo columnas pedidas)
+    # =========================
+    # Prepara mapa name->entry para recuperar fechas locales por video
+    name_to_entry = {e.name: e for e in result.entries if isinstance(e, dropbox.files.FileMetadata)}
+    tz_mx = ZoneInfo("America/Mexico_City")
+
+    # Carga índice de videos ya vistos para no duplicar filas
+    seen_ids = read_seen_ids_local_then_github()
+
+    # Prepara nuevas filas
+    new_rows = []  # cada row es una tupla (loc,can,lado,local_date,local_hour)
+    new_ids = set()
+
+    for v in videos:
+        e = name_to_entry.get(v["nombre"])
+        if not e:
+            continue
+        vid_id = stable_id(loc, can, lado, v["nombre"])
+        if vid_id in seen_ids:
+            continue  # ya registrado en corridas anteriores
+
+        mod_utc = e.client_modified.replace(tzinfo=timezone.utc)
+        local_dt = mod_utc.astimezone(tz_mx)
+        local_date = local_dt.strftime("%Y-%m-%d")
+        local_hour = local_dt.strftime("%H")
+
+        new_rows.append((loc, can, lado, local_date, local_hour))
+        new_ids.add(vid_id)
+
+    # Si no hay filas nuevas, salir sin tocar métricas
+    if not new_rows:
+        print("[INFO] No hay nuevos videos para registrar en métricas.")
+        return
+
+    # Merge con CSV existente (sin duplicar cabecera)
+    existing_csv = read_metrics_csv_local_then_github()
+    header = "loc,can,lado,local_date,local_hour"
+    lines = [ln for ln in existing_csv.splitlines() if ln.strip()]
+    if not lines or lines[0] != header:
+        lines = [header] + lines  # asegurar cabecera
+
+    # Agregar nuevas líneas (una por video nuevo)
+    for (a, b, c, d, e_) in new_rows:
+        lines.append(f"{a},{b},{c},{d},{e_}")
+
+    merged_csv_text = "\n".join(lines) + "\n"
+
+    # Escribir CSV (local, Dropbox, GitHub)
+    write_metrics_csv(dbx, merged_csv_text)
+
+    # Actualizar índice de vistos (local, Dropbox, GitHub)
+    seen_ids.update(new_ids)
+    write_seen_ids(dbx, seen_ids)
+
+    # Generar y escribir stats JSON (derivado del CSV)
+    stats = compute_stats_from_csv(merged_csv_text)
+    write_metrics_stats(dbx, stats)
+
+    print(f"[OK] Métricas actualizadas: +{len(new_rows)} eventos | CSV y JSON publicados.")
 
 # Ejecutar script si se llama directamente
 if __name__ == "__main__":
