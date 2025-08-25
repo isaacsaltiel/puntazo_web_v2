@@ -7,17 +7,71 @@
       "count": 60
     },
     {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-08-23",
+      "count": 53
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2025-08-03",
+      "count": 20
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-08-24",
+      "count": 11
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2025-08-02",
+      "count": 9
+    },
+    {
+      "loc": "testclub",
+      "can": "testcancha",
+      "date": "2025-07-16",
+      "count": 6
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "date": "2025-08-25",
       "count": 3
+    },
+    {
+      "loc": "vistahorizonte",
+      "can": "vistadelaslomas",
+      "date": "2025-06-23",
+      "count": 2
     }
   ],
   "by_hour_per_cancha": [
     {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "12",
+      "count": 14
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "15",
+      "count": 10
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "21",
+      "count": 10
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "11",
       "count": 10
     },
     {
@@ -45,14 +99,50 @@
       "count": 8
     },
     {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "14",
+      "count": 8
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "15",
+      "count": 8
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "20",
+      "count": 7
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "14",
       "count": 6
     },
     {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "17",
+      "count": 6
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
+      "hour": "19",
+      "count": 5
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "13",
+      "count": 5
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
       "hour": "19",
       "count": 5
     },
@@ -63,9 +153,57 @@
       "count": 4
     },
     {
+      "loc": "testclub",
+      "can": "testcancha",
+      "hour": "19",
+      "count": 4
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "12",
+      "count": 4
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "20",
+      "count": 4
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "13",
+      "count": 3
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "16",
+      "count": 3
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "09",
+      "count": 2
+    },
+    {
+      "loc": "vistahorizonte",
+      "can": "vistadelaslomas",
+      "hour": "17",
+      "count": 2
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "22",
+      "count": 2
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "22",
       "count": 2
     },
     {
@@ -79,9 +217,43 @@
       "can": "Cancha1",
       "hour": "21",
       "count": 1
+    },
+    {
+      "loc": "testclub",
+      "can": "testcancha",
+      "hour": "17",
+      "count": 1
+    },
+    {
+      "loc": "testclub",
+      "can": "testcancha",
+      "hour": "20",
+      "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "19",
+      "count": 1
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "21",
+      "count": 1
     }
   ],
   "lado_balance_per_day": [
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-08-23",
+      "counts_por_lado": {
+        "ladob": 24,
+        "ladoa": 29
+      },
+      "diff": 5
+    },
     {
       "loc": "Scorpion",
       "can": "Cancha1",
@@ -101,7 +273,53 @@
         "LadoB": 1
       },
       "diff": 1
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-08-24",
+      "counts_por_lado": {
+        "ladoa": 6,
+        "ladob": 5
+      },
+      "diff": 1
+    },
+    {
+      "loc": "vistahorizonte",
+      "can": "vistadelaslomas",
+      "date": "2025-06-23",
+      "counts_por_lado": {
+        "casa8": 2
+      },
+      "diff": 0
+    },
+    {
+      "loc": "testclub",
+      "can": "testcancha",
+      "date": "2025-07-16",
+      "counts_por_lado": {
+        "testlado": 6
+      },
+      "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2025-08-02",
+      "counts_por_lado": {
+        "ladoa": 9
+      },
+      "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2025-08-03",
+      "counts_por_lado": {
+        "ladoa": 20
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2025-08-25T18:39:00.145760+00:00"
+  "generated_at_utc": "2025-08-25T18:50:25.664725+00:00"
 }
