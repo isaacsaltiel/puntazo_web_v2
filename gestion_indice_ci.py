@@ -170,39 +170,82 @@ def write_metrics_csv(dbx, text):
         github_put_text(repo, METRICS_CSV_PATH, text, sha, message="Actualizar videos_log.csv")
 
 def compute_stats_from_csv(csv_text):
+    """
+    A partir del CSV (loc,can,lado,local_date,local_hour) genera:
+      - by_day_per_cancha: lista [{loc, can, date, count}], ordenada desc
+      - by_hour_per_cancha: lista [{loc, can, hour, count}], ordenada desc
+      - lado_balance_per_day: lista [{loc, can, date, counts_por_lado:{lado:count}, diff}], ordenada por diff desc
+    """
     lines = [ln for ln in csv_text.splitlines() if ln.strip()]
     if len(lines) <= 1:
         return {
-            "by_day": {},
-            "by_hour": {},
-            "by_loc": {},
-            "by_can": {},
-            "by_lado": {},
+            "by_day_per_cancha": [],
+            "by_hour_per_cancha": [],
+            "lado_balance_per_day": [],
             "generated_at_utc": datetime.now(timezone.utc).isoformat()
         }
     header = lines[0].split(",")
     idx = {name: i for i, name in enumerate(header)}
 
-    def inc(d, k): d[k] = d.get(k, 0) + 1
+    # Acumuladores
+    per_day = {}           # (loc, can, date) -> count
+    per_hour = {}          # (loc, can, hour) -> count
+    per_day_lado = {}      # (loc, can, date) -> {lado: count}
 
-    by_day, by_hour, by_loc, by_can, by_lado = {}, {}, {}, {}, {}
     for ln in lines[1:]:
         parts = ln.split(",")
         try:
-            inc(by_day, parts[idx["local_date"]])
-            inc(by_hour, parts[idx["local_hour"]])
-            inc(by_loc, parts[idx["loc"]])
-            inc(by_can, parts[idx["can"]])
-            inc(by_lado, parts[idx["lado"]])
+            loc = parts[idx["loc"]]
+            can = parts[idx["can"]]
+            lado = parts[idx["lado"]]
+            date = parts[idx["local_date"]]
+            hour = parts[idx["local_hour"]]
         except Exception:
             continue
 
+        key_day = (loc, can, date)
+        key_hour = (loc, can, hour)
+
+        per_day[key_day] = per_day.get(key_day, 0) + 1
+        per_hour[key_hour] = per_hour.get(key_hour, 0) + 1
+
+        if key_day not in per_day_lado:
+            per_day_lado[key_day] = {}
+        per_day_lado[key_day][lado] = per_day_lado[key_day].get(lado, 0) + 1
+
+    # Estructuras ordenadas
+    by_day_per_cancha = [
+        {"loc": k[0], "can": k[1], "date": k[2], "count": v}
+        for k, v in per_day.items()
+    ]
+    by_day_per_cancha.sort(key=lambda x: x["count"], reverse=True)
+
+    by_hour_per_cancha = [
+        {"loc": k[0], "can": k[1], "hour": k[2], "count": v}
+        for k, v in per_hour.items()
+    ]
+    by_hour_per_cancha.sort(key=lambda x: x["count"], reverse=True)
+
+    lado_balance_per_day = []
+    for (loc, can, date), counts in per_day_lado.items():
+        # diff = diferencia máxima entre lados (si hay 2 lados, mide el desbalance)
+        values = list(counts.values())
+        max_c = max(values) if values else 0
+        min_c = min(values) if values else 0
+        diff = max_c - min_c
+        lado_balance_per_day.append({
+            "loc": loc,
+            "can": can,
+            "date": date,
+            "counts_por_lado": counts,
+            "diff": diff
+        })
+    lado_balance_per_day.sort(key=lambda x: x["diff"], reverse=True)
+
     return {
-        "by_day": by_day,
-        "by_hour": by_hour,
-        "by_loc": by_loc,
-        "by_can": by_can,
-        "by_lado": by_lado,
+        "by_day_per_cancha": by_day_per_cancha,
+        "by_hour_per_cancha": by_hour_per_cancha,
+        "lado_balance_per_day": lado_balance_per_day,
         "generated_at_utc": datetime.now(timezone.utc).isoformat()
     }
 
@@ -339,36 +382,39 @@ def main():
         new_rows.append((loc, can, lado, local_date, local_hour))
         new_ids.add(vid_id)
 
-    # Si no hay filas nuevas, salir sin tocar métricas
-    if not new_rows:
-        print("[INFO] No hay nuevos videos para registrar en métricas.")
-        return
-
-    # Merge con CSV existente (sin duplicar cabecera)
+    # Si no hay filas nuevas, igual recalculamos stats desde el CSV existente
     existing_csv = read_metrics_csv_local_then_github()
     header = "loc,can,lado,local_date,local_hour"
     lines = [ln for ln in existing_csv.splitlines() if ln.strip()]
     if not lines or lines[0] != header:
-        lines = [header] + lines  # asegurar cabecera
+        lines = [header] + [ln for ln in lines if ln != header]
 
-    # Agregar nuevas líneas (una por video nuevo)
-    for (a, b, c, d, e_) in new_rows:
-        lines.append(f"{a},{b},{c},{d},{e_}")
+    if new_rows:
+        # Agregar nuevas líneas (una por video nuevo)
+        for (a, b, c, d, e_) in new_rows:
+            lines.append(f"{a},{b},{c},{d},{e_}")
 
-    merged_csv_text = "\n".join(lines) + "\n"
+        merged_csv_text = "\n".join(lines) + "\n"
 
-    # Escribir CSV (local, Dropbox, GitHub)
-    write_metrics_csv(dbx, merged_csv_text)
+        # Escribir CSV (local, Dropbox, GitHub)
+        write_metrics_csv(dbx, merged_csv_text)
 
-    # Actualizar índice de vistos (local, Dropbox, GitHub)
-    seen_ids.update(new_ids)
-    write_seen_ids(dbx, seen_ids)
+        # Actualizar índice de vistos (local, Dropbox, GitHub)
+        seen_ids.update(new_ids)
+        write_seen_ids(dbx, seen_ids)
+
+        csv_for_stats = merged_csv_text
+        print(f"[OK] Métricas CSV actualizado: +{len(new_rows)} eventos.")
+    else:
+        # No filas nuevas → usar el existente para stats
+        csv_for_stats = "\n".join(lines) + "\n"
+        print("[INFO] No hay nuevos videos para registrar en métricas. Recalculando stats con CSV existente.")
 
     # Generar y escribir stats JSON (derivado del CSV)
-    stats = compute_stats_from_csv(merged_csv_text)
+    stats = compute_stats_from_csv(csv_for_stats)
     write_metrics_stats(dbx, stats)
 
-    print(f"[OK] Métricas actualizadas: +{len(new_rows)} eventos | CSV y JSON publicados.")
+    print("[OK] Stats listas: by_day_per_cancha / by_hour_per_cancha / lado_balance_per_day (ordenadas).")
 
 # Ejecutar script si se llama directamente
 if __name__ == "__main__":
