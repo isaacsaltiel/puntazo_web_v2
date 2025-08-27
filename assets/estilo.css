@@ -581,6 +581,179 @@ html, body{ overflow-x:hidden; }
     font-size:.95rem;
   }
 }
+/* ================== Variables rápidas (ajusta a tu tema) ================== */
+:root {
+  --chip-bg: rgba(255,255,255,0.08);
+  --chip-bg-hover: rgba(255,255,255,0.18);
+  --chip-outline: rgba(255,255,255,0.28);
+  --chip-active-outline: rgba(255,255,255,0.6);
+  --chip-text: #fff;
+
+  --btn-fg: #fff;
+  --btn-bg: rgba(255,255,255,0.12);
+  --btn-bg-hover: rgba(255,255,255,0.22);
+
+  --bar-bg: rgba(255,255,255,0.25);
+  --bar-fill: rgba(255,255,255,0.9);
+}
+
+/* ================== Paginadores (arriba y abajo) ================== */
+#paginator-top, #paginator-bottom {
+  margin: 8px 0;
+}
+#paginator-top > div, #paginator-bottom > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+#paginator-top button,
+#paginator-bottom button {
+  appearance: none;
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  border: 1px solid var(--chip-outline);
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background .15s ease, transform .08s ease;
+}
+#paginator-top button:hover,
+#paginator-bottom button:hover { background: var(--chip-bg-hover); }
+#paginator-top button:disabled,
+#paginator-bottom button:disabled {
+  opacity: .55; cursor: default; transform: none;
+}
+#paginator-top button:active:not(:disabled),
+#paginator-bottom button:active:not(:disabled) { transform: translateY(1px); }
+
+/* Número de página activo (JS le pone estilo inline; reforzamos aquí) */
+#paginator-top button[style*="font-weight: 700"],
+#paginator-bottom button[style*="font-weight: 700"] {
+  outline: 1px solid var(--chip-active-outline) !important;
+}
+
+/* Link "Ir al lado opuesto" estilizado como chip */
+#paginator-top a, #paginator-bottom a {
+  text-decoration: none;
+  color: var(--chip-text);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-outline);
+  border-radius: 999px;
+  padding: 6px 10px;
+  transition: background .15s ease;
+}
+#paginator-top a:hover, #paginator-bottom a:hover { background: var(--chip-bg-hover); }
+
+/* Info de rango ("Mostrando X–Y de Z") */
+#paginator-top span:last-child,
+#paginator-bottom span:last-child {
+  margin-left: auto;
+  opacity: .8;
+  font-size: .95em;
+}
+
+/* ================== Botón Compartir/Descargar con progreso ================== */
+.btn-share-large {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--chip-outline);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  cursor: pointer;
+  transition: background .15s ease, transform .08s ease;
+}
+.btn-share-large:hover { background: var(--btn-bg-hover); }
+.btn-share-large:active { transform: translateY(1px); }
+.btn-share-large:disabled { opacity: .6; cursor: default; transform: none; }
+
+/* Contenido de progreso dentro del botón */
+.btn-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+.btn-progress__label {
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+.btn-progress__percent {
+  min-width: 3ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* Barra */
+.btn-progress__bar {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  min-width: 100px;
+  border-radius: 999px;
+  background: var(--bar-bg);
+  overflow: hidden;
+}
+.btn-progress__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0%;
+  background: var(--bar-fill);
+  border-radius: inherit;
+  transition: width 120ms linear, opacity 120ms linear;
+}
+/* Spinner (cuando no hay Content-Length) */
+.btn-progress__spinner {
+  display: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--bar-fill);
+  border-top-color: transparent;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Botón cancelar dentro del botón principal */
+.btn-progress__cancel {
+  appearance: none;
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  border: 1px solid var(--chip-outline);
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.btn-progress__cancel:hover { background: var(--chip-bg-hover); }
+
+/* ================== Filtros (si quieres pulirlos un poco) ================== */
+.btn-filtro {
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  border: 1px solid var(--chip-outline);
+  border-radius: 999px;
+  padding: 6px 10px;
+  margin: 4px 6px 0 0;
+  cursor: pointer;
+  transition: background .15s ease, transform .08s ease;
+}
+.btn-filtro:hover { background: var(--chip-bg-hover); }
+.btn-filtro.activo {
+  outline: 1px solid var(--chip-active-outline);
+  font-weight: 700;
+}
+.btn-filtro.quitar { opacity: .9; }
+
+/* Respeta preferencias de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  .btn-progress__fill { transition: none; }
+  .btn-share-large, #paginator-top button, #paginator-bottom button { transition: none; }
+}
+
 
 /* Cinturón anti-scroll horizontal (por si acaso) */
 html,body{ overflow-x:hidden; }
