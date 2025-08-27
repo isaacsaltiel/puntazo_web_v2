@@ -42,9 +42,6 @@ function scrollToVideoById(id) {
 }
 
 // ----------------------- GATE POR CANCHA -----------------------
-// Archivo: data/passwords.json
-// Estructura esperada: { canchas: [{ loc, can, enabled, sha256, remember_hours }] }
-
 async function sha256Hex(text) {
   const enc = new TextEncoder().encode(text);
   const buf = await crypto.subtle.digest('SHA-256', enc);
@@ -542,7 +539,8 @@ async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal
   const totalHeader = res.headers.get("Content-Length") || res.headers.get("content-length");
   const total = totalHeader ? parseInt(totalHeader, 10) : 0;
 
-  const contentType = res.headers.get("Content-Type") || "video/mp4";
+  // intenta conservar el tipo
+  const defaultType = url.toLowerCase().endsWith(".mp4") ? "video/mp4" : (res.headers.get("Content-Type") || "application/octet-stream");
   const reader = res.body?.getReader?.();
 
   if (onStart) onStart({ totalKnown: !!total, totalBytes: total });
@@ -551,7 +549,7 @@ async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal
     const blob = await res.blob();
     if (onProgress) onProgress({ percent: 100, loaded: blob.size, total: blob.size, indeterminate: !total });
     if (onFinish) onFinish();
-    return new Blob([blob], { type: contentType });
+    return new Blob([blob], { type: blob.type || defaultType });
   }
 
   const chunks = [];
@@ -564,7 +562,7 @@ async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal
     received += value.byteLength || value.length || 0;
     if (onProgress) {
       if (total) {
-        const pct = Math.max(0, Math.min(100, Math.round((received / total) * 100))));
+        const pct = Math.max(0, Math.min(100, Math.round((received / total) * 100)));
         onProgress({ percent: pct, loaded: received, total, indeterminate: false });
       } else {
         onProgress({ percent: null, loaded: received, total: 0, indeterminate: true });
@@ -573,7 +571,7 @@ async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal
   }
 
   if (onFinish) onFinish();
-  return new Blob(chunks, { type: contentType });
+  return new Blob(chunks, { type: defaultType });
 }
 
 async function crearBotonAccionCompartir(entry) {
@@ -582,19 +580,61 @@ async function crearBotonAccionCompartir(entry) {
   btn.textContent = "Compartir | Descargar";
   btn.title = "Compartir video";
   btn.setAttribute("aria-label", "Compartir video");
+  btn.dataset.state = "idle"; // idle | downloading | ready
+  btn._shareFile = null;      // File cache para segundo toque
+
+  // Helper: intenta abrir sharesheet con un File
+  const tryShareFile = async (file) => {
+    // Algunos navegadores fallan en canShare, pero comparten igual — probamos directo
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          files: [file],
+          title: "Video Puntazo",
+          text: "Mira este _*PUNTAZO*_"
+        });
+        return true;
+      }
+    } catch (e) {
+      // NotAllowedError normalmente significa que no había user activation
+      throw e;
+    }
+    return false;
+  };
 
   btn.addEventListener("click", async (e) => {
     e.preventDefault();
-    if (btn.dataset.downloading === "1") return;
+
+    // Si está en estado "ready", este toque es para abrir el ShareSheet garantizado
+    if (btn.dataset.state === "ready" && btn._shareFile) {
+      try {
+        await tryShareFile(btn._shareFile);
+      } catch {}
+      // Si aún así no se puede, descargamos el archivo
+      if (!navigator.canShare?.({ files: [btn._shareFile] })) {
+        const url = URL.createObjectURL(btn._shareFile);
+        const a = document.createElement("a");
+        a.href = url; a.download = entry.nombre;
+        document.body.appendChild(a); a.click();
+        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 800);
+      }
+      // Limpieza
+      btn._shareFile = null;
+      btn.textContent = "Compartido";
+      setTimeout(() => { btn.textContent = "Compartir | Descargar"; btn.dataset.state = "idle"; }, 1200);
+      return;
+    }
+
+    if (btn.dataset.state === "downloading") return; // evita doble clic
 
     // Priorizar ancho de banda
     pauseAllVideos();
 
-    btn.dataset.downloading = "1";
+    btn.dataset.state = "downloading";
     btn.disabled = true;
     const originalContent = btn.textContent;
 
-    // Construir UI de progreso (usa clases CSS)
+    // UI progreso (clases CSS)
     btn.textContent = "";
     const wrap = document.createElement("span");
     wrap.className = "btn-progress";
@@ -631,18 +671,20 @@ async function crearBotonAccionCompartir(entry) {
     const controller = new AbortController();
     const { signal } = controller;
 
-    const restore = (text = originalContent) => {
+    const restoreIdle = (text = originalContent) => {
       btn.innerHTML = "";
       btn.textContent = text;
       btn.disabled = false;
-      btn.dataset.downloading = "0";
+      btn.dataset.state = "idle";
+      btn._shareFile = null;
     };
 
     cancelBtn.addEventListener("click", (ev) => {
       ev.stopPropagation();
       try { controller.abort(); } catch {}
-      restore("Cancelado");
-      setTimeout(() => restore(originalContent), 1200);
+      btn.innerHTML = "";
+      btn.textContent = "Cancelado";
+      setTimeout(() => restoreIdle(originalContent), 1200);
     });
 
     try {
@@ -677,33 +719,36 @@ async function crearBotonAccionCompartir(entry) {
 
       const file = new File([blob], entry.nombre, { type: blob.type || "video/mp4" });
 
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "Video Puntazo",
-          text: "Mira este _*PUNTAZO*_"
-        });
-        restore(originalContent);
-        return;
+      // Intento 1: abrir ShareSheet en automático si todavía hay user activation (puede fallar tras descargas largas)
+      let autoShared = false;
+      try {
+        // Algunos navegadores exigen user activation activa; probamos directo:
+        autoShared = await tryShareFile(file);
+      } catch {
+        autoShared = false;
       }
 
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = entry.nombre;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-        a.remove();
-      }, 1000);
-
-      restore(originalContent);
+      if (autoShared) {
+        // Exitoso: restaurar botón
+        btn.innerHTML = "";
+        btn.textContent = "Compartido";
+        setTimeout(() => restoreIdle(originalContent), 1200);
+      } else {
+        // Sin user activation o share no soportado con archivos:
+        // Guardamos el file y pedimos un segundo toque explícito para abrir el ShareSheet.
+        btn._shareFile = file;
+        btn.innerHTML = "";
+        btn.textContent = "Listo — Compartir ahora";
+        btn.disabled = false;
+        btn.dataset.state = "ready";
+        // Nota: si el navegador no soporta share de archivos, en el segundo toque caerá a descargarlo.
+      }
     } catch (err) {
       if (err?.name === "AbortError") return;
       console.warn("Descarga/compartir falló:", err);
-      restore("Error");
-      setTimeout(() => restore(originalContent), 1500);
+      btn.innerHTML = "";
+      btn.textContent = "Error";
+      setTimeout(() => restoreIdle(originalContent), 1500);
     }
   });
 
@@ -982,10 +1027,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const btnVolver = document.getElementById("btn-volver");
   if (btnVolver) {
+    const p2 = getQueryParams();
     if (path.endsWith("lado.html")) {
-      btnVolver.href = `cancha.html?loc=${p.loc}&can=${p.can}`;
+      btnVolver.href = `cancha.html?loc=${p2.loc}&can=${p2.can}`;
     } else if (path.endsWith("cancha.html")) {
-      btnVolver.href = `locacion.html?loc=${p.loc}`;
+      btnVolver.href = `locacion.html?loc=${p2.loc}`;
     } else if (path.endsWith("locacion.html")) {
       btnVolver.href = "index.html";
     }
