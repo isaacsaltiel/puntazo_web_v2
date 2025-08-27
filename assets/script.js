@@ -13,6 +13,18 @@ function getQueryParams() {
   return params;
 }
 
+function setQueryParams(updates = {}, replace = false) {
+  const p = getQueryParams();
+  const next = { ...p, ...updates };
+  const qs = Object.entries(next)
+    .filter(([, v]) => v !== undefined && v !== null && v !== "")
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+    .join("&");
+  const url = `${location.pathname}${qs ? "?" + qs : ""}`;
+  if (replace) history.replaceState({}, "", url);
+  else history.pushState({}, "", url);
+}
+
 function formatAmPm(hour) {
   const h = parseInt(hour, 10);
   const suffix = h >= 12 ? "PM" : "AM";
@@ -101,31 +113,20 @@ async function requireCanchaPassword(locId, canId) {
 }
 
 /* ===================== Helpers de asociación (opuesto automático) ===================== */
-/**
- * Parsea nombres tipo:
- * Loc_Can_Lado_YYYYMMDD_HHMMSS.mp4
- */
 function parseFromName(name) {
   const re = /^(.+?)_(.+?)_(.+?)_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})\.mp4$/;
   const m = name.match(re);
   if (!m) return null;
   const [, loc, can, lado, Y, M, D, h, mi, s] = m;
-  const date = new Date(
-    Number(Y), Number(M) - 1, Number(D),
-    Number(h), Number(mi), Number(s)
-  );
+  const date = new Date(Number(Y), Number(M) - 1, Number(D), Number(h), Number(mi), Number(s));
   return { loc, can, lado, date, ymd: `${Y}${M}${D}`, h: Number(h), mi: Number(mi), s: Number(s) };
 }
 function absSeconds(a, b) { return Math.abs((a - b) / 1000); }
 
-/**
- * Opuesto: si la cancha tiene exactamente 2 lados, el opuesto es el otro.
- */
 async function findOppositeConfig(cfg, locId, canId, ladoId) {
   const loc = cfg.locaciones.find(l => l.id === locId);
   const can = loc?.cancha.find(c => c.id === canId);
   if (!can) return null;
-
   const otros = (can.lados || []).filter(l => l.id !== ladoId);
   if (otros.length === 1) {
     const opp = otros[0];
@@ -134,9 +135,6 @@ async function findOppositeConfig(cfg, locId, canId, ladoId) {
   return null;
 }
 
-/**
- * Busca clip del lado opuesto con timestamp ±15s.
- */
 async function findOppositeVideo(entry, cfg, locId, canId, ladoId) {
   const meta = parseFromName(entry.nombre);
   if (!meta) return null;
@@ -276,20 +274,18 @@ let allVideos = [];
 let visibilityMap = new Map();
 let currentPreviewActive = null;
 
-// Estado de paginación
 const PAGE_SIZE = 10;
 let videosListaCompleta = [];
 let paginacionHabilitada = false;
-let paginaActual = 0; // 0-based
+let paginaActual = 0;
 let cfgGlobal = null;
 let oppInfoCache = null;
 let contenedorVideos = null;
 
-let contenedorTopControls = null;     // arriba: paginador superior
-let contenedorBottomControls = null;  // abajo: paginador + filtros
+let contenedorTopControls = null;
+let contenedorBottomControls = null;
 let contFiltroArriba = null;
 let contFiltroAbajo = null;
-
 let ultimoFiltroActivo = null;
 
 // ---- Helpers UI ----
@@ -304,7 +300,6 @@ function ensureTopControlsContainer() {
       if (parent) parent.insertBefore(contenedorTopControls, contenedorVideos);
     }
   }
-  // Paginador superior
   let pagTop = document.getElementById("paginator-top");
   if (!pagTop) {
     pagTop = document.createElement("div");
@@ -323,14 +318,12 @@ function ensureBottomControlsContainer() {
       contenedorVideos.parentElement.insertBefore(contenedorBottomControls, contenedorVideos.nextSibling);
     }
   }
-  // Paginador inferior
   let pagBottom = document.getElementById("paginator-bottom");
   if (!pagBottom) {
     pagBottom = document.createElement("div");
     pagBottom.id = "paginator-bottom";
     contenedorBottomControls.appendChild(pagBottom);
   }
-  // Filtros abajo
   contFiltroAbajo = document.getElementById("filtro-horario-bottom");
   if (!contFiltroAbajo) {
     contFiltroAbajo = document.createElement("div");
@@ -366,10 +359,8 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
     return b;
   };
 
-  // Prev
   wrap.appendChild(btn("‹ Anterior", pageIndex === 0, () => onChange(pageIndex - 1), "Página anterior"));
 
-  // Números (ventana de hasta 5)
   const windowSize = 5;
   let start = Math.max(0, pageIndex - Math.floor(windowSize / 2));
   let end = Math.min(totalPages - 1, start + windowSize - 1);
@@ -390,7 +381,6 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
     wrap.appendChild(num);
   }
 
-  // Next (o Ir al lado opuesto si estás en la última página)
   if (pageIndex < totalPages - 1) {
     wrap.appendChild(btn("Siguiente ›", false, () => onChange(pageIndex + 1), "Página siguiente"));
   } else if (oppHref) {
@@ -404,7 +394,6 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
     wrap.appendChild(opp);
   }
 
-  // Info “Mostrando X–Y de Z”
   const info = document.createElement("span");
   const first = pageIndex * pageSize + 1;
   const last = Math.min((pageIndex + 1) * pageSize, totalItems);
@@ -416,7 +405,7 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
   container.appendChild(wrap);
 }
 
-// ---- Filtros (arriba y abajo idénticos, con navegación por URL clásica) ----
+// ---- Filtros (arriba y abajo sincronizados) ----
 function renderHourFilterIn(container, videos) {
   if (!container) return;
   const params = getQueryParams();
@@ -436,7 +425,9 @@ function renderHourFilterIn(container, videos) {
     if (filtroHoraActivo === h) btn.classList.add("activo");
     btn.addEventListener("click", () => {
       const p = getQueryParams();
-      window.location.href = `lado.html?loc=${p.loc}&can=${p.can}&lado=${p.lado}&filtro=${h}`;
+      setQueryParams({ filtro: h, pg: 0, video: "" });
+      populateVideos();
+      scrollToTop();
     });
     container.appendChild(btn);
   });
@@ -446,20 +437,19 @@ function renderHourFilterIn(container, videos) {
   quitarBtn.className = "btn-filtro quitar";
   if (!filtroHoraActivo) quitarBtn.style.display = "none";
   quitarBtn.addEventListener("click", () => {
-    const p = getQueryParams();
-    window.location.href = `lado.html?loc=${p.loc}&can=${p.can}&lado=${p.lado}`;
+    setQueryParams({ filtro: "", pg: 0, video: "" });
+    populateVideos();
+    scrollToTop();
   });
   container.appendChild(quitarBtn);
   container.style.display = "flex";
 }
 
 function createHourFilterUI(videos) {
-  // Arriba
   const filtroDiv = document.getElementById("filtro-horario");
   contFiltroArriba = filtroDiv || null;
   renderHourFilterIn(contFiltroArriba, videos);
 
-  // Abajo (misma estructura y orden)
   ensureBottomControlsContainer();
   renderHourFilterIn(contFiltroAbajo, videos);
 }
@@ -488,9 +478,7 @@ function createPreviewOverlay(videoSrc, duration, parentCard) {
     entries.forEach(entry => {
       visibilityMap.set(preview, entry.intersectionRatio);
       let max = 0, winner = null;
-      visibilityMap.forEach((ratio, node) => {
-        if (ratio > max) [max, winner] = [ratio, node];
-      });
+      visibilityMap.forEach((ratio, node) => { if (ratio > max) [max, winner] = [ratio, node]; });
       if (winner === preview && entry.isIntersecting) {
         const realPlaying = parentCard.querySelector("video.real")?.paused === false;
         if (!realPlaying) {
@@ -530,7 +518,7 @@ function setupMutualExclusion(list) {
 
 async function loadPreviewsSequentially(previews) {
   for (const v of previews) {
-    v.preload = "metadata"; // solo cabeceras; sin buffering pesado
+    v.preload = "metadata";
     await new Promise(res => {
       v.addEventListener("loadedmetadata", res, { once: true });
       v.load();
@@ -538,13 +526,55 @@ async function loadPreviewsSequentially(previews) {
   }
 }
 
-// Pausar todo y desactivar preloads (para priorizar acciones como compartir)
 function pauseAllVideos() {
   try { if (currentPreviewActive) currentPreviewActive.pause(); } catch {}
   document.querySelectorAll("video.video-preview, video.real").forEach(v => {
     try { v.pause(); } catch {}
     try { v.preload = "none"; } catch {}
   });
+}
+
+// ---------------- DESCARGA CON PROGRESO + COMPARTIR ----------------
+async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal } = {}) {
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  const totalHeader = res.headers.get("Content-Length") || res.headers.get("content-length");
+  const total = totalHeader ? parseInt(totalHeader, 10) : 0;
+
+  const contentType = res.headers.get("Content-Type") || "video/mp4";
+  const reader = res.body?.getReader?.();
+
+  if (onStart) onStart({ totalKnown: !!total, totalBytes: total });
+
+  if (!reader) {
+    // Sin streaming readable: progreso indeterminado
+    const blob = await res.blob();
+    if (onProgress) onProgress({ percent: 100, loaded: blob.size, total: blob.size, indeterminate: !total });
+    if (onFinish) onFinish();
+    return new Blob([blob], { type: contentType });
+  }
+
+  const chunks = [];
+  let received = 0;
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.byteLength || value.length || 0;
+    if (onProgress) {
+      if (total) {
+        const pct = Math.max(0, Math.min(100, Math.round((received / total) * 100)));
+        onProgress({ percent: pct, loaded: received, total, indeterminate: false });
+      } else {
+        onProgress({ percent: null, loaded: received, total: 0, indeterminate: true });
+      }
+    }
+  }
+
+  if (onFinish) onFinish();
+  return new Blob(chunks, { type: contentType });
 }
 
 async function crearBotonAccionCompartir(entry) {
@@ -554,47 +584,180 @@ async function crearBotonAccionCompartir(entry) {
   btn.title = "Compartir video";
   btn.setAttribute("aria-label", "Compartir video");
 
-  btn.addEventListener("click", async e => {
-    e.preventDefault();
-    const orig = btn.textContent;
-    btn.textContent = "Abriendo opciones…";
-    btn.disabled = true;
+  // Estilos mínimos para la UI de progreso dentro del botón
+  const styleProgressWrap = (wrap) => {
+    wrap.style.display = "flex";
+    wrap.style.gap = "8px";
+    wrap.style.alignItems = "center";
+    wrap.style.justifyContent = "center";
+    wrap.style.width = "100%";
+  };
+  const styleBar = (bar, fill) => {
+    bar.style.position = "relative";
+    bar.style.flex = "1";
+    bar.style.height = "6px";
+    bar.style.borderRadius = "999px";
+    bar.style.background = "rgba(255,255,255,0.25)";
+    fill.style.position = "absolute";
+    fill.style.left = "0";
+    fill.style.top = "0";
+    fill.style.bottom = "0";
+    fill.style.width = "0%";
+    fill.style.borderRadius = "999px";
+    fill.style.background = "rgba(255,255,255,0.9)";
+    fill.style.transition = "width 120ms linear";
+  };
+  const styleSpinner = (node) => {
+    node.textContent = "●";
+    node.style.display = "inline-block";
+    node.style.animation = "spin-dot 1s linear infinite";
+  };
+  // Inyectar una keyframe simple si no existe
+  if (!document.getElementById("spin-dot-keyframes")) {
+    const st = document.createElement("style");
+    st.id = "spin-dot-keyframes";
+    st.textContent = `
+      @keyframes spin-dot { 
+        0% { transform: rotate(0deg); } 
+        100% { transform: rotate(360deg); } 
+      }
+    `;
+    document.head.appendChild(st);
+  }
 
-    // Priorizar esta acción: pausar todo y cortar preloads
+  btn.addEventListener("click", async (e) => {
+    e.preventDefault();
+    if (btn.dataset.downloading === "1") return; // evita dobles clics
+
+    // Priorizar ancho de banda
     pauseAllVideos();
 
-    try {
-      // Compartir rápido con URL (sin descargar el archivo)
-      if (navigator.share) {
-        await navigator.share({
-          title: "Video Puntazo",
-          text: "Mira este _*PUNTAZO*_",
-          url: entry.url
-        });
-      } else if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(entry.url);
-        alert("Enlace copiado al portapapeles.");
-      } else {
-        window.open(entry.url, "_blank");
-      }
-    } catch (err) {
-      console.warn("Share falló:", err);
-      try {
-        if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(entry.url);
-          alert("Enlace copiado al portapapeles.");
-        }
-      } catch {}
-    } finally {
-      btn.textContent = orig;
+    btn.dataset.downloading = "1";
+    btn.disabled = true;
+
+    const originalContent = btn.textContent;
+
+    // Construir UI de progreso
+    btn.textContent = "";
+    const wrap = document.createElement("span");
+    styleProgressWrap(wrap);
+
+    const label = document.createElement("span");
+    label.textContent = "Descargando…";
+
+    const percentSpan = document.createElement("span");
+    percentSpan.textContent = "0%";
+    percentSpan.style.minWidth = "3ch";
+
+    const bar = document.createElement("span");
+    const fill = document.createElement("span");
+    styleBar(bar, fill);
+
+    const spinner = document.createElement("span");
+    styleSpinner(spinner);
+    spinner.style.display = "none";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.textContent = "Cancelar";
+    cancelBtn.style.padding = "4px 8px";
+    cancelBtn.style.border = "none";
+    cancelBtn.style.borderRadius = "6px";
+    cancelBtn.style.cursor = "pointer";
+    cancelBtn.style.opacity = "0.9";
+
+    wrap.appendChild(label);
+    wrap.appendChild(percentSpan);
+    wrap.appendChild(bar);
+    wrap.appendChild(spinner);
+    wrap.appendChild(cancelBtn);
+    btn.appendChild(wrap);
+
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    const restore = (text = originalContent) => {
+      btn.innerHTML = "";
+      btn.textContent = text;
       btn.disabled = false;
+      btn.dataset.downloading = "0";
+    };
+
+    cancelBtn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      try { controller.abort(); } catch {}
+      restore("Cancelado");
+      setTimeout(() => restore(originalContent), 1200);
+    });
+
+    try {
+      const blob = await downloadWithProgress(entry.url, {
+        signal,
+        onStart({ totalKnown }) {
+          // Si no se conoce el total, usar spinner
+          if (!totalKnown) {
+            spinner.style.display = "inline-block";
+            percentSpan.textContent = "";
+            fill.style.width = "0%";
+          }
+        },
+        onProgress({ percent, indeterminate }) {
+          if (indeterminate) {
+            spinner.style.display = "inline-block";
+            percentSpan.textContent = "";
+            fill.style.width = "100%"; // barra llena (indeterminado)
+            fill.style.opacity = "0.4";
+          } else {
+            spinner.style.display = "none";
+            percentSpan.textContent = `${percent}%`;
+            fill.style.width = `${percent}%`;
+            fill.style.opacity = "1";
+          }
+        },
+        onFinish() {
+          percentSpan.textContent = "100%";
+          fill.style.width = "100%";
+        }
+      });
+
+      const file = new File([blob], entry.nombre, { type: blob.type || "video/mp4" });
+
+      // Intentar compartir el archivo
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "Video Puntazo",
+          text: "Mira este _*PUNTAZO*_"
+        });
+        restore(originalContent);
+        return;
+      }
+
+      // Fallback: descargar el archivo
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = entry.nombre;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 1000);
+
+      restore(originalContent);
+    } catch (err) {
+      if (err?.name === "AbortError") return; // ya restauramos arriba
+      console.warn("Descarga/compartir falló:", err);
+      restore("Error");
+      setTimeout(() => restore(originalContent), 1500);
     }
   });
 
   return btn;
 }
 
-// ---- Render de página con descarga completa de la anterior ----
+// ---- Render de página y limpieza ----
 function limpiarRecursosDePagina() {
   try { if (currentPreviewActive) currentPreviewActive.pause(); } catch {}
   currentPreviewActive = null;
@@ -634,7 +797,6 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
   const pageSlice = videosListaCompleta.slice(start, end);
 
   for (const entry of pageSlice) {
-    // displayTime
     const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
     let displayTime = entry.nombre.replace(".mp4", "");
     if (m) {
@@ -642,7 +804,6 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
       displayTime = `${hr%12||12}:${mn} ${ap}`;
     }
 
-    // Card
     const card = document.createElement("div");
     card.className = "video-card";
     card.id = entry.nombre;
@@ -652,12 +813,10 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     title.textContent = displayTime;
     card.appendChild(title);
 
-    // Wrapper
     const wrap = document.createElement("div");
     wrap.style.position = "relative";
     wrap.style.width = "100%";
 
-    // Real video (oculto)
     const real = document.createElement("video");
     real.className = "real";
     real.controls = true;
@@ -668,14 +827,12 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     real.style.width = "100%";
     real.style.borderRadius = "6px";
 
-    // Preview
     const preview = createPreviewOverlay(entry.url, entry.duracion||60, card);
 
     wrap.appendChild(real);
     wrap.appendChild(preview);
     card.appendChild(wrap);
 
-    // Botones
     const btnContainer = document.createElement("div");
     btnContainer.className = "botones-container";
     btnContainer.style.display = "flex";
@@ -707,15 +864,12 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
 
   setupMutualExclusion(allVideos);
 
-  // Carga previews en serie SOLO de esta página
   const previews = Array.from(contenedorVideos.querySelectorAll("video.video-preview"));
   loadPreviewsSequentially(previews);
 
-  // Paginadores (arriba/abajo)
   const total = videosListaCompleta.length;
-  const params2 = getQueryParams();
   const oppHref = oppInfoCache?.oppId
-    ? `lado.html?loc=${params2.loc}&can=${params2.can}&lado=${oppInfoCache.oppId}`
+    ? `lado.html?loc=${params.loc}&can=${params.can}&lado=${oppInfoCache.oppId}`
     : null;
 
   const pagTop = document.getElementById("paginator-top");
@@ -726,6 +880,7 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
     if (newPage > totalPages - 1) newPage = totalPages - 1;
     paginaActual = newPage;
+    setQueryParams({ pg: paginaActual }, false);
     renderPaginaActual({ fueCambioDePagina: true });
     scrollToTop();
   };
@@ -733,7 +888,6 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
   renderPaginator(pagTop, total, paginaActual, PAGE_SIZE, onChange, oppHref);
   renderPaginator(pagBottom, total, paginaActual, PAGE_SIZE, onChange, oppHref);
 
-  // Desplazamiento suave al inicio del bloque nuevo
   if (fueCambioDePagina && contenedorVideos.firstElementChild) {
     contenedorVideos.firstElementChild.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -764,7 +918,6 @@ async function populateVideos() {
     if (loading) loading.style.display = "block";
     contenedorVideos.innerHTML = "";
 
-    // Breadcrumbs
     const linkClub = document.getElementById("link-club");
     const linkCancha = document.getElementById("link-cancha");
     const nombreLado = document.getElementById("nombre-lado");
@@ -772,10 +925,8 @@ async function populateVideos() {
     if (linkCancha) { linkCancha.textContent = canObj?.nombre || can; linkCancha.href = `cancha.html?loc=${loc}&can=${can}`; }
     if (nombreLado) nombreLado.textContent = ladoObj?.nombre || lado;
 
-    // Filtros arriba/abajo (idénticos)
     createHourFilterUI(data.videos);
 
-    // Aplica filtro si existe
     let list = data.videos || [];
     if (filtro) {
       list = list.filter(v => {
@@ -785,30 +936,26 @@ async function populateVideos() {
     }
 
     ultimoFiltroActivo = filtro || null;
-
-    // Guardar lista completa y estado de paginación
     videosListaCompleta = list;
     paginacionHabilitada = videosListaCompleta.length > 7;
 
-    // Preparar contenedores de paginación
     ensureTopControlsContainer();
     ensureBottomControlsContainer();
 
-    // Resolver info de lado opuesto (para el link cuando estás en la última página)
     oppInfoCache = await findOppositeConfig(cfgGlobal, loc, can, lado);
 
-    // Calcular página inicial
     const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
-    paginaActual = 0;
+    let desiredPg = parseInt(params.pg || "0", 10);
+    if (Number.isNaN(desiredPg)) desiredPg = 0;
 
-    // Si viene ?video=, ubicar la página donde está
     if (targetId) {
       const idx = videosListaCompleta.findIndex(v => v.nombre === targetId);
-      if (idx >= 0 && paginacionHabilitada) paginaActual = Math.floor(idx / PAGE_SIZE);
+      if (idx >= 0 && paginacionHabilitada) desiredPg = Math.floor(idx / PAGE_SIZE);
     }
-    paginaActual = Math.min(Math.max(0, paginaActual), totalPages - 1);
 
-    // Render inicial
+    paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
+    setQueryParams({ pg: paginaActual }, !("pg" in params));
+
     await renderPaginaActual({ fueCambioDePagina: false });
 
     if (loading) loading.style.display = "none";
@@ -889,6 +1036,20 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (path.endsWith("locacion.html")) {
       btnVolver.href = "index.html";
     }
+  }
+});
+
+window.addEventListener("popstate", () => {
+  const p = getQueryParams();
+  const newFilter = p.filtro || null;
+  if (newFilter !== ultimoFiltroActivo) {
+    populateVideos();
+  } else {
+    const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
+    let desiredPg = parseInt(p.pg || "0", 10);
+    if (Number.isNaN(desiredPg)) desiredPg = 0;
+    paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
+    renderPaginaActual({ fueCambioDePagina: true });
   }
 });
 
