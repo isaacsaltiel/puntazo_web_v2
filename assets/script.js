@@ -13,18 +13,6 @@ function getQueryParams() {
   return params;
 }
 
-function setQueryParams(updates = {}, replace = false) {
-  const p = getQueryParams();
-  const next = { ...p, ...updates };
-  const qs = Object.entries(next)
-    .filter(([, v]) => v !== undefined && v !== null && v !== "")
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
-    .join("&");
-  const url = `${location.pathname}${qs ? "?" + qs : ""}`;
-  if (replace) history.replaceState({}, "", url);
-  else history.pushState({}, "", url);
-}
-
 function formatAmPm(hour) {
   const h = parseInt(hour, 10);
   const suffix = h >= 12 ? "PM" : "AM";
@@ -376,7 +364,7 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
     b.style.cursor = disabled ? "default" : "pointer";
     b.addEventListener("click", handler);
     return b;
-    };
+  };
 
   // Prev
   wrap.appendChild(btn("‹ Anterior", pageIndex === 0, () => onChange(pageIndex - 1), "Página anterior"));
@@ -414,8 +402,6 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
     opp.style.textDecoration = "none";
     opp.style.outline = "1px solid rgba(255,255,255,0.3)";
     wrap.appendChild(opp);
-  } else {
-    // Última página sin opuesto: nada extra
   }
 
   // Info “Mostrando X–Y de Z”
@@ -430,7 +416,7 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
   container.appendChild(wrap);
 }
 
-// ---- Filtros (arriba y abajo sincronizados) ----
+// ---- Filtros (arriba y abajo idénticos, con navegación por URL clásica) ----
 function renderHourFilterIn(container, videos) {
   if (!container) return;
   const params = getQueryParams();
@@ -450,10 +436,7 @@ function renderHourFilterIn(container, videos) {
     if (filtroHoraActivo === h) btn.classList.add("activo");
     btn.addEventListener("click", () => {
       const p = getQueryParams();
-      // al cambiar filtro, reinicia la página a 0
-      setQueryParams({ filtro: h, pg: 0, video: "" });
-      populateVideos();
-      scrollToTop();
+      window.location.href = `lado.html?loc=${p.loc}&can=${p.can}&lado=${p.lado}&filtro=${h}`;
     });
     container.appendChild(btn);
   });
@@ -463,9 +446,8 @@ function renderHourFilterIn(container, videos) {
   quitarBtn.className = "btn-filtro quitar";
   if (!filtroHoraActivo) quitarBtn.style.display = "none";
   quitarBtn.addEventListener("click", () => {
-    setQueryParams({ filtro: "", pg: 0, video: "" });
-    populateVideos();
-    scrollToTop();
+    const p = getQueryParams();
+    window.location.href = `lado.html?loc=${p.loc}&can=${p.can}&lado=${p.lado}`;
   });
   container.appendChild(quitarBtn);
   container.style.display = "flex";
@@ -477,7 +459,7 @@ function createHourFilterUI(videos) {
   contFiltroArriba = filtroDiv || null;
   renderHourFilterIn(contFiltroArriba, videos);
 
-  // Abajo
+  // Abajo (misma estructura y orden)
   ensureBottomControlsContainer();
   renderHourFilterIn(contFiltroAbajo, videos);
 }
@@ -593,12 +575,10 @@ async function crearBotonAccionCompartir(entry) {
         await navigator.clipboard.writeText(entry.url);
         alert("Enlace copiado al portapapeles.");
       } else {
-        // Fallback mínimo: abrir el enlace en pestaña nueva
         window.open(entry.url, "_blank");
       }
     } catch (err) {
       console.warn("Share falló:", err);
-      // Fallback a copiar enlace si es posible
       try {
         if (navigator.clipboard?.writeText) {
           await navigator.clipboard.writeText(entry.url);
@@ -733,8 +713,9 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
 
   // Paginadores (arriba/abajo)
   const total = videosListaCompleta.length;
+  const params2 = getQueryParams();
   const oppHref = oppInfoCache?.oppId
-    ? `lado.html?loc=${params.loc}&can=${params.can}&lado=${oppInfoCache.oppId}`
+    ? `lado.html?loc=${params2.loc}&can=${params2.can}&lado=${oppInfoCache.oppId}`
     : null;
 
   const pagTop = document.getElementById("paginator-top");
@@ -745,7 +726,6 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
     if (newPage > totalPages - 1) newPage = totalPages - 1;
     paginaActual = newPage;
-    setQueryParams({ pg: paginaActual }, false);
     renderPaginaActual({ fueCambioDePagina: true });
     scrollToTop();
   };
@@ -792,7 +772,7 @@ async function populateVideos() {
     if (linkCancha) { linkCancha.textContent = canObj?.nombre || can; linkCancha.href = `cancha.html?loc=${loc}&can=${can}`; }
     if (nombreLado) nombreLado.textContent = ladoObj?.nombre || lado;
 
-    // Filtros arriba/abajo
+    // Filtros arriba/abajo (idénticos)
     createHourFilterUI(data.videos);
 
     // Aplica filtro si existe
@@ -819,19 +799,14 @@ async function populateVideos() {
 
     // Calcular página inicial
     const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
-    let desiredPg = parseInt(params.pg || "0", 10);
-    if (Number.isNaN(desiredPg)) desiredPg = 0;
+    paginaActual = 0;
 
     // Si viene ?video=, ubicar la página donde está
     if (targetId) {
       const idx = videosListaCompleta.findIndex(v => v.nombre === targetId);
-      if (idx >= 0 && paginacionHabilitada) desiredPg = Math.floor(idx / PAGE_SIZE);
+      if (idx >= 0 && paginacionHabilitada) paginaActual = Math.floor(idx / PAGE_SIZE);
     }
-
-    paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
-
-    // Escribir pg en la URL (replace si aún no estaba)
-    setQueryParams({ pg: paginaActual }, !("pg" in params));
+    paginaActual = Math.min(Math.max(0, paginaActual), totalPages - 1);
 
     // Render inicial
     await renderPaginaActual({ fueCambioDePagina: false });
@@ -914,23 +889,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (path.endsWith("locacion.html")) {
       btnVolver.href = "index.html";
     }
-  }
-});
-
-// Manejo del historial: si cambia ?pg o ?filtro con Atrás/Adelante, re-render.
-window.addEventListener("popstate", () => {
-  const p = getQueryParams();
-  const newFilter = p.filtro || null;
-  if (newFilter !== ultimoFiltroActivo) {
-    // Filtro cambió: repoblar todo
-    populateVideos();
-  } else {
-    // Solo cambió la página
-    const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
-    let desiredPg = parseInt(p.pg || "0", 10);
-    if (Number.isNaN(desiredPg)) desiredPg = 0;
-    paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
-    renderPaginaActual({ fueCambioDePagina: true });
   }
 });
 
