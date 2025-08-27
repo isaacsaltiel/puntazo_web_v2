@@ -13,6 +13,18 @@ function getQueryParams() {
   return params;
 }
 
+function setQueryParams(updates = {}, replace = false) {
+  const p = getQueryParams();
+  const next = { ...p, ...updates };
+  const qs = Object.entries(next)
+    .filter(([, v]) => v !== undefined && v !== null && v !== "")
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+    .join("&");
+  const url = `${location.pathname}${qs ? "?" + qs : ""}`;
+  if (replace) history.replaceState({}, "", url);
+  else history.pushState({}, "", url);
+}
+
 function formatAmPm(hour) {
   const h = parseInt(hour, 10);
   const suffix = h >= 12 ? "PM" : "AM";
@@ -32,7 +44,6 @@ function scrollToVideoById(id) {
 // ----------------------- GATE POR CANCHA -----------------------
 // Archivo: data/passwords.json
 // Estructura esperada: { canchas: [{ loc, can, enabled, sha256, remember_hours }] }
-// Seguridad: filtro ligero del lado del cliente. No sustituye auth del servidor.
 
 async function sha256Hex(text) {
   const enc = new TextEncoder().encode(text);
@@ -48,7 +59,7 @@ async function loadPasswords() {
     return await res.json();
   } catch (e) {
     console.warn('[gate] No se pudo cargar passwords.json:', e);
-    return null; // si no carga, no aplicamos gate (filtro ligero)
+    return null;
   }
 }
 
@@ -62,8 +73,8 @@ function getAuthKey(locId, canId) {
 }
 
 function isAuthorized(rule) {
-  if (!rule) return true; // si no hay regla, no requiere contraseña
-  if (!rule.enabled) return true; // desactivada
+  if (!rule) return true;
+  if (!rule.enabled) return true;
   const k = getAuthKey(rule.loc || '', rule.can || '');
   try {
     const raw = localStorage.getItem(k);
@@ -84,14 +95,13 @@ function setAuthorized(rule) {
 async function requireCanchaPassword(locId, canId) {
   const pwCfg = await loadPasswords();
   const rule = findCanchaRule(pwCfg, locId, canId);
-  if (!rule || !rule.enabled) return true; // no protegida
+  if (!rule || !rule.enabled) return true;
 
-  if (isAuthorized(rule)) return true; // ya autorizado vigente
+  if (isAuthorized(rule)) return true;
 
-  // Hasta 3 intentos. Cancelar devuelve false.
   for (let i = 0; i < 3; i++) {
     const input = window.prompt('Esta cancha requiere contraseña.');
-    if (input === null) return false; // canceló
+    if (input === null) return false;
     const h = await sha256Hex(input);
     if (h === rule.sha256) {
       setAuthorized(rule);
@@ -121,9 +131,7 @@ function parseFromName(name) {
 function absSeconds(a, b) { return Math.abs((a - b) / 1000); }
 
 /**
- * En lugar de leer "opuesto" del config, lo deducimos:
- * - Si la cancha tiene exactamente 2 lados, el opuesto es el otro.
- * - Si hay 1 lado o más de 2, no definimos opuesto (null).
+ * Opuesto: si la cancha tiene exactamente 2 lados, el opuesto es el otro.
  */
 async function findOppositeConfig(cfg, locId, canId, ladoId) {
   const loc = cfg.locaciones.find(l => l.id === locId);
@@ -139,8 +147,7 @@ async function findOppositeConfig(cfg, locId, canId, ladoId) {
 }
 
 /**
- * Busca el clip del lado opuesto con marca de tiempo más cercana (±15s).
- * Devuelve { lado, nombre, url } o null.
+ * Busca clip del lado opuesto con timestamp ±15s.
  */
 async function findOppositeVideo(entry, cfg, locId, canId, ladoId) {
   const meta = parseFromName(entry.nombre);
@@ -276,23 +283,152 @@ async function populateLados() {
   }
 }
 
-// ----------------------- video + filtros -----------------------
+// ----------------------- video + filtros + paginación -----------------------
 let allVideos = [];
 let visibilityMap = new Map();
 let currentPreviewActive = null;
 
-// Estado para paginación
+// Estado de paginación
 const PAGE_SIZE = 10;
-let videosListaCompleta = [];      // lista final tras filtro horario
+let videosListaCompleta = [];
 let paginacionHabilitada = false;
-let paginaActual = 0;              // índice de página (0-based)
-let cfgGlobal = null;              // cache config_locations para enlaces opuestos
-let oppInfoCache = null;           // info de lado opuesto si existe {oppId, oppUrl, oppName}
-let contenedorVideos = null;       // #videos-container
-let contenedorControles = null;    // contenedor bajo la grilla para "ver más" + filtros abajo
-let btnVerMas = null;              // botón de paginado
-let contFiltroArriba = null;       // #filtro-horario (arriba)
-let contFiltroAbajo = null;        // #filtro-horario-bottom (abajo)
+let paginaActual = 0; // 0-based
+let cfgGlobal = null;
+let oppInfoCache = null;
+let contenedorVideos = null;
+
+let contenedorTopControls = null;     // arriba: paginador superior
+let contenedorBottomControls = null;  // abajo: paginador + filtros
+let contFiltroArriba = null;
+let contFiltroAbajo = null;
+
+let ultimoFiltroActivo = null;
+
+// ---- Helpers UI ----
+function ensureTopControlsContainer() {
+  if (!contenedorTopControls) {
+    contenedorTopControls = document.getElementById("top-controls");
+    if (!contenedorTopControls) {
+      contenedorTopControls = document.createElement("div");
+      contenedorTopControls.id = "top-controls";
+      contenedorTopControls.style.margin = "12px 0";
+      const parent = contenedorVideos?.parentElement;
+      if (parent) parent.insertBefore(contenedorTopControls, contenedorVideos);
+    }
+  }
+  // Paginador superior
+  let pagTop = document.getElementById("paginator-top");
+  if (!pagTop) {
+    pagTop = document.createElement("div");
+    pagTop.id = "paginator-top";
+    contenedorTopControls.appendChild(pagTop);
+  }
+}
+
+function ensureBottomControlsContainer() {
+  if (!contenedorBottomControls) {
+    contenedorBottomControls = document.getElementById("bottom-controls");
+    if (!contenedorBottomControls) {
+      contenedorBottomControls = document.createElement("div");
+      contenedorBottomControls.id = "bottom-controls";
+      contenedorBottomControls.style.margin = "24px 0 12px 0";
+      contenedorVideos.parentElement.insertBefore(contenedorBottomControls, contenedorVideos.nextSibling);
+    }
+  }
+  // Paginador inferior
+  let pagBottom = document.getElementById("paginator-bottom");
+  if (!pagBottom) {
+    pagBottom = document.createElement("div");
+    pagBottom.id = "paginator-bottom";
+    contenedorBottomControls.appendChild(pagBottom);
+  }
+  // Filtros abajo
+  contFiltroAbajo = document.getElementById("filtro-horario-bottom");
+  if (!contFiltroAbajo) {
+    contFiltroAbajo = document.createElement("div");
+    contFiltroAbajo.id = "filtro-horario-bottom";
+    contFiltroAbajo.style.marginTop = "12px";
+    contenedorBottomControls.appendChild(contFiltroAbajo);
+  }
+}
+
+function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, oppHref) {
+  if (!container) return;
+  container.innerHTML = "";
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  if (totalPages === 1) return;
+
+  const wrap = document.createElement("div");
+  wrap.style.display = "flex";
+  wrap.style.flexWrap = "wrap";
+  wrap.style.alignItems = "center";
+  wrap.style.gap = "8px";
+
+  const btn = (label, disabled, handler, title) => {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.title = title || label;
+    b.disabled = !!disabled;
+    b.style.padding = "6px 10px";
+    b.style.border = "none";
+    b.style.borderRadius = "8px";
+    b.style.cursor = disabled ? "default" : "pointer";
+    b.addEventListener("click", handler);
+    return b;
+    };
+
+  // Prev
+  wrap.appendChild(btn("‹ Anterior", pageIndex === 0, () => onChange(pageIndex - 1), "Página anterior"));
+
+  // Números (ventana de hasta 5)
+  const windowSize = 5;
+  let start = Math.max(0, pageIndex - Math.floor(windowSize / 2));
+  let end = Math.min(totalPages - 1, start + windowSize - 1);
+  start = Math.max(0, Math.min(start, Math.max(0, end - windowSize + 1)));
+
+  for (let i = start; i <= end; i++) {
+    const num = document.createElement("button");
+    num.textContent = String(i + 1);
+    num.style.padding = "6px 10px";
+    num.style.border = "none";
+    num.style.borderRadius = "8px";
+    num.style.cursor = "pointer";
+    if (i === pageIndex) {
+      num.style.fontWeight = "700";
+      num.style.outline = "1px solid rgba(255,255,255,0.3)";
+    }
+    num.addEventListener("click", () => onChange(i));
+    wrap.appendChild(num);
+  }
+
+  // Next (o Ir al lado opuesto si estás en la última página)
+  if (pageIndex < totalPages - 1) {
+    wrap.appendChild(btn("Siguiente ›", false, () => onChange(pageIndex + 1), "Página siguiente"));
+  } else if (oppHref) {
+    const opp = document.createElement("a");
+    opp.textContent = "Ir al lado opuesto";
+    opp.href = oppHref;
+    opp.style.padding = "6px 10px";
+    opp.style.borderRadius = "8px";
+    opp.style.textDecoration = "none";
+    opp.style.outline = "1px solid rgba(255,255,255,0.3)";
+    wrap.appendChild(opp);
+  } else {
+    // Última página sin opuesto: nada extra
+  }
+
+  // Info “Mostrando X–Y de Z”
+  const info = document.createElement("span");
+  const first = pageIndex * pageSize + 1;
+  const last = Math.min((pageIndex + 1) * pageSize, totalItems);
+  info.textContent = `Mostrando ${first}–${last} de ${totalItems}`;
+  info.style.marginLeft = "auto";
+  info.style.opacity = "0.8";
+  wrap.appendChild(info);
+
+  container.appendChild(wrap);
+}
 
 // ---- Filtros (arriba y abajo sincronizados) ----
 function renderHourFilterIn(container, videos) {
@@ -314,7 +450,10 @@ function renderHourFilterIn(container, videos) {
     if (filtroHoraActivo === h) btn.classList.add("activo");
     btn.addEventListener("click", () => {
       const p = getQueryParams();
-      window.location.href = `lado.html?loc=${p.loc}&can=${p.can}&lado=${p.lado}&filtro=${h}`;
+      // al cambiar filtro, reinicia la página a 0
+      setQueryParams({ filtro: h, pg: 0, video: "" });
+      populateVideos();
+      scrollToTop();
     });
     container.appendChild(btn);
   });
@@ -324,53 +463,12 @@ function renderHourFilterIn(container, videos) {
   quitarBtn.className = "btn-filtro quitar";
   if (!filtroHoraActivo) quitarBtn.style.display = "none";
   quitarBtn.addEventListener("click", () => {
-    const p = getQueryParams();
-    window.location.href = `lado.html?loc=${p.loc}&can=${p.can}&lado=${p.lado}`;
+    setQueryParams({ filtro: "", pg: 0, video: "" });
+    populateVideos();
+    scrollToTop();
   });
   container.appendChild(quitarBtn);
   container.style.display = "flex";
-}
-
-function ensureBottomControlsContainer() {
-  // Crea contenedor bajo la grilla si no existe: incluye botón "Ver más" + barra filtros de abajo
-  if (!contenedorControles) {
-    contenedorControles = document.getElementById("bottom-controls");
-    if (!contenedorControles) {
-      contenedorControles = document.createElement("div");
-      contenedorControles.id = "bottom-controls";
-      contenedorControles.style.margin = "24px 0 12px 0";
-      contenedorVideos.parentElement.insertBefore(contenedorControles, contenedorVideos.nextSibling);
-    }
-  }
-
-  // Botón "Ver más"
-  if (!btnVerMas) {
-    btnVerMas = document.createElement("button");
-    btnVerMas.id = "load-more-btn";
-    btnVerMas.className = "btn-ver-mas";
-    btnVerMas.textContent = "Ver más";
-    btnVerMas.style.display = "none";
-    btnVerMas.style.margin = "12px 0";
-    btnVerMas.style.padding = "10px 16px";
-    btnVerMas.style.borderRadius = "8px";
-    btnVerMas.style.border = "none";
-    btnVerMas.style.cursor = "pointer";
-    btnVerMas.addEventListener("click", () => {
-      // Avanza una página y renderiza, descargando la anterior
-      paginaActual += 1;
-      renderPaginaActual(true);
-    });
-    contenedorControles.appendChild(btnVerMas);
-  }
-
-  // Filtros abajo
-  contFiltroAbajo = document.getElementById("filtro-horario-bottom");
-  if (!contFiltroAbajo) {
-    contFiltroAbajo = document.createElement("div");
-    contFiltroAbajo.id = "filtro-horario-bottom";
-    contFiltroAbajo.style.marginTop = "12px";
-    contenedorControles.appendChild(contFiltroAbajo);
-  }
 }
 
 function createHourFilterUI(videos) {
@@ -379,23 +477,24 @@ function createHourFilterUI(videos) {
   contFiltroArriba = filtroDiv || null;
   renderHourFilterIn(contFiltroArriba, videos);
 
-  // Abajo (siempre visible arriba del footer)
+  // Abajo
   ensureBottomControlsContainer();
   renderHourFilterIn(contFiltroAbajo, videos);
 }
 
-// ---- Previews y videos ----
+// ---- Previews / reproducción ----
 function createPreviewOverlay(videoSrc, duration, parentCard) {
   const preview = document.createElement("video");
   preview.muted = true;
   preview.playsInline = true;
-  preview.preload = "none"; // carga secuencial
+  preview.preload = "none";
   preview.src = videoSrc;
   preview.className = "video-preview";
   preview.setAttribute("aria-label", "Vista previa");
 
   let start = duration > 15 ? duration - 15 : 0;
   const len = 5, end = start + len;
+
   const onLoadedMeta = () => { try { preview.currentTime = start; } catch {} };
   const onTimeUpdate = () => {
     try { if (preview.currentTime >= end) preview.currentTime = start; } catch {}
@@ -424,7 +523,6 @@ function createPreviewOverlay(videoSrc, duration, parentCard) {
   }, { threshold: [0.25, 0.5, 0.75] });
 
   io.observe(preview);
-  // guardar referencias para depuración/limpieza de recursos
   preview._observer = io;
   preview._onLoadedMeta = onLoadedMeta;
   preview._onTimeUpdate = onTimeUpdate;
@@ -458,6 +556,15 @@ async function loadPreviewsSequentially(previews) {
   }
 }
 
+// Pausar todo y desactivar preloads (para priorizar acciones como compartir)
+function pauseAllVideos() {
+  try { if (currentPreviewActive) currentPreviewActive.pause(); } catch {}
+  document.querySelectorAll("video.video-preview, video.real").forEach(v => {
+    try { v.pause(); } catch {}
+    try { v.preload = "none"; } catch {}
+  });
+}
+
 async function crearBotonAccionCompartir(entry) {
   const btn = document.createElement("button");
   btn.className = "btn-share-large";
@@ -468,21 +575,36 @@ async function crearBotonAccionCompartir(entry) {
   btn.addEventListener("click", async e => {
     e.preventDefault();
     const orig = btn.textContent;
-    btn.textContent = "Espera un momento...";
+    btn.textContent = "Abriendo opciones…";
     btn.disabled = true;
+
+    // Priorizar esta acción: pausar todo y cortar preloads
+    pauseAllVideos();
+
     try {
-      const res = await fetch(entry.url);
-      const blob = await res.blob();
-      const file = new File([blob], entry.nombre, { type: blob.type });
-      if (navigator.canShare?.({ files: [file] })) {
+      // Compartir rápido con URL (sin descargar el archivo)
+      if (navigator.share) {
         await navigator.share({
-          files: [file],
           title: "Video Puntazo",
-          text: "Mira este _*PUNTAZO*_ \n www.puntazoclips.com"
+          text: "Mira este _*PUNTAZO*_",
+          url: entry.url
         });
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(entry.url);
+        alert("Enlace copiado al portapapeles.");
+      } else {
+        // Fallback mínimo: abrir el enlace en pestaña nueva
+        window.open(entry.url, "_blank");
       }
     } catch (err) {
-      console.warn("Share sheet falló:", err);
+      console.warn("Share falló:", err);
+      // Fallback a copiar enlace si es posible
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(entry.url);
+          alert("Enlace copiado al portapapeles.");
+        }
+      } catch {}
     } finally {
       btn.textContent = orig;
       btn.disabled = false;
@@ -492,88 +614,47 @@ async function crearBotonAccionCompartir(entry) {
   return btn;
 }
 
-// ---- Render de una página (10 máx) descargando completamente la anterior ----
+// ---- Render de página con descarga completa de la anterior ----
 function limpiarRecursosDePagina() {
-  // Pausar preview activo
   try { if (currentPreviewActive) currentPreviewActive.pause(); } catch {}
   currentPreviewActive = null;
-
-  // Reiniciar mapa de visibilidad
   visibilityMap = new Map();
 
-  // Descargar videos DOM actuales del contenedor
   if (!contenedorVideos) return;
   const cards = Array.from(contenedorVideos.children);
   cards.forEach(card => {
     const real = card.querySelector("video.real");
     const prev = card.querySelector("video.video-preview");
 
-    // Pausar y cortar flujos
     [real, prev].forEach(v => {
       if (!v) return;
       try { v.pause?.(); } catch {}
-      // Desconectar observers y eventos del preview
       if (v === prev && v._observer) {
         try { v._observer.disconnect(); } catch {}
         v.removeEventListener?.("loadedmetadata", v._onLoadedMeta);
         v.removeEventListener?.("timeupdate", v._onTimeUpdate);
         v._observer = null;
       }
-      // Cortar src y recargar para abortar cualquier descarga
       try { v.removeAttribute("src"); v.load?.(); } catch {}
     });
   });
 
-  // Limpiar DOM
   contenedorVideos.innerHTML = "";
   allVideos = [];
 }
 
-function actualizarBotonVerMas(oppLinkHref) {
-  if (!btnVerMas) return;
-
-  const total = videosListaCompleta.length;
-  const start = paginaActual * PAGE_SIZE;
-  const quedan = total - (start + PAGE_SIZE);
-
-  if (!paginacionHabilitada) {
-    btnVerMas.style.display = "none";
-    return;
-  }
-
-  if (quedan > 0) {
-    btnVerMas.textContent = "Ver más";
-    btnVerMas.onclick = () => {
-      paginaActual += 1;
-      renderPaginaActual(true);
-    };
-    btnVerMas.style.display = "inline-block";
-  } else {
-    // No quedan más videos en esta lista
-    if (oppLinkHref) {
-      btnVerMas.textContent = "Ir al lado opuesto";
-      btnVerMas.onclick = () => { window.location.href = oppLinkHref; };
-      btnVerMas.style.display = "inline-block";
-    } else {
-      btnVerMas.style.display = "none";
-    }
-  }
-}
-
-async function renderPaginaActual(fueCambioDePagina = false) {
+async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
   limpiarRecursosDePagina();
 
   const params = getQueryParams();
   const { loc, can, lado } = params;
 
-  // Sublista a mostrar
   const start = paginaActual * PAGE_SIZE;
   const end = Math.min(start + PAGE_SIZE, videosListaCompleta.length);
   const pageSlice = videosListaCompleta.slice(start, end);
 
-  // Render de cards
   for (const entry of pageSlice) {
-    // Calcula displayTime
+    // displayTime
     const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
     let displayTime = entry.nombre.replace(".mp4", "");
     if (m) {
@@ -614,19 +695,17 @@ async function renderPaginaActual(fueCambioDePagina = false) {
     wrap.appendChild(preview);
     card.appendChild(wrap);
 
-    // Contenedor de botones
+    // Botones
     const btnContainer = document.createElement("div");
     btnContainer.className = "botones-container";
     btnContainer.style.display = "flex";
     btnContainer.style.alignItems = "center";
     btnContainer.style.marginTop = "12px";
 
-    // Botón compartir/descargar
     const actionBtn = await crearBotonAccionCompartir(entry);
     actionBtn.style.removeProperty('flex');
     btnContainer.appendChild(actionBtn);
 
-    // Botón "Ver otra perspectiva" (opuesto automático)
     (async () => {
       try {
         const opposite = await findOppositeVideo(entry, cfgGlobal, loc, can, lado);
@@ -638,9 +717,7 @@ async function renderPaginaActual(fueCambioDePagina = false) {
           btnAlt.href = `lado.html?loc=${loc}&can=${can}&lado=${opposite.lado}&video=${encodeURIComponent(opposite.nombre)}`;
           btnContainer.appendChild(btnAlt);
         }
-      } catch {
-        // silencioso
-      }
+      } catch {}
     })();
 
     card.appendChild(btnContainer);
@@ -650,18 +727,33 @@ async function renderPaginaActual(fueCambioDePagina = false) {
 
   setupMutualExclusion(allVideos);
 
-  // Carga previews en serie solo para la página actual
+  // Carga previews en serie SOLO de esta página
   const previews = Array.from(contenedorVideos.querySelectorAll("video.video-preview"));
   loadPreviewsSequentially(previews);
 
-  // Actualizar botón "Ver más" / "Ir al lado opuesto"
-  let oppHref = null;
-  if (oppInfoCache?.oppId) {
-    oppHref = `lado.html?loc=${params.loc}&can=${params.can}&lado=${oppInfoCache.oppId}`;
-  }
-  actualizarBotonVerMas(oppHref);
+  // Paginadores (arriba/abajo)
+  const total = videosListaCompleta.length;
+  const oppHref = oppInfoCache?.oppId
+    ? `lado.html?loc=${params.loc}&can=${params.can}&lado=${oppInfoCache.oppId}`
+    : null;
 
-  // Si fue cambio de página, desplazamos suavemente al inicio de las nuevas cards
+  const pagTop = document.getElementById("paginator-top");
+  const pagBottom = document.getElementById("paginator-bottom");
+
+  const onChange = (newPage) => {
+    if (newPage < 0) newPage = 0;
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (newPage > totalPages - 1) newPage = totalPages - 1;
+    paginaActual = newPage;
+    setQueryParams({ pg: paginaActual }, false);
+    renderPaginaActual({ fueCambioDePagina: true });
+    scrollToTop();
+  };
+
+  renderPaginator(pagTop, total, paginaActual, PAGE_SIZE, onChange, oppHref);
+  renderPaginator(pagBottom, total, paginaActual, PAGE_SIZE, onChange, oppHref);
+
+  // Desplazamiento suave al inicio del bloque nuevo
   if (fueCambioDePagina && contenedorVideos.firstElementChild) {
     contenedorVideos.firstElementChild.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -671,6 +763,7 @@ async function populateVideos() {
   const params = getQueryParams();
   const { loc, can, lado, filtro, video: targetId } = params;
   const urlCfg = `data/config_locations.json?cb=${Date.now()}`;
+
   try {
     const resCfg = await fetch(urlCfg, { cache: "no-store" });
     cfgGlobal = await resCfg.json();
@@ -711,31 +804,40 @@ async function populateVideos() {
       });
     }
 
+    ultimoFiltroActivo = filtro || null;
+
     // Guardar lista completa y estado de paginación
     videosListaCompleta = list;
     paginacionHabilitada = videosListaCompleta.length > 7;
-    paginaActual = 0;
 
-    // Preparar contenedor de controles al pie (Ver más + filtros abajo)
+    // Preparar contenedores de paginación
+    ensureTopControlsContainer();
     ensureBottomControlsContainer();
 
-    // Resolver info de lado opuesto (para "Ir al lado opuesto" al final)
+    // Resolver info de lado opuesto (para el link cuando estás en la última página)
     oppInfoCache = await findOppositeConfig(cfgGlobal, loc, can, lado);
 
-    // Si hay parámetro ?video=..., tratar de arrancar en la página que lo contiene
+    // Calcular página inicial
+    const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
+    let desiredPg = parseInt(params.pg || "0", 10);
+    if (Number.isNaN(desiredPg)) desiredPg = 0;
+
+    // Si viene ?video=, ubicar la página donde está
     if (targetId) {
       const idx = videosListaCompleta.findIndex(v => v.nombre === targetId);
-      if (idx >= 0 && paginacionHabilitada) {
-        paginaActual = Math.floor(idx / PAGE_SIZE);
-      }
+      if (idx >= 0 && paginacionHabilitada) desiredPg = Math.floor(idx / PAGE_SIZE);
     }
 
-    // Render inicial (con descarga total controlada entre páginas)
-    await renderPaginaActual(false);
+    paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
+
+    // Escribir pg en la URL (replace si aún no estaba)
+    setQueryParams({ pg: paginaActual }, !("pg" in params));
+
+    // Render inicial
+    await renderPaginaActual({ fueCambioDePagina: false });
 
     if (loading) loading.style.display = "none";
 
-    // Si venía ?video=..., hacemos scroll al card ya en la página correcta
     if (targetId) scrollToVideoById(targetId);
   } catch (err) {
     console.error("Error en populateVideos():", err);
@@ -784,7 +886,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (path.endsWith("cancha.html")) {
       const ok = await requireCanchaPassword(p.loc, p.can);
       if (!ok) {
-        // si canceló o falló, regresar al listado de canchas del club
         window.location.href = `locacion.html?loc=${p.loc}`;
         return;
       }
@@ -816,6 +917,23 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+// Manejo del historial: si cambia ?pg o ?filtro con Atrás/Adelante, re-render.
+window.addEventListener("popstate", () => {
+  const p = getQueryParams();
+  const newFilter = p.filtro || null;
+  if (newFilter !== ultimoFiltroActivo) {
+    // Filtro cambió: repoblar todo
+    populateVideos();
+  } else {
+    // Solo cambió la página
+    const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
+    let desiredPg = parseInt(p.pg || "0", 10);
+    if (Number.isNaN(desiredPg)) desiredPg = 0;
+    paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
+    renderPaginaActual({ fueCambioDePagina: true });
+  }
+});
+
 // Cierra navbar al scrollear o click fuera
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.querySelector('.menu-toggle');
@@ -827,14 +945,12 @@ document.addEventListener("DOMContentLoaded", () => {
       nav.classList.toggle('show');
     });
 
-    // cerrar al hacer click fuera
     document.addEventListener('click', (e) => {
       if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) {
         nav.classList.remove('show');
       }
     });
 
-    // cerrar al scrollear
     window.addEventListener('scroll', () => {
       if (nav.classList.contains('show')) nav.classList.remove('show');
     });
@@ -854,21 +970,18 @@ function initNavbar(){
     nav.classList.toggle('show');
   });
 
-  // Cerrar al click fuera
   document.addEventListener('click', (e) => {
     if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) {
       close();
     }
   });
 
-  // Cerrar al scrollear o al cambiar de tamaño
   window.addEventListener('scroll', close);
   window.addEventListener('resize', () => {
     if (window.innerWidth > 768) close();
   });
 }
 
-// Llama al init junto con lo que ya tienes en DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
 });
