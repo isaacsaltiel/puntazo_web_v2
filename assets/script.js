@@ -548,7 +548,6 @@ async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal
   if (onStart) onStart({ totalKnown: !!total, totalBytes: total });
 
   if (!reader) {
-    // Sin streaming readable: progreso indeterminado
     const blob = await res.blob();
     if (onProgress) onProgress({ percent: 100, loaded: blob.size, total: blob.size, indeterminate: !total });
     if (onFinish) onFinish();
@@ -565,7 +564,7 @@ async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal
     received += value.byteLength || value.length || 0;
     if (onProgress) {
       if (total) {
-        const pct = Math.max(0, Math.min(100, Math.round((received / total) * 100)));
+        const pct = Math.max(0, Math.min(100, Math.round((received / total) * 100))));
         onProgress({ percent: pct, loaded: received, total, indeterminate: false });
       } else {
         onProgress({ percent: null, loaded: received, total: 0, indeterminate: true });
@@ -584,87 +583,43 @@ async function crearBotonAccionCompartir(entry) {
   btn.title = "Compartir video";
   btn.setAttribute("aria-label", "Compartir video");
 
-  // Estilos mínimos para la UI de progreso dentro del botón
-  const styleProgressWrap = (wrap) => {
-    wrap.style.display = "flex";
-    wrap.style.gap = "8px";
-    wrap.style.alignItems = "center";
-    wrap.style.justifyContent = "center";
-    wrap.style.width = "100%";
-  };
-  const styleBar = (bar, fill) => {
-    bar.style.position = "relative";
-    bar.style.flex = "1";
-    bar.style.height = "6px";
-    bar.style.borderRadius = "999px";
-    bar.style.background = "rgba(255,255,255,0.25)";
-    fill.style.position = "absolute";
-    fill.style.left = "0";
-    fill.style.top = "0";
-    fill.style.bottom = "0";
-    fill.style.width = "0%";
-    fill.style.borderRadius = "999px";
-    fill.style.background = "rgba(255,255,255,0.9)";
-    fill.style.transition = "width 120ms linear";
-  };
-  const styleSpinner = (node) => {
-    node.textContent = "●";
-    node.style.display = "inline-block";
-    node.style.animation = "spin-dot 1s linear infinite";
-  };
-  // Inyectar una keyframe simple si no existe
-  if (!document.getElementById("spin-dot-keyframes")) {
-    const st = document.createElement("style");
-    st.id = "spin-dot-keyframes";
-    st.textContent = `
-      @keyframes spin-dot { 
-        0% { transform: rotate(0deg); } 
-        100% { transform: rotate(360deg); } 
-      }
-    `;
-    document.head.appendChild(st);
-  }
-
   btn.addEventListener("click", async (e) => {
     e.preventDefault();
-    if (btn.dataset.downloading === "1") return; // evita dobles clics
+    if (btn.dataset.downloading === "1") return;
 
     // Priorizar ancho de banda
     pauseAllVideos();
 
     btn.dataset.downloading = "1";
     btn.disabled = true;
-
     const originalContent = btn.textContent;
 
-    // Construir UI de progreso
+    // Construir UI de progreso (usa clases CSS)
     btn.textContent = "";
     const wrap = document.createElement("span");
-    styleProgressWrap(wrap);
+    wrap.className = "btn-progress";
 
     const label = document.createElement("span");
+    label.className = "btn-progress__label";
     label.textContent = "Descargando…";
 
     const percentSpan = document.createElement("span");
+    percentSpan.className = "btn-progress__percent";
     percentSpan.textContent = "0%";
-    percentSpan.style.minWidth = "3ch";
 
     const bar = document.createElement("span");
+    bar.className = "btn-progress__bar";
     const fill = document.createElement("span");
-    styleBar(bar, fill);
+    fill.className = "btn-progress__fill";
+    bar.appendChild(fill);
 
     const spinner = document.createElement("span");
-    styleSpinner(spinner);
-    spinner.style.display = "none";
+    spinner.className = "btn-progress__spinner";
 
     const cancelBtn = document.createElement("button");
     cancelBtn.type = "button";
+    cancelBtn.className = "btn-progress__cancel";
     cancelBtn.textContent = "Cancelar";
-    cancelBtn.style.padding = "4px 8px";
-    cancelBtn.style.border = "none";
-    cancelBtn.style.borderRadius = "6px";
-    cancelBtn.style.cursor = "pointer";
-    cancelBtn.style.opacity = "0.9";
 
     wrap.appendChild(label);
     wrap.appendChild(percentSpan);
@@ -694,18 +649,18 @@ async function crearBotonAccionCompartir(entry) {
       const blob = await downloadWithProgress(entry.url, {
         signal,
         onStart({ totalKnown }) {
-          // Si no se conoce el total, usar spinner
           if (!totalKnown) {
             spinner.style.display = "inline-block";
             percentSpan.textContent = "";
             fill.style.width = "0%";
+            fill.style.opacity = "0.4";
           }
         },
         onProgress({ percent, indeterminate }) {
           if (indeterminate) {
             spinner.style.display = "inline-block";
             percentSpan.textContent = "";
-            fill.style.width = "100%"; // barra llena (indeterminado)
+            fill.style.width = "100%";
             fill.style.opacity = "0.4";
           } else {
             spinner.style.display = "none";
@@ -722,7 +677,6 @@ async function crearBotonAccionCompartir(entry) {
 
       const file = new File([blob], entry.nombre, { type: blob.type || "video/mp4" });
 
-      // Intentar compartir el archivo
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -733,7 +687,6 @@ async function crearBotonAccionCompartir(entry) {
         return;
       }
 
-      // Fallback: descargar el archivo
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -747,7 +700,7 @@ async function crearBotonAccionCompartir(entry) {
 
       restore(originalContent);
     } catch (err) {
-      if (err?.name === "AbortError") return; // ya restauramos arriba
+      if (err?.name === "AbortError") return;
       console.warn("Descarga/compartir falló:", err);
       restore("Error");
       setTimeout(() => restore(originalContent), 1500);
@@ -923,7 +876,7 @@ async function populateVideos() {
     const nombreLado = document.getElementById("nombre-lado");
     if (linkClub) { linkClub.textContent = locObj?.nombre || loc; linkClub.href = `locacion.html?loc=${loc}`; }
     if (linkCancha) { linkCancha.textContent = canObj?.nombre || can; linkCancha.href = `cancha.html?loc=${loc}&can=${can}`; }
-    if (nombreLado) nombreLado.textContent = ladoObj?.nombre || lado;
+    if (nombreLado) { nombreLado.textContent = ladoObj?.nombre || lado; }
 
     createHourFilterUI(data.videos);
 
