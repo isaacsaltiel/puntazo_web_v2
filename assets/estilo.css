@@ -753,7 +753,39 @@ html, body{ overflow-x:hidden; }
   .btn-progress__fill { transition: none; }
   .btn-share-large, #paginator-top button, #paginator-bottom button { transition: none; }
 }
+/* --- Ajustes anti-overflow para el botón de progreso --- */
+.btn-share-large {
+  box-sizing: border-box;
+}
 
+/* Móvil: que el botón pueda ocupar el ancho completo y permitir wrap */
+@media (max-width: 480px) {
+  .btn-share-large { width: 100%; }
+
+  .btn-progress {
+    flex-wrap: wrap;      /* permite que la barra baje a la segunda línea */
+    gap: 6px;
+  }
+  .btn-progress__bar {
+    flex: 1 1 100%;       /* barra ocupa toda la línea si hace wrap */
+    min-width: 0;         /* evita forzar ancho mínimo que cause overflow */
+    margin-top: 4px;      /* separa visualmente en la segunda línea */
+  }
+  .btn-progress__cancel {
+    padding: 4px 6px;
+    font-size: 0.95em;
+  }
+}
+
+/* Pantallas MUY angostas: quitar la palabra “Descargando…” */
+@media (max-width: 360px) {
+  .btn-progress__label { display: none; }
+}
+
+/* Ultra-compacto: si aún falta espacio, ocultar también el % */
+@media (max-width: 320px) {
+  .btn-progress__percent { display: none; }
+}
 
 /* Cinturón anti-scroll horizontal (por si acaso) */
 html,body{ overflow-x:hidden; }
