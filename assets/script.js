@@ -285,6 +285,60 @@ let contFiltroArriba = null;
 let contFiltroAbajo = null;
 let ultimoFiltroActivo = null;
 
+// NUEVO: botón fijo de "Ir al lado opuesto" en el header
+let btnOppTopEl = null;
+function ensureOppositeTopButton(oppHref, oppName) {
+  const btnVolver = document.getElementById("btn-volver");
+  if (!btnVolver) return;
+
+  // hacer que el contenedor del botón volver sea flex para alinear lado a lado
+  const parent = btnVolver.parentElement || document.body;
+  // No rompemos tu CSS: sólo si no es flex, lo hacemos flex
+  const csParent = window.getComputedStyle(parent);
+  if (csParent.display !== "flex") {
+    parent.style.display = "flex";
+    parent.style.alignItems = "center";
+    parent.style.gap = parent.style.gap || "8px";
+  }
+  // Separar a extremos si hay espacio
+  parent.style.justifyContent = parent.style.justifyContent || "space-between";
+
+  if (!btnOppTopEl) {
+    btnOppTopEl = document.createElement("a");
+    btnOppTopEl.id = "btn-opposite-top";
+    btnOppTopEl.className = "btn-alt"; // mismos tonos que el actual "Ver otra perspectiva"
+    btnOppTopEl.textContent = "Ir al lado opuesto";
+    btnOppTopEl.title = "Cambiar a la otra cámara";
+    btnOppTopEl.setAttribute("aria-label", "Ir al lado opuesto");
+
+    // Para parecerse en tamaño al de regresar, copiamos padding, radio y fuente
+    try {
+      const cs = window.getComputedStyle(btnVolver);
+      btnOppTopEl.style.padding = cs.padding;
+      btnOppTopEl.style.borderRadius = cs.borderRadius;
+      btnOppTopEl.style.fontSize = cs.fontSize;
+      btnOppTopEl.style.lineHeight = cs.lineHeight;
+    } catch {}
+
+    // Colócalo del lado opuesto
+    btnOppTopEl.style.marginLeft = "auto";
+
+    // Insertar sólo si no existe aún
+    if (!document.getElementById("btn-opposite-top")) {
+      parent.appendChild(btnOppTopEl);
+    }
+  }
+
+  if (oppHref) {
+    btnOppTopEl.href = oppHref;
+    btnOppTopEl.style.display = "";
+    if (oppName) btnOppTopEl.title = `Cambiar a ${oppName}`;
+  } else {
+    // si no hay lado opuesto, ocultamos el botón
+    btnOppTopEl.style.display = "none";
+  }
+}
+
 // ---- Helpers UI ----
 function ensureTopControlsContainer() {
   if (!contenedorTopControls) {
@@ -421,7 +475,6 @@ function renderHourFilterIn(container, videos) {
     btn.className = "btn-filtro";
     if (filtroHoraActivo === h) btn.classList.add("activo");
     btn.addEventListener("click", () => {
-      const p = getQueryParams();
       setQueryParams({ filtro: h, pg: 0, video: "" });
       populateVideos();
       scrollToTop();
@@ -539,7 +592,6 @@ async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal
   const totalHeader = res.headers.get("Content-Length") || res.headers.get("content-length");
   const total = totalHeader ? parseInt(totalHeader, 10) : 0;
 
-  // intenta conservar el tipo
   const defaultType = url.toLowerCase().endsWith(".mp4") ? "video/mp4" : (res.headers.get("Content-Type") || "application/octet-stream");
   const reader = res.body?.getReader?.();
 
@@ -583,9 +635,7 @@ async function crearBotonAccionCompartir(entry) {
   btn.dataset.state = "idle"; // idle | downloading | ready
   btn._shareFile = null;      // File cache para segundo toque
 
-  // Helper: intenta abrir sharesheet con un File
   const tryShareFile = async (file) => {
-    // Algunos navegadores fallan en canShare, pero comparten igual — probamos directo
     try {
       if (navigator.share) {
         await navigator.share({
@@ -595,22 +645,15 @@ async function crearBotonAccionCompartir(entry) {
         });
         return true;
       }
-    } catch (e) {
-      // NotAllowedError normalmente significa que no había user activation
-      throw e;
-    }
+    } catch (e) { throw e; }
     return false;
   };
 
   btn.addEventListener("click", async (e) => {
     e.preventDefault();
 
-    // Si está en estado "ready", este toque es para abrir el ShareSheet garantizado
     if (btn.dataset.state === "ready" && btn._shareFile) {
-      try {
-        await tryShareFile(btn._shareFile);
-      } catch {}
-      // Si aún así no se puede, descargamos el archivo
+      try { await tryShareFile(btn._shareFile); } catch {}
       if (!navigator.canShare?.({ files: [btn._shareFile] })) {
         const url = URL.createObjectURL(btn._shareFile);
         const a = document.createElement("a");
@@ -618,23 +661,20 @@ async function crearBotonAccionCompartir(entry) {
         document.body.appendChild(a); a.click();
         setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 800);
       }
-      // Limpieza
       btn._shareFile = null;
       btn.textContent = "Compartido";
       setTimeout(() => { btn.textContent = "Compartir | Descargar"; btn.dataset.state = "idle"; }, 1200);
       return;
     }
 
-    if (btn.dataset.state === "downloading") return; // evita doble clic
+    if (btn.dataset.state === "downloading") return;
 
-    // Priorizar ancho de banda
     pauseAllVideos();
 
     btn.dataset.state = "downloading";
     btn.disabled = true;
     const originalContent = btn.textContent;
 
-    // UI progreso (clases CSS)
     btn.textContent = "";
     const wrap = document.createElement("span");
     wrap.className = "btn-progress";
@@ -719,29 +759,19 @@ async function crearBotonAccionCompartir(entry) {
 
       const file = new File([blob], entry.nombre, { type: blob.type || "video/mp4" });
 
-      // Intento 1: abrir ShareSheet en automático si todavía hay user activation (puede fallar tras descargas largas)
       let autoShared = false;
-      try {
-        // Algunos navegadores exigen user activation activa; probamos directo:
-        autoShared = await tryShareFile(file);
-      } catch {
-        autoShared = false;
-      }
+      try { autoShared = await tryShareFile(file); } catch { autoShared = false; }
 
       if (autoShared) {
-        // Exitoso: restaurar botón
         btn.innerHTML = "";
         btn.textContent = "Compartido";
         setTimeout(() => restoreIdle(originalContent), 1200);
       } else {
-        // Sin user activation o share no soportado con archivos:
-        // Guardamos el file y pedimos un segundo toque explícito para abrir el ShareSheet.
         btn._shareFile = file;
         btn.innerHTML = "";
         btn.textContent = "Listo — Compartir ahora";
         btn.disabled = false;
         btn.dataset.state = "ready";
-        // Nota: si el navegador no soporta share de archivos, en el segundo toque caerá a descargarlo.
       }
     } catch (err) {
       if (err?.name === "AbortError") return;
@@ -885,10 +915,6 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
 
   renderPaginator(pagTop, total, paginaActual, PAGE_SIZE, onChange, oppHref);
   renderPaginator(pagBottom, total, paginaActual, PAGE_SIZE, onChange, oppHref);
-
-  if (fueCambioDePagina && contenedorVideos.firstElementChild) {
-    contenedorVideos.firstElementChild.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
 }
 
 async function populateVideos() {
@@ -923,8 +949,15 @@ async function populateVideos() {
     if (linkCancha) { linkCancha.textContent = canObj?.nombre || can; linkCancha.href = `cancha.html?loc=${loc}&can=${can}`; }
     if (nombreLado) { nombreLado.textContent = ladoObj?.nombre || lado; }
 
+    // Botón de opuesto fijo arriba (si existe lado opuesto)
+    oppInfoCache = await findOppositeConfig(cfgGlobal, loc, can, lado);
+    const oppTopHref = oppInfoCache?.oppId ? `lado.html?loc=${loc}&can=${can}&lado=${oppInfoCache.oppId}` : null;
+    ensureOppositeTopButton(oppTopHref, oppInfoCache?.oppName);
+
+    // Filtros
     createHourFilterUI(data.videos);
 
+    // Lista con filtro horario
     let list = data.videos || [];
     if (filtro) {
       list = list.filter(v => {
@@ -939,8 +972,6 @@ async function populateVideos() {
 
     ensureTopControlsContainer();
     ensureBottomControlsContainer();
-
-    oppInfoCache = await findOppositeConfig(cfgGlobal, loc, can, lado);
 
     const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
     let desiredPg = parseInt(params.pg || "0", 10);
@@ -1025,14 +1056,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   })();
 
+  // Ajusta el href del botón "Regresar a la cancha"
   const btnVolver = document.getElementById("btn-volver");
   if (btnVolver) {
+    const path2 = window.location.pathname;
     const p2 = getQueryParams();
-    if (path.endsWith("lado.html")) {
+    if (path2.endsWith("lado.html")) {
       btnVolver.href = `cancha.html?loc=${p2.loc}&can=${p2.can}`;
-    } else if (path.endsWith("cancha.html")) {
+    } else if (path2.endsWith("cancha.html")) {
       btnVolver.href = `locacion.html?loc=${p2.loc}`;
-    } else if (path.endsWith("locacion.html")) {
+    } else if (path2.endsWith("locacion.html")) {
       btnVolver.href = "index.html";
     }
   }
@@ -1049,6 +1082,15 @@ window.addEventListener("popstate", () => {
     if (Number.isNaN(desiredPg)) desiredPg = 0;
     paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
     renderPaginaActual({ fueCambioDePagina: true });
+
+    // Mantener actualizado el botón de opuesto fijo (por si cambió lado por navegación)
+    const { loc, can, lado } = p;
+    if (cfgGlobal && loc && can && lado) {
+      findOppositeConfig(cfgGlobal, loc, can, lado).then(info => {
+        const oppTopHref = info?.oppId ? `lado.html?loc=${loc}&can=${can}&lado=${info.oppId}` : null;
+        ensureOppositeTopButton(oppTopHref, info?.oppName);
+      }).catch(() => {});
+    }
   }
 });
 
