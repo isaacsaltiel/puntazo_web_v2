@@ -93,7 +93,6 @@ async function requireCanchaPassword(locId, canId) {
   const pwCfg = await loadPasswords();
   const rule = findCanchaRule(pwCfg, locId, canId);
   if (!rule || !rule.enabled) return true;
-
   if (isAuthorized(rule)) return true;
 
   for (let i = 0; i < 3; i++) {
@@ -279,86 +278,12 @@ let cfgGlobal = null;
 let oppInfoCache = null;
 let contenedorVideos = null;
 
-let contenedorTopControls = null;
 let contenedorBottomControls = null;
 let contFiltroArriba = null;
 let contFiltroAbajo = null;
 let ultimoFiltroActivo = null;
 
-// NUEVO: botón fijo de "Ir al lado opuesto" en el header
-let btnOppTopEl = null;
-function ensureOppositeTopButton(oppHref, oppName) {
-  const btnVolver = document.getElementById("btn-volver");
-  if (!btnVolver) return;
-
-  // hacer que el contenedor del botón volver sea flex para alinear lado a lado
-  const parent = btnVolver.parentElement || document.body;
-  // No rompemos tu CSS: sólo si no es flex, lo hacemos flex
-  const csParent = window.getComputedStyle(parent);
-  if (csParent.display !== "flex") {
-    parent.style.display = "flex";
-    parent.style.alignItems = "center";
-    parent.style.gap = parent.style.gap || "8px";
-  }
-  // Separar a extremos si hay espacio
-  parent.style.justifyContent = parent.style.justifyContent || "space-between";
-
-  if (!btnOppTopEl) {
-    btnOppTopEl = document.createElement("a");
-    btnOppTopEl.id = "btn-opposite-top";
-    btnOppTopEl.className = "btn-alt"; // mismos tonos que el actual "Ver otra perspectiva"
-    btnOppTopEl.textContent = "Ir al lado opuesto";
-    btnOppTopEl.title = "Cambiar a la otra cámara";
-    btnOppTopEl.setAttribute("aria-label", "Ir al lado opuesto");
-
-    // Para parecerse en tamaño al de regresar, copiamos padding, radio y fuente
-    try {
-      const cs = window.getComputedStyle(btnVolver);
-      btnOppTopEl.style.padding = cs.padding;
-      btnOppTopEl.style.borderRadius = cs.borderRadius;
-      btnOppTopEl.style.fontSize = cs.fontSize;
-      btnOppTopEl.style.lineHeight = cs.lineHeight;
-    } catch {}
-
-    // Colócalo del lado opuesto
-    btnOppTopEl.style.marginLeft = "auto";
-
-    // Insertar sólo si no existe aún
-    if (!document.getElementById("btn-opposite-top")) {
-      parent.appendChild(btnOppTopEl);
-    }
-  }
-
-  if (oppHref) {
-    btnOppTopEl.href = oppHref;
-    btnOppTopEl.style.display = "";
-    if (oppName) btnOppTopEl.title = `Cambiar a ${oppName}`;
-  } else {
-    // si no hay lado opuesto, ocultamos el botón
-    btnOppTopEl.style.display = "none";
-  }
-}
-
-// ---- Helpers UI ----
-function ensureTopControlsContainer() {
-  if (!contenedorTopControls) {
-    contenedorTopControls = document.getElementById("top-controls");
-    if (!contenedorTopControls) {
-      contenedorTopControls = document.createElement("div");
-      contenedorTopControls.id = "top-controls";
-      contenedorTopControls.style.margin = "12px 0";
-      const parent = contenedorVideos?.parentElement;
-      if (parent) parent.insertBefore(contenedorTopControls, contenedorVideos);
-    }
-  }
-  let pagTop = document.getElementById("paginator-top");
-  if (!pagTop) {
-    pagTop = document.createElement("div");
-    pagTop.id = "paginator-top";
-    contenedorTopControls.appendChild(pagTop);
-  }
-}
-
+// ---- Sólo contenedor inferior (paginador abajo) ----
 function ensureBottomControlsContainer() {
   if (!contenedorBottomControls) {
     contenedorBottomControls = document.getElementById("bottom-controls");
@@ -389,7 +314,7 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
   container.innerHTML = "";
 
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  if (totalPages === 1) return;
+  if (totalPages === 1 && !oppHref) return;
 
   const wrap = document.createElement("div");
   wrap.style.display = "flex";
@@ -397,7 +322,7 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
   wrap.style.alignItems = "center";
   wrap.style.gap = "8px";
 
-  const btn = (label, disabled, handler, title) => {
+  const mkBtn = (label, disabled, handler, title) => {
     const b = document.createElement("button");
     b.textContent = label;
     b.title = title || label;
@@ -410,8 +335,10 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
     return b;
   };
 
-  wrap.appendChild(btn("‹ Anterior", pageIndex === 0, () => onChange(pageIndex - 1), "Página anterior"));
+  // ← Anterior
+  wrap.appendChild(mkBtn("‹ Anterior", pageIndex === 0, () => onChange(pageIndex - 1), "Página anterior"));
 
+  // Números
   const windowSize = 5;
   let start = Math.max(0, pageIndex - Math.floor(windowSize / 2));
   let end = Math.min(totalPages - 1, start + windowSize - 1);
@@ -423,8 +350,10 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
     num.style.padding = "6px 10px";
     num.style.border = "none";
     num.style.borderRadius = "8px";
-    num.style.cursor = "pointer";
+    num.style.cursor = i === pageIndex ? "default" : "pointer";
     if (i === pageIndex) {
+      num.disabled = true; // no recargar la misma página
+      num.setAttribute("aria-current", "page");
       num.style.fontWeight = "700";
       num.style.outline = "1px solid rgba(255,255,255,0.3)";
     }
@@ -432,26 +361,33 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
     wrap.appendChild(num);
   }
 
-  if (pageIndex < totalPages - 1) {
-    wrap.appendChild(btn("Siguiente ›", false, () => onChange(pageIndex + 1), "Página siguiente"));
-  } else if (oppHref) {
+  // Siguiente →
+  wrap.appendChild(mkBtn("Siguiente ›", pageIndex >= totalPages - 1, () => onChange(pageIndex + 1), "Página siguiente"));
+
+  // Info + “Página X/Y”
+  const info = document.createElement("span");
+  const first = totalItems === 0 ? 0 : pageIndex * pageSize + 1;
+  const last = Math.min((pageIndex + 1) * pageSize, totalItems);
+  const pageLabel = totalPages > 1 ? ` · Página ${pageIndex + 1}/${totalPages}` : "";
+  info.textContent = `Mostrando ${first}–${last} de ${totalItems}${pageLabel}`;
+  info.style.marginLeft = "auto";
+  info.style.opacity = "0.85";
+  wrap.appendChild(info);
+
+  // “Ir al lado opuesto” (mismo estilo que el botón volver)
+  if (oppHref) {
     const opp = document.createElement("a");
     opp.textContent = "Ir al lado opuesto";
     opp.href = oppHref;
-    opp.style.padding = "6px 10px";
-    opp.style.borderRadius = "8px";
-    opp.style.textDecoration = "none";
-    opp.style.outline = "1px solid rgba(255,255,255,0.3)";
+    // copiar clases del botón volver, para aspecto gemelo
+    const btnVolver = document.getElementById("btn-volver");
+    if (btnVolver && btnVolver.className) {
+      opp.className = btnVolver.className;
+    } else {
+      opp.className = "btn-alt";
+    }
     wrap.appendChild(opp);
   }
-
-  const info = document.createElement("span");
-  const first = pageIndex * pageSize + 1;
-  const last = Math.min((pageIndex + 1) * pageSize, totalItems);
-  info.textContent = `Mostrando ${first}–${last} de ${totalItems}`;
-  info.style.marginLeft = "auto";
-  info.style.opacity = "0.8";
-  wrap.appendChild(info);
 
   container.appendChild(wrap);
 }
@@ -496,10 +432,12 @@ function renderHourFilterIn(container, videos) {
 }
 
 function createHourFilterUI(videos) {
+  // Arriba (existente en tu HTML)
   const filtroDiv = document.getElementById("filtro-horario");
   contFiltroArriba = filtroDiv || null;
   renderHourFilterIn(contFiltroArriba, videos);
 
+  // Abajo
   ensureBottomControlsContainer();
   renderHourFilterIn(contFiltroAbajo, videos);
 }
@@ -879,6 +817,7 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
           btnAlt.className = "btn-alt";
           btnAlt.textContent = "Ver otra perspectiva";
           btnAlt.title = "Cambiar a la otra cámara";
+          // Pasamos video=... para caer en la hoja correcta del lado opuesto
           btnAlt.href = `lado.html?loc=${loc}&can=${can}&lado=${opposite.lado}&video=${encodeURIComponent(opposite.nombre)}`;
           btnContainer.appendChild(btnAlt);
         }
@@ -895,14 +834,21 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
   const previews = Array.from(contenedorVideos.querySelectorAll("video.video-preview"));
   loadPreviewsSequentially(previews);
 
+  // Paginador SOLO ABAJO
   const total = videosListaCompleta.length;
+  const p = getQueryParams();
   const oppHref = oppInfoCache?.oppId
-    ? `lado.html?loc=${params.loc}&can=${params.can}&lado=${oppInfoCache.oppId}`
+    ? (() => {
+        // conserva pg actual y filtro si existe
+        const base = `lado.html?loc=${p.loc}&can=${p.can}&lado=${oppInfoCache.oppId}`;
+        const parts = [];
+        if (typeof paginaActual === "number") parts.push(`pg=${paginaActual}`);
+        if (p.filtro) parts.push(`filtro=${encodeURIComponent(p.filtro)}`);
+        return parts.length ? `${base}&${parts.join("&")}` : base;
+      })()
     : null;
 
-  const pagTop = document.getElementById("paginator-top");
   const pagBottom = document.getElementById("paginator-bottom");
-
   const onChange = (newPage) => {
     if (newPage < 0) newPage = 0;
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -912,9 +858,11 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     renderPaginaActual({ fueCambioDePagina: true });
     scrollToTop();
   };
-
-  renderPaginator(pagTop, total, paginaActual, PAGE_SIZE, onChange, oppHref);
   renderPaginator(pagBottom, total, paginaActual, PAGE_SIZE, onChange, oppHref);
+
+  if (fueCambioDePagina && contenedorVideos.firstElementChild) {
+    contenedorVideos.firstElementChild.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 async function populateVideos() {
@@ -949,15 +897,10 @@ async function populateVideos() {
     if (linkCancha) { linkCancha.textContent = canObj?.nombre || can; linkCancha.href = `cancha.html?loc=${loc}&can=${can}`; }
     if (nombreLado) { nombreLado.textContent = ladoObj?.nombre || lado; }
 
-    // Botón de opuesto fijo arriba (si existe lado opuesto)
-    oppInfoCache = await findOppositeConfig(cfgGlobal, loc, can, lado);
-    const oppTopHref = oppInfoCache?.oppId ? `lado.html?loc=${loc}&can=${can}&lado=${oppInfoCache.oppId}` : null;
-    ensureOppositeTopButton(oppTopHref, oppInfoCache?.oppName);
-
-    // Filtros
+    // Filtros (arriba y abajo)
     createHourFilterUI(data.videos);
 
-    // Lista con filtro horario
+    // Lista (aplicar filtro por hora si existe)
     let list = data.videos || [];
     if (filtro) {
       list = list.filter(v => {
@@ -966,13 +909,26 @@ async function populateVideos() {
       });
     }
 
+    // === ORDEN global: más reciente → más antiguo ===
+    list.sort((a, b) => {
+      const pa = parseFromName(a.nombre);
+      const pb = parseFromName(b.nombre);
+      const ta = pa?.date?.getTime?.() ?? 0;
+      const tb = pb?.date?.getTime?.() ?? 0;
+      // descendente
+      return tb - ta;
+    });
+
     ultimoFiltroActivo = filtro || null;
     videosListaCompleta = list;
     paginacionHabilitada = videosListaCompleta.length > 7;
 
-    ensureTopControlsContainer();
     ensureBottomControlsContainer();
 
+    // Info lado opuesto (para link inferior y para "Ver otra perspectiva")
+    oppInfoCache = await findOppositeConfig(cfgGlobal, loc, can, lado);
+
+    // Página deseada (querystring o por video objetivo)
     const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
     let desiredPg = parseInt(params.pg || "0", 10);
     if (Number.isNaN(desiredPg)) desiredPg = 0;
@@ -1056,7 +1012,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   })();
 
-  // Ajusta el href del botón "Regresar a la cancha"
+  // Ajusta href del botón "Regresar a la cancha"
   const btnVolver = document.getElementById("btn-volver");
   if (btnVolver) {
     const path2 = window.location.pathname;
@@ -1082,15 +1038,6 @@ window.addEventListener("popstate", () => {
     if (Number.isNaN(desiredPg)) desiredPg = 0;
     paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
     renderPaginaActual({ fueCambioDePagina: true });
-
-    // Mantener actualizado el botón de opuesto fijo (por si cambió lado por navegación)
-    const { loc, can, lado } = p;
-    if (cfgGlobal && loc && can && lado) {
-      findOppositeConfig(cfgGlobal, loc, can, lado).then(info => {
-        const oppTopHref = info?.oppId ? `lado.html?loc=${loc}&can=${can}&lado=${info.oppId}` : null;
-        ensureOppositeTopButton(oppTopHref, info?.oppName);
-      }).catch(() => {});
-    }
   }
 });
 
