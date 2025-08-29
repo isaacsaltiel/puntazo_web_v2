@@ -71,6 +71,12 @@
       "can": "vistadelaslomas",
       "date": "2025-06-23",
       "count": 2
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-08-29",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -289,6 +295,12 @@
       "can": "cancha3",
       "hour": "19",
       "count": 1
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "09",
+      "count": 1
     }
   ],
   "lado_balance_per_day": [
@@ -407,7 +419,16 @@
         "ladoa": 4
       },
       "diff": 0
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-08-29",
+      "counts_por_lado": {
+        "ladob": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2025-08-29T08:12:31.591877+00:00"
+  "generated_at_utc": "2025-08-29T16:11:10.353994+00:00"
 }
