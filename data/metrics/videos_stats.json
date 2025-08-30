@@ -39,6 +39,12 @@
     {
       "loc": "scorpion",
       "can": "cancha1",
+      "date": "2025-08-29",
+      "count": 12
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
       "date": "2025-08-24",
       "count": 11
     },
@@ -71,12 +77,6 @@
       "can": "vistadelaslomas",
       "date": "2025-06-23",
       "count": 2
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "date": "2025-08-29",
-      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -90,19 +90,25 @@
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "18",
-      "count": 18
+      "count": 20
     },
     {
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "12",
-      "count": 14
+      "count": 15
     },
     {
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "19",
       "count": 14
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "11",
+      "count": 13
     },
     {
       "loc": "scorpion",
@@ -126,12 +132,6 @@
       "loc": "interpadel",
       "can": "cancha3",
       "hour": "21",
-      "count": 10
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "hour": "11",
       "count": 10
     },
     {
@@ -234,7 +234,13 @@
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "13",
-      "count": 3
+      "count": 4
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "10",
+      "count": 4
     },
     {
       "loc": "scorpion",
@@ -425,10 +431,10 @@
       "can": "cancha1",
       "date": "2025-08-29",
       "counts_por_lado": {
-        "ladob": 1
+        "ladob": 12
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2025-08-29T16:11:10.353994+00:00"
+  "generated_at_utc": "2025-08-30T00:40:35.860812+00:00"
 }
