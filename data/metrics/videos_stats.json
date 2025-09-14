@@ -33,6 +33,12 @@
     {
       "loc": "scorpion",
       "can": "cancha1",
+      "date": "2025-09-13",
+      "count": 45
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
       "date": "2025-08-28",
       "count": 37
     },
@@ -218,6 +224,12 @@
     },
     {
       "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-09-13",
+      "count": 2
+    },
+    {
+      "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-09-10",
       "count": 1
@@ -233,8 +245,20 @@
     {
       "loc": "scorpion",
       "can": "cancha1",
+      "hour": "13",
+      "count": 43
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
       "hour": "17",
       "count": 40
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "12",
+      "count": 39
     },
     {
       "loc": "scorpion",
@@ -269,32 +293,26 @@
     {
       "loc": "scorpion",
       "can": "cancha1",
-      "hour": "13",
-      "count": 28
+      "hour": "14",
+      "count": 31
     },
     {
       "loc": "scorpion",
       "can": "cancha1",
-      "hour": "14",
-      "count": 27
+      "hour": "10",
+      "count": 31
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "11",
+      "count": 28
     },
     {
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "09",
       "count": 27
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "hour": "10",
-      "count": 26
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "hour": "12",
-      "count": 25
     },
     {
       "loc": "scorpion",
@@ -313,12 +331,6 @@
       "can": "cancha2",
       "hour": "18",
       "count": 25
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "hour": "11",
-      "count": 21
     },
     {
       "loc": "scorpion",
@@ -375,6 +387,12 @@
       "count": 11
     },
     {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "hour": "12",
+      "count": 11
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "15",
@@ -402,12 +420,6 @@
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "13",
-      "count": 9
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha2",
-      "hour": "12",
       "count": 9
     },
     {
@@ -759,6 +771,16 @@
       "diff": 1
     },
     {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-09-13",
+      "counts_por_lado": {
+        "ladoa": 23,
+        "ladob": 22
+      },
+      "diff": 1
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -928,7 +950,17 @@
         "ladob": 14
       },
       "diff": 0
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-09-13",
+      "counts_por_lado": {
+        "ladoa": 1,
+        "ladob": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2025-09-13T16:08:58.432196+00:00"
+  "generated_at_utc": "2025-09-14T00:45:34.033392+00:00"
 }
