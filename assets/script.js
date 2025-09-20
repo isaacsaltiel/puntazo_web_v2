@@ -139,6 +139,7 @@ async function findOppositeConfig(cfg, locId, canId, ladoId) {
 async function findOppositeVideo(entry, cfg, locId, canId, ladoId) {
   const meta = parseFromName(entry.nombre);
   if (!meta) return null;
+
   const oppCfg = await findOppositeConfig(cfg, locId, canId, ladoId);
   if (!oppCfg || !oppCfg.oppUrl) return null;
 
@@ -269,132 +270,241 @@ async function populateLados() {
   }
 }
 
-// ----------------------- PROMOCIONES (club → promo) -----------------------
-let _clubPromos = null;
-let _promoDefs = null;
+// ----------------------- PROMOCIONES (multi-club) -----------------------
+let clubPromotions = null;
+let promoConfig = null;
 
-/**
- * Carga asignación club→promo.
- * Soporta: data/club_promotions.json  ó  data/flow_promotions.json
- * Formato esperado:
- * {
- *   "Scorpion": "luckia",
- *   "OtroClub": "otra_promo"
- * }
- */
 async function loadClubPromotions() {
-  if (_clubPromos) return _clubPromos;
-  const tryFiles = [
-    "data/club_promotions.json",
-    "data/flow_promotions.json" // compat
-  ];
-  for (const path of tryFiles) {
-    try {
-      const r = await fetch(`${path}?cb=${Date.now()}`, { cache: "no-store" });
-      if (!r.ok) continue;
-      const j = await r.json();
-      // Si viniera envuelto (e.g., { clubs: { Scorpion: "luckia" } }), desenrollamos
-      const map = j?.clubs || j?.promotions || j;
-      if (map && typeof map === "object") {
-        _clubPromos = map;
-        return _clubPromos;
-      }
-    } catch { /* sigue con el siguiente */ }
+  if (clubPromotions !== null) return clubPromotions;
+  try {
+    const res = await fetch("data/club_promotions.json?cb=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    clubPromotions = await res.json();
+    return clubPromotions;
+  } catch (err) {
+    console.warn("[promo] No se pudo cargar club_promotions.json", err);
+    return {};
   }
-  _clubPromos = {};
-  return _clubPromos;
 }
-
-/**
- * Carga definiciones de promociones.
- * Soporta: data/promotions_config.json  ó  data/promotion_config.json
- * Formato:
- * {
- *   "luckia": {
- *     "text": "Regístrate con Luckia",
- *     "url": "https://www.luckia.mx",
- *     "color": "#EA5B0C",
- *     "logo": "logos/luckia.png"
- *   }
- * }
- */
 async function loadPromotionDefinitions() {
-  if (_promoDefs) return _promoDefs;
-  const tryFiles = [
-    "data/promotions_config.json",
-    "data/promotion_config.json" // compat
-  ];
-  for (const path of tryFiles) {
-    try {
-      const r = await fetch(`${path}?cb=${Date.now()}`, { cache: "no-store" });
-      if (!r.ok) continue;
-      const j = await r.json();
-      if (j && typeof j === "object") {
-        _promoDefs = j;
-        return _promoDefs;
-      }
-    } catch {/* siguiente */}
+  if (promoConfig !== null) return promoConfig;
+  try {
+    const res = await fetch("data/promotions_config.json?cb=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    promoConfig = await res.json();
+    return promoConfig;
+  } catch (err) {
+    console.warn("[promo] No se pudo cargar promotions_config.json", err);
+    return {};
   }
-  _promoDefs = {};
-  return _promoDefs;
 }
 
-/**
- * Construye el botón de promoción para el club dado (si corresponde).
- * Retorna {el, applied} donde el es el elemento <a> o null.
- */
-async function buildPromoButtonForClub(locId) {
+/** Devuelve una lista de elementos (botones) para las promos del club `loc` */
+async function buildPromoButtonsForClub(loc, entry) {
   const clubMap = await loadClubPromotions();
-  const promoId = clubMap?.[locId];
-  if (!promoId) return { el: null, applied: false };
-
   const defs = await loadPromotionDefinitions();
-  const conf = defs?.[promoId];
-  if (!conf) return { el: null, applied: false };
+  let promos = clubMap?.[loc];
+  if (!promos) return [];
+  if (!Array.isArray(promos)) promos = [promos];
 
-  const color = conf.color || "#EA5B0C"; // naranja solicitado
-  const text = conf.text || "Ir a Luckia";
-  const href = conf.url || "#";
-  const logo = conf.logo || "logos/luckia.png";
+  const buttons = [];
 
-  const a = document.createElement("a");
-  a.href = href;
-  a.target = "_blank";
-  a.rel = "noopener";
-  a.className = "btn-promo"; // si existe en CSS, se verá con tu estilo
-  // Fallback visual por si no está la clase en CSS
-  a.style.display = "inline-flex";
-  a.style.alignItems = "center";
-  a.style.justifyContent = "center";
-  a.style.gap = "10px";
-  a.style.padding = "12px 16px";
-  a.style.border = "1px solid #fff";
-  a.style.borderRadius = "10px";
-  a.style.fontWeight = "700";
-  a.style.textDecoration = "none";
-  a.style.color = "#fff";
-  a.style.background = color;
-  a.style.width = "100%";
-  a.style.minHeight = "44px";
-  a.style.boxSizing = "border-box";
+  for (const pid of promos) {
+    const conf = defs?.[pid];
+    if (!conf) continue;
 
-  if (logo) {
-    const img = document.createElement("img");
-    img.src = logo;
-    img.alt = "Luckia";
-    img.loading = "lazy";
-    img.style.height = "20px";
-    img.style.width = "auto";
-    img.style.objectFit = "contain";
-    a.appendChild(img);
+    if (conf.action === "url") {
+      const a = document.createElement("a");
+      a.href = conf.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.className = "btn-promo";
+      stylePromoButton(a, conf);
+      if (conf.logo) {
+        const img = document.createElement("img");
+        img.src = conf.logo;
+        img.alt = pid;
+        img.style.height = "20px";
+        img.style.width = "auto";
+        img.style.objectFit = "contain";
+        a.appendChild(img);
+      }
+      const span = document.createElement("span");
+      span.textContent = conf.text || "Promoción";
+      a.appendChild(span);
+      buttons.push(a);
+    } else if (conf.action === "modal_then_mailto") {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn-promo";
+      stylePromoButton(btn, conf);
+      if (conf.logo) {
+        const img = document.createElement("img");
+        img.src = conf.logo;
+        img.alt = pid;
+        img.style.height = "20px";
+        img.style.width = "auto";
+        img.style.objectFit = "contain";
+        btn.appendChild(img);
+      }
+      const span = document.createElement("span");
+      span.textContent = conf.text || "Nominar";
+      btn.appendChild(span);
+      btn.addEventListener("click", () => openPuntazoModal(entry, conf));
+      buttons.push(btn);
+    }
   }
+  return buttons;
+}
 
-  const span = document.createElement("span");
-  span.textContent = text;
-  span.style.whiteSpace = "nowrap";
-  a.appendChild(span);
+function stylePromoButton(el, conf) {
+  el.style.display = "inline-flex";
+  el.style.alignItems = "center";
+  el.style.justifyContent = "center";
+  el.style.gap = "10px";
+  el.style.padding = "12px 16px";
+  el.style.border = `1px solid ${conf.border_color || "#fff"}`; // Luckia usa blanco; Puntazo usa #004FC8
+  el.style.borderRadius = "10px";
+  el.style.fontWeight = "700";
+  el.style.textDecoration = "none";
+  el.style.color = conf.text_color || "#fff";                    // Puntazo: #000
+  el.style.background = conf.bg_color || conf.color || "#EA5B0C"; // Puntazo: #fff
+  el.style.width = "100%";
+  el.style.minHeight = "44px";
+  el.style.boxSizing = "border-box";
+  el.style.marginTop = "10px";
+}
 
-  return { el: a, applied: true };
+// ----------------------- Modal Puntazo (overlay + mailto) -----------------------
+let puntazoModal = null;
+
+function ensurePuntazoModal() {
+  if (puntazoModal) return puntazoModal;
+  const wrap = document.createElement("div");
+  wrap.id = "puntazo-modal";
+  wrap.style.position = "fixed";
+  wrap.style.inset = "0";
+  wrap.style.background = "rgba(0,0,0,.7)";
+  wrap.style.display = "none";
+  wrap.style.alignItems = "center";
+  wrap.style.justifyContent = "center";
+  wrap.style.zIndex = "2000";
+
+  const box = document.createElement("div");
+  box.style.width = "90%";
+  box.style.maxWidth = "520px";
+  box.style.background = "#fff";
+  box.style.color = "#000";
+  box.style.border = "2px solid #004FC8";
+  box.style.borderRadius = "12px";
+  box.style.padding = "20px";
+  box.style.textAlign = "left";
+  box.style.maxHeight = "80vh";
+  box.style.overflowY = "auto";
+
+  const head = document.createElement("div");
+  head.style.display = "flex";
+  head.style.alignItems = "center";
+  head.style.gap = "10px";
+  const logo = document.createElement("img");
+  logo.src = "logos/PPuntazo.png";
+  logo.alt = "Puntazo";
+  logo.style.height = "40px";
+  const title = document.createElement("h2");
+  title.textContent = "Puntazo del mes";
+  title.style.color = "#004FC8";
+  title.style.margin = "0";
+  head.appendChild(logo);
+  head.appendChild(title);
+  box.appendChild(head);
+
+  const desc = document.createElement("div");
+  desc.style.marginTop = "10px";
+  const ul = document.createElement("ul");
+  ul.style.paddingLeft = "20px";
+  [
+    "Concurso mensual donde puedes ganar premios.",
+    "Tus videos pueden publicarse en redes sociales.",
+    "Los premios y ganadores se anuncian en @puntazoclips.",
+    "El ganador se decide por likes y el jurado de Puntazo + Scorpion."
+  ].forEach(txt => {
+    const li = document.createElement("li");
+    li.textContent = txt;
+    ul.appendChild(li);
+  });
+  desc.appendChild(ul);
+  box.appendChild(desc);
+
+  const btnRow = document.createElement("div");
+  btnRow.style.display = "flex";
+  btnRow.style.gap = "8px";
+  btnRow.style.marginTop = "18px";
+
+  const btnNominar = document.createElement("button");
+  btnNominar.textContent = "Nominar mi punto";
+  btnNominar.style.flex = "1";
+  btnNominar.style.padding = "12px 16px";
+  btnNominar.style.border = "2px solid #004FC8";
+  btnNominar.style.borderRadius = "10px";
+  btnNominar.style.background = "#004FC8";
+  btnNominar.style.color = "#fff";
+  btnNominar.style.cursor = "pointer";
+  btnNominar.addEventListener("click", () => {
+    if (wrap._conf && wrap._entry) {
+      sendPuntazoMail(wrap._entry, wrap._conf);
+    }
+  });
+
+  const btnClose = document.createElement("button");
+  btnClose.textContent = "Cerrar";
+  btnClose.style.padding = "12px 16px";
+  btnClose.style.border = "2px solid #ccc";
+  btnClose.style.borderRadius = "10px";
+  btnClose.style.background = "#f5f5f5";
+  btnClose.style.cursor = "pointer";
+  btnClose.addEventListener("click", () => { wrap.style.display = "none"; });
+
+  btnRow.appendChild(btnNominar);
+  btnRow.appendChild(btnClose);
+  box.appendChild(btnRow);
+
+  wrap.appendChild(box);
+  document.body.appendChild(wrap);
+  puntazoModal = wrap;
+  return wrap;
+}
+
+function openPuntazoModal(entry, conf) {
+  const modal = ensurePuntazoModal();
+  modal._entry = entry;
+  modal._conf = conf;
+  modal.style.display = "flex";
+}
+
+function sendPuntazoMail(entry, conf) {
+  const mail = conf.mailto || "contacto@puntazoclips.com";
+  const subject = encodeURIComponent(conf.subject || "Nominar punto al Puntazo del mes");
+  const bodyLines = (conf.bodyTemplate || [
+    "Hola equipo Puntazo,",
+    "",
+    "Quiero nominar mi punto al Puntazo del mes.",
+    "",
+    "• URL del video: {videoUrl}",
+    "• Nombre del archivo: {videoName}",
+    "",
+    "Confirmo que autorizo el uso del video en redes sociales @puntazoclips y entiendo que el ganador se define por likes y el jurado de Puntazo + Scorpion.",
+    "",
+    "Nombre del participante: ",
+    "Instagram (@): ",
+    "",
+    "¡Gracias!"
+  ]).map(line =>
+    line.replace("{videoUrl}", entry?.url || "")
+        .replace("{videoName}", entry?.nombre || "")
+  );
+  const body = encodeURIComponent(bodyLines.join("\n"));
+  const mailto = `mailto:${mail}?subject=${subject}&body=${body}`;
+  window.location.href = mailto;
 }
 
 // ----------------------- video + filtros + paginación -----------------------
@@ -739,8 +849,8 @@ async function crearBotonAccionCompartir(entry) {
   btn.textContent = "Compartir | Descargar";
   btn.title = "Compartir video";
   btn.setAttribute("aria-label", "Compartir video");
-  btn.dataset.state = "idle"; // idle | downloading | ready
-  btn._shareFile = null;      // File cache para segundo toque
+  btn.dataset.state = "idle";
+  btn._shareFile = null;
 
   const tryShareFile = async (file) => {
     try {
@@ -968,29 +1078,34 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     wrap.appendChild(preview);
     card.appendChild(wrap);
 
-    // Contenedor de botones de acción
+    // === [NUEVO] Botones de promoción por club (si aplica) ===
+    try {
+      const promoButtons = await buildPromoButtonsForClub(loc, entry);
+      if (promoButtons.length) {
+        const promoContainer = document.createElement("div");
+        promoContainer.className = "botones-container";
+        promoContainer.style.display = "flex";
+        promoContainer.style.flexDirection = "column";
+        promoContainer.style.gap = "8px";
+        promoContainer.style.marginTop = "12px";
+        promoButtons.forEach(b => promoContainer.appendChild(b));
+        card.appendChild(promoContainer);
+      }
+    } catch (e) {
+      console.warn("[promo] No se pudieron renderizar promos:", e);
+    }
+
+    // Contenedor de acciones estándar
     const btnContainer = document.createElement("div");
     btnContainer.className = "botones-container";
     btnContainer.style.display = "flex";
     btnContainer.style.alignItems = "center";
     btnContainer.style.marginTop = "12px";
 
-    // === 1) Botón de PROMOCIÓN (arriba del resto) ===
-    try {
-      const { el: promoEl, applied } = await buildPromoButtonForClub(loc);
-      if (applied && promoEl) {
-        btnContainer.appendChild(promoEl);
-      }
-    } catch (e) {
-      console.warn("[promo] No fue posible construir el botón:", e);
-    }
-
-    // === 2) Botón Compartir/Descargar ===
     const actionBtn = await crearBotonAccionCompartir(entry);
     actionBtn.style.removeProperty('flex');
     btnContainer.appendChild(actionBtn);
 
-    // === 3) Ver otra perspectiva (si existe) ===
     (async () => {
       try {
         const opposite = await findOppositeVideo(entry, cfgGlobal, loc, can, lado);
@@ -1103,13 +1218,13 @@ async function populateVideos() {
       });
     }
 
-    // Orden descendente por tsKey (nuevo → antiguo)
+    // Orden por tsKey (más nuevo → más antiguo)
     list.sort((a, b) => {
       const pa = parseFromName(a.nombre);
       const pb = parseFromName(b.nombre);
       const ta = pa ? pa.tsKey : -Infinity;
       const tb = pb ? pb.tsKey : -Infinity;
-      return tb - ta;
+      return tb - ta; // descendente
     });
 
     ultimoFiltroActivo = filtro || null;
@@ -1229,7 +1344,6 @@ window.addEventListener("popstate", () => {
     paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
     renderPaginaActual({ fueCambioDePagina: true });
 
-    // Recalcular botón opuesto fijo por si cambió de lado con el historial
     if (cfgGlobal && p.loc && p.can && p.lado) {
       findOppositeConfig(cfgGlobal, p.loc, p.can, p.lado).then(info => {
         const base = info?.oppId
