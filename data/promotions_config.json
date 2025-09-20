@@ -7,28 +7,27 @@
     "action": "url"
   },
   "puntazo": {
-    "text": "Nominar tu punto al Puntazo del mes",
+    "text": "Nominar l Puntazo del mes",
     "logo": "logos/PPuntazo.png",
     "border_color": "#004FC8",
     "bg_color": "#FFFFFF",
     "text_color": "#000000",
     "action": "modal_then_mailto",
     "mailto": "contacto@puntazoclips.com",
-    "subject": "Nominar punto al Puntazo del mes",
+    "subject": "Nominar a El Puntazo del mes",
     "bodyTemplate": [
-      "Hola equipo Puntazo,",
-      "",
-      "Quiero nominar mi punto al Puntazo del mes.",
-      "",
-      "• URL del video: {videoUrl}",
-      "• Nombre del archivo: {videoName}",
-      "",
-      "Confirmo que autorizo el uso del video en redes sociales @puntazoclips y entiendo que el ganador se define por likes y el jurado de Puntazo + Scorpion.",
-      "",
-      "Nombre del participante: ",
-      "Instagram (@): ",
-      "",
-      "¡Gracias!"
-    ]
-  }
+    "Hola Puntazo,",
+    "",
+    "Quiero nominar mi punto al Puntazo del mes.",
+    "",
+    "Nombre del participante: ",
+    "Instagram (@): ",
+    "",
+    "Confirmo que autorizo el uso del video en redes sociales @puntazoclips y @scorpion_padel y entiendo que el ganador se define por likes y el jurado de Puntazo + Scorpion, siempre y cuando siga a @puntazoclips y @scorpion_padel.",
+    "",
+    "• URL del video: {videoUrl}",
+    "• Nombre del archivo: {videoName}",
+    "",
+    "¡Gracias!"
+  ]
 }
