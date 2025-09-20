@@ -376,6 +376,8 @@ function stylePromoButton(el, conf) {
 }
 
 // ----------------------- Modal Puntazo (overlay + mailto) -----------------------
+
+// ----------------------- Modal Puntazo (overlay + mailto) -----------------------
 let puntazoModal = null;
 
 function ensurePuntazoModal() {
@@ -433,6 +435,26 @@ function ensurePuntazoModal() {
     ul.appendChild(li);
   });
   desc.appendChild(ul);
+
+  // --- Agregado: sección de Requisitos en negritas ---
+  const reqTitle = document.createElement("p");
+  reqTitle.style.margin = "10px 0 6px";
+  reqTitle.innerHTML = "<strong>Requisitos:</strong>";
+  desc.appendChild(reqTitle);
+
+  const reqUl = document.createElement("ul");
+  reqUl.style.paddingLeft = "20px";
+  [
+    "Seguir en Instagram a @scorpion_padel y @puntazoclips.",
+    "Enviar el correo dando clic al botón de abajo."
+  ].forEach(txt => {
+    const li = document.createElement("li");
+    li.textContent = txt;
+    reqUl.appendChild(li);
+  });
+  desc.appendChild(reqUl);
+  // --- Fin agregado ---
+
   box.appendChild(desc);
 
   const btnRow = document.createElement("div");
@@ -482,30 +504,35 @@ function openPuntazoModal(entry, conf) {
 }
 
 function sendPuntazoMail(entry, conf) {
-  const mail = conf.mailto || "contacto@puntazoclips.com";
-  const subject = encodeURIComponent(conf.subject || "Nominar punto al Puntazo del mes");
-  const bodyLines = (conf.bodyTemplate || [
-    "Hola equipo Puntazo,",
+  const mail = conf?.mailto || "contacto@puntazoclips.com";
+  const subject = encodeURIComponent(conf?.subject || "Nominar punto al Puntazo del mes");
+
+  const bodyTemplate = conf?.bodyTemplate || [
+    "Hola Puntazo,",
     "",
     "Quiero nominar mi punto al Puntazo del mes.",
     "",
+    "Nombre del participante:",
+    "Instagram (@):",
+    "",
+    "Confirmo que autorizo el uso del video en redes sociales @puntazoclips y @scorpion_padel y entiendo que el ganador se define por likes y por el jurado de Puntazo + Scorpion, siempre y cuando siga las cuentas @puntazoclips y @scorpion_padel.",
+    "",
+    "¡Gracias!",
+    "",
     "• URL del video: {videoUrl}",
-    "• Nombre del archivo: {videoName}",
-    "",
-    "Confirmo que autorizo el uso del video en redes sociales @puntazoclips y entiendo que el ganador se define por likes y el jurado de Puntazo + Scorpion.",
-    "",
-    "Nombre del participante: ",
-    "Instagram (@): ",
-    "",
-    "¡Gracias!"
-  ]).map(line =>
+    "• Nombre del archivo: {videoName}"
+  ];
+
+  const bodyLines = bodyTemplate.map(line =>
     line.replace("{videoUrl}", entry?.url || "")
         .replace("{videoName}", entry?.nombre || "")
   );
+
   const body = encodeURIComponent(bodyLines.join("\n"));
   const mailto = `mailto:${mail}?subject=${subject}&body=${body}`;
   window.location.href = mailto;
 }
+
 
 // ----------------------- video + filtros + paginación -----------------------
 let allVideos = [];
