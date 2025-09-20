@@ -4,5 +4,30 @@
     "url": "https://www.luckia.mx/registrate/apuestas-deportivas/?btag=657508_f394581f4c4d42c592799baee4505260",
     "color": "#EA5B0C",
     "logo": "logos/luckia.png"
+  },
+  "puntazo": {
+    "text": "Nominar tu punto al Puntazo del mes",
+    "logo": "logos/PPuntazo.png",
+    "border_color": "#004FC8",      // azul del borde (puedes ajustar)
+    "bg_color": "#FFFFFF",          // fondo blanco
+    "text_color": "#000000",        // texto en negro para contraste
+    "action": "modal_then_mailto",  // abre modal y luego mailto
+    "mailto": "contacto@puntazoclips.com",
+    "subject": "Nominar punto al Puntazo del mes",
+    "bodyTemplate": [
+      "Hola equipo Puntazo,",
+      "",
+      "Quiero nominar mi punto al Puntazo del mes.",
+      "",
+      "• URL del video: {videoUrl}",
+      "• Nombre del archivo: {videoName}",
+      "",
+      "Confirmo que autorizo el uso del video en redes sociales @puntazoclips y entiendo que el ganador se define por likes y el jurado de Puntazo + Scorpion.",
+      "",
+      "Nombre del participante: ",
+      "Instagram (@): ",
+      "",
+      "¡Gracias!"
+    ]
   }
 }
