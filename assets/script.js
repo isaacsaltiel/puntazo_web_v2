@@ -120,7 +120,7 @@ function parseFromName(name) {
   const [, loc, can, lado, Y, M, D, h, mi, s] = m;
   const tsKey = Number(`${Y}${M}${D}${h}${mi}${s}`);
   const date = new Date(Number(Y), Number(M) - 1, Number(D), Number(h), Number(mi), Number(s));
-  return { loc, can, lado, date, tsKey, ymd: `${Y}${M}${D}`, h: Number(h), mi: Number(mi), s: Number(s) };
+  return { loc, can, lado, date, tsKey, ymd: `${Y}${M}${D}`, Y, M, D, h, mi, s };
 }
 function absSeconds(a, b) { return Math.abs((a - b) / 1000); }
 
@@ -274,6 +274,61 @@ async function populateLados() {
 let clubPromotions = null;
 let promoConfig = null;
 
+// === util promos: merge profundo (simple) ===
+function deepMerge(base, override) {
+  if (!override) return structuredClone(base);
+  if (!base) return structuredClone(override);
+  if (Array.isArray(base) && Array.isArray(override)) {
+    // para arrays, si override existe, usamos override completo
+    return structuredClone(override);
+  }
+  if (typeof base === 'object' && typeof override === 'object') {
+    const out = { ...base };
+    for (const k of Object.keys(override)) {
+      out[k] = deepMerge(base[k], override[k]);
+    }
+    return out;
+  }
+  return structuredClone(override);
+}
+
+// === util promos: estilos de botón con compatibilidad hacia atrás ===
+function getButtonStyle(conf) {
+  const b = conf?.button || {};
+  return {
+    bg: b.bg_color ?? conf?.bg_color ?? conf?.color ?? "#EA5B0C",
+    fg: b.text_color ?? conf?.text_color ?? "#FFFFFF",
+    border: b.border_color ?? conf?.border_color ?? "#FFFFFF",
+    logo: b.logo ?? conf?.logo ?? null,
+  };
+}
+
+// === util promos: placeholders ===
+function resolvePlaceholders(str, entry, extraCtx = {}) {
+  if (!str) return str;
+  const meta = entry?.nombre ? parseFromName(entry.nombre) : null;
+  const params = getQueryParams();
+  const ctx = {
+    videoUrl: entry?.url || "",
+    videoName: entry?.nombre || "",
+    loc: params.loc || meta?.loc || "",
+    can: params.can || meta?.can || "",
+    lado: params.lado || meta?.lado || "",
+    YYYY: meta?.Y || "",
+    MM: meta?.M || "",
+    DD: meta?.D || "",
+    hh: meta?.h || "",
+    mm: meta?.mi || "",
+    ss: meta?.s || "",
+    ...extraCtx
+  };
+  return String(str).replace(/\{(videoUrl|videoName|loc|can|lado|YYYY|MM|DD|hh|mm|ss)\}/g, (_, k) => ctx[k] ?? "");
+}
+
+function resolvePlaceholdersInArray(arr, entry, extraCtx = {}) {
+  return (arr || []).map(s => resolvePlaceholders(s, entry, extraCtx));
+}
+
 async function loadClubPromotions() {
   if (clubPromotions !== null) return clubPromotions;
   try {
@@ -299,91 +354,33 @@ async function loadPromotionDefinitions() {
   }
 }
 
-/** Devuelve una lista de elementos (botones) para las promos del club `loc` */
-async function buildPromoButtonsForClub(loc, entry) {
-  const clubMap = await loadClubPromotions();
-  const defs = await loadPromotionDefinitions();
-  let promos = clubMap?.[loc];
-  if (!promos) return [];
-  if (!Array.isArray(promos)) promos = [promos];
-
-  const buttons = [];
-
-  for (const pid of promos) {
-    const conf = defs?.[pid];
-    if (!conf) continue;
-
-    if (conf.action === "url") {
-      const a = document.createElement("a");
-      a.href = conf.url;
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.className = "btn-promo";
-      stylePromoButton(a, conf);
-      if (conf.logo) {
-        const img = document.createElement("img");
-        img.src = conf.logo;
-        img.alt = pid;
-        img.style.height = "20px";
-        img.style.width = "auto";
-        img.style.objectFit = "contain";
-        a.appendChild(img);
-      }
-      const span = document.createElement("span");
-      span.textContent = conf.text || "Promoción";
-      a.appendChild(span);
-      buttons.push(a);
-    } else if (conf.action === "modal_then_mailto") {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "btn-promo";
-      stylePromoButton(btn, conf);
-      if (conf.logo) {
-        const img = document.createElement("img");
-        img.src = conf.logo;
-        img.alt = pid;
-        img.style.height = "20px";
-        img.style.width = "auto";
-        img.style.objectFit = "contain";
-        btn.appendChild(img);
-      }
-      const span = document.createElement("span");
-      span.textContent = conf.text || "Nominar";
-      btn.appendChild(span);
-      btn.addEventListener("click", () => openPuntazoModal(entry, conf));
-      buttons.push(btn);
-    }
-  }
-  return buttons;
-}
-
 function stylePromoButton(el, conf) {
+  const st = getButtonStyle(conf);
   el.style.display = "inline-flex";
   el.style.alignItems = "center";
   el.style.justifyContent = "center";
   el.style.gap = "10px";
   el.style.padding = "12px 16px";
-  el.style.border = `1px solid ${conf.border_color || "#fff"}`; // Luckia usa blanco; Puntazo usa #004FC8
+  el.style.border = `1px solid ${st.border}`;
   el.style.borderRadius = "10px";
   el.style.fontWeight = "700";
   el.style.textDecoration = "none";
-  el.style.color = conf.text_color || "#fff";                    // Puntazo: #000
-  el.style.background = conf.bg_color || conf.color || "#EA5B0C"; // Puntazo: #fff
+  el.style.color = st.fg;
+  el.style.background = st.bg;
   el.style.width = "100%";
   el.style.minHeight = "44px";
   el.style.boxSizing = "border-box";
   el.style.marginTop = "10px";
 }
 
-// ----------------------- Modal Puntazo (overlay + mailto) -----------------------
+// === MODAL GENÉRICO DE PROMOCIONES ===
+let promoModalRoot = null;
 
-// ----------------------- Modal Puntazo (overlay + mailto) -----------------------
-let puntazoModal = null;
+function ensurePromoModalRoot() {
+  if (promoModalRoot) return promoModalRoot;
 
-function ensurePuntazoModal() {
-  if (puntazoModal) return puntazoModal;
   const wrap = document.createElement("div");
-  wrap.id = "puntazo-modal";
+  wrap.id = "promo-modal-root";
   wrap.style.position = "fixed";
   wrap.style.inset = "0";
   wrap.style.background = "rgba(0,0,0,.7)";
@@ -393,147 +390,408 @@ function ensurePuntazoModal() {
   wrap.style.zIndex = "2000";
 
   const box = document.createElement("div");
+  box.id = "promo-modal-box";
   box.style.width = "90%";
-  box.style.maxWidth = "520px";
+  box.style.maxWidth = "560px";
   box.style.background = "#fff";
   box.style.color = "#000";
-  box.style.border = "2px solid #004FC8";
+  box.style.border = "2px solid #333";
   box.style.borderRadius = "12px";
   box.style.padding = "20px";
   box.style.textAlign = "left";
   box.style.maxHeight = "80vh";
   box.style.overflowY = "auto";
+  box.style.boxSizing = "border-box";
+  wrap.appendChild(box);
 
+  wrap.addEventListener("click", (e) => {
+    if (e.target === wrap) {
+      wrap.style.display = "none";
+    }
+  });
+
+  document.body.appendChild(wrap);
+  promoModalRoot = wrap;
+  return wrap;
+}
+
+function clearNode(el) {
+  while (el.firstChild) el.removeChild(el.firstChild);
+}
+
+// action helpers
+function doUrlAction(action) {
+  const href = action?.href || "#";
+  const target = action?.target || "_blank";
+  try { window.open(href, target); } catch { location.href = href; }
+}
+
+function doCloseAction() {
+  const root = ensurePromoModalRoot();
+  root.style.display = "none";
+}
+
+function buildMailto(action, entry) {
+  const to = action?.to || "contacto@puntazoclips.com";
+  const subject = encodeURIComponent(resolvePlaceholders(action?.subject || "", entry));
+  const lines = resolvePlaceholdersInArray(action?.bodyTemplate || [], entry);
+  const body = encodeURIComponent(lines.join("\n"));
+  return `mailto:${to}?subject=${subject}&body=${body}`;
+}
+
+async function doCopyAction(action, entry) {
+  const text = resolvePlaceholders(action?.text || "", entry);
+  try {
+    await navigator.clipboard.writeText(text);
+    toast("Copiado al portapapeles");
+  } catch {
+    // fallback
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); toast("Copiado al portapapeles"); }
+    catch { alert("No se pudo copiar"); }
+    finally { ta.remove(); }
+  }
+}
+
+let toastTimer = null;
+function toast(msg) {
+  let el = document.getElementById("__promo_toast__");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "__promo_toast__";
+    el.style.position = "fixed";
+    el.style.left = "50%";
+    el.style.bottom = "26px";
+    el.style.transform = "translateX(-50%)";
+    el.style.background = "rgba(0,0,0,.8)";
+    el.style.color = "#fff";
+    el.style.padding = "10px 14px";
+    el.style.borderRadius = "8px";
+    el.style.zIndex = "3000";
+    el.style.fontWeight = "600";
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.display = "none"; }, 1600);
+}
+
+function renderPromoModal(conf, entry) {
+  const root = ensurePromoModalRoot();
+  const box = document.getElementById("promo-modal-box");
+  clearNode(box);
+
+  const theme = conf?.modal?.theme || {};
+  const borderColor = theme.border_color || "#333";
+  const bgColor = theme.bg_color || "#fff";
+  const fgColor = theme.text_color || "#000";
+
+  box.style.border = `2px solid ${borderColor}`;
+  box.style.background = bgColor;
+  box.style.color = fgColor;
+
+  // header (logos + title)
   const head = document.createElement("div");
   head.style.display = "flex";
   head.style.alignItems = "center";
   head.style.gap = "10px";
-  const logo = document.createElement("img");
-  logo.src = "logos/PPuntazo.png";
-  logo.alt = "Puntazo";
-  logo.style.height = "40px";
+  const logos = (conf?.modal?.logos || []).slice(0,3);
+  if (logos.length) {
+    logos.forEach(src => {
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = "logo";
+      img.style.height = "40px";
+      img.style.width = "auto";
+      img.style.objectFit = "contain";
+      head.appendChild(img);
+    });
+  }
   const title = document.createElement("h2");
-  title.textContent = "Puntazo del mes";
-  title.style.color = "#004FC8";
+  title.textContent = conf?.modal?.title || resolvePlaceholders(conf?.label || "Promoción", entry);
   title.style.margin = "0";
-  head.appendChild(logo);
+  title.style.color = borderColor;
   head.appendChild(title);
   box.appendChild(head);
 
-  const desc = document.createElement("div");
-  desc.style.marginTop = "10px";
-  const ul = document.createElement("ul");
-  ul.style.paddingLeft = "20px";
-  [
-    "Concurso mensual donde puedes ganar premios.",
-    "Tus videos pueden publicarse en redes sociales.",
-    "Los premios y ganadores se anuncian en @puntazoclips.",
-    "El ganador se decide por likes y el jurado de Puntazo + Scorpion."
-  ].forEach(txt => {
-    const li = document.createElement("li");
-    li.textContent = txt;
-    ul.appendChild(li);
-  });
-  desc.appendChild(ul);
+  // intro_list
+  const intro = conf?.modal?.intro_list || [];
+  if (intro.length) {
+    const desc = document.createElement("div");
+    desc.style.marginTop = "10px";
+    const ul = document.createElement("ul");
+    ul.style.paddingLeft = "20px";
+    resolvePlaceholdersInArray(intro, entry).forEach(txt => {
+      const li = document.createElement("li");
+      li.textContent = txt;
+      ul.appendChild(li);
+    });
+    desc.appendChild(ul);
+    box.appendChild(desc);
+  }
 
-  // --- Agregado: sección de Requisitos en negritas ---
-  const reqTitle = document.createElement("p");
-  reqTitle.style.margin = "10px 0 6px";
-  reqTitle.innerHTML = "<strong>Requisitos:</strong>";
-  desc.appendChild(reqTitle);
+  // requirements
+  const req = conf?.modal?.requirements;
+  if (req?.items?.length) {
+    const reqTitle = document.createElement("p");
+    reqTitle.style.margin = "10px 0 6px";
+    reqTitle.innerHTML = `<strong>${req.title_bold || "Requisitos:"}</strong>`;
+    box.appendChild(reqTitle);
 
-  const reqUl = document.createElement("ul");
-  reqUl.style.paddingLeft = "20px";
-  [
-    "Seguir en Instagram a @scorpion_padel y @puntazoclips.",
-    "Enviar el correo dando clic al botón de abajo."
-  ].forEach(txt => {
-    const li = document.createElement("li");
-    li.textContent = txt;
-    reqUl.appendChild(li);
-  });
-  desc.appendChild(reqUl);
-  // --- Fin agregado ---
+    const reqUl = document.createElement("ul");
+    reqUl.style.paddingLeft = "20px";
+    resolvePlaceholdersInArray(req.items, entry).forEach(txt => {
+      const li = document.createElement("li");
+      li.textContent = txt;
+      reqUl.appendChild(li);
+    });
+    box.appendChild(reqUl);
+  }
 
-  box.appendChild(desc);
-
+  // buttons row
   const btnRow = document.createElement("div");
   btnRow.style.display = "flex";
   btnRow.style.gap = "8px";
   btnRow.style.marginTop = "18px";
 
-  const btnNominar = document.createElement("button");
-  btnNominar.textContent = "Nominar mi punto";
-  btnNominar.style.flex = "1";
-  btnNominar.style.padding = "12px 16px";
-  btnNominar.style.border = "2px solid #004FC8";
-  btnNominar.style.borderRadius = "10px";
-  btnNominar.style.background = "#004FC8";
-  btnNominar.style.color = "#fff";
-  btnNominar.style.cursor = "pointer";
-  btnNominar.addEventListener("click", () => {
-    if (wrap._conf && wrap._entry) {
-      sendPuntazoMail(wrap._entry, wrap._conf);
-    }
+  const buttons = (conf?.modal?.buttons || []).slice(0,3);
+  buttons.forEach(bc => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = resolvePlaceholders(bc.label || "Acción", entry);
+
+    const s = bc.style || {};
+    btn.style.flex = "1";
+    btn.style.padding = "12px 16px";
+    btn.style.border = `2px solid ${s.border_color || borderColor}`;
+    btn.style.borderRadius = "10px";
+    btn.style.background = s.bg_color || borderColor;
+    btn.style.color = s.text_color || "#fff";
+    btn.style.cursor = "pointer";
+    btn.addEventListener("click", async () => {
+      const act = bc.action || {};
+      await handlePromoAction(act, entry);
+    });
+    btnRow.appendChild(btn);
   });
 
-  const btnClose = document.createElement("button");
-  btnClose.textContent = "Cerrar";
-  btnClose.style.padding = "12px 16px";
-  btnClose.style.border = "2px solid #ccc";
-  btnClose.style.borderRadius = "10px";
-  btnClose.style.background = "#f5f5f5";
-  btnClose.style.cursor = "pointer";
-  btnClose.addEventListener("click", () => { wrap.style.display = "none"; });
+  // si no hay botones, agregamos un "Cerrar"
+  if (!buttons.length) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "Cerrar";
+    btn.style.flex = "1";
+    btn.style.padding = "12px 16px";
+    btn.style.border = `2px solid ${borderColor}`;
+    btn.style.borderRadius = "10px";
+    btn.style.background = "#f5f5f5";
+    btn.style.color = "#000";
+    btn.style.cursor = "pointer";
+    btn.addEventListener("click", doCloseAction);
+    btnRow.appendChild(btn);
+  }
 
-  btnRow.appendChild(btnNominar);
-  btnRow.appendChild(btnClose);
   box.appendChild(btnRow);
 
-  wrap.appendChild(box);
-  document.body.appendChild(wrap);
-  puntazoModal = wrap;
-  return wrap;
+  root.style.display = "flex";
 }
 
-function openPuntazoModal(entry, conf) {
-  const modal = ensurePuntazoModal();
-  modal._entry = entry;
-  modal._conf = conf;
-  modal.style.display = "flex";
+async function handlePromoAction(action, entry) {
+  const type = (action?.type || "").toLowerCase();
+
+  if (type === "url") {
+    doUrlAction(action);
+    return;
+  }
+
+  if (type === "mailto") {
+    const href = buildMailto(action, entry);
+    location.href = href;
+    return;
+  }
+
+  if (type === "copy") {
+    await doCopyAction(action, entry);
+    return;
+  }
+
+  if (type === "close") {
+    doCloseAction();
+    return;
+  }
+
+  // fallback desconocido → cerrar
+  doCloseAction();
 }
 
-function sendPuntazoMail(entry, conf) {
-  const mail = conf?.mailto || "contacto@puntazoclips.com";
-  const subject = encodeURIComponent(conf?.subject || "Nominar punto al Puntazo del mes");
-
-  const bodyTemplate = conf?.bodyTemplate || [
-    "Hola Puntazo,",
-    "",
-    "Quiero nominar mi punto al Puntazo del mes.",
-    "",
-    "Nombre del participante:",
-    "Instagram (@):",
-    "",
-    "Confirmo que autorizo el uso del video en redes sociales @puntazoclips y @scorpion_padel y entiendo que el ganador se define por likes y por el jurado de Puntazo + Scorpion, siempre y cuando siga las cuentas @puntazoclips y @scorpion_padel.",
-    "",
-    "¡Gracias!",
-    "",
-    "• URL del video: {videoUrl}",
-    "• Nombre del archivo: {videoName}"
-  ];
-
-  const bodyLines = bodyTemplate.map(line =>
-    line.replace("{videoUrl}", entry?.url || "")
-        .replace("{videoName}", entry?.nombre || "")
-  );
-
-  const body = encodeURIComponent(bodyLines.join("\n"));
-  const mailto = `mailto:${mail}?subject=${subject}&body=${body}`;
-  window.location.href = mailto;
+function openPromoModal(entry, conf) {
+  // seguridad: modal.enabled
+  if (!conf?.modal?.enabled) {
+    console.warn("[promo] Intento de abrir modal con enabled=false");
+    return;
+  }
+  renderPromoModal(conf, entry);
 }
 
+// Compatibilidad: legacy "modal_then_mailto"
+function legacyConvertIfNeeded(conf) {
+  const c = structuredClone(conf);
+  if (c?.action === "modal_then_mailto") {
+    c.action = { type: "modal" };
+    c.modal = c.modal || {};
+    c.modal.enabled = true;
+    // Si no hay botones definidos, creamos 2: Nominar (mailto) + Cerrar
+    if (!Array.isArray(c.modal.buttons) || !c.modal.buttons.length) {
+      c.modal.buttons = [
+        {
+          label: "Nominar mi punto",
+          style: {
+            bg_color: c.border_color || "#004FC8",
+            text_color: "#fff",
+            border_color: c.border_color || "#004FC8"
+          },
+          action: {
+            type: "mailto",
+            to: c.mailto || "contacto@puntazoclips.com",
+            subject: c.subject || "Nominar punto",
+            bodyTemplate: c.bodyTemplate || []
+          }
+        },
+        {
+          label: "Cerrar",
+          style: { bg_color: "#f5f5f5", text_color: "#000", border_color: "#ccc" },
+          action: { type: "close" }
+        }
+      ];
+    }
+    // theme básico si no existe
+    c.modal.theme = c.modal.theme || {
+      bg_color: c.bg_color || "#fff",
+      text_color: c.text_color || "#000",
+      border_color: c.border_color || "#004FC8"
+    };
+    // logos si venían
+    if (!c.modal.logos && c.logo) c.modal.logos = [c.logo];
+  }
+  return c;
+}
 
+/** Mapea las promos del club `loc` a botones ya con overrides aplicados */
+async function buildPromoButtonsForClub(loc, entry) {
+  const clubMap = await loadClubPromotions();
+  const defs = await loadPromotionDefinitions();
+
+  let promosForLoc = clubMap?.[loc];
+  if (!promosForLoc) return [];
+
+  let promoIds = [];
+  let overrides = {};
+
+  if (Array.isArray(promosForLoc)) {
+    promoIds = promosForLoc;
+  } else if (typeof promosForLoc === "object" && Array.isArray(promosForLoc.promos)) {
+    promoIds = promosForLoc.promos;
+    overrides = promosForLoc.overrides || {};
+  } else {
+    // formato desconocido
+    return [];
+  }
+
+  const buttons = [];
+
+  for (const pid of promoIds) {
+    let base = defs?.[pid];
+    if (!base) continue;
+
+    // compatibilidad legacy
+    base = legacyConvertIfNeeded(base);
+
+    // merge overrides por club (si existen)
+    const merged = deepMerge(base, overrides[pid] || {});
+
+    const actionObj = merged?.action || {};
+    const actionType = (actionObj.type || (typeof merged.action === "string" ? merged.action : "") || "").toLowerCase();
+
+    // botón visible en la tarjeta (fuera del modal)
+    const st = getButtonStyle(merged);
+    const label = merged?.label || "Promoción";
+
+    if (actionType === "url") {
+      const a = document.createElement("a");
+      a.href = actionObj.href || "#";
+      a.target = actionObj.target || "_blank";
+      a.rel = "noopener";
+      a.className = "btn-promo";
+      stylePromoButton(a, merged);
+      if (st.logo) {
+        const img = document.createElement("img");
+        img.src = st.logo;
+        img.alt = pid;
+        img.style.height = "20px";
+        img.style.width = "auto";
+        img.style.objectFit = "contain";
+        a.appendChild(img);
+      }
+      const span = document.createElement("span");
+      span.textContent = resolvePlaceholders(label, entry);
+      a.appendChild(span);
+      buttons.push(a);
+      continue;
+    }
+
+    if (actionType === "modal") {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn-promo";
+      stylePromoButton(btn, merged);
+      if (st.logo) {
+        const img = document.createElement("img");
+        img.src = st.logo;
+        img.alt = pid;
+        img.style.height = "20px";
+        img.style.width = "auto";
+        img.style.objectFit = "contain";
+        btn.appendChild(img);
+      }
+      const span = document.createElement("span");
+      span.textContent = resolvePlaceholders(label, entry);
+      btn.appendChild(span);
+      btn.addEventListener("click", () => openPromoModal(entry, merged));
+      buttons.push(btn);
+      continue;
+    }
+
+    // fallback: si no hay type pero hay url
+    if (!actionType && merged?.url) {
+      const a = document.createElement("a");
+      a.href = merged.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.className = "btn-promo";
+      stylePromoButton(a, merged);
+      if (st.logo) {
+        const img = document.createElement("img");
+        img.src = st.logo;
+        img.alt = pid;
+        img.style.height = "20px";
+        img.style.width = "auto";
+        img.style.objectFit = "contain";
+        a.appendChild(img);
+      }
+      const span = document.createElement("span");
+      span.textContent = resolvePlaceholders(label, entry);
+      a.appendChild(span);
+      buttons.push(a);
+      continue;
+    }
+  }
+
+  return buttons;
+}
 
 // ----------------------- video + filtros + paginación -----------------------
 let allVideos = [];
@@ -882,7 +1140,7 @@ async function crearBotonAccionCompartir(entry) {
 
   const tryShareFile = async (file) => {
     try {
-      if (navigator.share) {
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: "Video Puntazo",
@@ -1106,7 +1364,7 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     wrap.appendChild(preview);
     card.appendChild(wrap);
 
-    // === [NUEVO] Botones de promoción por club (si aplica) ===
+    // === Botones de promoción por club (desde JSON) ===
     try {
       const promoButtons = await buildPromoButtonsForClub(loc, entry);
       if (promoButtons.length) {
