@@ -1,34 +1,142 @@
 {
   "luckia": {
-    "text": "Juega en Luckia | Doble bono hasta $4000",
-    "url": "https://www.luckia.mx/registrate/apuestas-deportivas/?btag=657508_f394581f4c4d42c592799baee4505260",
-    "color": "#EA5B0C",
-    "logo": "logos/luckia.png",
-    "action": "url"
+    "label": "Juega en Luckia | Doble bono hasta $4000",
+    "button": {
+      "logo": "logos/luckia.png",
+      "bg_color": "#EA5B0C",
+      "text_color": "#FFFFFF",
+      "border_color": "#FFFFFF"
+    },
+    "action": {
+      "type": "url",
+      "href": "https://www.luckia.mx/registrate/apuestas-deportivas/?btag=657508_f394581f4c4d42c592799baee4505260",
+      "target": "_blank"
+    },
+    "modal": { "enabled": false }
   },
+
   "puntazo": {
-    "text": "Nominar al Puntazo del mes",
-    "logo": "logos/PPuntazo.png",
-    "border_color": "#004FC8",
-    "bg_color": "#FFFFFF",
-    "text_color": "#000000",
-    "action": "modal_then_mailto",
-    "mailto": "contacto@puntazoclips.com",
-    "subject": "Nominar a El Puntazo del mes",
-    "bodyTemplate": [
-      "Hola Puntazo,",
-      "",
-      "Quiero nominar mi punto al Puntazo del mes.",
-      "",
-      "Nombre del participante: ",
-      "Instagram (@): ",
-      "",
-      "Confirmo que autorizo el uso del video en redes sociales @puntazoclips y @scorpion_padel y entiendo que el ganador se define por likes y el jurado de Puntazo + Scorpion, siempre y cuando siga a @puntazoclips y @scorpion_padel.",
-      "",
-      "• URL del video: {videoUrl}",
-      "• Nombre del archivo: {videoName}",
-      "",
-      "¡Gracias!"
-    ]
+    "label": "Nominar al Puntazo del mes",
+    "button": {
+      "logo": "logos/PPuntazo.png",
+      "bg_color": "#FFFFFF",
+      "text_color": "#000000",
+      "border_color": "#004FC8"
+    },
+    "action": {
+      "type": "modal"             // ← abre la ventana
+    },
+    "modal": {
+      "enabled": true,
+      "title": "Puntazo del mes",
+      "theme": {
+        "bg_color": "#FFFFFF",
+        "text_color": "#000000",
+        "border_color": "#004FC8"
+      },
+      "logos": [
+        "logos/PPuntazo.png"
+        // puedes agregar hasta 3: "logos/scorpion.png", "logos/otro.png"
+      ],
+      "intro_list": [
+        "Concurso mensual donde puedes ganar premios.",
+        "Tus videos pueden publicarse en redes sociales.",
+        "Los premios y ganadores se anuncian en @puntazoclips.",
+        "El ganador se decide por likes y el jurado de Puntazo + Scorpion."
+      ],
+      "requirements": {
+        "title_bold": "Requisitos:",
+        "items": [
+          "Seguir en Instagram a @scorpion_padel y @puntazoclips.",
+          "Enviar el correo dando clic al botón de abajo."
+        ]
+      },
+      "buttons": [
+        {
+          "label": "Nominar mi punto",
+          "style": {
+            "bg_color": "#004FC8",
+            "text_color": "#FFFFFF",
+            "border_color": "#004FC8"
+          },
+          "action": {
+            "type": "mailto",
+            "to": "contacto@puntazoclips.com",
+            "subject": "Nominar a El Puntazo del mes",
+            "bodyTemplate": [
+              "Hola Puntazo,",
+              "",
+              "Quiero nominar mi punto al Puntazo del mes.",
+              "",
+              "Nombre del participante: ",
+              "Instagram (@): ",
+              "",
+              "Confirmo que autorizo el uso del video en redes sociales @puntazoclips y @scorpion_padel y entiendo que el ganador se define por likes y el jurado de Puntazo + Scorpion, siempre y cuando siga a @puntazoclips y @scorpion_padel.",
+              "",
+              "• URL del video: {videoUrl}",
+              "• Nombre del archivo: {videoName}",
+              "",
+              "¡Gracias!"
+            ]
+          }
+        },
+        {
+          "label": "Cerrar",
+          "style": {
+            "bg_color": "#f5f5f5",
+            "text_color": "#000000",
+            "border_color": "#CCCCCC"
+          },
+          "action": { "type": "close" }
+        }
+      ]
+    }
+  },
+
+  "printassault": {
+    "label": "PrintAssault",
+    "button": {
+      "logo": "logos/printassault.png",
+      "bg_color": "#111111",
+      "text_color": "#FFFFFF",
+      "border_color": "#FFFFFF"
+    },
+    "action": {
+      "type": "modal"
+    },
+    "modal": {
+      "enabled": true,
+      "title": "PrintAssault – Promo",
+      "theme": {
+        "bg_color": "#FFFFFF",
+        "text_color": "#000000",
+        "border_color": "#111111"
+      },
+      "logos": ["logos/printassault.png"],
+      "intro_list": [
+        "Descripción breve de la promoción.",
+        "Beneficios, vigencia, mecánica."
+      ],
+      "requirements": {
+        "title_bold": "Requisitos:",
+        "items": [
+          "Sigue @printassault.",
+          "Completa el formulario."
+        ]
+      },
+      "buttons": [
+        {
+          "label": "Ir al sitio",
+          "style": { "bg_color": "#111111", "text_color": "#FFFFFF", "border_color": "#111111" },
+          "action": { "type": "url", "href": "https://printassault.example/promo", "target": "_blank" }
+        },
+        {
+          "label": "Copiar código",
+          "style": { "bg_color": "#FFFFFF", "text_color": "#111111", "border_color": "#111111" },
+          "action": { "type": "copy", "text": "PUNTAZO10" }
+        },
+        { "label": "Cerrar", "style": { "bg_color": "#f5f5f5", "text_color": "#000", "border_color": "#ccc" }, "action": { "type": "close" } }
+      ]
+    }
   }
 }
