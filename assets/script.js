@@ -173,6 +173,22 @@ async function findOppositeVideo(entry, cfg, locId, canId, ladoId) {
 /* =================== FIN Helpers de asociación =================== */
 
 // ----------------------- navegación -----------------------
+
+// === NUEVO: helpers de mono-lado ===
+function isSingleLado(cfg, locId, canId) {
+  const loc = cfg?.locaciones?.find(l => l.id === locId);
+  const can = loc?.cancha?.find(c => c.id === canId);
+  const n = Array.isArray(can?.lados) ? can.lados.length : 0;
+  return n === 1;
+}
+function buildDirectLadoHref(cfg, locId, canId) {
+  const loc = cfg?.locaciones?.find(l => l.id === locId);
+  const can = loc?.cancha?.find(c => c.id === canId);
+  if (!can || !Array.isArray(can.lados) || can.lados.length !== 1) return null;
+  const lado = can.lados[0];
+  return `lado.html?loc=${encodeURIComponent(locId)}&can=${encodeURIComponent(canId)}&lado=${encodeURIComponent(lado.id)}`;
+}
+
 async function populateLocaciones() {
   try {
     const url = `data/config_locations.json?cb=${Date.now()}`;
@@ -210,12 +226,21 @@ async function populateCanchas() {
     ul.innerHTML = "";
     const nombreEl = document.getElementById("nombre-locacion");
     if (nombreEl) nombreEl.textContent = loc.nombre;
+
     loc.cancha.forEach(can => {
       const li = document.createElement("li");
       li.classList.add("fade-in");
       li.style.marginBottom = "10px";
       const a = document.createElement("a");
-      a.href = `cancha.html?loc=${locId}&can=${can.id}`;
+
+      // === CAMBIO: si la cancha es mono-lado, saltamos la página de lados
+      if (Array.isArray(can.lados) && can.lados.length === 1) {
+        const unico = can.lados[0];
+        a.href = `lado.html?loc=${encodeURIComponent(locId)}&can=${encodeURIComponent(can.id)}&lado=${encodeURIComponent(unico.id)}`;
+      } else {
+        a.href = `cancha.html?loc=${encodeURIComponent(locId)}&can=${encodeURIComponent(can.id)}`;
+      }
+
       a.textContent = can.nombre;
       a.classList.add("link-blanco");
       li.appendChild(a);
@@ -458,10 +483,10 @@ async function doCopyAction(action, entry) {
 
 let toastTimer = null;
 function toast(msg) {
-  let el = document.getElementById("__promo_toast__");
+  let el = document.getElementById("__promo_to__ast__");
   if (!el) {
     el = document.createElement("div");
-    el.id = "__promo_toast__";
+    el.id = "__promo_to__ast__";
     el.style.position = "fixed";
     el.style.left = "50%";
     el.style.bottom = "26px";
@@ -926,7 +951,7 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
       num.disabled = true;
       num.setAttribute("aria-current", "page");
       num.style.fontWeight = "700";
-      num.style.outline = "1px solid rgba(255,255,255,0.3)";
+      num.style.outline = "1px solid rgba(255,255,255,0.3)`;
     }
     num.addEventListener("click", () => onChange(i));
     wrap.appendChild(num);
@@ -1492,6 +1517,18 @@ async function populateVideos() {
       : null;
     ensureOppositeTopButton(oppTopHref, oppInfoCache?.oppName);
 
+    // === CAMBIO: actualizar botón "Regresar" según mono-lado ===
+    const btnVolver = document.getElementById("btn-volver");
+    if (btnVolver) {
+      if (isSingleLado(cfgGlobal, loc, can)) {
+        // cancha con un solo lado → regresar al menú de canchas
+        btnVolver.href = `cancha.html?loc=${encodeURIComponent(loc)}`;
+      } else {
+        // cancha con múltiples lados → regresar al menú de lados (comportamiento original)
+        btnVolver.href = `cancha.html?loc=${encodeURIComponent(loc)}&can=${encodeURIComponent(can)}`;
+      }
+    }
+
     // Filtros (arriba y abajo)
     createHourFilterUI(data.videos);
 
@@ -1609,16 +1646,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const path2 = window.location.pathname;
     const p2 = getQueryParams();
     if (path2.endsWith("lado.html")) {
-      btnVolver.href = `cancha.html?loc=${p2.loc}&can=${p2.can}`;
+      // NOTA: populateVideos vuelve a ajustar este href con el config real (según mono-lado)
+      btnVolver.href = `cancha.html?loc=${encodeURIComponent(p2.loc)}&can=${encodeURIComponent(p2.can)}`;
     } else if (path2.endsWith("cancha.html")) {
-      btnVolver.href = `locacion.html?loc=${p2.loc}`;
+      btnVolver.href = `locacion.html?loc=${encodeURIComponent(p2.loc)}`;
     } else if (path2.endsWith("locacion.html")) {
       btnVolver.href = "index.html";
     }
   }
 });
 
-window.addEventListener("popstate", () => {
+window.addEventListener("popstate", async () => {
   const p = getQueryParams();
   const newFilter = p.filtro || null;
   if (newFilter !== ultimoFiltroActivo) {
@@ -1642,6 +1680,22 @@ window.addEventListener("popstate", () => {
         ensureOppositeTopButton(oppTopHref, info?.oppName);
       }).catch(() => {});
     }
+
+    // === CAMBIO: también actualizar el botón "Regresar" en popstate
+    try {
+      if (!cfgGlobal) {
+        const resCfg = await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" });
+        cfgGlobal = await resCfg.json();
+      }
+      const btnVolver = document.getElementById("btn-volver");
+      if (btnVolver && p.loc && p.can) {
+        if (isSingleLado(cfgGlobal, p.loc, p.can)) {
+          btnVolver.href = `cancha.html?loc=${encodeURIComponent(p.loc)}`;
+        } else {
+          btnVolver.href = `cancha.html?loc=${encodeURIComponent(p.loc)}&can=${encodeURIComponent(p.can)}`;
+        }
+      }
+    } catch {}
   }
 });
 
@@ -1696,3 +1750,4 @@ function initNavbar(){
 document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
 });
+
