@@ -109,10 +109,6 @@ async function requireCanchaPassword(locId, canId) {
 }
 
 /* ===================== Helpers de asociación (opuesto automático) ===================== */
-/**
- * Parsea nombres tipo: Loc_Can_Lado_YYYYMMDD_HHMMSS.mp4
- * Devuelve también tsKey = YYYYMMDDHHMMSS como número para ordenar sin zonas horarias.
- */
 function parseFromName(name) {
   const re = /^(.+?)_(.+?)_(.+?)_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})\.mp4$/;
   const m = name.match(re);
@@ -173,22 +169,6 @@ async function findOppositeVideo(entry, cfg, locId, canId, ladoId) {
 /* =================== FIN Helpers de asociación =================== */
 
 // ----------------------- navegación -----------------------
-
-// === NUEVO: helpers de mono-lado ===
-function isSingleLado(cfg, locId, canId) {
-  const loc = cfg?.locaciones?.find(l => l.id === locId);
-  const can = loc?.cancha?.find(c => c.id === canId);
-  const n = Array.isArray(can?.lados) ? can.lados.length : 0;
-  return n === 1;
-}
-function buildDirectLadoHref(cfg, locId, canId) {
-  const loc = cfg?.locaciones?.find(l => l.id === locId);
-  const can = loc?.cancha?.find(c => c.id === canId);
-  if (!can || !Array.isArray(can.lados) || can.lados.length !== 1) return null;
-  const lado = can.lados[0];
-  return `lado.html?loc=${encodeURIComponent(locId)}&can=${encodeURIComponent(canId)}&lado=${encodeURIComponent(lado.id)}`;
-}
-
 async function populateLocaciones() {
   try {
     const url = `data/config_locations.json?cb=${Date.now()}`;
@@ -233,12 +213,13 @@ async function populateCanchas() {
       li.style.marginBottom = "10px";
       const a = document.createElement("a");
 
-      // === CAMBIO: si la cancha es mono-lado, saltamos la página de lados
-      if (Array.isArray(can.lados) && can.lados.length === 1) {
-        const unico = can.lados[0];
-        a.href = `lado.html?loc=${encodeURIComponent(locId)}&can=${encodeURIComponent(can.id)}&lado=${encodeURIComponent(unico.id)}`;
+      // SALTO DE “LADOS” SI SOLO HAY UNO
+      const lados = Array.isArray(can.lados) ? can.lados : [];
+      if (lados.length === 1) {
+        const unico = lados[0];
+        a.href = `lado.html?loc=${locId}&can=${can.id}&lado=${unico.id}`;
       } else {
-        a.href = `cancha.html?loc=${encodeURIComponent(locId)}&can=${encodeURIComponent(can.id)}`;
+        a.href = `cancha.html?loc=${locId}&can=${can.id}`;
       }
 
       a.textContent = can.nombre;
@@ -261,6 +242,15 @@ async function populateLados() {
     const config = await res.json();
     const loc = config.locaciones.find(l => l.id === locId);
     const cancha = loc?.cancha.find(c => c.id === canId);
+
+    // REDIRECCIÓN AUTOMÁTICA SI SOLO HAY UN LADO
+    const lados = Array.isArray(cancha?.lados) ? cancha.lados : [];
+    if (lados.length === 1) {
+      const unico = lados[0];
+      window.location.href = `lado.html?loc=${locId}&can=${canId}&lado=${unico.id}`;
+      return;
+    }
+
     const ul = document.getElementById("lados-lista");
     if (!ul || !loc || !cancha) return;
     ul.innerHTML = "";
@@ -299,12 +289,10 @@ async function populateLados() {
 let clubPromotions = null;
 let promoConfig = null;
 
-// === util promos: merge profundo (simple) ===
 function deepMerge(base, override) {
   if (!override) return structuredClone(base);
   if (!base) return structuredClone(override);
   if (Array.isArray(base) && Array.isArray(override)) {
-    // para arrays, si override existe, usamos override completo
     return structuredClone(override);
   }
   if (typeof base === 'object' && typeof override === 'object') {
@@ -317,7 +305,6 @@ function deepMerge(base, override) {
   return structuredClone(override);
 }
 
-// === util promos: estilos de botón con compatibilidad hacia atrás ===
 function getButtonStyle(conf) {
   const b = conf?.button || {};
   return {
@@ -328,7 +315,6 @@ function getButtonStyle(conf) {
   };
 }
 
-// === util promos: placeholders ===
 function resolvePlaceholders(str, entry, extraCtx = {}) {
   if (!str) return str;
   const meta = entry?.nombre ? parseFromName(entry.nombre) : null;
@@ -398,7 +384,6 @@ function stylePromoButton(el, conf) {
   el.style.marginTop = "10px";
 }
 
-// === MODAL GENÉRICO DE PROMOCIONES ===
 let promoModalRoot = null;
 
 function ensurePromoModalRoot() {
@@ -444,7 +429,6 @@ function clearNode(el) {
   while (el.firstChild) el.removeChild(el.firstChild);
 }
 
-// action helpers
 function doUrlAction(action) {
   const href = action?.href || "#";
   const target = action?.target || "_blank";
@@ -470,7 +454,6 @@ async function doCopyAction(action, entry) {
     await navigator.clipboard.writeText(text);
     toast("Copiado al portapapeles");
   } catch {
-    // fallback
     const ta = document.createElement("textarea");
     ta.value = text;
     document.body.appendChild(ta);
@@ -483,10 +466,10 @@ async function doCopyAction(action, entry) {
 
 let toastTimer = null;
 function toast(msg) {
-  let el = document.getElementById("__promo_to__ast__");
+  let el = document.getElementById("__promo_toast__");
   if (!el) {
     el = document.createElement("div");
-    el.id = "__promo_to__ast__";
+    el.id = "__promo_toast__";
     el.style.position = "fixed";
     el.style.left = "50%";
     el.style.bottom = "26px";
@@ -519,7 +502,6 @@ function renderPromoModal(conf, entry) {
   box.style.background = bgColor;
   box.style.color = fgColor;
 
-  // header (logos + title)
   const head = document.createElement("div");
   head.style.display = "flex";
   head.style.alignItems = "center";
@@ -543,7 +525,6 @@ function renderPromoModal(conf, entry) {
   head.appendChild(title);
   box.appendChild(head);
 
-  // intro_list
   const intro = conf?.modal?.intro_list || [];
   if (intro.length) {
     const desc = document.createElement("div");
@@ -559,7 +540,6 @@ function renderPromoModal(conf, entry) {
     box.appendChild(desc);
   }
 
-  // requirements
   const req = conf?.modal?.requirements;
   if (req?.items?.length) {
     const reqTitle = document.createElement("p");
@@ -577,7 +557,6 @@ function renderPromoModal(conf, entry) {
     box.appendChild(reqUl);
   }
 
-  // buttons row
   const btnRow = document.createElement("div");
   btnRow.style.display = "flex";
   btnRow.style.gap = "8px";
@@ -604,7 +583,6 @@ function renderPromoModal(conf, entry) {
     btnRow.appendChild(btn);
   });
 
-  // si no hay botones, agregamos un "Cerrar"
   if (!buttons.length) {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -632,29 +610,23 @@ async function handlePromoAction(action, entry) {
     doUrlAction(action);
     return;
   }
-
   if (type === "mailto") {
     const href = buildMailto(action, entry);
     location.href = href;
     return;
   }
-
   if (type === "copy") {
     await doCopyAction(action, entry);
     return;
   }
-
   if (type === "close") {
     doCloseAction();
     return;
   }
-
-  // fallback desconocido → cerrar
   doCloseAction();
 }
 
 function openPromoModal(entry, conf) {
-  // seguridad: modal.enabled
   if (!conf?.modal?.enabled) {
     console.warn("[promo] Intento de abrir modal con enabled=false");
     return;
@@ -662,14 +634,12 @@ function openPromoModal(entry, conf) {
   renderPromoModal(conf, entry);
 }
 
-// Compatibilidad: legacy "modal_then_mailto"
 function legacyConvertIfNeeded(conf) {
   const c = structuredClone(conf);
   if (c?.action === "modal_then_mailto") {
     c.action = { type: "modal" };
     c.modal = c.modal || {};
     c.modal.enabled = true;
-    // Si no hay botones definidos, creamos 2: Nominar (mailto) + Cerrar
     if (!Array.isArray(c.modal.buttons) || !c.modal.buttons.length) {
       c.modal.buttons = [
         {
@@ -693,19 +663,16 @@ function legacyConvertIfNeeded(conf) {
         }
       ];
     }
-    // theme básico si no existe
     c.modal.theme = c.modal.theme || {
       bg_color: c.bg_color || "#fff",
       text_color: c.text_color || "#000",
       border_color: c.border_color || "#004FC8"
     };
-    // logos si venían
     if (!c.modal.logos && c.logo) c.modal.logos = [c.logo];
   }
   return c;
 }
 
-/** Mapea las promos del club `loc` a botones ya con overrides aplicados */
 async function buildPromoButtonsForClub(loc, entry) {
   const clubMap = await loadClubPromotions();
   const defs = await loadPromotionDefinitions();
@@ -722,7 +689,6 @@ async function buildPromoButtonsForClub(loc, entry) {
     promoIds = promosForLoc.promos;
     overrides = promosForLoc.overrides || {};
   } else {
-    // formato desconocido
     return [];
   }
 
@@ -732,16 +698,13 @@ async function buildPromoButtonsForClub(loc, entry) {
     let base = defs?.[pid];
     if (!base) continue;
 
-    // compatibilidad legacy
     base = legacyConvertIfNeeded(base);
 
-    // merge overrides por club (si existen)
     const merged = deepMerge(base, overrides[pid] || {});
 
     const actionObj = merged?.action || {};
     const actionType = (actionObj.type || (typeof merged.action === "string" ? merged.action : "") || "").toLowerCase();
 
-    // botón visible en la tarjeta (fuera del modal)
     const st = getButtonStyle(merged);
     const label = merged?.label || "Promoción";
 
@@ -790,7 +753,6 @@ async function buildPromoButtonsForClub(loc, entry) {
       continue;
     }
 
-    // fallback: si no hay type pero hay url
     if (!actionType && merged?.url) {
       const a = document.createElement("a");
       a.href = merged.url;
@@ -836,7 +798,6 @@ let contFiltroArriba = null;
 let contFiltroAbajo = null;
 let ultimoFiltroActivo = null;
 
-// ---------- Botón fijo de "Ir al lado opuesto" junto a "Regresar a la cancha" ----------
 let btnOppTopEl = null;
 function ensureOppositeTopButton(oppHref, oppName) {
   const btnVolver = document.getElementById("btn-volver");
@@ -881,7 +842,6 @@ function ensureOppositeTopButton(oppHref, oppName) {
   }
 }
 
-// ---- Contenedor inferior (solo paginador abajo) ----
 function ensureBottomControlsContainer() {
   if (!contenedorBottomControls) {
     contenedorBottomControls = document.getElementById("bottom-controls");
@@ -951,7 +911,7 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
       num.disabled = true;
       num.setAttribute("aria-current", "page");
       num.style.fontWeight = "700";
-      num.style.outline = "1px solid rgba(255,255,255,0.3)`;
+      num.style.outline = "1px solid rgba(255,255,255,0.3)";
     }
     num.addEventListener("click", () => onChange(i));
     wrap.appendChild(num);
@@ -984,7 +944,6 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
   container.appendChild(wrap);
 }
 
-// ---- Filtros (arriba y abajo sincronizados) ----
 function renderHourFilterIn(container, videos) {
   if (!container) return;
   const params = getQueryParams();
@@ -1032,7 +991,6 @@ function createHourFilterUI(videos) {
   renderHourFilterIn(contFiltroAbajo, videos);
 }
 
-// ---- Previews / reproducción ----
 function createPreviewOverlay(videoSrc, duration, parentCard) {
   const preview = document.createElement("video");
   preview.muted = true;
@@ -1313,7 +1271,6 @@ async function crearBotonAccionCompartir(entry) {
   return btn;
 }
 
-// ---- Render de página y limpieza ----
 function limpiarRecursosDePagina() {
   try { if (currentPreviewActive) currentPreviewActive.pause(); } catch {}
   currentPreviewActive = null;
@@ -1389,7 +1346,6 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     wrap.appendChild(preview);
     card.appendChild(wrap);
 
-    // === Botones de promoción por club (desde JSON) ===
     try {
       const promoButtons = await buildPromoButtonsForClub(loc, entry);
       if (promoButtons.length) {
@@ -1406,7 +1362,6 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
       console.warn("[promo] No se pudieron renderizar promos:", e);
     }
 
-    // Contenedor de acciones estándar
     const btnContainer = document.createElement("div");
     btnContainer.className = "botones-container";
     btnContainer.style.display = "flex";
@@ -1441,7 +1396,6 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
   const previews = Array.from(contenedorVideos.querySelectorAll("video.video-preview"));
   loadPreviewsSequentially(previews);
 
-  // Paginador SOLO ABAJO
   const total = videosListaCompleta.length;
   const p = getQueryParams();
 
@@ -1504,7 +1458,6 @@ async function populateVideos() {
     if (linkCancha) { linkCancha.textContent = canObj?.nombre || can; linkCancha.href = `cancha.html?loc=${loc}&can=${can}`; }
     if (nombreLado) { nombreLado.textContent = ladoObj?.nombre || lado; }
 
-    // Info lado opuesto y botón fijo arriba (conserva pg/filtro)
     oppInfoCache = await findOppositeConfig(cfgGlobal, loc, can, lado);
     const oppTopHref = oppInfoCache?.oppId
       ? (() => {
@@ -1517,22 +1470,8 @@ async function populateVideos() {
       : null;
     ensureOppositeTopButton(oppTopHref, oppInfoCache?.oppName);
 
-    // === CAMBIO: actualizar botón "Regresar" según mono-lado ===
-    const btnVolver = document.getElementById("btn-volver");
-    if (btnVolver) {
-      if (isSingleLado(cfgGlobal, loc, can)) {
-        // cancha con un solo lado → regresar al menú de canchas
-        btnVolver.href = `cancha.html?loc=${encodeURIComponent(loc)}`;
-      } else {
-        // cancha con múltiples lados → regresar al menú de lados (comportamiento original)
-        btnVolver.href = `cancha.html?loc=${encodeURIComponent(loc)}&can=${encodeURIComponent(can)}`;
-      }
-    }
-
-    // Filtros (arriba y abajo)
     createHourFilterUI(data.videos);
 
-    // Lista con filtro horario
     let list = data.videos || [];
     if (filtro) {
       list = list.filter(v => {
@@ -1541,13 +1480,12 @@ async function populateVideos() {
       });
     }
 
-    // Orden por tsKey (más nuevo → más antiguo)
     list.sort((a, b) => {
       const pa = parseFromName(a.nombre);
       const pb = parseFromName(b.nombre);
       const ta = pa ? pa.tsKey : -Infinity;
       const tb = pb ? pb.tsKey : -Infinity;
-      return tb - ta; // descendente
+      return tb - ta;
     });
 
     ultimoFiltroActivo = filtro || null;
@@ -1556,7 +1494,6 @@ async function populateVideos() {
 
     ensureBottomControlsContainer();
 
-    // Página deseada
     const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
     let desiredPg = parseInt(params.pg || "0", 10);
     if (Number.isNaN(desiredPg)) desiredPg = 0;
@@ -1602,6 +1539,22 @@ function createScrollToTopBtn() {
   });
 }
 
+// ---------- Helper: detectar si una cancha es “mono-lado” ----------
+async function isSingleLado(locId, canId) {
+  try {
+    let cfg = cfgGlobal;
+    if (!cfg) {
+      const res = await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" });
+      cfg = await res.json();
+    }
+    const loc = cfg?.locaciones?.find(l => l.id === locId);
+    const can = loc?.cancha?.find(c => c.id === canId);
+    return Array.isArray(can?.lados) && can.lados.length === 1;
+  } catch {
+    return false;
+  }
+}
+
 // ----------------------- arranque -----------------------
 document.addEventListener("DOMContentLoaded", () => {
   const path = window.location.pathname;
@@ -1624,6 +1577,19 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = `locacion.html?loc=${p.loc}`;
         return;
       }
+      // Si la cancha solo tiene un lado, redirigimos directo al lado
+      try {
+        const res = await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" });
+        const cfg = await res.json();
+        const loc = cfg.locaciones.find(l => l.id === p.loc);
+        const can = loc?.cancha.find(c => c.id === p.can);
+        const lados = Array.isArray(can?.lados) ? can.lados : [];
+        if (lados.length === 1) {
+          const unico = lados[0];
+          window.location.href = `lado.html?loc=${p.loc}&can=${p.can}&lado=${unico.id}`;
+          return;
+        }
+      } catch {}
       populateLados();
       return;
     }
@@ -1640,23 +1606,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   })();
 
-  // href del botón "Regresar a la cancha"
+  // href del botón "Regresar a la cancha" con salto si es mono-lado
   const btnVolver = document.getElementById("btn-volver");
   if (btnVolver) {
-    const path2 = window.location.pathname;
-    const p2 = getQueryParams();
-    if (path2.endsWith("lado.html")) {
-      // NOTA: populateVideos vuelve a ajustar este href con el config real (según mono-lado)
-      btnVolver.href = `cancha.html?loc=${encodeURIComponent(p2.loc)}&can=${encodeURIComponent(p2.can)}`;
-    } else if (path2.endsWith("cancha.html")) {
-      btnVolver.href = `locacion.html?loc=${encodeURIComponent(p2.loc)}`;
-    } else if (path2.endsWith("locacion.html")) {
-      btnVolver.href = "index.html";
-    }
+    (async () => {
+      const path2 = window.location.pathname;
+      const p2 = getQueryParams();
+      if (path2.endsWith("lado.html")) {
+        const mono = await isSingleLado(p2.loc, p2.can);
+        btnVolver.href = mono
+          ? `locacion.html?loc=${p2.loc}`          // salto al menú de canchas (no al de lados)
+          : `cancha.html?loc=${p2.loc}&can=${p2.can}`;
+      } else if (path2.endsWith("cancha.html")) {
+        btnVolver.href = `locacion.html?loc=${p2.loc}`;
+      } else if (path2.endsWith("locacion.html")) {
+        btnVolver.href = "index.html";
+      }
+    })();
   }
 });
 
-window.addEventListener("popstate", async () => {
+window.addEventListener("popstate", () => {
   const p = getQueryParams();
   const newFilter = p.filtro || null;
   if (newFilter !== ultimoFiltroActivo) {
@@ -1680,22 +1650,6 @@ window.addEventListener("popstate", async () => {
         ensureOppositeTopButton(oppTopHref, info?.oppName);
       }).catch(() => {});
     }
-
-    // === CAMBIO: también actualizar el botón "Regresar" en popstate
-    try {
-      if (!cfgGlobal) {
-        const resCfg = await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" });
-        cfgGlobal = await resCfg.json();
-      }
-      const btnVolver = document.getElementById("btn-volver");
-      if (btnVolver && p.loc && p.can) {
-        if (isSingleLado(cfgGlobal, p.loc, p.can)) {
-          btnVolver.href = `cancha.html?loc=${encodeURIComponent(p.loc)}`;
-        } else {
-          btnVolver.href = `cancha.html?loc=${encodeURIComponent(p.loc)}&can=${encodeURIComponent(p.can)}`;
-        }
-      }
-    } catch {}
   }
 });
 
@@ -1750,4 +1704,3 @@ function initNavbar(){
 document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
 });
-
