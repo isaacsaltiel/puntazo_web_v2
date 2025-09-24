@@ -158,7 +158,7 @@ def procesar_uno(nombre: str, ACCESS_TOKEN: str | None) -> tuple[str, bool, str]
         # 2) Recursos por club
         club_dir = CLUBS_ROOT / loc
         logo1 = LOGO1_PATH
-        logo2 = club_dir / "logo.png"
+        logo2 = club_dir / "logo_borde_bicolor.png"
         logo3 = club_dir / "tercer_logo.png"
         intro = club_dir / "intro.mp4"
         outro = club_dir / "outro.mp4"
