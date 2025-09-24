@@ -59,5 +59,3 @@ jobs:
       - name: Procesar (20, 2×2, newest, sin dry-run)
         run: |
           python procesar_videos_ffmpeg.py
-
-
