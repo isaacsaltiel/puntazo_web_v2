@@ -299,6 +299,12 @@
       "can": "cancha4",
       "date": "2025-09-21",
       "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "date": "2025-09-23",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -660,6 +666,12 @@
       "loc": "interpadel",
       "can": "cancha4",
       "hour": "12",
+      "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "hour": "10",
       "count": 1
     }
   ],
@@ -1150,7 +1162,16 @@
         "ladoa": 4
       },
       "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "date": "2025-09-23",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2025-09-23T16:11:52.429728+00:00"
+  "generated_at_utc": "2025-09-24T00:42:39.328725+00:00"
 }
