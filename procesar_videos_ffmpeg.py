@@ -23,7 +23,7 @@ APP_KEY         = os.environ["DROPBOX_APP_KEY"]
 APP_SECRET      = os.environ["DROPBOX_APP_SECRET"]
 REFRESH_TOKEN   = os.environ["DROPBOX_REFRESH_TOKEN"]
 
-LOGO1_PATH      = Path(os.environ.get("LOGO1_PATH", "logos/logo_borde_bicolor.png")).resolve()
+LOGO1_PATH      = Path(os.environ.get("LOGO1_PATH", "logos/puntazo.png")).resolve()
 CLUBS_ROOT      = Path(os.environ.get("CLUBS_ROOT", "clubs")).resolve()
 DEBUG           = os.environ.get("DEBUG", "false").lower() in ("1", "true", "yes")
 THIRD_LOGO_ON   = os.environ.get("THIRD_LOGO_ENABLED", "false").lower() in ("1", "true", "yes")
