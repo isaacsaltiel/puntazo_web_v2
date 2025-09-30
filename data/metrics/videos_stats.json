@@ -109,15 +109,15 @@
       "count": 22
     },
     {
-      "loc": "interpadel",
-      "can": "cancha3",
-      "date": "2025-08-03",
-      "count": 20
-    },
-    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-09-27",
+      "count": 21
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2025-08-03",
       "count": 20
     },
     {
@@ -289,6 +289,12 @@
       "count": 3
     },
     {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-09-29",
+      "count": 3
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -365,14 +371,14 @@
     {
       "loc": "scorpion",
       "can": "cancha1",
-      "hour": "20",
+      "hour": "13",
       "count": 54
     },
     {
       "loc": "scorpion",
       "can": "cancha1",
-      "hour": "13",
-      "count": 53
+      "hour": "20",
+      "count": 54
     },
     {
       "loc": "scorpion",
@@ -443,13 +449,13 @@
     {
       "loc": "scorpion",
       "can": "cancha2",
-      "hour": "17",
-      "count": 25
+      "hour": "18",
+      "count": 28
     },
     {
       "loc": "scorpion",
       "can": "cancha2",
-      "hour": "18",
+      "hour": "17",
       "count": 25
     },
     {
@@ -963,6 +969,26 @@
       "diff": 1
     },
     {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-09-27",
+      "counts_por_lado": {
+        "ladoa": 11,
+        "ladob": 10
+      },
+      "diff": 1
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-09-29",
+      "counts_por_lado": {
+        "ladob": 2,
+        "ladoa": 1
+      },
+      "diff": 1
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -1305,17 +1331,7 @@
         "ladoa": 5
       },
       "diff": 0
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "date": "2025-09-27",
-      "counts_por_lado": {
-        "ladoa": 10,
-        "ladob": 10
-      },
-      "diff": 0
     }
   ],
-  "generated_at_utc": "2025-09-29T16:09:52.466192+00:00"
+  "generated_at_utc": "2025-09-30T00:43:07.838898+00:00"
 }
