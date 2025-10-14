@@ -296,6 +296,12 @@
     },
     {
       "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-10-13",
+      "count": 5
+    },
+    {
+      "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-08-31",
       "count": 4
@@ -352,12 +358,6 @@
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-10-07",
-      "count": 3
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "date": "2025-10-13",
       "count": 3
     },
     {
@@ -462,7 +462,7 @@
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "21",
-      "count": 78
+      "count": 80
     },
     {
       "loc": "scorpion",
@@ -1111,8 +1111,8 @@
       "can": "cancha1",
       "date": "2025-10-13",
       "counts_por_lado": {
-        "ladob": 2,
-        "ladoa": 1
+        "ladob": 3,
+        "ladoa": 2
       },
       "diff": 1
     },
@@ -1598,5 +1598,5 @@
       "diff": 0
     }
   ],
-  "generated_at_utc": "2025-10-14T00:42:35.034724+00:00"
+  "generated_at_utc": "2025-10-14T08:12:30.327277+00:00"
 }
