@@ -247,6 +247,12 @@
       "count": 9
     },
     {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2025-10-14",
+      "count": 9
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-08-25",
@@ -358,6 +364,12 @@
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-10-07",
+      "count": 3
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "date": "2025-10-14",
       "count": 3
     },
     {
@@ -723,6 +735,12 @@
       "count": 5
     },
     {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "14",
+      "count": 5
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "18",
@@ -780,6 +798,18 @@
       "loc": "interpadel",
       "can": "cancha4",
       "hour": "00",
+      "count": 2
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "hour": "17",
+      "count": 2
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "17",
       "count": 2
     },
     {
@@ -852,6 +882,24 @@
       "loc": "interpadel",
       "can": "cancha4",
       "hour": "16",
+      "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "16",
+      "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "18",
+      "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "hour": "18",
       "count": 1
     }
   ],
@@ -1596,7 +1644,25 @@
         "ladob": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2025-10-14",
+      "counts_por_lado": {
+        "ladoa": 9
+      },
+      "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "date": "2025-10-14",
+      "counts_por_lado": {
+        "ladoa": 3
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2025-10-14T16:11:17.958332+00:00"
+  "generated_at_utc": "2025-10-15T00:44:12.495744+00:00"
 }
