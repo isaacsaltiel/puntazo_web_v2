@@ -259,6 +259,12 @@
       "count": 10
     },
     {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-10-17",
+      "count": 10
+    },
+    {
       "loc": "interpadel",
       "can": "cancha3",
       "date": "2025-08-02",
@@ -358,6 +364,12 @@
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-10-16",
+      "count": 4
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-10-17",
       "count": 4
     },
     {
@@ -628,6 +640,18 @@
     },
     {
       "loc": "scorpion",
+      "can": "cancha2",
+      "hour": "09",
+      "count": 27
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "08",
+      "count": 25
+    },
+    {
+      "loc": "scorpion",
       "can": "cancha1",
       "hour": "23",
       "count": 24
@@ -636,12 +660,6 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "20",
-      "count": 23
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha2",
-      "hour": "09",
       "count": 23
     },
     {
@@ -670,12 +688,6 @@
     },
     {
       "loc": "scorpion",
-      "can": "cancha1",
-      "hour": "08",
-      "count": 18
-    },
-    {
-      "loc": "scorpion",
       "can": "cancha2",
       "hour": "19",
       "count": 17
@@ -690,7 +702,7 @@
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "07",
-      "count": 11
+      "count": 14
     },
     {
       "loc": "Scorpion",
@@ -1741,7 +1753,27 @@
         "ladoa": 10
       },
       "diff": 0
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-10-17",
+      "counts_por_lado": {
+        "ladoa": 5,
+        "ladob": 5
+      },
+      "diff": 0
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-10-17",
+      "counts_por_lado": {
+        "ladob": 2,
+        "ladoa": 2
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2025-10-17T08:13:46.497106+00:00"
+  "generated_at_utc": "2025-10-17T16:11:04.344909+00:00"
 }
