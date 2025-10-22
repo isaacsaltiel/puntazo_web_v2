@@ -368,6 +368,12 @@
     },
     {
       "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-10-21",
+      "count": 5
+    },
+    {
+      "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-08-31",
       "count": 4
@@ -451,6 +457,12 @@
       "count": 3
     },
     {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-10-21",
+      "count": 3
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -514,12 +526,6 @@
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-10-11",
-      "count": 2
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "date": "2025-10-21",
       "count": 2
     },
     {
@@ -600,13 +606,13 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "18",
-      "count": 52
+      "count": 53
     },
     {
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "17",
-      "count": 50
+      "count": 51
     },
     {
       "loc": "scorpion",
@@ -630,7 +636,7 @@
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "10",
-      "count": 46
+      "count": 48
     },
     {
       "loc": "scorpion",
@@ -652,14 +658,14 @@
     },
     {
       "loc": "scorpion",
-      "can": "cancha1",
-      "hour": "09",
-      "count": 37
+      "can": "cancha2",
+      "hour": "17",
+      "count": 39
     },
     {
       "loc": "scorpion",
-      "can": "cancha2",
-      "hour": "17",
+      "can": "cancha1",
+      "hour": "09",
       "count": 37
     },
     {
@@ -1275,6 +1281,16 @@
       "counts_por_lado": {
         "ladob": 3,
         "ladoa": 2
+      },
+      "diff": 1
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-10-21",
+      "counts_por_lado": {
+        "ladoa": 1,
+        "ladob": 2
       },
       "diff": 1
     },
@@ -1917,10 +1933,10 @@
       "can": "cancha1",
       "date": "2025-10-21",
       "counts_por_lado": {
-        "ladob": 2
+        "ladob": 5
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2025-10-21T16:12:22.138628+00:00"
+  "generated_at_utc": "2025-10-22T00:45:26.595823+00:00"
 }
