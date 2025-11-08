@@ -523,6 +523,12 @@
       "count": 3
     },
     {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-11-08",
+      "count": 3
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -610,6 +616,12 @@
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-11-07",
+      "count": 2
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-11-08",
       "count": 2
     },
     {
@@ -720,7 +732,7 @@
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "10",
-      "count": 54
+      "count": 57
     },
     {
       "loc": "scorpion",
@@ -828,7 +840,7 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "09",
-      "count": 28
+      "count": 29
     },
     {
       "loc": "scorpion",
@@ -858,7 +870,7 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "08",
-      "count": 16
+      "count": 17
     },
     {
       "loc": "scorpion",
@@ -2209,7 +2221,25 @@
         "ladob": 2
       },
       "diff": 0
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-11-08",
+      "counts_por_lado": {
+        "ladoa": 2
+      },
+      "diff": 0
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-11-08",
+      "counts_por_lado": {
+        "ladob": 3
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2025-11-08T08:11:35.696287+00:00"
+  "generated_at_utc": "2025-11-08T16:09:26.862825+00:00"
 }
