@@ -367,6 +367,12 @@
       "count": 7
     },
     {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-11-11",
+      "count": 7
+    },
+    {
       "loc": "testclub",
       "can": "testcancha",
       "date": "2025-07-16",
@@ -529,6 +535,12 @@
       "count": 3
     },
     {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-11-11",
+      "count": 3
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -633,7 +645,7 @@
     {
       "loc": "scorpion",
       "can": "cancha1",
-      "date": "2025-11-11",
+      "date": "2025-11-12",
       "count": 2
     },
     {
@@ -699,7 +711,7 @@
     {
       "loc": "scorpion",
       "can": "cancha2",
-      "date": "2025-11-11",
+      "date": "2025-11-12",
       "count": 1
     }
   ],
@@ -713,13 +725,13 @@
     {
       "loc": "scorpion",
       "can": "cancha1",
-      "hour": "13",
-      "count": 71
+      "hour": "20",
+      "count": 72
     },
     {
       "loc": "scorpion",
       "can": "cancha1",
-      "hour": "20",
+      "hour": "13",
       "count": 71
     },
     {
@@ -742,15 +754,15 @@
     },
     {
       "loc": "scorpion",
-      "can": "cancha1",
-      "hour": "10",
-      "count": 60
+      "can": "cancha2",
+      "hour": "18",
+      "count": 61
     },
     {
       "loc": "scorpion",
-      "can": "cancha2",
-      "hour": "18",
-      "count": 59
+      "can": "cancha1",
+      "hour": "10",
+      "count": 60
     },
     {
       "loc": "scorpion",
@@ -798,7 +810,7 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "22",
-      "count": 43
+      "count": 44
     },
     {
       "loc": "scorpion",
@@ -820,6 +832,12 @@
     },
     {
       "loc": "scorpion",
+      "can": "cancha2",
+      "hour": "23",
+      "count": 36
+    },
+    {
+      "loc": "scorpion",
       "can": "cancha1",
       "hour": "23",
       "count": 34
@@ -828,12 +846,6 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "13",
-      "count": 34
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha2",
-      "hour": "23",
       "count": 34
     },
     {
@@ -870,7 +882,7 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "19",
-      "count": 23
+      "count": 24
     },
     {
       "loc": "scorpion",
@@ -993,16 +1005,22 @@
       "count": 4
     },
     {
-      "loc": "interpadel",
-      "can": "cancha3",
-      "hour": "09",
+      "loc": "scorpion",
+      "can": "cancha2",
+      "hour": "00",
       "count": 4
     },
     {
       "loc": "scorpion",
-      "can": "cancha2",
+      "can": "cancha1",
       "hour": "00",
-      "count": 3
+      "count": 4
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "09",
+      "count": 4
     },
     {
       "loc": "interpadel",
@@ -1038,12 +1056,6 @@
       "loc": "interpadel",
       "can": "cancha3",
       "hour": "22",
-      "count": 2
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "hour": "00",
       "count": 2
     },
     {
@@ -1439,6 +1451,16 @@
       "counts_por_lado": {
         "ladob": 3,
         "ladoa": 2
+      },
+      "diff": 1
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-11-11",
+      "counts_por_lado": {
+        "ladob": 4,
+        "ladoa": 3
       },
       "diff": 1
     },
@@ -2272,6 +2294,15 @@
       "can": "cancha1",
       "date": "2025-11-11",
       "counts_por_lado": {
+        "ladob": 3
+      },
+      "diff": 0
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-11-12",
+      "counts_por_lado": {
         "ladob": 2
       },
       "diff": 0
@@ -2279,12 +2310,12 @@
     {
       "loc": "scorpion",
       "can": "cancha2",
-      "date": "2025-11-11",
+      "date": "2025-11-12",
       "counts_por_lado": {
-        "ladob": 1
+        "ladoa": 1
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2025-11-12T00:45:54.720513+00:00"
+  "generated_at_utc": "2025-11-12T08:14:16.268083+00:00"
 }
