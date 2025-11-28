@@ -242,6 +242,12 @@
     },
     {
       "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-11-27",
+      "count": 14
+    },
+    {
+      "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-09-22",
       "count": 13
@@ -394,6 +400,12 @@
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-11-11",
+      "count": 7
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "date": "2025-11-27",
       "count": 7
     },
     {
@@ -791,12 +803,6 @@
       "can": "cancha1",
       "date": "2025-11-18",
       "count": 1
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "date": "2025-11-27",
-      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -846,18 +852,18 @@
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "10",
-      "count": 60
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "hour": "17",
-      "count": 54
+      "count": 64
     },
     {
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "18",
+      "count": 55
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "17",
       "count": 54
     },
     {
@@ -899,6 +905,12 @@
     {
       "loc": "scorpion",
       "can": "cancha2",
+      "hour": "12",
+      "count": 46
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
       "hour": "15",
       "count": 44
     },
@@ -930,7 +942,7 @@
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "09",
-      "count": 40
+      "count": 41
     },
     {
       "loc": "scorpion",
@@ -943,12 +955,6 @@
       "can": "cancha2",
       "hour": "13",
       "count": 34
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha2",
-      "hour": "12",
-      "count": 32
     },
     {
       "loc": "scorpion",
@@ -2535,10 +2541,20 @@
       "can": "cancha1",
       "date": "2025-11-27",
       "counts_por_lado": {
-        "ladob": 1
+        "ladob": 7
+      },
+      "diff": 0
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-11-27",
+      "counts_por_lado": {
+        "ladob": 7,
+        "ladoa": 7
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2025-11-27T08:15:16.170974+00:00"
+  "generated_at_utc": "2025-11-28T00:44:12.541001+00:00"
 }
