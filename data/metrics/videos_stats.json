@@ -194,6 +194,12 @@
     },
     {
       "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-12-10",
+      "count": 22
+    },
+    {
+      "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-09-27",
       "count": 21
@@ -340,12 +346,6 @@
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-11-18",
-      "count": 12
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha2",
-      "date": "2025-12-10",
       "count": 12
     },
     {
@@ -709,6 +709,12 @@
       "count": 3
     },
     {
+      "loc": "frondoso",
+      "can": "cancha2",
+      "date": "2025-12-10",
+      "count": 3
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -917,12 +923,6 @@
       "can": "cancha1",
       "date": "2025-12-10",
       "count": 1
-    },
-    {
-      "loc": "frondoso",
-      "can": "cancha2",
-      "date": "2025-12-10",
-      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -1030,6 +1030,12 @@
     },
     {
       "loc": "scorpion",
+      "can": "cancha2",
+      "hour": "20",
+      "count": 50
+    },
+    {
+      "loc": "scorpion",
       "can": "cancha1",
       "hour": "14",
       "count": 48
@@ -1037,13 +1043,13 @@
     {
       "loc": "scorpion",
       "can": "cancha2",
-      "hour": "12",
-      "count": 46
+      "hour": "19",
+      "count": 48
     },
     {
       "loc": "scorpion",
       "can": "cancha2",
-      "hour": "20",
+      "hour": "12",
       "count": 46
     },
     {
@@ -1062,12 +1068,6 @@
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "09",
-      "count": 42
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha2",
-      "hour": "19",
       "count": 42
     },
     {
@@ -1380,6 +1380,12 @@
       "loc": "frondoso",
       "can": "cancha1",
       "hour": "15",
+      "count": 2
+    },
+    {
+      "loc": "frondoso",
+      "can": "cancha2",
+      "hour": "19",
       "count": 2
     },
     {
@@ -2895,8 +2901,8 @@
       "can": "cancha2",
       "date": "2025-12-10",
       "counts_por_lado": {
-        "ladoa": 6,
-        "ladob": 6
+        "ladoa": 11,
+        "ladob": 11
       },
       "diff": 0
     },
@@ -2923,10 +2929,10 @@
       "can": "cancha2",
       "date": "2025-12-10",
       "counts_por_lado": {
-        "ladoa": 1
+        "ladoa": 3
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2025-12-11T00:50:06.740318+00:00"
+  "generated_at_utc": "2025-12-11T08:16:05.607212+00:00"
 }
