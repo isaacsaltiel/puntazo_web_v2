@@ -403,6 +403,12 @@
       "count": 10
     },
     {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-12-16",
+      "count": 10
+    },
+    {
       "loc": "interpadel",
       "can": "cancha3",
       "date": "2025-08-02",
@@ -996,7 +1002,7 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "17",
-      "count": 90
+      "count": 98
     },
     {
       "loc": "scorpion",
@@ -1128,7 +1134,7 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "14",
-      "count": 36
+      "count": 38
     },
     {
       "loc": "scorpion",
@@ -3076,7 +3082,17 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2025-12-16",
+      "counts_por_lado": {
+        "ladoa": 5,
+        "ladob": 5
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2025-12-16T16:13:36.275439+00:00"
+  "generated_at_utc": "2025-12-17T00:44:49.945535+00:00"
 }
