@@ -511,6 +511,12 @@
       "count": 7
     },
     {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "date": "2025-12-20",
+      "count": 7
+    },
+    {
       "loc": "testclub",
       "can": "testcancha",
       "date": "2025-07-16",
@@ -1233,6 +1239,12 @@
       "count": 10
     },
     {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "hour": "09",
+      "count": 10
+    },
+    {
       "loc": "frondoso",
       "can": "cancha2",
       "hour": "16",
@@ -1357,12 +1369,6 @@
       "can": "cancha1",
       "hour": "15",
       "count": 4
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha4",
-      "hour": "09",
-      "count": 3
     },
     {
       "loc": "interpadel",
@@ -3124,7 +3130,16 @@
         "ladob": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "date": "2025-12-20",
+      "counts_por_lado": {
+        "ladoa": 7
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2025-12-20T08:13:01.639443+00:00"
+  "generated_at_utc": "2025-12-20T16:10:53.064350+00:00"
 }
