@@ -1071,39 +1071,6 @@ function pauseAllVideos() {
 }
 
 // ---------------- DESCARGA CON PROGRESO + COMPARTIR ----------------
-function dropboxDownloadUrl(url) {
-  const u = new URL(url);
-  u.searchParams.set("dl", "1");   // fuerza descarga
-  u.searchParams.delete("raw");
-  return u.toString();
-}
-
-function dropboxShareUrl(url) {
-  const u = new URL(url);
-  u.searchParams.set("raw", "1");  // render directo
-  u.searchParams.delete("dl");
-  return u.toString();
-}
-
-function toDropboxCorsFriendly(url) {
-  try {
-    const u = new URL(url);
-
-    // Solo si es Dropbox web
-    if (u.hostname === "www.dropbox.com") {
-      u.hostname = "dl.dropboxusercontent.com";
-    }
-
-    // Asegura que sea directo al archivo (sin preview)
-    u.searchParams.set("raw", "1");
-    u.searchParams.delete("dl");
-
-    return u.toString();
-  } catch {
-    return url;
-  }
-}
-
 async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal } = {}) {
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1170,23 +1137,6 @@ async function crearBotonAccionCompartir(entry) {
 
   btn.addEventListener("click", async (e) => {
     e.preventDefault();
-    // ✅ 1) intentar compartir LINK primero (sin descargar el archivo)
-    const shareUrl = dropboxShareUrl(entry.url);
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "Video Puntazo",
-          text: "Mira este _*PUNTAZO*_",
-          url: shareUrl
-        });
-        btn.textContent = "Compartido ✅";
-        setTimeout(() => { btn.textContent = "Compartir | Descargar"; btn.dataset.state = "idle"; }, 1200);
-        return;
-      } catch (e) {
-        // si el usuario cancela, seguimos al flujo de descarga
-      }
-    }
 
     if (btn.dataset.state === "ready" && btn._shareFile) {
       try { await tryShareFile(btn._shareFile); } catch {}
@@ -1264,8 +1214,7 @@ async function crearBotonAccionCompartir(entry) {
     });
 
     try {
-      const directUrl = toDropboxCorsFriendly(entry.url);
-      const blob = await downloadWithProgress(directUrl.url, {
+      const blob = await downloadWithProgress(entry.url, {
         signal,
         onStart({ totalKnown }) {
           if (!totalKnown) {
@@ -1312,15 +1261,9 @@ async function crearBotonAccionCompartir(entry) {
       }
     } catch (err) {
       if (err?.name === "AbortError") return;
-    
       console.warn("Descarga/compartir falló:", err);
-    
-      // ✅ Fallback: descarga directa sin fetch (infalible)
-      const dlUrl = dropboxDownloadUrl(entry.url);
-      window.open(dlUrl, "_blank", "noopener");
-    
       btn.innerHTML = "";
-      btn.textContent = "Descargando…";
+      btn.textContent = "Error";
       setTimeout(() => restoreIdle(originalContent), 1500);
     }
   });
