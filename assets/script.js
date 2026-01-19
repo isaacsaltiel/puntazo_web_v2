@@ -1071,6 +1071,25 @@ function pauseAllVideos() {
 }
 
 // ---------------- DESCARGA CON PROGRESO + COMPARTIR ----------------
+function toDropboxCorsFriendly(url) {
+  try {
+    const u = new URL(url);
+
+    // Solo si es Dropbox web
+    if (u.hostname === "www.dropbox.com") {
+      u.hostname = "dl.dropboxusercontent.com";
+    }
+
+    // Asegura que sea directo al archivo (sin preview)
+    u.searchParams.set("raw", "1");
+    u.searchParams.delete("dl");
+
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
 async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal } = {}) {
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1214,7 +1233,8 @@ async function crearBotonAccionCompartir(entry) {
     });
 
     try {
-      const blob = await downloadWithProgress(entry.url, {
+      const directUrl = toDropboxCorsFriendly(entry.url);
+      const blob = await downloadWithProgress(directUrl.url, {
         signal,
         onStart({ totalKnown }) {
           if (!totalKnown) {
