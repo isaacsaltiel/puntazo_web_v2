@@ -1071,6 +1071,47 @@ function pauseAllVideos() {
 }
 
 // ---------------- DESCARGA CON PROGRESO + COMPARTIR ----------------
+
+// Convierte links de Dropbox "www.dropbox.com" a link directo apto para fetch()
+// y evita parametros que causan redirects (raw=1 / dl=1).
+function toDropboxDirectFetchUrl(url) {
+  try {
+    const u = new URL(url);
+
+    // Si viene de www.dropbox.com, pásalo al host directo
+    if (u.hostname === "www.dropbox.com") {
+      u.hostname = "dl.dropboxusercontent.com";
+    }
+
+    // Quita params que meten redirects (y rompen CORS)
+    u.searchParams.delete("raw");
+    u.searchParams.delete("dl");
+
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+// Fallback: construye un link que fuerza descarga "normal" (sin fetch)
+function toDropboxForceDownloadUrl(url) {
+  try {
+    const u = new URL(url);
+
+    // Para descarga normal, lo correcto es usar www.dropbox.com con dl=1
+    if (u.hostname === "dl.dropboxusercontent.com") {
+      u.hostname = "www.dropbox.com";
+    }
+
+    u.searchParams.delete("raw");
+    u.searchParams.set("dl", "1");
+
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
 async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal } = {}) {
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1078,7 +1119,10 @@ async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal
   const totalHeader = res.headers.get("Content-Length") || res.headers.get("content-length");
   const total = totalHeader ? parseInt(totalHeader, 10) : 0;
 
-  const defaultType = url.toLowerCase().endsWith(".mp4") ? "video/mp4" : (res.headers.get("Content-Type") || "application/octet-stream");
+  const defaultType = url.toLowerCase().endsWith(".mp4")
+    ? "video/mp4"
+    : (res.headers.get("Content-Type") || "application/octet-stream");
+
   const reader = res.body?.getReader?.();
 
   if (onStart) onStart({ totalKnown: !!total, totalBytes: total });
@@ -1096,8 +1140,10 @@ async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal
   while (true) {
     const { value, done } = await reader.read();
     if (done) break;
+
     chunks.push(value);
     received += value.byteLength || value.length || 0;
+
     if (onProgress) {
       if (total) {
         const pct = Math.max(0, Math.min(100, Math.round((received / total) * 100)));
@@ -1131,25 +1177,41 @@ async function crearBotonAccionCompartir(entry) {
         });
         return true;
       }
-    } catch (e) { throw e; }
+    } catch (e) {
+      throw e;
+    }
     return false;
   };
 
   btn.addEventListener("click", async (e) => {
     e.preventDefault();
 
+    // Si ya está listo para compartir (porque el navegador no auto-compartió)
     if (btn.dataset.state === "ready" && btn._shareFile) {
-      try { await tryShareFile(btn._shareFile); } catch {}
+      try {
+        await tryShareFile(btn._shareFile);
+      } catch {}
+
+      // Si no se puede compartir, descarga el blob local
       if (!navigator.canShare?.({ files: [btn._shareFile] })) {
         const url = URL.createObjectURL(btn._shareFile);
         const a = document.createElement("a");
-        a.href = url; a.download = entry.nombre;
-        document.body.appendChild(a); a.click();
-        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 800);
+        a.href = url;
+        a.download = entry.nombre;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+          a.remove();
+        }, 800);
       }
+
       btn._shareFile = null;
       btn.textContent = "Compartido";
-      setTimeout(() => { btn.textContent = "Compartir | Descargar"; btn.dataset.state = "idle"; }, 1200);
+      setTimeout(() => {
+        btn.textContent = "Compartir | Descargar";
+        btn.dataset.state = "idle";
+      }, 1200);
       return;
     }
 
@@ -1161,6 +1223,7 @@ async function crearBotonAccionCompartir(entry) {
     btn.disabled = true;
     const originalContent = btn.textContent;
 
+    // UI progreso
     btn.textContent = "";
     const wrap = document.createElement("span");
     wrap.className = "btn-progress";
@@ -1214,7 +1277,10 @@ async function crearBotonAccionCompartir(entry) {
     });
 
     try {
-      const blob = await downloadWithProgress(entry.url, {
+      // ✅ AQUÍ VA LA CORRECCIÓN: usar URL directa para fetch
+      const directUrl = toDropboxDirectFetchUrl(entry.url);
+
+      const blob = await downloadWithProgress(directUrl, {
         signal,
         onStart({ totalKnown }) {
           if (!totalKnown) {
@@ -1246,7 +1312,11 @@ async function crearBotonAccionCompartir(entry) {
       const file = new File([blob], entry.nombre, { type: blob.type || "video/mp4" });
 
       let autoShared = false;
-      try { autoShared = await tryShareFile(file); } catch { autoShared = false; }
+      try {
+        autoShared = await tryShareFile(file);
+      } catch {
+        autoShared = false;
+      }
 
       if (autoShared) {
         btn.innerHTML = "";
@@ -1261,7 +1331,27 @@ async function crearBotonAccionCompartir(entry) {
       }
     } catch (err) {
       if (err?.name === "AbortError") return;
+
       console.warn("Descarga/compartir falló:", err);
+
+      // ✅ FALLBACK: descarga normal (sin fetch) para que nunca muera el botón
+      try {
+        const fallbackUrl = toDropboxForceDownloadUrl(entry.url);
+
+        const a = document.createElement("a");
+        a.href = fallbackUrl;
+        a.download = entry.nombre; // a veces se ignora por cross-origin, pero no estorba
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => a.remove(), 500);
+
+        btn.innerHTML = "";
+        btn.textContent = "Descargando…";
+        setTimeout(() => restoreIdle(originalContent), 1200);
+        return;
+      } catch {}
+
+      // Si hasta el fallback falla, mostramos error
       btn.innerHTML = "";
       btn.textContent = "Error";
       setTimeout(() => restoreIdle(originalContent), 1500);
