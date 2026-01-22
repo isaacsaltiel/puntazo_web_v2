@@ -37,6 +37,12 @@
   <link rel="stylesheet" href="/assets/inicio.css" />
 </head>
 <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(console.error);
+  }
+</script>
+
+<script>
   // ==========================
   // PWA Install Button (All phones)
   // ==========================
