@@ -815,6 +815,60 @@ html,body{ overflow-x:hidden; }
   width: auto;
   object-fit: contain;
 }
+/* Botón instalar en footer */
+.footer-install-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+/* Modal instalación */
+.install-modal{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 18px;
+}
+
+.install-modal.show{
+  display: flex;
+}
+
+.install-backdrop{
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+}
+
+.install-card{
+  position: relative;
+  width: min(520px, 100%);
+  background: #0f0f10;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.35);
+  color: #fff;
+  text-align: left;
+}
+
+.install-card h3{
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.install-steps{
+  margin: 12px 0 14px 18px;
+  line-height: 1.35;
+  opacity: 0.95;
+}
 
 
 
