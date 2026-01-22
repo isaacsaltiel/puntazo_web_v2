@@ -3,10 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Puntazo">
-
   <base href="/" />
   <title>Puntazo</title>
 
@@ -40,109 +36,6 @@
   <link rel="stylesheet" href="/assets/estilo.css" />
   <link rel="stylesheet" href="/assets/inicio.css" />
 </head>
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/sw.js").catch(console.error);
-  }
-</script>
-
-<script>
-  // ==========================
-  // PWA Install Button (All phones)
-  // ==========================
-  let deferredPrompt = null;
-
-  const installBtn = document.getElementById("installPuntazoBtn");
-  const modal = document.getElementById("installModal");
-  const stepsEl = document.getElementById("installSteps");
-  const closeModalBtn = document.getElementById("closeInstallModal");
-
-  function isIOS() {
-    return /iphone|ipad|ipod/i.test(navigator.userAgent);
-  }
-
-  function isStandalone() {
-    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-  }
-
-  function openModal(steps = []) {
-    if (!modal || !stepsEl) return;
-    stepsEl.innerHTML = steps.map(s => `<li>${s}</li>`).join("");
-    modal.classList.add("show");
-    modal.setAttribute("aria-hidden", "false");
-  }
-
-  function closeModal() {
-    if (!modal) return;
-    modal.classList.remove("show");
-    modal.setAttribute("aria-hidden", "true");
-  }
-
-  if (closeModalBtn) closeModalBtn.addEventListener("click", closeModal);
-  if (modal) modal.addEventListener("click", (e) => {
-    if (e.target && e.target.classList.contains("install-backdrop")) closeModal();
-  });
-
-  // Captura el evento de instalación (Android/Chrome/Edge)
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-  });
-
-  // Click del botón instalar
-  if (installBtn) {
-    installBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-
-      // Si ya está instalada
-      if (isStandalone()) {
-        openModal([
-          "Puntazo ya está instalado ✅",
-          "Busca el ícono en tu pantalla de inicio."
-        ]);
-        return;
-      }
-
-      // Android/Chrome: prompt real
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const choice = await deferredPrompt.userChoice;
-        deferredPrompt = null;
-
-        if (choice && choice.outcome === "accepted") {
-          openModal([
-            "Listo ✅ Ya quedó Puntazo como app.",
-            "Ahora lo abres desde tu pantalla de inicio."
-          ]);
-        } else {
-          openModal([
-            "Sin problema 😄",
-            "Si luego quieres instalarlo, vuelve a tocar 'Instalar Puntazo'."
-          ]);
-        }
-        return;
-      }
-
-      // iPhone/Safari: instrucciones manuales
-      if (isIOS()) {
-        openModal([
-          "Abre Puntazo en Safari (importante).",
-          "Toca el botón de compartir (⬆️).",
-          "Elige: “Añadir a pantalla de inicio”.",
-          "Listo: se instala como app."
-        ]);
-        return;
-      }
-
-      // Otros Android browsers: instrucciones genéricas
-      openModal([
-        "Abre el menú del navegador (⋮ o ⚙️).",
-        "Busca: “Añadir a pantalla de inicio”.",
-        "Confirma y listo ✅"
-      ]);
-    });
-  }
-</script>
 
 <body>
   <header class="site-header">
@@ -206,14 +99,15 @@
 
     <p>Recuerda que los videos se borran pasadas 24 horas.</p>
 
-    <!-- Recuperar puntazo -->
+    <!-- NUEVO: Recuperar puntazo -->
     <p style="margin-top:14px;">
       <strong>¿No se registró algún puntazo?</strong><br />
       Tu puntazo no merece quedarse en el olvido 😭 Escríbenos y lo buscamos.
     </p>
 
     <a
-      class="cta-btn cta-whatsapp footer-wa-cta"
+      class="cta-btn cta-whatsapp"
+      style="margin-top:8px; display:inline-block; padding:10px 14px; font-size:0.95rem; border-radius:12px;"
       href="https://wa.me/522206804856?text=Hola%20Puntazo!%20No%20me%20aparecio%20mi%20clip%20y%20quiero%20recuperarlo.%0A%0AFecha%20(dia)%3A%20____%0AClub%3A%20____%0ACancha%3A%20____%0AHora%20exacta%20del%20punto%20(o%20rango%20aprox)%3A%20____%0ALado%20(A/B)%20si%20aplica%3A%20____%0A%0AGracias!"
       target="_blank"
       rel="noopener"
@@ -230,32 +124,13 @@
       rel="noopener"
     >WhatsApp</a>
 
-    <!-- NUEVO: Instalar Puntazo -->
     <a
-      id="installPuntazoBtn"
-      href="#"
-      class="cta-btn cta-contacto footer-install-btn"
-      role="button"
-      aria-label="Instalar Puntazo como app"
-    >📲 Instalar Puntazo</a>
+      href="mailto:isaacsaltiel@gmail.com?subject=Quiero%20información%20de%20Puntazo&body=Hola%20equipo%20Puntazo,%0D%0A%0D%0AMe%20interesa%20que%20mis%20canchas%20formen%20parte.%0D%0A%0D%0ANombre:%0D%0ATel%C3%A9fono:%0D%0A%0D%0A%C2%A1Gracias!"
+    >Email</a>
   </div>
 
   <p class="footer-copy">© 2026 Puntazo</p>
-
-  <!-- Modal para instrucciones (iPhone y otros casos) -->
-  <div id="installModal" class="install-modal" aria-hidden="true">
-    <div class="install-backdrop"></div>
-    <div class="install-card" role="dialog" aria-modal="true" aria-label="Instalar Puntazo">
-      <h3>Agregar Puntazo a tu pantalla 📲</h3>
-      <p id="installSubtitle" style="margin-top:6px; opacity:0.9;">
-        Tarda 10 segundos y queda como app.
-      </p>
-      <ol id="installSteps" class="install-steps"></ol>
-      <button id="closeInstallModal" class="cta-btn cta-contacto" type="button">Listo ✅</button>
-    </div>
-  </div>
 </footer>
-
 
 
 
