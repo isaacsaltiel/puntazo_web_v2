@@ -59,6 +59,11 @@
       <a href="index.html" class="highlight-btn">Encuentra tus clips</a>
     </nav>
   </header>
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(console.error);
+  }
+</script>
 
   <main class="site-content fade-in">
     <div class="titulo-lado">
