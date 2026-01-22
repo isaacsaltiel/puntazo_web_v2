@@ -529,6 +529,18 @@
       "count": 8
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-01-21",
+      "count": 8
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "date": "2026-01-21",
+      "count": 8
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-09-08",
@@ -574,6 +586,12 @@
       "loc": "breakpoint",
       "can": "cancha4",
       "date": "2026-01-17",
+      "count": 7
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "date": "2026-01-21",
       "count": 7
     },
     {
@@ -649,12 +667,6 @@
       "count": 6
     },
     {
-      "loc": "breakpoint",
-      "can": "cancha4",
-      "date": "2026-01-21",
-      "count": 6
-    },
-    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-10-13",
@@ -682,12 +694,6 @@
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2026-01-19",
-      "count": 5
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "date": "2026-01-21",
       "count": 5
     },
     {
@@ -898,12 +904,6 @@
       "loc": "breakpoint",
       "can": "cancha5",
       "date": "2026-01-19",
-      "count": 3
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha2",
-      "date": "2026-01-21",
       "count": 3
     },
     {
@@ -1497,6 +1497,12 @@
       "count": 8
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "20",
+      "count": 8
+    },
+    {
       "loc": "interpadel",
       "can": "cancha3",
       "hour": "12",
@@ -1512,12 +1518,6 @@
       "loc": "frondoso",
       "can": "cancha1",
       "hour": "17",
-      "count": 7
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "20",
       "count": 7
     },
     {
@@ -1662,6 +1662,18 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "10",
+      "count": 3
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "hour": "21",
+      "count": 3
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "hour": "21",
       "count": 3
     },
     {
@@ -1818,6 +1830,18 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "15",
+      "count": 2
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "21",
+      "count": 2
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "22",
       "count": 2
     },
     {
@@ -1996,18 +2020,6 @@
     },
     {
       "loc": "breakpoint",
-      "can": "cancha2",
-      "hour": "21",
-      "count": 1
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha4",
-      "hour": "21",
-      "count": 1
-    },
-    {
-      "loc": "breakpoint",
       "can": "cancha5",
       "hour": "21",
       "count": 1
@@ -2032,18 +2044,6 @@
     },
     {
       "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "21",
-      "count": 1
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "22",
-      "count": 1
-    },
-    {
-      "loc": "breakpoint",
       "can": "cancha4",
       "hour": "07",
       "count": 1
@@ -2064,6 +2064,18 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "13",
+      "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "hour": "22",
+      "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "hour": "23",
       "count": 1
     }
   ],
@@ -3951,7 +3963,7 @@
       "can": "cancha1",
       "date": "2026-01-21",
       "counts_por_lado": {
-        "ladoa": 5
+        "ladoa": 8
       },
       "diff": 0
     },
@@ -3960,7 +3972,7 @@
       "can": "cancha4",
       "date": "2026-01-21",
       "counts_por_lado": {
-        "ladoa": 6
+        "ladoa": 8
       },
       "diff": 0
     },
@@ -3969,7 +3981,7 @@
       "can": "cancha2",
       "date": "2026-01-21",
       "counts_por_lado": {
-        "ladoa": 3
+        "ladoa": 7
       },
       "diff": 0
     },
@@ -3983,5 +3995,5 @@
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-01-22T00:51:25.148516+00:00"
+  "generated_at_utc": "2026-01-22T08:16:03.319011+00:00"
 }
