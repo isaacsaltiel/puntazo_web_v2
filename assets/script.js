@@ -41,6 +41,31 @@ function scrollToVideoById(id) {
   if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+// ----------------------- analytics helpers (SAFE) -----------------------
+function trackEvent(name, params = {}) {
+  try {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", name, params);
+    }
+  } catch (e) {
+    // si falla, NO rompe nada
+  }
+}
+
+// Helper: contexto estándar para analytics (loc/can/lado)
+function gaCtx(extra = {}) {
+  const p = getQueryParams();
+  return {
+    loc: p.loc || "",
+    can: p.can || "",
+    lado: p.lado || "",
+    filtro: p.filtro || "",
+    pg: p.pg || "",
+    ...extra
+  };
+}
+
+
 // ----------------------- GATE POR CANCHA -----------------------
 async function sha256Hex(text) {
   const enc = new TextEncoder().encode(text);
@@ -101,10 +126,18 @@ async function requireCanchaPassword(locId, canId) {
     const h = await sha256Hex(input);
     if (h === rule.sha256) {
       setAuthorized(rule);
+
+      // [GA4] autorización exitosa
+      trackEvent("gate_unlock", gaCtx({ result: "ok" }));
+
       return true;
     }
     alert('Contraseña incorrecta. Inténtalo de nuevo.');
   }
+
+  // [GA4] falló gate
+  trackEvent("gate_unlock", gaCtx({ result: "fail" }));
+
   return false;
 }
 
@@ -168,6 +201,7 @@ async function findOppositeVideo(entry, cfg, locId, canId, ladoId) {
 }
 /* =================== FIN Helpers de asociación =================== */
 
+
 // ----------------------- navegación -----------------------
 async function populateLocaciones() {
   try {
@@ -185,6 +219,12 @@ async function populateLocaciones() {
       a.href = `locacion.html?loc=${loc.id}`;
       a.textContent = loc.nombre;
       a.classList.add("link-blanco");
+
+      // [GA4] click locación
+      a.addEventListener("click", () => {
+        trackEvent("open_locacion", { loc: loc.id, loc_name: loc.nombre || "" });
+      });
+
       li.appendChild(a);
       ul.appendChild(li);
     });
@@ -218,8 +258,25 @@ async function populateCanchas() {
       if (lados.length === 1) {
         const unico = lados[0];
         a.href = `lado.html?loc=${locId}&can=${can.id}&lado=${unico.id}`;
+
+        // [GA4] click cancha mono-lado (directo a lado)
+        a.addEventListener("click", () => {
+          trackEvent("open_lado", {
+            loc: locId,
+            can: can.id,
+            lado: unico.id,
+            can_name: can.nombre || "",
+            via: "direct_from_locacion"
+          });
+        });
+
       } else {
         a.href = `cancha.html?loc=${locId}&can=${can.id}`;
+
+        // [GA4] click cancha
+        a.addEventListener("click", () => {
+          trackEvent("open_cancha", { loc: locId, can: can.id, can_name: can.nombre || "" });
+        });
       }
 
       a.textContent = can.nombre;
@@ -277,6 +334,17 @@ async function populateLados() {
       a.href = `lado.html?loc=${locId}&can=${canId}&lado=${lado.id}`;
       a.textContent = lado.nombre || lado.id;
       a.classList.add("link-blanco");
+
+      // [GA4] click lado
+      a.addEventListener("click", () => {
+        trackEvent("open_lado", {
+          loc: locId,
+          can: canId,
+          lado: lado.id,
+          lado_name: lado.nombre || ""
+        });
+      });
+
       li.appendChild(a);
       ul.appendChild(li);
     });
@@ -284,6 +352,7 @@ async function populateLados() {
     console.error("Error en populateLados():", err);
   }
 }
+
 
 // ----------------------- PROMOCIONES (multi-club) -----------------------
 let clubPromotions = null;
@@ -606,6 +675,12 @@ function renderPromoModal(conf, entry) {
 async function handlePromoAction(action, entry) {
   const type = (action?.type || "").toLowerCase();
 
+  // [GA4] promo action
+  trackEvent("promo_action", gaCtx({
+    action_type: type || "unknown",
+    video_name: entry?.nombre || ""
+  }));
+
   if (type === "url") {
     doUrlAction(action);
     return;
@@ -631,6 +706,10 @@ function openPromoModal(entry, conf) {
     console.warn("[promo] Intento de abrir modal con enabled=false");
     return;
   }
+
+  // [GA4] promo modal open
+  trackEvent("promo_modal_open", gaCtx({ video_name: entry?.nombre || "", promo_label: conf?.label || "" }));
+
   renderPromoModal(conf, entry);
 }
 
@@ -715,6 +794,17 @@ async function buildPromoButtonsForClub(loc, entry) {
       a.rel = "noopener";
       a.className = "btn-promo";
       stylePromoButton(a, merged);
+
+      // [GA4] promo click
+      a.addEventListener("click", () => {
+        trackEvent("promo_click", gaCtx({
+          promo_id: pid,
+          promo_label: label,
+          action_type: "url",
+          video_name: entry?.nombre || ""
+        }));
+      });
+
       if (st.logo) {
         const img = document.createElement("img");
         img.src = st.logo;
@@ -736,6 +826,18 @@ async function buildPromoButtonsForClub(loc, entry) {
       btn.type = "button";
       btn.className = "btn-promo";
       stylePromoButton(btn, merged);
+
+      // [GA4] promo click
+      btn.addEventListener("click", () => {
+        trackEvent("promo_click", gaCtx({
+          promo_id: pid,
+          promo_label: label,
+          action_type: "modal",
+          video_name: entry?.nombre || ""
+        }));
+        openPromoModal(entry, merged);
+      });
+
       if (st.logo) {
         const img = document.createElement("img");
         img.src = st.logo;
@@ -748,7 +850,7 @@ async function buildPromoButtonsForClub(loc, entry) {
       const span = document.createElement("span");
       span.textContent = resolvePlaceholders(label, entry);
       btn.appendChild(span);
-      btn.addEventListener("click", () => openPromoModal(entry, merged));
+
       buttons.push(btn);
       continue;
     }
@@ -760,6 +862,17 @@ async function buildPromoButtonsForClub(loc, entry) {
       a.rel = "noopener";
       a.className = "btn-promo";
       stylePromoButton(a, merged);
+
+      // [GA4] promo click legacy
+      a.addEventListener("click", () => {
+        trackEvent("promo_click", gaCtx({
+          promo_id: pid,
+          promo_label: label,
+          action_type: "legacy_url",
+          video_name: entry?.nombre || ""
+        }));
+      });
+
       if (st.logo) {
         const img = document.createElement("img");
         img.src = st.logo;
@@ -779,6 +892,7 @@ async function buildPromoButtonsForClub(loc, entry) {
 
   return buttons;
 }
+
 
 // ----------------------- video + filtros + paginación -----------------------
 let allVideos = [];
@@ -830,6 +944,12 @@ function ensureOppositeTopButton(oppHref, oppName) {
       btnOppTopEl.style.fontSize = btnOppTopEl.style.fontSize || cs.fontSize;
       btnOppTopEl.style.lineHeight = btnOppTopEl.style.lineHeight || cs.lineHeight;
     } catch {}
+
+    // [GA4] click lado opuesto (top)
+    btnOppTopEl.addEventListener("click", () => {
+      trackEvent("click_opposite_side", gaCtx({ position: "top" }));
+    });
+
     parent.appendChild(btnOppTopEl);
   }
 
@@ -938,6 +1058,12 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, o
       opp.className = "btn-alt";
     }
     opp.href = oppHref;
+
+    // [GA4] click lado opuesto (bottom)
+    opp.addEventListener("click", () => {
+      trackEvent("click_opposite_side", gaCtx({ position: "bottom" }));
+    });
+
     wrap.appendChild(opp);
   }
 
@@ -962,6 +1088,9 @@ function renderHourFilterIn(container, videos) {
     btn.className = "btn-filtro";
     if (filtroHoraActivo === h) btn.classList.add("activo");
     btn.addEventListener("click", () => {
+      // [GA4] filtro por hora
+      trackEvent("filter_hour", gaCtx({ hour: h }));
+
       setQueryParams({ filtro: h, pg: 0, video: "" });
       populateVideos();
       scrollToTop();
@@ -974,6 +1103,9 @@ function renderHourFilterIn(container, videos) {
   quitarBtn.className = "btn-filtro quitar";
   if (!filtroHoraActivo) quitarBtn.style.display = "none";
   quitarBtn.addEventListener("click", () => {
+    // [GA4] quitar filtro
+    trackEvent("filter_remove", gaCtx({ prev_hour: filtroHoraActivo || "" }));
+
     setQueryParams({ filtro: "", pg: 0, video: "" });
     populateVideos();
     scrollToTop();
@@ -1034,6 +1166,10 @@ function createPreviewOverlay(videoSrc, duration, parentCard) {
   preview._onTimeUpdate = onTimeUpdate;
 
   preview.addEventListener("click", () => {
+    // [GA4] click preview para reproducir real
+    const id = parentCard?.id || "";
+    trackEvent("click_preview_to_play", gaCtx({ video_name: id }));
+
     const realVideo = parentCard.querySelector("video.real");
     if (realVideo) {
       preview.style.display = "none";
@@ -1069,6 +1205,7 @@ function pauseAllVideos() {
     try { v.preload = "none"; } catch {}
   });
 }
+
 
 // ---------------- DESCARGA CON PROGRESO + COMPARTIR ----------------
 
@@ -1186,14 +1323,26 @@ async function crearBotonAccionCompartir(entry) {
   btn.addEventListener("click", async (e) => {
     e.preventDefault();
 
+    // [GA4] click share/download
+    trackEvent("click_share_download", gaCtx({ video_name: entry?.nombre || "" }));
+
     // Si ya está listo para compartir (porque el navegador no auto-compartió)
     if (btn.dataset.state === "ready" && btn._shareFile) {
+      let okShare = false;
       try {
-        await tryShareFile(btn._shareFile);
+        okShare = await tryShareFile(btn._shareFile);
       } catch {}
+
+      // [GA4] share success manual
+      if (okShare) {
+        trackEvent("share_success", gaCtx({ video_name: entry?.nombre || "", mode: "manual_ready" }));
+      }
 
       // Si no se puede compartir, descarga el blob local
       if (!navigator.canShare?.({ files: [btn._shareFile] })) {
+        // [GA4] download fallback (file)
+        trackEvent("download_fallback", gaCtx({ video_name: entry?.nombre || "", mode: "local_blob" }));
+
         const url = URL.createObjectURL(btn._shareFile);
         const a = document.createElement("a");
         a.href = url;
@@ -1319,10 +1468,16 @@ async function crearBotonAccionCompartir(entry) {
       }
 
       if (autoShared) {
+        // [GA4] share success auto
+        trackEvent("share_success", gaCtx({ video_name: entry?.nombre || "", mode: "auto_share" }));
+
         btn.innerHTML = "";
         btn.textContent = "Compartido";
         setTimeout(() => restoreIdle(originalContent), 1200);
       } else {
+        // [GA4] share ready (user needs to tap again)
+        trackEvent("share_ready", gaCtx({ video_name: entry?.nombre || "" }));
+
         btn._shareFile = file;
         btn.innerHTML = "";
         btn.textContent = "Listo — Tageanos @puntazoclips !";
@@ -1337,6 +1492,9 @@ async function crearBotonAccionCompartir(entry) {
       // ✅ FALLBACK: descarga normal (sin fetch) para que nunca muera el botón
       try {
         const fallbackUrl = toDropboxForceDownloadUrl(entry.url);
+
+        // [GA4] download fallback (dropbox link)
+        trackEvent("download_fallback", gaCtx({ video_name: entry?.nombre || "", mode: "dropbox_dl1" }));
 
         const a = document.createElement("a");
         a.href = fallbackUrl;
@@ -1430,6 +1588,11 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     real.style.width = "100%";
     real.style.borderRadius = "6px";
 
+    // [GA4] play video (once per card)
+    real.addEventListener("play", () => {
+      trackEvent("play_video", gaCtx({ video_name: entry?.nombre || "" }));
+    }, { once: true });
+
     const preview = createPreviewOverlay(entry.url, entry.duracion||60, card);
 
     wrap.appendChild(real);
@@ -1471,6 +1634,15 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
           btnAlt.textContent = "Ver otra perspectiva";
           btnAlt.title = "Cambiar a la otra cámara";
           btnAlt.href = `lado.html?loc=${loc}&can=${can}&lado=${opposite.lado}&video=${encodeURIComponent(opposite.nombre)}`;
+
+          // [GA4] click otra perspectiva (per video)
+          btnAlt.addEventListener("click", () => {
+            trackEvent("click_other_perspective", gaCtx({
+              video_name: entry?.nombre || "",
+              target_lado: opposite.lado || ""
+            }));
+          });
+
           btnContainer.appendChild(btnAlt);
         }
       } catch {}
@@ -1504,6 +1676,15 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     if (newPage < 0) newPage = 0;
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
     if (newPage > totalPages - 1) newPage = totalPages - 1;
+
+    // [GA4] paginate
+    trackEvent("paginate", gaCtx({
+      from: paginaActual,
+      to: newPage,
+      total_items: total,
+      page_size: PAGE_SIZE
+    }));
+
     paginaActual = newPage;
     setQueryParams({ pg: paginaActual }, false);
     renderPaginaActual({ fueCambioDePagina: true });
@@ -1534,6 +1715,15 @@ async function populateVideos() {
       if (contenedorVideos) contenedorVideos.innerHTML = "<p style='color:#fff;'>Lado no encontrado.</p>";
       return;
     }
+
+    // [GA4] view side (entrada a página de videos)
+    trackEvent("view_side", gaCtx({
+      loc: loc,
+      can: can,
+      lado: lado,
+      filtro: filtro || "",
+      has_target_video: !!targetId
+    }));
 
     const res = await fetch(`${ladoObj.json_url}?cb=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) throw new Error("No se pudo acceder al JSON.");
@@ -1610,6 +1800,7 @@ async function populateVideos() {
   }
 }
 
+
 // ----------------------- scroll-top -----------------------
 function createScrollToTopBtn() {
   const btn = document.createElement("button");
@@ -1617,7 +1808,11 @@ function createScrollToTopBtn() {
   btn.className = "scroll-top";
   btn.style.display = "none";
   btn.setAttribute("aria-label", "Ir arriba");
-  btn.addEventListener("click", scrollToTop);
+  btn.addEventListener("click", () => {
+    // [GA4] scroll to top
+    trackEvent("scroll_to_top", gaCtx({}));
+    scrollToTop();
+  });
   document.body.appendChild(btn);
 
   let lastY = window.scrollY;
@@ -1644,6 +1839,7 @@ async function isSingleLado(locId, canId) {
     return false;
   }
 }
+
 
 // ----------------------- arranque -----------------------
 document.addEventListener("DOMContentLoaded", () => {
@@ -1742,6 +1938,7 @@ window.addEventListener("popstate", () => {
     }
   }
 });
+
 
 // Cierra navbar al scrollear o click fuera
 document.addEventListener("DOMContentLoaded", () => {
