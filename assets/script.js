@@ -1325,7 +1325,7 @@ async function crearBotonAccionCompartir(entry) {
       } else {
         btn._shareFile = file;
         btn.innerHTML = "";
-        btn.textContent = "Listo — Compartir ahora";
+        btn.textContent = "Listo — Tagenos @puntazoclips !";
         btn.disabled = false;
         btn.dataset.state = "ready";
       }
