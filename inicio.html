@@ -40,6 +40,71 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <!-- Estilos extra SOLO para WhatsApp/contacto (mínimo y seguro) -->
+  <style>
+    .contacto-grid{
+      max-width: 950px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+    .contacto-card{
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+    }
+    .contacto-card p{
+      margin: 10px 0 12px 0;
+      line-height: 1.4;
+    }
+
+    /* Botón WhatsApp (verde) */
+    .cta-whatsapp{
+      background: #25D366 !important;
+      border: 2px solid #25D366 !important;
+      color: #0b1b12 !important;
+      font-weight: 700 !important;
+    }
+    .cta-whatsapp:hover{
+      filter: brightness(0.95);
+      transform: translateY(-1px);
+    }
+
+    /* Botón grande WhatsApp */
+    .cta-whatsapp-big{
+      font-size: 1.05rem;
+      padding: 14px 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: min(520px, 100%);
+    }
+
+    .whatsapp-title{
+      margin-top: 6px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #25D366;
+      letter-spacing: 0.2px;
+    }
+
+    .mini-note{
+      opacity: 0.9;
+      font-size: 0.95rem;
+    }
+
+    /* Footer links simétricos */
+    .site-footer .footer-links{
+      display:flex;
+      gap:14px;
+      justify-content:center;
+      flex-wrap: wrap;
+    }
+  </style>
 </head>
 
 <body>
@@ -65,8 +130,22 @@
     <div class="hero-content">
       <h1>Revive tu mejor jugada. Una y otra vez.</h1>
       <p>Transformamos cada jugada en un recuerdo inolvidable, al alcance de tu club.</p>
-      <!-- Borde más grueso con clase extra -->
-      <a href="index.html" class="cta-btn cta-hero">Explora videos</a>
+
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <a href="index.html" class="cta-btn cta-hero">Explora videos</a>
+
+        <!-- CTA WhatsApp ligero desde arriba -->
+        <a
+          href="https://wa.me/522206804856?text=Hola%20Puntazo!%20Quiero%20mas%20informacion%20sobre%20su%20sistema."
+          class="cta-btn cta-hero cta-whatsapp"
+          target="_blank"
+          rel="noopener"
+        >WhatsApp</a>
+      </div>
+
+      <p class="mini-note" style="margin-top:10px;">
+        Ya estamos activos en <strong>Interpadel</strong>, <strong>Scorpion</strong> y <strong>Breakpoint</strong>.
+      </p>
     </div>
   </section>
 
@@ -121,26 +200,68 @@
   <!-- Contacto -->
   <section id="contacto" class="fade-section">
     <h2>Contáctanos</h2>
-    <p>¿Te interesa que tu club forme parte? ¡Escríbenos!</p>
 
-    <!-- Botón centrado, azul, UNA sola línea -->
-    <a
-      class="cta-btn cta-contacto"
-      href="mailto:isaacsaltiel@gmail.com?subject=Quiero%20información%20de%20Puntazo&body=Hola%20equipo%20Puntazo,%0D%0A%0D%0AMe%20interesa%20que%20mi%20club%20forme%20parte.%0D%0A%0D%0ANombre:%0D%0ATel%C3%A9fono:%0D%0A%0D%0A%C2%A1Gracias!"
-      >Lo quiero en mi cancha</a
-    >
+    <div class="contacto-grid">
+      <!-- 1) CLUB -->
+      <div class="contacto-card">
+        <p><strong>¿Te interesa que tu club forme parte?</strong><br>
+        Escríbenos y te contamos cómo funciona (instalación rápida + clips automáticos).</p>
+
+        <a
+          class="cta-btn cta-contacto"
+          target="_blank"
+          rel="noopener"
+          href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo!%20Me%20interesa%20llevar%20Puntazo%20a%20mi%20club.%0AClub%3A%20____%0ACiudad%3A%20____%0A%23%20de%20canchas%3A%20____%0AMi%20nombre%3A%20____%0ATel%3A%20____%0AGracias!"
+        >Lo quiero en mi cancha</a>
+      </div>
+
+      <!-- 2) MARCA -->
+      <div class="contacto-card">
+        <p><strong>¿Te interesa que tu marca aparezca en los videos?</strong><br>
+        Tenemos opciones de logo/watermark y presencia dentro del clip.</p>
+
+        <a
+          class="cta-btn cta-contacto"
+          target="_blank"
+          rel="noopener"
+          href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo!%20Me%20interesa%20que%20mi%20marca%20aparezca%20en%20sus%20videos.%0AMarca%3A%20____%0AObjetivo%3A%20____%0APresupuesto%20aprox%3A%20____%0AMi%20nombre%3A%20____%0ATel%3A%20____%0AGracias!"
+        >Quiero mi marca en los videos</a>
+      </div>
+
+      <!-- 3) WHATSAPP DIRECTO -->
+      <div class="contacto-card">
+        <div class="whatsapp-title">WhatsApp directo</div>
+        <p class="mini-note">Si vienes con una idea nueva o solo quieres info rápida, aquí es. ⚡</p>
+
+        <a
+          class="cta-btn cta-whatsapp cta-whatsapp-big"
+          target="_blank"
+          rel="noopener"
+          href="https://wa.me/522206804856?text=Hola%20Puntazo!%20Quiero%20mas%20informacion."
+        >💬 Enviar WhatsApp</a>
+      </div>
+    </div>
   </section>
 
   <!-- Footer (inicio) -->
   <footer class="site-footer">
     <p>© 2026 Puntazo – Todos los derechos reservados</p>
-    <div>
+
+    <div class="footer-links">
       <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
       <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
+
+      <!-- WhatsApp en footer (simétrico y prioritario) -->
+      <a
+        href="https://wa.me/522206804856?text=Hola%20Puntazo!%20Quiero%20mas%20informacion."
+        target="_blank"
+        rel="noopener"
+      >WhatsApp</a>
+
+      <!-- Si quieres, lo puedes borrar ya: email no es prioridad -->
       <a
         href="mailto:isaacsaltiel@gmail.com?subject=Quiero%20información%20de%20Puntazo&body=Hola%20equipo%20Puntazo,%0D%0A%0D%0AMe%20interesa%20que%20mi%20club%20forme%20parte.%0D%0A%0D%0ANombre:%0D%0ATel%C3%A9fono:%0D%0A%0D%0A%C2%A1Gracias!"
-        >Email</a
-      >
+      >Email</a>
     </div>
   </footer>
 
