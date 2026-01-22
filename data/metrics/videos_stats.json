@@ -595,6 +595,12 @@
       "count": 7
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "date": "2026-01-22",
+      "count": 7
+    },
+    {
       "loc": "testclub",
       "can": "testcancha",
       "date": "2025-07-16",
@@ -667,6 +673,12 @@
       "count": 6
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-01-22",
+      "count": 6
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-10-13",
@@ -694,6 +706,12 @@
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2026-01-19",
+      "count": 5
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "date": "2026-01-22",
       "count": 5
     },
     {
@@ -1211,6 +1229,12 @@
       "can": "cancha3",
       "date": "2026-01-21",
       "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "date": "2026-01-22",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -1425,6 +1449,12 @@
       "count": 13
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "09",
+      "count": 13
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "00",
@@ -1523,12 +1553,6 @@
     {
       "loc": "breakpoint",
       "can": "cancha1",
-      "hour": "09",
-      "count": 7
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
       "hour": "19",
       "count": 7
     },
@@ -1584,6 +1608,12 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "11",
+      "count": 5
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "hour": "07",
       "count": 5
     },
     {
@@ -1660,6 +1690,12 @@
     },
     {
       "loc": "breakpoint",
+      "can": "cancha2",
+      "hour": "08",
+      "count": 3
+    },
+    {
+      "loc": "breakpoint",
       "can": "cancha1",
       "hour": "10",
       "count": 3
@@ -1691,6 +1727,12 @@
     {
       "loc": "breakpoint",
       "can": "cancha4",
+      "hour": "09",
+      "count": 3
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
       "hour": "09",
       "count": 3
     },
@@ -1845,6 +1887,12 @@
       "count": 2
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "hour": "06",
+      "count": 2
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "10",
@@ -1960,12 +2008,6 @@
     },
     {
       "loc": "breakpoint",
-      "can": "cancha2",
-      "hour": "08",
-      "count": 1
-    },
-    {
-      "loc": "breakpoint",
       "can": "cancha5",
       "hour": "09",
       "count": 1
@@ -2044,12 +2086,6 @@
     },
     {
       "loc": "breakpoint",
-      "can": "cancha4",
-      "hour": "07",
-      "count": 1
-    },
-    {
-      "loc": "breakpoint",
       "can": "cancha1",
       "hour": "08",
       "count": 1
@@ -2076,6 +2112,18 @@
       "loc": "breakpoint",
       "can": "cancha2",
       "hour": "23",
+      "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "hour": "08",
+      "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "hour": "10",
       "count": 1
     }
   ],
@@ -3993,7 +4041,43 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "date": "2026-01-22",
+      "counts_por_lado": {
+        "ladoa": 7
+      },
+      "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "date": "2026-01-22",
+      "counts_por_lado": {
+        "ladoa": 5
+      },
+      "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-01-22",
+      "counts_por_lado": {
+        "ladoa": 6
+      },
+      "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "date": "2026-01-22",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-01-22T08:16:03.319011+00:00"
+  "generated_at_utc": "2026-01-22T16:19:33.433587+00:00"
 }
