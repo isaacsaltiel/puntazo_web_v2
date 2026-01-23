@@ -1991,3 +1991,234 @@ function initNavbar(){
 document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
 });
+/* ==========================================================
+   RECUPERAR PUNTAZO (Google Forms) - Banner arriba de la página
+   PÉGALO AL FINAL COMPLETO DE assets/script.js
+   ========================================================== */
+(() => {
+  const RECOVERY_FORM_URL =
+    "https://docs.google.com/forms/d/e/1FAIpQLSfdPf8qcP1N7R13ef9P1mb2eZVcFnTeDZtHsKNoh6fAN4TDvQ/viewform?usp=send_form";
+
+  // WhatsApp (footer / soporte)
+  const WHATSAPP_NUMBER = "5212206804856"; // +52 1 220 680 4856
+  const WHATSAPP_TEXT =
+    "Hola Puntazo 👋\nQuiero recuperar un puntazo que no se registró.\n\n📅 Día:\n📍 Club:\n🎾 Cancha:\n🕒 Hora exacta (o rango):\n\nGracias!";
+
+  function injectRecoveryStyles() {
+    if (document.getElementById("puntazo-recovery-styles")) return;
+
+    const style = document.createElement("style");
+    style.id = "puntazo-recovery-styles";
+    style.textContent = `
+      /* ===== Banner Recuperación ===== */
+      #puntazo-recovery-banner {
+        width: min(1100px, calc(100% - 24px));
+        margin: 14px auto 10px auto;
+        padding: 14px 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(0,0,0,0.08);
+        background: linear-gradient(135deg, rgba(255, 247, 237, 0.95), rgba(239, 246, 255, 0.95));
+        box-shadow: 0 10px 22px rgba(0,0,0,0.06);
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        position: relative;
+        overflow: hidden;
+        animation: puntazoFadeIn 320ms ease-out;
+      }
+
+      #puntazo-recovery-banner::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 10% 20%, rgba(251, 146, 60, 0.12), transparent 60%),
+                    radial-gradient(circle at 90% 0%, rgba(59, 130, 246, 0.12), transparent 55%);
+        pointer-events: none;
+      }
+
+      .puntazo-recovery-left {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        min-width: 260px;
+        flex: 1;
+        z-index: 1;
+      }
+
+      .puntazo-recovery-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: rgba(255,255,255,0.7);
+        border: 1px solid rgba(0,0,0,0.06);
+        font-size: 22px;
+        flex: 0 0 auto;
+      }
+
+      .puntazo-recovery-texts {
+        display: grid;
+        gap: 3px;
+      }
+
+      .puntazo-recovery-kicker {
+        font-size: 12px;
+        opacity: 0.8;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+      }
+
+      .puntazo-recovery-title {
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1.15;
+      }
+
+      .puntazo-recovery-sub {
+        font-size: 13px;
+        opacity: 0.85;
+        line-height: 1.25;
+      }
+
+      .puntazo-recovery-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        z-index: 1;
+      }
+
+      .puntazo-recovery-btn {
+        border: 0;
+        cursor: pointer;
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-weight: 800;
+        font-size: 13px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        user-select: none;
+        transform: translateY(0px);
+        transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease;
+      }
+
+      .puntazo-recovery-btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.02);
+      }
+
+      .puntazo-recovery-btn:active {
+        transform: translateY(0px);
+        opacity: 0.95;
+      }
+
+      .puntazo-recovery-btn.primary {
+        background: rgba(17, 24, 39, 0.92);
+        color: white;
+      }
+
+      .puntazo-recovery-btn.secondary {
+        background: rgba(255,255,255,0.75);
+        color: rgba(17, 24, 39, 0.95);
+        border: 1px solid rgba(0,0,0,0.10);
+      }
+
+      .puntazo-recovery-mini {
+        font-size: 11px;
+        opacity: 0.8;
+        margin-top: 3px;
+      }
+
+      @keyframes puntazoFadeIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to   { opacity: 1; transform: translateY(0px); }
+      }
+
+      @media (max-width: 520px) {
+        #puntazo-recovery-banner {
+          padding: 12px;
+        }
+        .puntazo-recovery-title {
+          font-size: 15px;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function buildWhatsAppURL() {
+    const text = encodeURIComponent(WHATSAPP_TEXT);
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
+  }
+
+  function injectRecoveryBanner() {
+    // Evita duplicados
+    if (document.getElementById("puntazo-recovery-banner")) return;
+
+    const banner = document.createElement("section");
+    banner.id = "puntazo-recovery-banner";
+    banner.innerHTML = `
+      <div class="puntazo-recovery-left">
+        <div class="puntazo-recovery-icon">🕵️‍♂️</div>
+        <div class="puntazo-recovery-texts">
+          <div class="puntazo-recovery-kicker">¿Se te perdió un puntazo?</div>
+          <div class="puntazo-recovery-title">Recupéralo en 30 segundos</div>
+          <div class="puntazo-recovery-sub">
+            Llena el formulario con <b>día, club, cancha y hora</b> y lo buscamos por ti.
+            <div class="puntazo-recovery-mini">Tip: si no sabes la hora exacta, pon un rango aproximado.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="puntazo-recovery-actions">
+        <a class="puntazo-recovery-btn primary" id="puntazo-recover-form"
+           href="${RECOVERY_FORM_URL}" target="_blank" rel="noopener">
+          📋 Recuperar mi puntazo
+        </a>
+
+        <a class="puntazo-recovery-btn secondary" id="puntazo-recover-wa"
+           href="${buildWhatsAppURL()}" target="_blank" rel="noopener"
+           title="Si de plano urge o tienes duda rápida, aquí está WhatsApp">
+          💬 WhatsApp
+        </a>
+      </div>
+    `;
+
+    // Dónde lo metemos (lo más arriba posible sin romper nada)
+    const header =
+      document.querySelector("header") ||
+      document.querySelector("#topbar") ||
+      document.querySelector(".topbar");
+
+    const filters =
+      document.querySelector("#filters") ||
+      document.querySelector(".filters") ||
+      document.querySelector("#controls") ||
+      document.querySelector(".controls");
+
+    // Preferencia: después del header si existe, si no antes de filtros, si no al inicio del body
+    if (header && header.parentNode) {
+      header.insertAdjacentElement("afterend", banner);
+      return;
+    }
+    if (filters && filters.parentNode) {
+      filters.parentNode.insertBefore(banner, filters);
+      return;
+    }
+
+    document.body.insertBefore(banner, document.body.firstChild);
+  }
+
+  // Corre cuando el DOM esté listo
+  window.addEventListener("DOMContentLoaded", () => {
+    injectRecoveryStyles();
+    injectRecoveryBanner();
+  });
+})();
+
