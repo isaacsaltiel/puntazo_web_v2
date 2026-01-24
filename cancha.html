@@ -41,103 +41,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet" />
-
-  <!-- NUEVO: Estilos del banner superior (CTA) -->
-  <style>
-    .live-cta-bar{
-      width: 100%;
-      padding: 18px 16px;
-      background: radial-gradient(1200px 300px at 20% 0%, rgba(255,255,255,0.16), rgba(0,0,0,0)),
-                  linear-gradient(135deg, rgba(0,0,0,0.88), rgba(18,18,18,0.88));
-      border-bottom: 1px solid rgba(255,255,255,0.10);
-    }
-    .live-cta-inner{
-      max-width: 1100px;
-      margin: 0 auto;
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-    }
-    .live-cta-left{
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      color: #fff;
-    }
-    .live-badge{
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      width: fit-content;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      background: rgba(255,255,255,0.14);
-      border: 1px solid rgba(255,255,255,0.18);
-      backdrop-filter: blur(6px);
-    }
-    .live-title{
-      margin: 0;
-      font-size: 1.25rem;
-      line-height: 1.2;
-      font-weight: 800;
-    }
-    .live-subtitle{
-      margin: 0;
-      opacity: 0.9;
-      font-size: 0.95rem;
-      font-weight: 500;
-    }
-    .live-cta-right{
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .live-cta-btn{
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      font-weight: 800;
-      text-decoration: none;
-      background: #ffffff;
-      color: #000000;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      transform: translateY(0);
-      transition: transform .15s ease, opacity .15s ease;
-      white-space: nowrap;
-    }
-    .live-cta-btn:hover{
-      transform: translateY(-1px);
-      opacity: 0.95;
-    }
-    .live-cta-small{
-      color: rgba(255,255,255,0.85);
-      font-size: 0.88rem;
-      text-decoration: none;
-      border-bottom: 1px dashed rgba(255,255,255,0.35);
-      padding-bottom: 2px;
-    }
-    .live-cta-small:hover{
-      color: #fff;
-      border-bottom-color: rgba(255,255,255,0.65);
-    }
-
-    @media (max-width: 520px){
-      .live-title{ font-size: 1.10rem; }
-      .live-subtitle{ font-size: 0.90rem; }
-      .live-cta-btn{ width: 100%; }
-    }
-  </style>
 </head>
-
 <body>
   <header class="site-header">
     <a href="inicio.html" class="logo-link">
@@ -158,33 +62,6 @@
     </nav>
   </header>
 
-  <!-- =========================================
-       NUEVO: CTA ULTRA VISIBLE (arriba de todo)
-       ========================================= -->
-  <section class="live-cta-bar" role="region" aria-label="Registrar puntazo en vivo">
-    <div class="live-cta-inner">
-      <div class="live-cta-left">
-        <div class="live-badge">🚀 NUEVO · EN VIVO</div>
-        <h2 class="live-title">Tu teléfono ya es el botón 🔥</h2>
-        <p class="live-subtitle">Registra tu puntazo al instante desde el cel. Pruébalo hoy y no dejes que se pierda 😮‍💨</p>
-      </div>
-
-      <div class="live-cta-right">
-        <a
-          class="live-cta-btn"
-          href="https://script.google.com/macros/s/AKfycbw0af8yRcqDI9cXLxjCd41J5cAUhrpTG_c8gkabUduLTeM2EB4Wvz0Sxf4IDEDcuJHbwA/exec"
-          target="_blank"
-          rel="noopener"
-          onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:location.pathname});}catch(e){}"
-        >
-          📲 Registrar puntazo en vivo
-        </a>
-
-        <a class="live-cta-small" href="#modo-clasico">¿Prefieres el modo clásico?</a>
-      </div>
-    </div>
-  </section>
-
   <main class="site-content fade-in">
     <div class="titulo-lado">
       <div class="titulo-club">
@@ -201,72 +78,56 @@
     </div>
   
     <ul id="lados-lista" class="lados-lista"></ul>
+
   </main>
 
+
   <footer class="site-footer" id="contacto">
-    <div class="footer-info">
-      <p>
-        ¿Te interesa que estemos en tu club?
-        <a
-          href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo!%20Me%20interesa%20llevar%20Puntazo%20a%20mi%20club.%0AClub%3A%20____%0ACiudad%3A%20____%0A%23%20de%20canchas%3A%20____%0AMi%20nombre%3A%20____%0ATel%3A%20____%0AGracias!"
-          target="_blank"
-          rel="noopener"
-        >Escríbenos</a>
-      </p>
-
-      <p>Recuerda que los videos se borran pasadas 24 horas.</p>
-
-      <!-- NUEVO: Recuperar puntazo -->
-      <p style="margin-top:14px;">
-        <strong>¿No se registró algún puntazo?</strong><br />
-        Tu puntazo no merece quedarse en el olvido 😭 Escríbenos y lo buscamos.
-      </p>
-
+  <div class="footer-info">
+    <p>
+      ¿Te interesa que estemos en tu club?
       <a
-        class="cta-btn cta-whatsapp"
-        style="margin-top:8px; display:inline-block; padding:10px 14px; font-size:0.95rem; border-radius:12px;"
-        href="https://wa.me/522206804856?text=Hola%20Puntazo!%20No%20me%20aparecio%20mi%20clip%20y%20quiero%20recuperarlo.%0A%0AFecha%20(dia)%3A%20____%0AClub%3A%20____%0ACancha%3A%20____%0AHora%20exacta%20del%20punto%20(o%20rango%20aprox)%3A%20____%0ALado%20(A/B)%20si%20aplica%3A%20____%0A%0AGracias!"
+        href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo!%20Me%20interesa%20llevar%20Puntazo%20a%20mi%20club.%0AClub%3A%20____%0ACiudad%3A%20____%0A%23%20de%20canchas%3A%20____%0AMi%20nombre%3A%20____%0ATel%3A%20____%0AGracias!"
         target="_blank"
         rel="noopener"
-      >📼 Recuperar puntazo</a>
+      >Escríbenos</a>
+    </p>
 
-      <!-- =========================================
-           MODO CLÁSICO / CREAR PUNTAZO (discreto abajo)
-           ========================================= -->
-      <div id="modo-clasico" style="margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.12);">
-        <p style="margin:0 0 6px 0; opacity:0.92;">
-          <strong>Modo clásico</strong> (por si andas en modo “sin batería, sin señal, sin fe” 😅)
-        </p>
+    <p>Recuerda que los videos se borran pasadas 24 horas.</p>
 
-        <a
-          href="https://script.google.com/macros/s/AKfycbw0af8yRcqDI9cXLxjCd41J5cAUhrpTG_c8gkabUduLTeM2EB4Wvz0Sxf4IDEDcuJHbwA/exec"
-          target="_blank"
-          rel="noopener"
-          style="display:inline-block; text-decoration:none; padding:9px 12px; border-radius:12px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18); color:#fff; font-weight:700; font-size:0.92rem;"
-          onclick="try{gtag('event','modo_clasico_click',{event_category:'CTA',event_label:location.pathname});}catch(e){}"
-        >
-          🧾 Crear puntazo manual (discreto)
-        </a>
-      </div>
-    </div>
+    <!-- NUEVO: Recuperar puntazo -->
+    <p style="margin-top:14px;">
+      <strong>¿No se registró algún puntazo?</strong><br />
+      Tu puntazo no merece quedarse en el olvido 😭 Escríbenos y lo buscamos.
+    </p>
 
-    <div class="footer-redes">
-      <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
-      <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
+    <a
+      class="cta-btn cta-whatsapp"
+      style="margin-top:8px; display:inline-block; padding:10px 14px; font-size:0.95rem; border-radius:12px;"
+      href="https://wa.me/522206804856?text=Hola%20Puntazo!%20No%20me%20aparecio%20mi%20clip%20y%20quiero%20recuperarlo.%0A%0AFecha%20(dia)%3A%20____%0AClub%3A%20____%0ACancha%3A%20____%0AHora%20exacta%20del%20punto%20(o%20rango%20aprox)%3A%20____%0ALado%20(A/B)%20si%20aplica%3A%20____%0A%0AGracias!"
+      target="_blank"
+      rel="noopener"
+    >📼 Recuperar puntazo</a>
+  </div>
 
-      <a
-        href="https://wa.me/522206804856?text=Hola%20Puntazo!%20Quiero%20mas%20informacion."
-        target="_blank"
-        rel="noopener"
-      >WhatsApp</a>
+  <div class="footer-redes">
+    <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
+    <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
 
-      <a
-        href="mailto:isaacsaltiel@gmail.com?subject=Quiero%20información%20de%20Puntazo&body=Hola%20equipo%20Puntazo,%0D%0A%0D%0AMe%20interesa%20que%20mis%20canchas%20formen%20parte.%0D%0A%0D%0ANombre:%0D%0ATel%C3%A9fono:%0D%0A%0D%0A%C2%A1Gracias!"
-      >Email</a>
-    </div>
+    <a
+      href="https://wa.me/522206804856?text=Hola%20Puntazo!%20Quiero%20mas%20informacion."
+      target="_blank"
+      rel="noopener"
+    >WhatsApp</a>
 
-    <p class="footer-copy">© 2026 Puntazo</p>
-  </footer>
+    <a
+      href="mailto:isaacsaltiel@gmail.com?subject=Quiero%20información%20de%20Puntazo&body=Hola%20equipo%20Puntazo,%0D%0A%0D%0AMe%20interesa%20que%20mis%20canchas%20formen%20parte.%0D%0A%0D%0ANombre:%0D%0ATel%C3%A9fono:%0D%0A%0D%0A%C2%A1Gracias!"
+    >Email</a>
+  </div>
+
+  <p class="footer-copy">© 2026 Puntazo</p>
+</footer>
+
 
   <script src="assets/script.js"></script>
   <script>
