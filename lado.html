@@ -44,61 +44,207 @@
   <link rel="stylesheet" href="/assets/estilo.css" />
   <link rel="stylesheet" href="/assets/inicio.css" />
 
-  <!-- NUEVO: CTA registrar puntazo + recuperar discreto -->
+  <!-- NUEVO: Banner mega llamativo + recuperar discreto -->
   <style>
-    .top-actions{
+    /* Recover mini, discretito */
+    .recover-mini-wrap{
       max-width: 1100px;
-      margin: 12px auto 10px;
+      margin: 6px auto 0;
       padding: 0 16px;
-    }
-    .top-actions-inner{
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
+      justify-content: flex-end;
     }
-
-    .cta-livephone{
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      font-weight: 900;
-      text-decoration: none;
-      background: #ffffff;
-      color: #111111;
-      box-shadow: 0 10px 26px rgba(0,0,0,0.28);
-      border: 1px solid rgba(255,255,255,0.35);
-      transform: translateY(0);
-      transition: transform .12s ease, opacity .12s ease;
-      white-space: nowrap;
-    }
-    .cta-livephone:hover{
-      transform: translateY(-1px);
-      opacity: 0.95;
-    }
-
     .recover-mini{
-      font-size: 0.92rem;
-      opacity: 0.82;
-      text-decoration: none;
+      font-size: 0.90rem;
+      opacity: 0.78;
       color: rgba(255,255,255,0.88);
-      border-bottom: 1px dashed rgba(255,255,255,0.35);
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(255,255,255,0.28);
       padding-bottom: 2px;
       white-space: nowrap;
     }
     .recover-mini:hover{
       opacity: 1;
-      border-bottom-color: rgba(255,255,255,0.65);
-      color: #fff;
+      color:#fff;
+      border-bottom-color: rgba(255,255,255,0.55);
     }
 
-    @media (max-width: 520px){
-      .cta-livephone{ width: 100%; }
-      .top-actions-inner{ justify-content: center; }
+    /* MEGA BANNER: el protagonista absoluto */
+    .live-mega{
+      max-width: 1100px;
+      margin: 18px auto 14px;
+      padding: 0 16px;
+    }
+
+    .live-mega-card{
+      position: relative;
+      overflow: hidden;
+      border-radius: 22px;
+      padding: 18px;
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 18px 55px rgba(0,0,0,0.35);
+      background:
+        radial-gradient(1200px 500px at 20% 0%, rgba(255,255,255,0.14), rgba(0,0,0,0)),
+        radial-gradient(900px 400px at 90% 30%, rgba(255,255,255,0.10), rgba(0,0,0,0)),
+        linear-gradient(135deg, rgba(18,18,18,0.98), rgba(30,30,30,0.98));
+    }
+
+    /* Brillos tipo “folleto / promo” */
+    .live-mega-card::before{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background:
+        conic-gradient(from 180deg, rgba(255,255,255,0.00), rgba(255,255,255,0.20), rgba(255,255,255,0.00));
+      animation: sweep 4.5s linear infinite;
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    /* Confetti sutil (sin parecer piñata) */
+    .live-mega-card::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background-image:
+        radial-gradient(circle at 12% 18%, rgba(255,255,255,0.15) 0 2px, transparent 3px),
+        radial-gradient(circle at 82% 22%, rgba(255,255,255,0.14) 0 2px, transparent 3px),
+        radial-gradient(circle at 70% 76%, rgba(255,255,255,0.10) 0 2px, transparent 3px),
+        radial-gradient(circle at 20% 72%, rgba(255,255,255,0.10) 0 2px, transparent 3px);
+      opacity: 0.55;
+      pointer-events:none;
+    }
+
+    @keyframes sweep{
+      0%{ transform: rotate(0deg); }
+      100%{ transform: rotate(360deg); }
+    }
+
+    .live-mega-inner{
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .live-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 0.80rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.18);
+      width: fit-content;
+      backdrop-filter: blur(6px);
+    }
+
+    .live-title{
+      margin: 10px 0 6px 0;
+      font-size: 1.55rem;
+      line-height: 1.1;
+      font-weight: 900;
+      color:#fff;
+    }
+
+    .live-subtitle{
+      margin: 0;
+      font-size: 1.02rem;
+      opacity: 0.92;
+      line-height: 1.35;
+      color: rgba(255,255,255,0.92);
+    }
+
+    .live-steps{
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .step-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.14);
+      font-weight: 700;
+      font-size: 0.92rem;
+      color:#fff;
+      white-space: nowrap;
+    }
+
+    .live-actions{
+      display:flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .live-btn-main{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      font-weight: 900;
+      text-decoration:none;
+      background:#fff;
+      color:#111;
+      box-shadow: 0 14px 34px rgba(0,0,0,0.40);
+      border: 1px solid rgba(255,255,255,0.35);
+      transform: translateY(0);
+      transition: transform .12s ease, opacity .12s ease;
+      white-space: nowrap;
+    }
+    .live-btn-main:hover{
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+
+    .live-btn-secondary{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      font-weight: 800;
+      text-decoration:none;
+      background: rgba(255,255,255,0.12);
+      color:#fff;
+      border: 1px solid rgba(255,255,255,0.18);
+      opacity: 0.95;
+      white-space: nowrap;
+    }
+    .live-btn-secondary:hover{
+      opacity: 1;
+    }
+
+    .live-note{
+      font-size: 0.86rem;
+      opacity: 0.85;
+      line-height: 1.25;
+      text-align: center;
+      color: rgba(255,255,255,0.88);
+    }
+
+    @media (max-width: 860px){
+      .live-mega-inner{
+        grid-template-columns: 1fr;
+      }
+      .live-title{
+        font-size: 1.35rem;
+      }
     }
   </style>
 </head>
@@ -123,32 +269,7 @@
 
   <main class="site-content fade-in">
 
-    <!-- NUEVO: Registrar puntazo en vivo (arriba) + Recuperar discreto -->
-    <section class="top-actions" aria-label="Acciones rápidas">
-      <div class="top-actions-inner">
-        <a
-          class="cta-livephone"
-          href="https://script.google.com/macros/s/AKfycbw0af8yRcqDI9cXLxjCd41J5cAUhrpTG_c8gkabUduLTeM2EB4Wvz0Sxf4IDEDcuJHbwA/exec"
-          target="_blank"
-          rel="noopener"
-          onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'videos_top'});}catch(e){}"
-        >
-          📲 Registrar puntazo en vivo
-        </a>
-
-        <a
-          class="recover-mini"
-          href="https://forms.gle/TsGHKaSjBnpu65SQA"
-          target="_blank"
-          rel="noopener"
-          onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'videos_top'});}catch(e){}"
-        >
-          ¿No aparece tu clip? Recuperar
-        </a>
-      </div>
-    </section>
-
-    <!-- Breadcrumbs -->
+    <!-- Breadcrumbs (lo primero que ves) -->
     <div class="titulo-lado">
       <div class="titulo-club">
         <a id="link-club" class="breadcrumb-link" href="#"></a>
@@ -159,13 +280,75 @@
       </div>
     </div>
 
+    <!-- Recuperar clip DISCRETO (sí existe, pero no grita) -->
+    <div class="recover-mini-wrap">
+      <a
+        class="recover-mini"
+        href="https://forms.gle/TsGHKaSjBnpu65SQA"
+        target="_blank"
+        rel="noopener"
+        onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'top_discreto'});}catch(e){}"
+      >
+        ¿No aparece tu clip? Recuperar
+      </a>
+    </div>
+
     <!-- Regresar -->
     <div class="btn-volver-container">
       <a href="#" id="btn-volver" class="btn-volver">← Regresar a la cancha</a>
     </div>
 
-    <!-- Filtro horario -->
+    <!-- Filtro horario (antes del anuncio) -->
     <div id="filtro-horario"></div>
+
+    <!-- MEGA ANUNCIO: LO MÁS IMPORTANTE DE LA PÁGINA -->
+    <section class="live-mega" aria-label="Registrar puntazo en vivo">
+      <div class="live-mega-card">
+        <div class="live-mega-inner">
+          <div>
+            <div class="live-badge">🚀 NUEVO · REGISTRO EN VIVO</div>
+            <h2 class="live-title">Tu teléfono ya es el botón 📲🔥</h2>
+            <p class="live-subtitle">
+              Ahora puedes <strong>registrar tu puntazo al instante</strong> desde tu celular, sin depender del botón físico.
+              <br /><strong>Prúebalo ya</strong> y haz que tu mejor punto sí aparezca aquí 😮‍💨
+            </p>
+
+            <div class="live-steps">
+              <span class="step-pill">1️⃣ Abre</span>
+              <span class="step-pill">2️⃣ Pícale en el momento</span>
+              <span class="step-pill">3️⃣ Listo ✅</span>
+            </div>
+          </div>
+
+          <div class="live-actions">
+            <a
+              class="live-btn-main"
+              href="https://script.google.com/macros/s/AKfycbw0af8yRcqDI9cXLxjCd41J5cAUhrpTG_c8gkabUduLTeM2EB4Wvz0Sxf4IDEDcuJHbwA/exec"
+              target="_blank"
+              rel="noopener"
+              onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'mega_banner'});}catch(e){}"
+            >
+              📲 Registrar puntazo en vivo
+            </a>
+
+            <a
+              class="live-btn-secondary"
+              href="https://script.google.com/macros/s/AKfycbw0af8yRcqDI9cXLxjCd41J5cAUhrpTG_c8gkabUduLTeM2EB4Wvz0Sxf4IDEDcuJHbwA/exec"
+              target="_blank"
+              rel="noopener"
+              onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'mega_banner_secondary'});}catch(e){}"
+            >
+              ⚡ Probar ahora mismo
+            </a>
+
+            <div class="live-note">
+              Tip: úsalo justo cuando cae el punto 💥<br/>
+              (sí, así de fácil… qué miedo 😈)
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- Mensaje de carga -->
     <div id="loading" class="aviso" style="display:none;">Cargando videos...</div>
@@ -177,7 +360,7 @@
     <section id="videos-container" class="video-grid"></section>
   </main>
 
-  <!-- Footer interno (diferente al de inicio) -->
+  <!-- Footer interno -->
   <footer class="site-footer" id="contacto">
     <div class="footer-info">
       <p>
@@ -230,7 +413,7 @@
     <p class="footer-copy">© 2026 Puntazo</p>
   </footer>
 
-  <!-- JS principal (puebla listas, videos, botones, etc.) -->
+  <!-- JS principal -->
   <script src="assets/script.js"></script>
 
   <!-- Navbar: cerrar al scroll o click fuera -->
