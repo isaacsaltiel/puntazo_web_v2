@@ -44,90 +44,61 @@
   <link rel="stylesheet" href="/assets/estilo.css" />
   <link rel="stylesheet" href="/assets/inicio.css" />
 
-  <!-- NUEVO: Estilos del bloque "Recuperar puntazo" arriba -->
+  <!-- NUEVO: CTA registrar puntazo + recuperar discreto -->
   <style>
-    .recover-top {
+    .top-actions{
       max-width: 1100px;
-      margin: 14px auto 10px;
+      margin: 12px auto 10px;
       padding: 0 16px;
     }
-
-    .recover-card {
+    .top-actions-inner{
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
-      padding: 16px 18px;
-      border-radius: 18px;
-      background: linear-gradient(135deg, rgba(17,17,17,1), rgba(34,34,34,1));
-      color: #fff;
-      box-shadow: 0 12px 32px rgba(0,0,0,.18);
-      border: 1px solid rgba(255,255,255,.08);
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
-    .recover-card h2 {
-      margin: 0;
-      font-size: 1.15rem;
-      line-height: 1.15;
-      letter-spacing: .2px;
-    }
-
-    .recover-card p {
-      margin: 8px 0 0;
-      font-size: .95rem;
-      opacity: .9;
-    }
-
-    .recover-actions {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 6px;
-      min-width: 220px;
-    }
-
-    .recover-btn {
-      background: #ffffff;
-      color: #111111;
-      text-decoration: none;
-      padding: 10px 14px;
-      border-radius: 14px;
-      font-weight: 800;
+    .cta-livephone{
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      white-space: nowrap;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-weight: 900;
+      text-decoration: none;
+      background: #ffffff;
+      color: #111111;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.35);
+      transform: translateY(0);
       transition: transform .12s ease, opacity .12s ease;
+      white-space: nowrap;
     }
-
-    .recover-btn:hover {
+    .cta-livephone:hover{
       transform: translateY(-1px);
-      opacity: .95;
+      opacity: 0.95;
     }
 
-    .recover-sub {
-      font-size: .78rem;
-      opacity: .75;
-      text-align: right;
-      line-height: 1.2;
+    .recover-mini{
+      font-size: 0.92rem;
+      opacity: 0.82;
+      text-decoration: none;
+      color: rgba(255,255,255,0.88);
+      border-bottom: 1px dashed rgba(255,255,255,0.35);
+      padding-bottom: 2px;
+      white-space: nowrap;
+    }
+    .recover-mini:hover{
+      opacity: 1;
+      border-bottom-color: rgba(255,255,255,0.65);
+      color: #fff;
     }
 
-    @media (max-width: 720px) {
-      .recover-card {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .recover-actions {
-        width: 100%;
-        align-items: stretch;
-      }
-      .recover-btn {
-        width: 100%;
-      }
-      .recover-sub {
-        text-align: left;
-      }
+    @media (max-width: 520px){
+      .cta-livephone{ width: 100%; }
+      .top-actions-inner{ justify-content: center; }
     }
   </style>
 </head>
@@ -152,29 +123,28 @@
 
   <main class="site-content fade-in">
 
-    <!-- NUEVO: Recuperar puntazo (Google Forms) MUY ARRIBA -->
-    <section class="recover-top" aria-label="Recuperar puntazo">
-      <div class="recover-card">
-        <div class="recover-text">
-          <h2>¿No aparece tu puntazo? 😭</h2>
-          <p>
-            No te preocupes. Llena el formulario y lo recuperamos por ti.
-          </p>
-        </div>
+    <!-- NUEVO: Registrar puntazo en vivo (arriba) + Recuperar discreto -->
+    <section class="top-actions" aria-label="Acciones rápidas">
+      <div class="top-actions-inner">
+        <a
+          class="cta-livephone"
+          href="https://script.google.com/macros/s/AKfycbw0af8yRcqDI9cXLxjCd41J5cAUhrpTG_c8gkabUduLTeM2EB4Wvz0Sxf4IDEDcuJHbwA/exec"
+          target="_blank"
+          rel="noopener"
+          onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'videos_top'});}catch(e){}"
+        >
+          📲 Registrar puntazo en vivo
+        </a>
 
-        <div class="recover-actions">
-          <a
-            class="recover-btn"
-            href="https://forms.gle/TsGHKaSjBnpu65SQA"
-            target="_blank"
-            rel="noopener"
-          >📝 Recuperar mi puntazo</a>
-
-          <div class="recover-sub">
-            Llena la encuesta rapida<br />
-            Y en unos minutos estara disponible
-          </div>
-        </div>
+        <a
+          class="recover-mini"
+          href="https://forms.gle/TsGHKaSjBnpu65SQA"
+          target="_blank"
+          rel="noopener"
+          onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'videos_top'});}catch(e){}"
+        >
+          ¿No aparece tu clip? Recuperar
+        </a>
       </div>
     </section>
 
@@ -221,19 +191,25 @@
 
       <p>Recuerda que los videos se borran pasadas 24 horas.</p>
 
-      <!-- Recuperar puntazo (WhatsApp) -->
-      <p style="margin-top:14px;">
-        <strong>¿No se registró algún puntazo?</strong><br />
-        Tu puntazo no merece quedarse en el olvido 😭 Escríbenos y lo buscamos.
+      <!-- Recuperar puntazo (DISCRETO) -->
+      <p style="margin-top:10px; font-size:0.92rem; opacity:0.88;">
+        ¿Faltó tu clip?
+        <a
+          href="https://forms.gle/TsGHKaSjBnpu65SQA"
+          target="_blank"
+          rel="noopener"
+          style="color:#fff; text-decoration:none; border-bottom:1px dashed rgba(255,255,255,0.35); padding-bottom:2px;"
+          onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'footer_form'});}catch(e){}"
+        >Recupéralo aquí</a>
+        <span style="opacity:0.7;">·</span>
+        <a
+          href="https://wa.me/522206804856?text=Hola%20Puntazo!%20No%20me%20aparecio%20mi%20clip%20y%20quiero%20recuperarlo.%0A%0AFecha%20(dia)%3A%20____%0AClub%3A%20____%0ACancha%3A%20____%0AHora%20exacta%20del%20punto%20(o%20rango%20aprox)%3A%20____%0ALado%20(A/B)%20si%20aplica%3A%20____%0A%0AGracias!"
+          target="_blank"
+          rel="noopener"
+          style="color:#fff; text-decoration:none; border-bottom:1px dashed rgba(255,255,255,0.35); padding-bottom:2px;"
+          onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'footer_whatsapp'});}catch(e){}"
+        >WhatsApp</a>
       </p>
-
-      <a
-        class="cta-btn cta-whatsapp"
-        style="margin-top:8px; display:inline-block; padding:10px 14px; font-size:0.95rem; border-radius:12px;"
-        href="https://wa.me/522206804856?text=Hola%20Puntazo!%20No%20me%20aparecio%20mi%20clip%20y%20quiero%20recuperarlo.%0A%0AFecha%20(dia)%3A%20____%0AClub%3A%20____%0ACancha%3A%20____%0AHora%20exacta%20del%20punto%20(o%20rango%20aprox)%3A%20____%0ALado%20(A/B)%20si%20aplica%3A%20____%0A%0AGracias!"
-        target="_blank"
-        rel="noopener"
-      >📼 Recuperar puntazo</a>
     </div>
 
     <div class="footer-redes">
