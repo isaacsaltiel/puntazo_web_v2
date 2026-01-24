@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/" />
+  <title>Puntazo</title>
+
+  <!-- Favicon principal -->
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
   <script>
@@ -11,129 +16,113 @@
     gtag('js', new Date());
     gtag('config', 'G-7HTMSTJ035'); 
   </script>
-  <title>Puntazo</title>
 
-  <!-- Favicons completos -->
-  <link rel="apple-touch-icon" sizes="57x57" href="assets/icons/apple-icon-57x57.png" />
-  <link rel="apple-touch-icon" sizes="60x60" href="assets/icons/apple-icon-60x60.png" />
-  <link rel="apple-touch-icon" sizes="72x72" href="assets/icons/apple-icon-72x72.png" />
-  <link rel="apple-touch-icon" sizes="76x76" href="assets/icons/apple-icon-76x76.png" />
-  <link rel="apple-touch-icon" sizes="114x114" href="assets/icons/apple-icon-114x114.png" />
-  <link rel="apple-touch-icon" sizes="120x120" href="assets/icons/apple-icon-120x120.png" />
-  <link rel="apple-touch-icon" sizes="144x144" href="assets/icons/apple-icon-144x144.png" />
-  <link rel="apple-touch-icon" sizes="152x152" href="assets/icons/apple-icon-152x152.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-icon-180x180.png" />
+  <!-- Favicons Apple -->
+  <link rel="apple-touch-icon" sizes="57x57" href="/assets/icons/apple-icon-57x57.png" />
+  <link rel="apple-touch-icon" sizes="60x60" href="/assets/icons/apple-icon-60x60.png" />
+  <link rel="apple-touch-icon" sizes="72x72" href="/assets/icons/apple-icon-72x72.png" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/assets/icons/apple-icon-76x76.png" />
+  <link rel="apple-touch-icon" sizes="114x114" href="/assets/icons/apple-icon-114x114.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/apple-icon-120x120.png" />
+  <link rel="apple-touch-icon" sizes="144x144" href="/assets/icons/apple-icon-144x144.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-icon-152x152.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
 
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/android-icon-192x192.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="96x96" href="assets/icons/favicon-96x96.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png" />
-  <link rel="manifest" href="assets/icons/manifest.json" />
+  <!-- Favicons Android / otros -->
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/android-icon-192x192.png" />
+  <link rel="icon" type="image/png" sizes="96x96" href="/assets/icons/favicon-96x96.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png" />
+
+  <!-- Manifest y color de tema -->
+  <link rel="manifest" href="/assets/icons/manifest.json" />
   <meta name="msapplication-TileColor" content="#ffffff" />
-  <meta name="msapplication-TileImage" content="assets/icons/ms-icon-144x144.png" />
+  <meta name="msapplication-TileImage" content="/assets/icons/ms-icon-144x144.png" />
   <meta name="theme-color" content="#ffffff" />
 
   <!-- Estilos -->
-  <link rel="stylesheet" href="assets/estilo.css" />
-  <link rel="stylesheet" href="assets/inicio.css" />
+  <link rel="stylesheet" href="/assets/estilo.css" />
+  <link rel="stylesheet" href="/assets/inicio.css" />
 
-  <!-- Fuentes -->
+  <!-- Fuente Montserrat -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet" />
 
-  <!-- NUEVO: Estilos del banner superior (CTA) -->
+  <!-- Estilos extra SOLO para WhatsApp/contacto (mínimo y seguro) -->
   <style>
-    .live-cta-bar{
-      width: 100%;
-      padding: 18px 16px;
-      background: radial-gradient(1200px 300px at 20% 0%, rgba(255,255,255,0.16), rgba(0,0,0,0)),
-                  linear-gradient(135deg, rgba(0,0,0,0.88), rgba(18,18,18,0.88));
-      border-bottom: 1px solid rgba(255,255,255,0.10);
-    }
-    .live-cta-inner{
-      max-width: 1100px;
+    .contacto-grid{
+      max-width: 950px;
       margin: 0 auto;
-      display: flex;
+      display: grid;
       gap: 16px;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
     }
-    .live-cta-left{
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      color: #fff;
+    .contacto-card{
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
     }
-    .live-badge{
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      width: fit-content;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      background: rgba(255,255,255,0.14);
-      border: 1px solid rgba(255,255,255,0.18);
-      backdrop-filter: blur(6px);
+    .contacto-card p{
+      margin: 10px 0 12px 0;
+      line-height: 1.4;
     }
-    .live-title{
-      margin: 0;
-      font-size: 1.25rem;
-      line-height: 1.2;
-      font-weight: 800;
+
+    /* Botón WhatsApp (verde) */
+    .cta-whatsapp{
+      background: #25D366 !important;
+      border: 2px solid #25D366 !important;
+      color: #0b1b12 !important;
+      font-weight: 700 !important;
     }
-    .live-subtitle{
-      margin: 0;
-      opacity: 0.9;
-      font-size: 0.95rem;
-      font-weight: 500;
+    .cta-whatsapp:hover{
+      filter: brightness(0.95);
+      transform: translateY(-1px);
     }
-    .live-cta-right{
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .live-cta-btn{
+
+    /* Botón grande WhatsApp */
+    .cta-whatsapp-big{
+      font-size: 1.05rem;
+      padding: 14px 18px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      font-weight: 800;
-      text-decoration: none;
-      background: #ffffff;
-      color: #000000;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      transform: translateY(0);
-      transition: transform .15s ease, opacity .15s ease;
-      white-space: nowrap;
-    }
-    .live-cta-btn:hover{
-      transform: translateY(-1px);
-      opacity: 0.95;
-    }
-    .live-cta-small{
-      color: rgba(255,255,255,0.85);
-      font-size: 0.88rem;
-      text-decoration: none;
-      border-bottom: 1px dashed rgba(255,255,255,0.35);
-      padding-bottom: 2px;
-    }
-    .live-cta-small:hover{
-      color: #fff;
-      border-bottom-color: rgba(255,255,255,0.65);
+      width: min(520px, 100%);
     }
 
-    @media (max-width: 520px){
-      .live-title{ font-size: 1.10rem; }
-      .live-subtitle{ font-size: 0.90rem; }
-      .live-cta-btn{ width: 100%; }
+    .whatsapp-title{
+      margin-top: 6px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #25D366;
+      letter-spacing: 0.2px;
+    }
+
+    .mini-note{
+      opacity: 0.9;
+      font-size: 0.95rem;
+    }
+
+    /* Footer links simétricos */
+    .site-footer .footer-links{
+      display:flex;
+      gap:14px;
+      justify-content:center;
+      flex-wrap: wrap;
+    }
+
+    /* NUEVO: Botón "Registrar puntazo en vivo" */
+    .cta-livephone{
+      background: #ffffff !important;
+      border: 2px solid rgba(255,255,255,0.85) !important;
+      color: #000 !important;
+      font-weight: 800 !important;
+    }
+    .cta-livephone:hover{
+      opacity: 0.95;
+      transform: translateY(-1px);
     }
   </style>
 </head>
@@ -141,145 +130,205 @@
 <body>
   <header class="site-header">
     <a href="inicio.html" class="logo-link">
-      <img src="assets/logo.png" alt="Logo Puntazo" class="logo" />
+      <img src="assets/logo.png" alt="Logo " class="logo" />
     </a>
     <a href="inicio.html" class="empresa-nombre"></a>
 
-    <button class="menu-toggle" aria-label="Abrir menú">
-      ☰
-    </button>
+    <button class="menu-toggle" aria-label="Abrir menú">☰</button>
 
     <nav class="navbar">
       <a href="inicio.html#quienes-somos">Quiénes somos</a>
       <a href="inicio.html#servicios">Servicios</a>
-      <a href="inicio.html#testimonios">Testimonios</a>
+      <a href="inicio.html#ventajas">Ventajas</a>
       <a href="inicio.html#contacto">Contacto</a>
       <a href="index.html" class="highlight-btn">Encuentra tus clips</a>
     </nav>
   </header>
 
-  <!-- =========================================
-       NUEVO: CTA ULTRA VISIBLE (arriba de todo)
-       ========================================= -->
-  <section class="live-cta-bar" role="region" aria-label="Registrar puntazo en vivo">
-    <div class="live-cta-inner">
-      <div class="live-cta-left">
-        <div class="live-badge">🚀 NUEVO · EN VIVO</div>
-        <h2 class="live-title">Tu teléfono ya es el botón 🔥</h2>
-        <p class="live-subtitle">Registra tu puntazo al instante desde el cel. Pruébalo hoy y no dejes que se pierda 😮‍💨</p>
-      </div>
+  <!-- Hero principal -->
+  <section class="hero fade-in">
+    <div class="hero-content">
+      <h1>Revive tu mejor jugada. Una y otra vez.</h1>
+      <p>Transformamos cada jugada en un recuerdo inolvidable, al alcance de tu club.</p>
 
-      <div class="live-cta-right">
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <a href="index.html" class="cta-btn cta-hero">Explora videos</a>
+
+        <!-- NUEVO: Registrar puntazo en vivo (teléfono = botón) -->
         <a
-          class="live-cta-btn"
           href="https://script.google.com/macros/s/AKfycbw0af8yRcqDI9cXLxjCd41J5cAUhrpTG_c8gkabUduLTeM2EB4Wvz0Sxf4IDEDcuJHbwA/exec"
+          class="cta-btn cta-hero cta-livephone"
           target="_blank"
           rel="noopener"
-          onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:location.pathname});}catch(e){}"
-        >
-          📲 Registrar puntazo en vivo
-        </a>
+          onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'hero'});}catch(e){}"
+        >📲 Registrar puntazo en vivo</a>
 
-        <a class="live-cta-small" href="#modo-clasico">¿Prefieres el modo clásico?</a>
+        <!-- CTA WhatsApp ligero desde arriba -->
+        <a
+          href="https://wa.me/522206804856?text=Hola%20Puntazo!%20Quiero%20mas%20informacion%20sobre%20su%20sistema."
+          class="cta-btn cta-hero cta-whatsapp"
+          target="_blank"
+          rel="noopener"
+        >WhatsApp</a>
+      </div>
+
+      <p class="mini-note" style="margin-top:10px;">
+        Ya estamos activos en <strong>Interpadel</strong>, <strong>Scorpion</strong> y <strong>Breakpoint</strong>.
+      </p>
+    </div>
+  </section>
+
+  <!-- Sección Quiénes somos -->
+  <section id="quienes-somos" class="fade-section">
+    <h2>¿Quiénes somos?</h2>
+    <p>
+      En Puntazo creemos que cada momento en la cancha merece ser recordado. Nuestro sistema automatizado graba tus mejores
+      jugadas, las guarda individualmente y te permite compartir y descargarlas para que ese puntazo no se quede solo en tu memoria.
+    </p>
+  </section>
+
+  <!-- Servicios / Beneficios -->
+  <section id="servicios" class="features fade-section">
+    <h2>¿Qué ofrecemos?</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>🎥 Grabación inteligente</h3>
+        <p>Cada lado de la cancha es capturado en alta definición.</p>
+      </div>
+      <div class="card">
+        <h3>⏱️ Acceso inmediato</h3>
+        <p>Consulta tus videos minutos después de jugar.</p>
+      </div>
+      <div class="card">
+        <h3>📡 Difusión profesional</h3>
+        <p>Ideal para clubes, entrenadores y jugadores destacados.</p>
       </div>
     </div>
   </section>
 
-  <main class="site-content fade-in">
-    <div class="titulo-lado">
-      <div class="titulo-club">
-        <a id="link-club" class="breadcrumb-link" href="#" style="color:#fff; text-decoration:none;"></a>
-        <span id="breadcrumb-sep1"> – </span>
-        <a id="link-cancha" class="breadcrumb-link" href="#" style="color:#fff; text-decoration:none;"></a>
-        <span id="breadcrumb-sep2" style="display:none;"> – </span>
-        <span id="nombre-lado" style="display:none;"></span>
-      </div>
+  <!-- Ventajas -->
+  <section id="ventajas" class="fade-section">
+    <h2>Ventajas</h2>
+    <div class="testimonios">
+      <blockquote><strong>Jugador:</strong> Guarda y comparte tus mejores jugadas al instante.</blockquote>
+      <blockquote><strong>Entrenador:</strong> Corrige errores fácilmente y acelera el progreso de tus alumnos.</blockquote>
+      <blockquote><strong>Club:</strong> Enriquece la experiencia y gana visibilidad con marcas de agua personalizadas.</blockquote>
     </div>
-  
-    <div class="btn-volver-container">
-      <a href="#" id="btn-volver" class="btn-volver">← Regresar a la locación</a>
-    </div>
-  
-    <ul id="lados-lista" class="lados-lista"></ul>
-  </main>
+  </section>
 
-  <footer class="site-footer" id="contacto">
-    <div class="footer-info">
-      <p>
-        ¿Te interesa que estemos en tu club?
+  <!-- Carrusel de imágenes -->
+  <section class="carrusel fade-section">
+    <h2>Nuestros espacios</h2>
+    <div class="carousel-container">
+      <img src="assets/carrusel1.jpg" alt="Cancha 1" />
+      <img src="assets/carrusel2.jpg" alt="Cancha 2" />
+      <img src="assets/carrusel3.jpg" alt="Club" />
+    </div>
+  </section>
+
+  <!-- Contacto -->
+  <section id="contacto" class="fade-section">
+    <h2>Contáctanos</h2>
+
+    <div class="contacto-grid">
+      <!-- 1) CLUB -->
+      <div class="contacto-card">
+        <p><strong>¿Te interesa que tu club forme parte?</strong><br>
+        Escríbenos y te contamos cómo funciona (instalación rápida + clips automáticos).</p>
+
         <a
+          class="cta-btn cta-contacto"
+          target="_blank"
+          rel="noopener"
           href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo!%20Me%20interesa%20llevar%20Puntazo%20a%20mi%20club.%0AClub%3A%20____%0ACiudad%3A%20____%0A%23%20de%20canchas%3A%20____%0AMi%20nombre%3A%20____%0ATel%3A%20____%0AGracias!"
-          target="_blank"
-          rel="noopener"
-        >Escríbenos</a>
-      </p>
+        >Lo quiero en mi cancha</a>
+      </div>
 
-      <p>Recuerda que los videos se borran pasadas 24 horas.</p>
-
-      <!-- NUEVO: Recuperar puntazo -->
-      <p style="margin-top:14px;">
-        <strong>¿No se registró algún puntazo?</strong><br />
-        Tu puntazo no merece quedarse en el olvido 😭 Escríbenos y lo buscamos.
-      </p>
-
-      <a
-        class="cta-btn cta-whatsapp"
-        style="margin-top:8px; display:inline-block; padding:10px 14px; font-size:0.95rem; border-radius:12px;"
-        href="https://wa.me/522206804856?text=Hola%20Puntazo!%20No%20me%20aparecio%20mi%20clip%20y%20quiero%20recuperarlo.%0A%0AFecha%20(dia)%3A%20____%0AClub%3A%20____%0ACancha%3A%20____%0AHora%20exacta%20del%20punto%20(o%20rango%20aprox)%3A%20____%0ALado%20(A/B)%20si%20aplica%3A%20____%0A%0AGracias!"
-        target="_blank"
-        rel="noopener"
-      >📼 Recuperar puntazo</a>
-
-      <!-- =========================================
-           MODO CLÁSICO / CREAR PUNTAZO (discreto abajo)
-           ========================================= -->
-      <div id="modo-clasico" style="margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.12);">
-        <p style="margin:0 0 6px 0; opacity:0.92;">
-          <strong>Modo clásico</strong> (por si andas en modo “sin batería, sin señal, sin fe” 😅)
-        </p>
+      <!-- 2) MARCA -->
+      <div class="contacto-card">
+        <p><strong>¿Te interesa que tu marca aparezca en los videos?</strong><br>
+        Tenemos opciones de logo/watermark y presencia dentro del clip.</p>
 
         <a
-          href="https://script.google.com/macros/s/AKfycbw0af8yRcqDI9cXLxjCd41J5cAUhrpTG_c8gkabUduLTeM2EB4Wvz0Sxf4IDEDcuJHbwA/exec"
+          class="cta-btn cta-contacto"
           target="_blank"
           rel="noopener"
-          style="display:inline-block; text-decoration:none; padding:9px 12px; border-radius:12px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18); color:#fff; font-weight:700; font-size:0.92rem;"
-          onclick="try{gtag('event','modo_clasico_click',{event_category:'CTA',event_label:location.pathname});}catch(e){}"
-        >
-          🧾 Crear puntazo manual (discreto)
-        </a>
+          href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo!%20Me%20interesa%20que%20mi%20marca%20aparezca%20en%20sus%20videos.%0AMarca%3A%20____%0AObjetivo%3A%20____%0APresupuesto%20aprox%3A%20____%0AMi%20nombre%3A%20____%0ATel%3A%20____%0AGracias!"
+        >Quiero mi marca en los videos</a>
+      </div>
+
+      <!-- 3) WHATSAPP DIRECTO -->
+      <div class="contacto-card">
+        <div class="whatsapp-title">WhatsApp directo</div>
+        <p class="mini-note">Si vienes con una idea nueva o solo quieres info rápida, aquí es. ⚡</p>
+
+        <a
+          class="cta-btn cta-whatsapp cta-whatsapp-big"
+          target="_blank"
+          rel="noopener"
+          href="https://wa.me/522206804856?text=Hola%20Puntazo!%20Quiero%20mas%20informacion."
+        >💬 Enviar WhatsApp</a>
       </div>
     </div>
+  </section>
 
-    <div class="footer-redes">
+  <!-- Footer (inicio) -->
+  <footer class="site-footer">
+    <p>© 2026 Puntazo – Todos los derechos reservados</p>
+
+    <div class="footer-links">
       <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
       <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
 
+      <!-- WhatsApp en footer (simétrico y prioritario) -->
       <a
         href="https://wa.me/522206804856?text=Hola%20Puntazo!%20Quiero%20mas%20informacion."
         target="_blank"
         rel="noopener"
       >WhatsApp</a>
 
+      <!-- Si quieres, lo puedes borrar ya: email no es prioridad -->
       <a
-        href="mailto:isaacsaltiel@gmail.com?subject=Quiero%20información%20de%20Puntazo&body=Hola%20equipo%20Puntazo,%0D%0A%0D%0AMe%20interesa%20que%20mis%20canchas%20formen%20parte.%0D%0A%0D%0ANombre:%0D%0ATel%C3%A9fono:%0D%0A%0D%0A%C2%A1Gracias!"
+        href="mailto:isaacsaltiel@gmail.com?subject=Quiero%20información%20de%20Puntazo&body=Hola%20equipo%20Puntazo,%0D%0A%0D%0AMe%20interesa%20que%20mi%20club%20forme%20parte.%0D%0A%0D%0ANombre:%0D%0ATel%C3%A9fono:%0D%0A%0D%0A%C2%A1Gracias!"
       >Email</a>
     </div>
-
-    <p class="footer-copy">© 2026 Puntazo</p>
   </footer>
 
-  <script src="assets/script.js"></script>
+  <!-- Fade-in -->
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const btn = document.querySelector('.menu-toggle');
-      const nav = document.querySelector('.navbar');
-      if (btn && nav) {
-        btn.addEventListener('click', () => {
-          nav.classList.toggle('show');
-        });
-      }
-    });
+    const observer = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+      { threshold: 0.1 }
+    );
+    document.querySelectorAll('.fade-section').forEach(sec => observer.observe(sec));
   </script>
 
+  <!-- Navbar: abrir/cerrar + cerrar al scroll o click fuera -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.querySelector('.menu-toggle');
+      const nav = document.querySelector('.navbar');
+
+      if (!btn || !nav) return;
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        nav.classList.toggle('show');
+      });
+
+      // Cerrar al hacer click fuera
+      document.addEventListener('click', (e) => {
+        if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) {
+          nav.classList.remove('show');
+        }
+      });
+
+      // Cerrar al scrollear
+      window.addEventListener('scroll', () => {
+        if (nav.classList.contains('show')) nav.classList.remove('show');
+      });
+    });
+  </script>
 </body>
 </html>
+
