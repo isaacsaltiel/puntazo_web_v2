@@ -595,6 +595,18 @@
       "count": 8
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "date": "2026-01-27",
+      "count": 8
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "date": "2026-01-27",
+      "count": 8
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-09-08",
@@ -751,6 +763,12 @@
       "count": 5
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "date": "2026-01-27",
+      "count": 5
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-08-31",
@@ -877,12 +895,6 @@
       "count": 4
     },
     {
-      "loc": "breakpoint",
-      "can": "cancha4",
-      "date": "2026-01-27",
-      "count": 4
-    },
-    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "date": "2025-08-25",
@@ -1000,12 +1012,6 @@
       "loc": "breakpoint",
       "can": "cancha5",
       "date": "2026-01-25",
-      "count": 3
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha2",
-      "date": "2026-01-27",
       "count": 3
     },
     {
@@ -1201,8 +1207,8 @@
       "count": 2
     },
     {
-      "loc": "breakpoint",
-      "can": "cancha5",
+      "loc": "scorpion",
+      "can": "cancha2",
       "date": "2026-01-27",
       "count": 2
     },
@@ -1512,7 +1518,7 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "15",
-      "count": 44
+      "count": 46
     },
     {
       "loc": "scorpion",
@@ -1667,6 +1673,12 @@
     {
       "loc": "breakpoint",
       "can": "cancha4",
+      "hour": "11",
+      "count": 9
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
       "hour": "09",
       "count": 9
     },
@@ -1732,14 +1744,14 @@
     },
     {
       "loc": "breakpoint",
-      "can": "cancha4",
-      "hour": "11",
+      "can": "cancha1",
+      "hour": "19",
       "count": 7
     },
     {
       "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "19",
+      "can": "cancha2",
+      "hour": "10",
       "count": 7
     },
     {
@@ -1818,12 +1830,6 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "07",
-      "count": 5
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha2",
-      "hour": "10",
       "count": 5
     },
     {
@@ -1913,7 +1919,19 @@
     {
       "loc": "breakpoint",
       "can": "cancha5",
+      "hour": "10",
+      "count": 4
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha5",
       "hour": "12",
+      "count": 4
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "hour": "11",
       "count": 4
     },
     {
@@ -1974,6 +1992,12 @@
       "loc": "breakpoint",
       "can": "cancha3",
       "hour": "23",
+      "count": 3
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "hour": "10",
       "count": 3
     },
     {
@@ -2152,12 +2176,6 @@
     },
     {
       "loc": "breakpoint",
-      "can": "cancha5",
-      "hour": "10",
-      "count": 2
-    },
-    {
-      "loc": "breakpoint",
       "can": "cancha2",
       "hour": "14",
       "count": 2
@@ -2280,12 +2298,6 @@
       "loc": "breakpoint",
       "can": "cancha3",
       "hour": "07",
-      "count": 1
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha4",
-      "hour": "10",
       "count": 1
     },
     {
@@ -4510,7 +4522,7 @@
       "can": "cancha5",
       "date": "2026-01-27",
       "counts_por_lado": {
-        "ladoa": 2
+        "ladoa": 8
       },
       "diff": 0
     },
@@ -4519,7 +4531,7 @@
       "can": "cancha4",
       "date": "2026-01-27",
       "counts_por_lado": {
-        "ladoa": 4
+        "ladoa": 8
       },
       "diff": 0
     },
@@ -4528,10 +4540,20 @@
       "can": "cancha2",
       "date": "2026-01-27",
       "counts_por_lado": {
-        "ladoa": 3
+        "ladoa": 5
+      },
+      "diff": 0
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2026-01-27",
+      "counts_por_lado": {
+        "ladoa": 1,
+        "ladob": 1
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-01-27T16:16:05.042394+00:00"
+  "generated_at_utc": "2026-01-28T00:52:18.218080+00:00"
 }
