@@ -691,6 +691,12 @@
       "count": 8
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "date": "2026-02-06",
+      "count": 8
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-09-08",
@@ -769,6 +775,12 @@
       "count": 7
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-02-06",
+      "count": 7
+    },
+    {
       "loc": "testclub",
       "can": "testcancha",
       "date": "2025-07-16",
@@ -844,12 +856,6 @@
       "loc": "breakpoint",
       "can": "cancha2",
       "date": "2026-02-05",
-      "count": 6
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha3",
-      "date": "2026-02-06",
       "count": 6
     },
     {
@@ -1483,12 +1489,6 @@
       "count": 2
     },
     {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "date": "2026-02-06",
-      "count": 2
-    },
-    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-09-10",
@@ -2069,6 +2069,12 @@
     {
       "loc": "breakpoint",
       "can": "cancha1",
+      "hour": "16",
+      "count": 10
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
       "hour": "07",
       "count": 10
     },
@@ -2182,8 +2188,8 @@
     },
     {
       "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "16",
+      "can": "cancha3",
+      "hour": "12",
       "count": 8
     },
     {
@@ -2212,6 +2218,12 @@
     },
     {
       "loc": "frondoso",
+      "can": "cancha1",
+      "hour": "17",
+      "count": 7
+    },
+    {
+      "loc": "breakpoint",
       "can": "cancha1",
       "hour": "17",
       "count": 7
@@ -2286,12 +2298,6 @@
       "loc": "breakpoint",
       "can": "cancha3",
       "hour": "17",
-      "count": 6
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha3",
-      "hour": "12",
       "count": 6
     },
     {
@@ -2388,12 +2394,6 @@
       "loc": "frondoso",
       "can": "cancha1",
       "hour": "11",
-      "count": 4
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "17",
       "count": 4
     },
     {
@@ -5439,7 +5439,7 @@
       "can": "cancha1",
       "date": "2026-02-06",
       "counts_por_lado": {
-        "ladoa": 2
+        "ladoa": 7
       },
       "diff": 0
     },
@@ -5448,7 +5448,7 @@
       "can": "cancha3",
       "date": "2026-02-06",
       "counts_por_lado": {
-        "ladoa": 6
+        "ladoa": 8
       },
       "diff": 0
     },
@@ -5462,5 +5462,5 @@
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-02-06T16:30:13.729290+00:00"
+  "generated_at_utc": "2026-02-07T00:58:08.235418+00:00"
 }
