@@ -1011,6 +1011,67 @@ html,body{ overflow-x:hidden; }
 
 .pz-hide-by-day{ display: none !important; }
 
+/* ========== GRID CARDS (Locaciones / Canchas / Lados) ========== */
+.grid-cards{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  display: grid;
+  gap: 14px;
+
+  /* 2 columnas cuando se pueda, 1 en pantallas chicas */
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+/* cada <li> no necesita estilos, pero por si acaso */
+.grid-cards > li{
+  margin: 0 !important; /* mata el marginBottom inline que mete JS */
+  padding: 0;
+}
+
+/* el link se vuelve “tarjeta” */
+.grid-cards > li > a{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  min-height: 72px;
+  padding: 16px 14px;
+  border-radius: 16px;
+
+  text-decoration: none;
+
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.22);
+
+  transition: transform .12s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+}
+
+/* hover elegante (no feria) */
+.grid-cards > li > a:hover{
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.11);
+  border-color: rgba(255,255,255,0.22);
+  opacity: 0.98;
+}
+
+/* opcional: que el texto se vea más “botón” */
+.grid-cards > li > a.link-blanco{
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+/* en móvil, tarjetas más compactas */
+@media (max-width: 520px){
+  .grid-cards > li > a{
+    min-height: 64px;
+    padding: 14px 12px;
+    border-radius: 14px;
+  }
+}
 
 
 
