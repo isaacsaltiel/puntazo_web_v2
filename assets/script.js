@@ -2012,75 +2012,65 @@ document.addEventListener('DOMContentLoaded', () => {
   const dayKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
 
   // --- 1) Parseo robusto de fecha desde strings (nombre/URL)
-  function parseFromString(str) {
-    if (!str) return null;
-    const s = String(str);
+function parseFromString(str) {
+  if (!str) return null;
+  const s = String(str);
 
-    // YYYYMMDD_HHMMSS o YYYYMMDD-HHMMSS
-    let m = s.match(/(20\d{2})(\d{2})(\d{2})[^\d]?(\d{2})(\d{2})(\d{2})/);
-    if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
+  // ✅ TU FORMATO EXACTO: ..._YYYYMMDD_HHMMSS.mp4
+  // (lo buscamos en cualquier parte del string)
+  let m = s.match(/_(20\d{2})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})\.mp4/i);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
 
-    // YYYY-MM-DD_HH:MM:SS o YYYY-MM-DD HH-MM-SS o con T
-    m = s.match(/(20\d{2})-(\d{2})-(\d{2})[T _-]?(\d{2})[:\-](\d{2})[:\-](\d{2})/);
-    if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
+  // fallback 1: YYYYMMDD_HHMMSS (sin .mp4)
+  m = s.match(/(20\d{2})(\d{2})(\d{2})[ _-](\d{2})(\d{2})(\d{2})/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
 
-    // Solo fecha YYYYMMDD
-    m = s.match(/(20\d{2})(\d{2})(\d{2})/);
-    if (m) return new Date(+m[1], +m[2]-1, +m[3], 0, 0, 0);
+  // fallback 2: YYYY-MM-DD_HH:MM:SS (o variaciones)
+  m = s.match(/(20\d{2})-(\d{2})-(\d{2})[T _-]?(\d{2})[:\-](\d{2})[:\-](\d{2})/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
 
-    // ISO parseable
-    const d = new Date(s);
-    if (!isNaN(d.getTime())) return d;
-
-    return null;
-  }
+  return null;
+}
 
 function extractBestNameFromCard(card) {
-  const ds = card?.dataset || {};
+  // Objetivo: encontrar la URL/filename donde venga ..._YYYYMMDD_HHMMSS.mp4
+  // ✅ Probamos muchas “esquinas” del DOM para no depender de una sola.
+
   const candidates = [];
 
-  // 1) dataset típico (por si tu render ya lo trae)
-  ["filename","name","videoName","title","src","url","href","videoUrl"].forEach(k => {
-    if (ds[k]) candidates.push(ds[k]);
-  });
-
-  // 2) video src (muchas veces aquí sí viene el path con el nombre)
-  const v = card.querySelector("video");
-  if (v) {
-    const attrSrc = v.getAttribute("src");
-    if (attrSrc) candidates.push(attrSrc);
-    if (v.currentSrc) candidates.push(v.currentSrc);
-    if (v.src) candidates.push(v.src);
-
-    const source = v.querySelector("source");
-    const sSrc = source?.getAttribute("src");
-    if (sSrc) candidates.push(sSrc);
+  // 1) datasets (si tu render guarda algo ahí)
+  if (card?.dataset) {
+    for (const k in card.dataset) candidates.push(card.dataset[k]);
   }
 
-  // 3) links
-  const a = card.querySelector("a[href]");
-  if (a?.getAttribute("href")) candidates.push(a.getAttribute("href"));
-  if (a?.href) candidates.push(a.href);
+  // 2) atributos típicos
+  candidates.push(
+    card.getAttribute("data-url"),
+    card.getAttribute("data-src"),
+    card.getAttribute("data-video"),
+    card.getAttribute("data-video-url")
+  );
 
-  // 4) texto (por si renderizas el nombre/hora)
-  const txt = (card.textContent || "").trim();
+  // 3) video src/currentSrc
+  const v = card.querySelector("video");
+  if (v) candidates.push(v.currentSrc, v.src);
+
+  // 4) links dentro del card
+  const links = Array.from(card.querySelectorAll("a[href]"));
+  for (const a of links) candidates.push(a.href);
+
+  // 5) por si tu script pone el filename como texto
+  const txt = card.textContent;
   if (txt) candidates.push(txt);
 
-  // 5) 🔥 hack efectivo: escanear HTML interno y extraer un token de fecha
-  const html = card.innerHTML || "";
+  // 6) 🔥 último recurso: el HTML completo del card (aquí casi siempre vive el src/href real)
+  candidates.push(card.outerHTML);
 
-  // Busca algo tipo 20260209_113000 o 2026-02-09 11:30:00 o al menos 20260209
-  const token =
-    html.match(/20\d{2}\d{2}\d{2}[^\d]?\d{2}\d{2}\d{2}/) ||              // YYYYMMDD_HHMMSS
-    html.match(/20\d{2}-\d{2}-\d{2}[T _-]?\d{2}[:\-]\d{2}[:\-]\d{2}/) || // YYYY-MM-DD HH:MM:SS
-    html.match(/20\d{2}\d{2}\d{2}/) ||                                   // YYYYMMDD
-    html.match(/20\d{2}-\d{2}-\d{2}/);                                   // YYYY-MM-DD
-
-  if (token) return token[0];
-
-  // 6) fallback: lo primero que tengamos
-  return candidates.find(Boolean) || "";
+  // devuelve el primer candidato que tenga pinta de mp4 o que contenga la fecha
+  return candidates.find(x => typeof x === "string" && (x.includes(".mp4") || x.includes("_20"))) || "";
 }
+
+
 
 
   function setDot(btn, shouldShow, pulse=false) {
