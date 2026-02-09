@@ -2016,21 +2016,22 @@ function parseFromString(str) {
   if (!str) return null;
   const s = String(str);
 
-  // ✅ TU FORMATO EXACTO: ..._YYYYMMDD_HHMMSS.mp4
-  // (lo buscamos en cualquier parte del string)
-  let m = s.match(/_(20\d{2})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})\.mp4/i);
-  if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
+  // ✅ TU FORMATO REAL: ..._DDMMYYYY_HHMMSS.mp4
+  // Ej: BreakPoint_Cancha4_LadoA_08022026_124730.mp4
+  let m = s.match(/_(\d{2})(\d{2})(20\d{2})_(\d{2})(\d{2})(\d{2})\.mp4/i);
+  if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
 
-  // fallback 1: YYYYMMDD_HHMMSS (sin .mp4)
-  m = s.match(/(20\d{2})(\d{2})(\d{2})[ _-](\d{2})(\d{2})(\d{2})/);
-  if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
+  // Fallback: DDMMYYYY_HHMMSS (sin .mp4)
+  m = s.match(/(\d{2})(\d{2})(20\d{2})[ _-](\d{2})(\d{2})(\d{2})/);
+  if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
 
-  // fallback 2: YYYY-MM-DD_HH:MM:SS (o variaciones)
-  m = s.match(/(20\d{2})-(\d{2})-(\d{2})[T _-]?(\d{2})[:\-](\d{2})[:\-](\d{2})/);
-  if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
+  // Fallback ISO
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d;
 
   return null;
 }
+
 
 function extractBestNameFromCard(card) {
   // Objetivo: encontrar la URL/filename donde venga ..._YYYYMMDD_HHMMSS.mp4
