@@ -12,6 +12,7 @@ function getQueryParams() {
     });
   return params;
 }
+card.dataset.filename = video.nombre;
 
 function setQueryParams(updates = {}, replace = false) {
   const p = getQueryParams();
