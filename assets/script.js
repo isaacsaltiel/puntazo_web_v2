@@ -492,7 +492,7 @@ async function populateLocaciones() {
     config.locaciones.forEach(loc => {
       const li = document.createElement("li");
       li.classList.add("fade-in");
-      li.style.marginBottom = "0px";
+      li.style.marginBottom = "5px";
       const a = document.createElement("a");
       a.href = `locacion.html?loc=${loc.id}`;
       a.textContent = loc.nombre;
@@ -528,7 +528,7 @@ async function populateCanchas() {
     loc.cancha.forEach(can => {
       const li = document.createElement("li");
       li.classList.add("fade-in");
-      li.style.marginBottom = "0px";
+      li.style.marginBottom = "5px";
       const a = document.createElement("a");
 
       // SALTO DE “LADOS” SI SOLO HAY UNO
@@ -607,7 +607,7 @@ async function populateLados() {
     cancha.lados.forEach(lado => {
       const li = document.createElement("li");
       li.classList.add("fade-in");
-      li.style.marginBottom = "0px";
+      li.style.marginBottom = "5px";
       const a = document.createElement("a");
       a.href = `lado.html?loc=${locId}&can=${canId}&lado=${lado.id}`;
       a.textContent = lado.nombre || lado.id;
@@ -2073,12 +2073,33 @@ async function populateVideos() {
     
     // Render tabs por día (Hoy/Ayer/2d/3d) + pill Recuperados
     const model = renderDayFilterBar(raw, selectedKey);
+
+// ✅ AUTO: si NO eligieron día (no hay ?dia=) y hoy no tiene videos, pero ayer sí,
+// entra directo a ayer para que no se vea vacío.
+    const hasExplicitDay = ("dia" in params) && !!params.dia;
+    if (!hasExplicitDay && !targetId) {
+      const todayKey = model.dayKeys?.[0];
+      const yKey = model.dayKeys?.[1];
+      const nToday = (todayKey ? (model.byKey.get(todayKey) || []).length : 0);
+      const nY = (yKey ? (model.byKey.get(yKey) || []).length : 0);
+    
+      if (nToday === 0 && nY > 0) {
+        selectedKey = yKey;
+    
+        // opcional pero recomendado: reflejar selección en URL sin crear historial
+        setQueryParams({ dia: selectedKey, pg: 0, video: "" }, true);
+    
+        // re-render para que se marque el tab correcto
+        renderDayFilterBar(raw, selectedKey);
+      }
+    }
     
     // si te pasaron un día raro, cae a "Hoy"
     if (!model.dayKeys.includes(selectedKey)) {
       selectedKey = model.dayKeys[0] || ymdFromDate(new Date());
       renderDayFilterBar(raw, selectedKey);
     }
+
     
     // 4) filtra por día
     let list = raw.filter(v => v._meta?.ymd === selectedKey);
