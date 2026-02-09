@@ -869,6 +869,148 @@ html,body{ overflow-x:hidden; }
   line-height: 1.35;
   opacity: 0.95;
 }
+/* =========================
+   PUNTAZO · Filtro por días
+   ========================= */
+.pz-day-wrap{
+  max-width: 1100px;
+  margin: 10px auto 0;
+  padding: 0 16px;
+}
+
+.pz-daybar{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 10px 0 6px;
+}
+
+.pz-daybtn{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.92);
+  font-weight: 900;
+  cursor: pointer;
+  user-select: none;
+  backdrop-filter: blur(6px);
+  transition: transform .12s ease, opacity .12s ease, background .12s ease;
+}
+
+.pz-daybtn:hover{ transform: translateY(-1px); opacity: 0.97; }
+.pz-daybtn.is-active{
+  background: rgba(255,255,255,0.16);
+  border-color: rgba(255,255,255,0.22);
+  color: #fff;
+}
+
+.pz-daybtn.is-disabled{
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+
+.pz-count{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.14);
+  font-weight: 900;
+  font-size: 0.85rem;
+}
+
+.pz-dot{
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #ff2d2d;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.35);
+}
+
+.pz-dot.pulse{
+  animation: pzPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pzPulse{
+  0%{ transform: scale(1); opacity: .85; }
+  50%{ transform: scale(1.25); opacity: 1; }
+  100%{ transform: scale(1); opacity: .85; }
+}
+
+.pz-recoverbar{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 6px 0 4px;
+  opacity: 0.92;
+}
+
+.pz-mini{
+  font-size: 0.92rem;
+  color: rgba(255,255,255,0.88);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pz-toggle{
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.92);
+  font-weight: 900;
+  padding: 8px 10px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+.pz-toggle.is-on{
+  background: rgba(255,255,255,0.16);
+  color: #fff;
+}
+
+.pz-empty{
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px dashed rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.86);
+  opacity: 0.95;
+}
+
+/* Badge de recuperado sobre cada card */
+.pz-card{ position: relative; }
+.pz-badge{
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 950;
+  font-size: 0.78rem;
+  letter-spacing: 0.3px;
+  color: #111;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(0,0,0,0.12);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.30);
+}
+
+.pz-hide-by-day{ display: none !important; }
+
 
 
 
