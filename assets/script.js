@@ -2016,21 +2016,13 @@ function parseFromString(str) {
   if (!str) return null;
   const s = String(str);
 
-  // ✅ TU FORMATO REAL: ..._DDMMYYYY_HHMMSS.mp4
-  // Ej: BreakPoint_Cancha4_LadoA_08022026_124730.mp4
+  // ..._DDMMYYYY_HHMMSS.mp4
   let m = s.match(/_(\d{2})(\d{2})(20\d{2})_(\d{2})(\d{2})(\d{2})\.mp4/i);
   if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
 
-  // Fallback: DDMMYYYY_HHMMSS (sin .mp4)
-  m = s.match(/(\d{2})(\d{2})(20\d{2})[ _-](\d{2})(\d{2})(\d{2})/);
-  if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
-
-  // Fallback ISO
-  const d = new Date(s);
-  if (!isNaN(d.getTime())) return d;
-
   return null;
 }
+
 
 
 function extractBestNameFromCard(card) {
@@ -2213,43 +2205,6 @@ function extractBestNameFromCard(card) {
   return { cards, changed };
 }
 
-
-      // Duración: la obtenemos del <video> cuando carga metadata
-      const vid = card.querySelector("video");
-      if (vid && !card.dataset.pzDurationSecBound) {
-        card.dataset.pzDurationSecBound = "1";
-        vid.addEventListener("loadedmetadata", () => {
-          const dur = Number(vid.duration);
-          if (Number.isFinite(dur) && dur > 0) {
-            card.dataset.pzDurationSec = String(dur);
-
-            const eventTs = Number(card.dataset.pzEventTs || 0);
-            const uploadTs = Number(card.dataset.pzUploadTs || 0);
-            const isRec = computeRecovered(card, eventTs, uploadTs, dur);
-
-            card.dataset.pzRecovered = isRec ? "1" : "0";
-            upsertRecoveredBadge(card, isRec);
-
-            // Rebuild UI porque cambió conteo de recuperados
-            scheduleRebuild();
-          }
-        });
-      }
-
-      // Si ya tenemos duración guardada (por alguna razón), calcula recuperado
-      if (card.dataset.pzRecovered == null) {
-        const eventTs = Number(card.dataset.pzEventTs || 0);
-        const uploadTs = Number(card.dataset.pzUploadTs || 0);
-        const dur = Number(card.dataset.pzDurationSec || NaN);
-        const isRec = computeRecovered(card, eventTs, uploadTs, dur);
-
-        card.dataset.pzRecovered = isRec ? "1" : "0";
-        upsertRecoveredBadge(card, isRec);
-      }
-    }
-
-    return { cards, changed };
-  }
 
   // Estado UI
   const state = {
