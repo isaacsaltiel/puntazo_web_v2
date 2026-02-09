@@ -1991,3 +1991,385 @@ function initNavbar(){
 document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
 });
+/* ============================================================
+   PUNTAZO · Tabs por día + bolita roja + detección recuperados
+   Pegar al FINAL de assets/script.js
+   ============================================================ */
+(() => {
+  const CFG = {
+    MAX_RECOVER_DAYS: 3,                 // hoy + 3 días atrás
+    NEW_WINDOW_MS: 2 * 60 * 60 * 1000,   // 2 horas
+    RECOVERED_DURATION_SEC: 140,         // >= 2:20 aprox => recuperado (ajustable)
+    RECOVERED_UPLOAD_DELAY_MS: 2 * 60 * 60 * 1000 // 2 horas de diferencia => recuperado
+  };
+
+  const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const addDays = (d, delta) => { const x = new Date(d); x.setDate(x.getDate() + delta); return x; };
+  const dayKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+
+  // --- 1) Parseo robusto de fecha desde strings (nombre/URL)
+  function parseFromString(str) {
+    if (!str) return null;
+    const s = String(str);
+
+    // YYYYMMDD_HHMMSS o YYYYMMDD-HHMMSS
+    let m = s.match(/(20\d{2})(\d{2})(\d{2})[^\d]?(\d{2})(\d{2})(\d{2})/);
+    if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
+
+    // YYYY-MM-DD_HH:MM:SS o YYYY-MM-DD HH-MM-SS o con T
+    m = s.match(/(20\d{2})-(\d{2})-(\d{2})[T _-]?(\d{2})[:\-](\d{2})[:\-](\d{2})/);
+    if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
+
+    // Solo fecha YYYYMMDD
+    m = s.match(/(20\d{2})(\d{2})(\d{2})/);
+    if (m) return new Date(+m[1], +m[2]-1, +m[3], 0, 0, 0);
+
+    // ISO parseable
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) return d;
+
+    return null;
+  }
+
+  function extractBestNameFromCard(card) {
+    // intenta: data-filename, texto, src del video, href de links, etc.
+    const ds = card?.dataset || {};
+    if (ds.filename) return ds.filename;
+
+    const v = card.querySelector("video");
+    if (v && (v.currentSrc || v.src)) return (v.currentSrc || v.src);
+
+    const a = card.querySelector('a[href*=".mp4"], a[href*="cloudinary"], a[href*="dropbox"]');
+    if (a && a.href) return a.href;
+
+    const txt = card.textContent;
+    if (txt && txt.length < 500) return txt;
+
+    return "";
+  }
+
+  function getUploadTsFromCard(card) {
+    // Si tu render ya pone data-pz-upload-ts, se usa y queda perfecto.
+    // Si no existe, usamos el eventTs como fallback (menos preciso para recuperados).
+    const v = Number(card.dataset.pzUploadTs || card.dataset.uploadTs || 0);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  }
+
+  function setDot(btn, shouldShow, pulse=false) {
+    const prev = btn.querySelector(".pz-dot");
+    if (prev) prev.remove();
+    if (!shouldShow) return;
+    const dot = document.createElement("span");
+    dot.className = "pz-dot" + (pulse ? " pulse" : "");
+    btn.appendChild(dot);
+  }
+
+  function ensureUIContainers() {
+    const horario = $("#filtro-horario");
+    if (!horario) return null;
+
+    let wrap = $("#pz-day-wrap");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.id = "pz-day-wrap";
+      wrap.className = "pz-day-wrap";
+      horario.parentNode.insertBefore(wrap, horario);
+    }
+
+    let bar = $("#pz-daybar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "pz-daybar";
+      bar.className = "pz-daybar";
+      wrap.appendChild(bar);
+    }
+
+    let rbar = $("#pz-recoverbar");
+    if (!rbar) {
+      rbar = document.createElement("div");
+      rbar.id = "pz-recoverbar";
+      rbar.className = "pz-recoverbar";
+      wrap.appendChild(rbar);
+    }
+
+    let empty = $("#pz-empty");
+    if (!empty) {
+      empty = document.createElement("div");
+      empty.id = "pz-empty";
+      empty.className = "pz-empty";
+      empty.style.display = "none";
+      empty.textContent = "Nada por aquí en este día. O sea sí, pero invisible. Cambia de día 👆";
+      wrap.appendChild(empty);
+    }
+
+    return { wrap, bar, rbar, empty };
+  }
+
+  function computeRecovered(card, eventTs, uploadTs, durationSec) {
+    const durRecovered = Number.isFinite(durationSec) && durationSec >= CFG.RECOVERED_DURATION_SEC;
+
+    let delayRecovered = false;
+    if (eventTs && uploadTs && uploadTs > 0) {
+      const diff = Math.abs(uploadTs - eventTs);
+      delayRecovered = diff >= CFG.RECOVERED_UPLOAD_DELAY_MS;
+    }
+
+    return durRecovered || delayRecovered;
+  }
+
+  function upsertRecoveredBadge(card, isRecovered) {
+    let badge = card.querySelector(".pz-badge");
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.className = "pz-badge";
+      badge.textContent = "RECUPERADO";
+      badge.style.display = "none";
+      card.appendChild(badge);
+    }
+    badge.style.display = isRecovered ? "inline-flex" : "none";
+  }
+
+  function indexCards() {
+    const container = $("#videos-container");
+    if (!container) return { cards: [], changed: false };
+
+    const cards = Array.from(container.children);
+    let changed = false;
+
+    for (const card of cards) {
+      if (!(card instanceof HTMLElement)) continue;
+
+      // Marca como "card" para poder poner badge arriba
+      if (!card.classList.contains("pz-card")) card.classList.add("pz-card");
+
+      if (!card.dataset.pzEventTs) {
+        const name = extractBestNameFromCard(card);
+        const d = parseFromString(name);
+        if (d) {
+          card.dataset.pzEventTs = String(d.getTime());
+          card.dataset.pzDayKey = dayKey(d);
+          changed = true;
+        }
+      }
+
+      // UploadTs: si no existe, fallback a eventTs
+      if (!card.dataset.pzUploadTs) {
+        const ev = Number(card.dataset.pzEventTs || 0);
+        const up = getUploadTsFromCard(card) || ev || 0;
+        if (up) {
+          card.dataset.pzUploadTs = String(up);
+          changed = true;
+        }
+      }
+
+      // Duración: la obtenemos del <video> cuando carga metadata
+      const vid = card.querySelector("video");
+      if (vid && !card.dataset.pzDurationSecBound) {
+        card.dataset.pzDurationSecBound = "1";
+        vid.addEventListener("loadedmetadata", () => {
+          const dur = Number(vid.duration);
+          if (Number.isFinite(dur) && dur > 0) {
+            card.dataset.pzDurationSec = String(dur);
+
+            const eventTs = Number(card.dataset.pzEventTs || 0);
+            const uploadTs = Number(card.dataset.pzUploadTs || 0);
+            const isRec = computeRecovered(card, eventTs, uploadTs, dur);
+
+            card.dataset.pzRecovered = isRec ? "1" : "0";
+            upsertRecoveredBadge(card, isRec);
+
+            // Rebuild UI porque cambió conteo de recuperados
+            scheduleRebuild();
+          }
+        });
+      }
+
+      // Si ya tenemos duración guardada (por alguna razón), calcula recuperado
+      if (card.dataset.pzRecovered == null) {
+        const eventTs = Number(card.dataset.pzEventTs || 0);
+        const uploadTs = Number(card.dataset.pzUploadTs || 0);
+        const dur = Number(card.dataset.pzDurationSec || NaN);
+        const isRec = computeRecovered(card, eventTs, uploadTs, dur);
+
+        card.dataset.pzRecovered = isRec ? "1" : "0";
+        upsertRecoveredBadge(card, isRec);
+      }
+    }
+
+    return { cards, changed };
+  }
+
+  // Estado UI
+  const state = {
+    activeDayKey: null,
+    onlyRecovered: false
+  };
+
+  function labelForKey(k) {
+    const now = new Date();
+    const tk = dayKey(now);
+    const yk = dayKey(addDays(now, -1));
+    if (k === tk) return "Hoy";
+    if (k === yk) return "Ayer";
+
+    // calcula diferencia
+    const kd = parseFromString(k + "T00:00:00") || new Date(k + "T00:00:00");
+    const diff = Math.round((startOfDay(now) - startOfDay(kd)) / 86400000);
+    if (diff >= 2) return `Hace ${diff} días`;
+    return k;
+  }
+
+  function buildDayButtons(cards) {
+    const ui = ensureUIContainers();
+    if (!ui) return;
+
+    const now = Date.now();
+    const todayKey = dayKey(new Date());
+    const yesterdayKey = dayKey(addDays(new Date(), -1));
+
+    // Agrupa por dayKey
+    const byDay = new Map();
+    for (const c of cards) {
+      const dk = c.dataset.pzDayKey;
+      if (!dk) continue;
+
+      const uploadTs = Number(c.dataset.pzUploadTs || 0);
+      const isNew = uploadTs > 0 && (now - uploadTs) <= CFG.NEW_WINDOW_MS;
+
+      const isRec = (c.dataset.pzRecovered === "1");
+      const isRecNew = isRec && isNew;
+
+      if (!byDay.has(dk)) byDay.set(dk, { total: 0, newCount: 0, rec: 0, recNew: 0 });
+      const agg = byDay.get(dk);
+      agg.total += 1;
+      if (isNew) agg.newCount += 1;
+      if (isRec) agg.rec += 1;
+      if (isRecNew) agg.recNew += 1;
+    }
+
+    // Keys a mostrar
+    const keys = [];
+    // siempre hoy y ayer (aunque estén en 0)
+    keys.push(todayKey, yesterdayKey);
+
+    // hace 2..3 días solo si existen
+    for (let i = 2; i <= CFG.MAX_RECOVER_DAYS; i++) {
+      const k = dayKey(addDays(new Date(), -i));
+      if (byDay.has(k) && byDay.get(k).total > 0) keys.push(k);
+    }
+
+    // default activo: hoy
+    if (!state.activeDayKey) state.activeDayKey = todayKey;
+
+    // limpia y pinta
+    ui.bar.innerHTML = "";
+    for (const k of keys) {
+      const agg = byDay.get(k) || { total: 0, newCount: 0, rec: 0, recNew: 0 };
+
+      const btn = document.createElement("button");
+      btn.className = "pz-daybtn";
+      btn.type = "button";
+      btn.dataset.dayKey = k;
+
+      const lbl = document.createElement("span");
+      lbl.textContent = labelForKey(k);
+
+      const cnt = document.createElement("span");
+      cnt.className = "pz-count";
+      cnt.textContent = String(agg.total);
+
+      btn.appendChild(lbl);
+      btn.appendChild(cnt);
+
+      const disabled = agg.total === 0;
+      if (disabled) btn.classList.add("is-disabled");
+
+      if (k === state.activeDayKey) btn.classList.add("is-active");
+
+      // bolita roja si hay nuevos en ese día (y un poquito de pulse si el nuevo es recuperado)
+      setDot(btn, agg.newCount > 0, agg.recNew > 0);
+
+      btn.addEventListener("click", () => {
+        if (disabled) return;
+        state.activeDayKey = k;
+        applyFilters(cards);
+        // actualiza activo
+        $$(".pz-daybtn", ui.bar).forEach(b => b.classList.toggle("is-active", b.dataset.dayKey === k));
+      });
+
+      ui.bar.appendChild(btn);
+    }
+
+    // recoverbar
+    ui.rbar.innerHTML = "";
+    const activeAgg = byDay.get(state.activeDayKey) || { total: 0, newCount: 0, rec: 0, recNew: 0 };
+
+    const info = document.createElement("div");
+    info.className = "pz-mini";
+    info.textContent = `Recuperados: ${activeAgg.rec}`;
+
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "pz-toggle" + (state.onlyRecovered ? " is-on" : "");
+    toggle.textContent = state.onlyRecovered ? "Mostrando: solo recuperados" : "Filtrar: solo recuperados";
+    toggle.addEventListener("click", () => {
+      state.onlyRecovered = !state.onlyRecovered;
+      applyFilters(cards);
+      buildDayButtons(cards); // re-render barra para actualizar textos/dots
+    });
+
+    ui.rbar.appendChild(info);
+    ui.rbar.appendChild(toggle);
+
+    applyFilters(cards);
+  }
+
+  function applyFilters(cards) {
+    const ui = ensureUIContainers();
+    if (!ui) return;
+
+    let shown = 0;
+    for (const c of cards) {
+      const dk = c.dataset.pzDayKey;
+      const isRec = (c.dataset.pzRecovered === "1");
+
+      const matchDay = (dk === state.activeDayKey);
+      const matchRec = !state.onlyRecovered || isRec;
+
+      const show = matchDay && matchRec;
+
+      c.classList.toggle("pz-hide-by-day", !show);
+      if (show) shown++;
+    }
+
+    ui.empty.style.display = shown === 0 ? "block" : "none";
+  }
+
+  // --- Rebuild con debounce (para MutationObserver + loadedmetadata)
+  let rebuildTimer = null;
+  function scheduleRebuild() {
+    if (rebuildTimer) clearTimeout(rebuildTimer);
+    rebuildTimer = setTimeout(() => {
+      const { cards } = indexCards();
+      buildDayButtons(cards);
+    }, 120);
+  }
+
+  function boot() {
+    const container = $("#videos-container");
+    if (!container) return;
+
+    // primer build
+    scheduleRebuild();
+
+    // cuando tu script agrega videos, reconstruimos
+    const obs = new MutationObserver(() => scheduleRebuild());
+    obs.observe(container, { childList: true, subtree: false });
+  }
+
+  document.addEventListener("DOMContentLoaded", boot);
+})();
