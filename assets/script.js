@@ -2149,37 +2149,70 @@ function extractBestNameFromCard(card) {
   }
 
   function indexCards() {
-    const container = $("#videos-container");
-    if (!container) return { cards: [], changed: false };
+  const container = document.querySelector("#videos-container");
+  if (!container) return { cards: [], changed: false };
 
-    const cards = Array.from(container.children);
-    let changed = false;
+  const cards = Array.from(container.children).filter(el => el instanceof HTMLElement);
+  let changed = false;
 
-    for (const card of cards) {
-      if (!(card instanceof HTMLElement)) continue;
+  for (const card of cards) {
+    if (!card.classList.contains("pz-card")) card.classList.add("pz-card");
 
-      // Marca como "card" para poder poner badge arriba
-      if (!card.classList.contains("pz-card")) card.classList.add("pz-card");
+    // 1) Siempre intenta sacar el "nombre" (URL/filename) del card
+    const best = extractBestNameFromCard(card);
+    const d = parseFromString(best);
 
-      if (!card.dataset.pzEventTs) {
-        const name = extractBestNameFromCard(card);
-        const d = parseFromString(name);
-        if (d) {
-          card.dataset.pzEventTs = String(d.getTime());
-          card.dataset.pzDayKey = dayKey(d);
-          changed = true;
+    // 2) Si sí pudo parsear, siempre escribe pzEventTs y pzDayKey (aunque ya existan)
+    if (d) {
+      const ts = String(d.getTime());
+      const dk = dayKey(d);
+
+      if (card.dataset.pzEventTs !== ts) { card.dataset.pzEventTs = ts; changed = true; }
+      if (card.dataset.pzDayKey !== dk)  { card.dataset.pzDayKey  = dk; changed = true; }
+    }
+
+    // 3) UploadTs: si no hay, usa eventTs (fallback)
+    const upExisting = Number(card.dataset.pzUploadTs || 0);
+    if (!upExisting || upExisting <= 0) {
+      const ev = Number(card.dataset.pzEventTs || 0);
+      const up = getUploadTsFromCard(card) || ev || 0;
+      if (up) { card.dataset.pzUploadTs = String(up); changed = true; }
+    }
+
+    // 4) Duración: escucha una sola vez
+    const vid = card.querySelector("video");
+    if (vid && !card.dataset.pzDurationSecBound) {
+      card.dataset.pzDurationSecBound = "1";
+      vid.addEventListener("loadedmetadata", () => {
+        const dur = Number(vid.duration);
+        if (Number.isFinite(dur) && dur > 0) {
+          card.dataset.pzDurationSec = String(dur);
+
+          const eventTs = Number(card.dataset.pzEventTs || 0);
+          const uploadTs = Number(card.dataset.pzUploadTs || 0);
+          const isRec = computeRecovered(card, eventTs, uploadTs, dur);
+
+          card.dataset.pzRecovered = isRec ? "1" : "0";
+          upsertRecoveredBadge(card, isRec);
+
+          scheduleRebuild(); // refresca conteos y dots
         }
-      }
+      });
+    }
 
-      // UploadTs: si no existe, fallback a eventTs
-      if (!card.dataset.pzUploadTs) {
-        const ev = Number(card.dataset.pzEventTs || 0);
-        const up = getUploadTsFromCard(card) || ev || 0;
-        if (up) {
-          card.dataset.pzUploadTs = String(up);
-          changed = true;
-        }
-      }
+    // 5) Marca recuperado con lo que haya disponible
+    const eventTs = Number(card.dataset.pzEventTs || 0);
+    const uploadTs = Number(card.dataset.pzUploadTs || 0);
+    const dur = Number(card.dataset.pzDurationSec || NaN);
+    const isRec = computeRecovered(card, eventTs, uploadTs, dur);
+
+    card.dataset.pzRecovered = isRec ? "1" : "0";
+    upsertRecoveredBadge(card, isRec);
+  }
+
+  return { cards, changed };
+}
+
 
       // Duración: la obtenemos del <video> cuando carga metadata
       const vid = card.querySelector("video");
