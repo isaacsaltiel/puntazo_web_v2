@@ -2035,29 +2035,53 @@ document.addEventListener('DOMContentLoaded', () => {
     return null;
   }
 
-  function extractBestNameFromCard(card) {
-    // intenta: data-filename, texto, src del video, href de links, etc.
-    const ds = card?.dataset || {};
-    if (ds.filename) return ds.filename;
+function extractBestNameFromCard(card) {
+  const ds = card?.dataset || {};
+  const candidates = [];
 
-    const v = card.querySelector("video");
-    if (v && (v.currentSrc || v.src)) return (v.currentSrc || v.src);
+  // 1) dataset típico (por si tu render ya lo trae)
+  ["filename","name","videoName","title","src","url","href","videoUrl"].forEach(k => {
+    if (ds[k]) candidates.push(ds[k]);
+  });
 
-    const a = card.querySelector('a[href*=".mp4"], a[href*="cloudinary"], a[href*="dropbox"]');
-    if (a && a.href) return a.href;
+  // 2) video src (muchas veces aquí sí viene el path con el nombre)
+  const v = card.querySelector("video");
+  if (v) {
+    const attrSrc = v.getAttribute("src");
+    if (attrSrc) candidates.push(attrSrc);
+    if (v.currentSrc) candidates.push(v.currentSrc);
+    if (v.src) candidates.push(v.src);
 
-    const txt = card.textContent;
-    if (txt && txt.length < 500) return txt;
-
-    return "";
+    const source = v.querySelector("source");
+    const sSrc = source?.getAttribute("src");
+    if (sSrc) candidates.push(sSrc);
   }
 
-  function getUploadTsFromCard(card) {
-    // Si tu render ya pone data-pz-upload-ts, se usa y queda perfecto.
-    // Si no existe, usamos el eventTs como fallback (menos preciso para recuperados).
-    const v = Number(card.dataset.pzUploadTs || card.dataset.uploadTs || 0);
-    return Number.isFinite(v) && v > 0 ? v : 0;
-  }
+  // 3) links
+  const a = card.querySelector("a[href]");
+  if (a?.getAttribute("href")) candidates.push(a.getAttribute("href"));
+  if (a?.href) candidates.push(a.href);
+
+  // 4) texto (por si renderizas el nombre/hora)
+  const txt = (card.textContent || "").trim();
+  if (txt) candidates.push(txt);
+
+  // 5) 🔥 hack efectivo: escanear HTML interno y extraer un token de fecha
+  const html = card.innerHTML || "";
+
+  // Busca algo tipo 20260209_113000 o 2026-02-09 11:30:00 o al menos 20260209
+  const token =
+    html.match(/20\d{2}\d{2}\d{2}[^\d]?\d{2}\d{2}\d{2}/) ||              // YYYYMMDD_HHMMSS
+    html.match(/20\d{2}-\d{2}-\d{2}[T _-]?\d{2}[:\-]\d{2}[:\-]\d{2}/) || // YYYY-MM-DD HH:MM:SS
+    html.match(/20\d{2}\d{2}\d{2}/) ||                                   // YYYYMMDD
+    html.match(/20\d{2}-\d{2}-\d{2}/);                                   // YYYY-MM-DD
+
+  if (token) return token[0];
+
+  // 6) fallback: lo primero que tengamos
+  return candidates.find(Boolean) || "";
+}
+
 
   function setDot(btn, shouldShow, pulse=false) {
     const prev = btn.querySelector(".pz-dot");
