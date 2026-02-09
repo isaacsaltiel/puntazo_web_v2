@@ -2269,6 +2269,49 @@ document.addEventListener('DOMContentLoaded', () => {
     dot.className = "pzdf-dot";
     btn.appendChild(dot);
   }
+  function rebuildIndexFromDOM() {
+    const container = document.querySelector("#videos-container");
+    if (!container) return false;
+  
+    const cards = Array.from(container.children).filter(el => el instanceof HTMLElement);
+    if (!cards.length) return false;
+  
+    index.items = [];
+    index.byUrlKey = new Map();
+  
+    const tNow = Date.now();
+  
+    // regex para encontrar filename: _DDMMYYYY_HHMMSS.mp4
+    const reName = /([A-Za-z0-9]+_[A-Za-z0-9]+_[A-Za-z0-9]+_\d{8}_\d{6}\.mp4)/i;
+    // regex para encontrar una URL mp4 en el HTML (dropbox/raw, cloudinary, etc.)
+    const reUrl = /(https?:\/\/[^"' <>\n]+\.mp4[^"' <>\n]*)/i;
+  
+    for (const card of cards) {
+      const html = card.outerHTML;
+  
+      const nm = html.match(reName);
+      const um = html.match(reUrl);
+  
+      const nombre = nm ? nm[1] : "";
+      const url = um ? um[1] : "";
+  
+      if (!nombre) continue;
+  
+      const dt = parseDDMMYYYY(nombre);
+      const dk = dt ? dayKey(dt) : null;
+  
+      // “nuevo” aproximado: por hora del nombre (si no tenemos upload real)
+      const isNew = dt ? ((tNow - dt.getTime()) <= CFG.NEW_WINDOW_MS) : false;
+  
+      const urlKey = normUrl(url || nombre); // si no hay URL, al menos llave por nombre
+      const item = { urlKey, url, nombre, dt, dk, isNew };
+  
+      index.items.push(item);
+      index.byUrlKey.set(urlKey, item);
+    }
+  
+    return index.items.length > 0;
+  }
 
   function renderBar() {
     const ui = ensureUI();
@@ -2390,9 +2433,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function scheduleRebuild() {
     if (t) clearTimeout(t);
     t = setTimeout(() => {
+      // 🔥 Si el índice está vacío pero ya hay videos pintados, cuenta desde el DOM
+      if ((!index.items || index.items.length === 0)) {
+        rebuildIndexFromDOM();
+      }
       renderBar();
     }, 120);
   }
+
 
   // --- Boot
   function boot() {
