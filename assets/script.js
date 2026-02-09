@@ -2328,26 +2328,43 @@ document.addEventListener('DOMContentLoaded', () => {
     applyFilters(cards);
   }
 
-  function applyFilters(cards) {
-    const ui = ensureUIContainers();
-    if (!ui) return;
+function applyFilters(cards) {
+  const ui = ensureUIContainers();
+  if (!ui) return;
 
-    let shown = 0;
-    for (const c of cards) {
-      const dk = c.dataset.pzDayKey;
-      const isRec = (c.dataset.pzRecovered === "1");
-
-      const matchDay = (dk === state.activeDayKey);
-      const matchRec = !state.onlyRecovered || isRec;
-
-      const show = matchDay && matchRec;
-
-      c.classList.toggle("pz-hide-by-day", !show);
-      if (show) shown++;
-    }
-
-    ui.empty.style.display = shown === 0 ? "block" : "none";
+  // Si no hay cards, sí mostramos vacío
+  if (!cards || cards.length === 0) {
+    ui.empty.style.display = "block";
+    return;
   }
+
+  let shown = 0;
+
+  for (const c of cards) {
+    const dk = c.dataset.pzDayKey;           // puede venir undefined
+    const isRec = (c.dataset.pzRecovered === "1");
+
+    // ✅ FAILSAFE #1: si NO sabemos el día, NO lo escondas
+    const matchDay = (!dk) || (dk === state.activeDayKey);
+
+    const matchRec = !state.onlyRecovered || isRec;
+
+    const show = matchDay && matchRec;
+
+    c.classList.toggle("pz-hide-by-day", !show);
+    if (show) shown++;
+  }
+
+  // ✅ FAILSAFE #2: si el filtro dejó 0 visibles, NO filtres (muestra todo)
+  if (shown === 0) {
+    for (const c of cards) c.classList.remove("pz-hide-by-day");
+    ui.empty.style.display = "none";
+    return;
+  }
+
+  ui.empty.style.display = "none";
+}
+
 
   // --- Rebuild con debounce (para MutationObserver + loadedmetadata)
   let rebuildTimer = null;
