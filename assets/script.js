@@ -492,7 +492,7 @@ async function populateLocaciones() {
     config.locaciones.forEach(loc => {
       const li = document.createElement("li");
       li.classList.add("fade-in");
-      li.style.marginBottom = "10px";
+      li.style.marginBottom = "0px";
       const a = document.createElement("a");
       a.href = `locacion.html?loc=${loc.id}`;
       a.textContent = loc.nombre;
@@ -528,7 +528,7 @@ async function populateCanchas() {
     loc.cancha.forEach(can => {
       const li = document.createElement("li");
       li.classList.add("fade-in");
-      li.style.marginBottom = "10px";
+      li.style.marginBottom = "0px";
       const a = document.createElement("a");
 
       // SALTO DE “LADOS” SI SOLO HAY UNO
@@ -607,7 +607,7 @@ async function populateLados() {
     cancha.lados.forEach(lado => {
       const li = document.createElement("li");
       li.classList.add("fade-in");
-      li.style.marginBottom = "10px";
+      li.style.marginBottom = "0px";
       const a = document.createElement("a");
       a.href = `lado.html?loc=${locId}&can=${canId}&lado=${lado.id}`;
       a.textContent = lado.nombre || lado.id;
