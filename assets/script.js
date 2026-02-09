@@ -143,14 +143,292 @@ async function requireCanchaPassword(locId, canId) {
 
 /* ===================== Helpers de asociación (opuesto automático) ===================== */
 function parseFromName(name) {
-  const re = /^(.+?)_(.+?)_(.+?)_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})\.mp4$/;
-  const m = name.match(re);
+  const re = /^(.+?)_(.+?)_(.+?)_(\d{8})_(\d{6})\.mp4$/i;
+  const m = String(name || "").match(re);
   if (!m) return null;
-  const [, loc, can, lado, Y, M, D, h, mi, s] = m;
-  const tsKey = Number(`${Y}${M}${D}${h}${mi}${s}`);
-  const date = new Date(Number(Y), Number(M) - 1, Number(D), Number(h), Number(mi), Number(s));
-  return { loc, can, lado, date, tsKey, ymd: `${Y}${M}${D}`, Y, M, D, h, mi, s };
+
+  const [, loc, can, lado, date8, time6] = m;
+
+  // date8 puede ser YYYYMMDD o DDMMYYYY
+  const tryYYYYMMDD = () => {
+    const Y = Number(date8.slice(0, 4));
+    const Mo = Number(date8.slice(4, 6));
+    const D = Number(date8.slice(6, 8));
+    if (Y >= 1900 && Y <= 2100 && Mo >= 1 && Mo <= 12 && D >= 1 && D <= 31) {
+      return { Y: String(Y), M: date8.slice(4, 6), D: date8.slice(6, 8) };
+    }
+    return null;
+  };
+
+  const tryDDMMYYYY = () => {
+    const D = Number(date8.slice(0, 2));
+    const Mo = Number(date8.slice(2, 4));
+    const Y = Number(date8.slice(4, 8));
+    if (Y >= 1900 && Y <= 2100 && Mo >= 1 && Mo <= 12 && D >= 1 && D <= 31) {
+      return { Y: String(Y), M: date8.slice(2, 4), D: date8.slice(0, 2) };
+    }
+    return null;
+  };
+
+  const d = tryYYYYMMDD() || tryDDMMYYYY();
+  if (!d) return null;
+
+  const h = time6.slice(0, 2);
+  const mi = time6.slice(2, 4);
+  const s = time6.slice(4, 6);
+
+  const tsKey = Number(`${d.Y}${d.M}${d.D}${h}${mi}${s}`);
+  const date = new Date(Number(d.Y), Number(d.M) - 1, Number(d.D), Number(h), Number(mi), Number(s));
+
+  return {
+    loc,
+    can,
+    lado,
+    date,
+    tsKey,
+    ymd: `${d.Y}${d.M}${d.D}`,
+    Y: d.Y,
+    M: d.M,
+    D: d.D,
+    h,
+    mi,
+    s
+  };
 }
+/* ===================== FILTRO POR DÍA + NUEVO + RECUPERADOS ===================== */
+const DAY_OFFSETS = [0, 1, 2, 3];
+const NEW_WINDOW_MS = 2 * 60 * 60 * 1000;        // 2 horas
+const RECOVER_DELTA_MS = 2 * 60 * 60 * 1000;     // diferencia nombre vs subida >= 2h => recuperado
+const RECOVER_DURATION_S = 130;                  // >130s suele ser recuperado (ajústalo si quieres)
+
+const uploadTimeCache = new Map(); // url -> epoch ms
+
+function ymdFromDate(d) {
+  const Y = d.getFullYear();
+  const M = String(d.getMonth() + 1).padStart(2, "0");
+  const D = String(d.getDate()).padStart(2, "0");
+  return `${Y}${M}${D}`;
+}
+
+function addDays(d, delta) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + delta);
+  return x;
+}
+
+function labelForOffset(off) {
+  if (off === 0) return "Hoy";
+  if (off === 1) return "Ayer";
+  return `Hace ${off} días`;
+}
+
+// Si tu JSON algún día trae "subido_ts", lo usamos directo sin HEAD.
+function parseUploadTimeFromEntry(entry) {
+  const cand =
+    entry?.subido_ts ?? entry?.ts_subida ??
+    entry?.upload_ts ?? entry?.uploaded_ts ??
+    entry?.uploaded_at ?? entry?.upload_time ??
+    entry?.mtime ?? entry?.last_modified;
+
+  if (cand == null) return null;
+
+  // número (segundos o ms)
+  if (typeof cand === "number") {
+    if (cand > 1e12) return cand;          // ms
+    if (cand > 1e9) return cand * 1000;    // s
+    return null;
+  }
+
+  // string ISO o fecha
+  if (typeof cand === "string") {
+    const t = Date.parse(cand);
+    return Number.isFinite(t) ? t : null;
+  }
+
+  return null;
+}
+
+async function tryHeadLastModified(url) {
+  try {
+    const direct = toDropboxDirectFetchUrl(url);
+    const res = await fetch(direct, { method: "HEAD", cache: "no-store" });
+    if (!res.ok) return null;
+
+    const lm = res.headers.get("Last-Modified") || res.headers.get("last-modified");
+    if (!lm) return null;
+
+    const t = Date.parse(lm);
+    return Number.isFinite(t) ? t : null;
+  } catch {
+    return null;
+  }
+}
+
+async function prefetchUploadTimes(entries, limit = 12) {
+  // Solo a los más recientes (para no spamear HEAD a Dropbox)
+  const candidates = [...entries]
+    .map(e => ({ e, m: parseFromName(e.nombre) }))
+    .filter(x => x.m)
+    .sort((a, b) => b.m.tsKey - a.m.tsKey)
+    .slice(0, limit)
+    .map(x => x.e);
+
+  const CONC = 4;
+  for (let i = 0; i < candidates.length; i += CONC) {
+    const batch = candidates.slice(i, i + CONC);
+    await Promise.all(batch.map(async (entry) => {
+      const url = entry?.url;
+      if (!url || uploadTimeCache.has(url)) return;
+
+      const direct = parseUploadTimeFromEntry(entry);
+      if (direct) { uploadTimeCache.set(url, direct); return; }
+
+      const head = await tryHeadLastModified(url);
+      if (head) uploadTimeCache.set(url, head);
+    }));
+  }
+}
+
+function getKnownUploadDate(entry) {
+  const direct = parseUploadTimeFromEntry(entry);
+  if (direct) return new Date(direct);
+  const t = uploadTimeCache.get(entry?.url);
+  return t ? new Date(t) : null;
+}
+
+function isNewVideo(entry) {
+  const up = getKnownUploadDate(entry);
+  const base = up || entry?._meta?.date || null; // fallback: fecha del nombre
+  if (!base) return false;
+  return (Date.now() - base.getTime()) <= NEW_WINDOW_MS;
+}
+
+function isRecovered(entry) {
+  const dur = Number(entry?.duracion ?? entry?.duration ?? entry?.dur ?? entry?.seconds ?? NaN);
+  if (Number.isFinite(dur) && dur >= RECOVER_DURATION_S) return true;
+
+  const up = getKnownUploadDate(entry);
+  const nameDate = entry?._meta?.date || null;
+  if (up && nameDate) {
+    return Math.abs(up.getTime() - nameDate.getTime()) >= RECOVER_DELTA_MS;
+  }
+  return false;
+}
+
+function ensureDayFilterContainer() {
+  const hour = document.getElementById("filtro-horario");
+  if (!hour) return null;
+
+  let el = document.getElementById("filtro-dia");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "filtro-dia";
+    el.style.display = "flex";
+    el.style.flexWrap = "wrap";
+    el.style.gap = "8px";
+    el.style.margin = "12px 0 8px";
+    hour.parentElement.insertBefore(el, hour);
+  }
+  return el;
+}
+
+function dayBtnStyles(btn, { active = false, disabled = false } = {}) {
+  btn.style.padding = "8px 10px";
+  btn.style.borderRadius = "999px";
+  btn.style.border = "1px solid rgba(255,255,255,0.20)";
+  btn.style.background = active ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.08)";
+  btn.style.color = "rgba(255,255,255,0.95)";
+  btn.style.fontWeight = "800";
+  btn.style.cursor = disabled ? "not-allowed" : "pointer";
+  btn.style.opacity = disabled ? "0.45" : "1";
+  btn.style.position = "relative";
+  btn.style.whiteSpace = "nowrap";
+}
+
+function addRedDot(btn) {
+  const dot = document.createElement("span");
+  dot.style.position = "absolute";
+  dot.style.top = "2px";
+  dot.style.right = "2px";
+  dot.style.width = "10px";
+  dot.style.height = "10px";
+  dot.style.borderRadius = "999px";
+  dot.style.background = "#ff2d2d";
+  dot.style.boxShadow = "0 0 0 2px rgba(0,0,0,0.35)";
+  btn.appendChild(dot);
+}
+
+function renderDayFilterBar(allEntries, selectedKey) {
+  const container = ensureDayFilterContainer();
+  if (!container) return { selectedKey, dayKeys: [], byKey: new Map() };
+
+  container.innerHTML = "";
+
+  const now = new Date();
+  const dayKeys = DAY_OFFSETS.map(off => ymdFromDate(addDays(now, -off)));
+
+  const byKey = new Map(dayKeys.map(k => [k, []]));
+  allEntries.forEach(e => {
+    const k = e._meta?.ymd;
+    if (byKey.has(k)) byKey.get(k).push(e);
+  });
+
+  // botones de días
+  dayKeys.forEach((k, off) => {
+    const vids = byKey.get(k) || [];
+    const count = vids.length;
+    const hasNew = vids.some(isNewVideo);
+    const hasRecovered = vids.some(isRecovered);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = `${labelForOffset(off)}${count ? ` (${count})` : ""}${hasRecovered ? " ↻" : ""}`;
+
+    // Hoy y Ayer siempre están. Hace 2/3 solo si hay videos.
+    const disabled = (count === 0) && (off !== 0 && off !== 1);
+    dayBtnStyles(btn, { active: k === selectedKey, disabled });
+
+    if (hasNew && count) addRedDot(btn);
+
+    btn.addEventListener("click", () => {
+      if (disabled) return;
+      // al cambiar día: resetea hora y pag (para que no te quede filtro fantasma)
+      setQueryParams({ dia: k, rec: "", filtro: "", pg: 0, video: "" });
+      populateVideos();
+      scrollToTop();
+    });
+
+    container.appendChild(btn);
+  });
+
+  // toggle Recuperados
+  const selList = byKey.get(selectedKey) || [];
+  const recList = selList.filter(isRecovered);
+  const recCount = recList.length;
+  const hasNewRec = recList.some(v => isNewVideo(v));
+
+  const recOn = getQueryParams().rec === "1";
+  const pill = document.createElement("button");
+  pill.type = "button";
+  pill.textContent = recCount ? `Recuperados (${recCount})` : "Recuperados";
+  dayBtnStyles(pill, { active: recOn, disabled: recCount === 0 });
+  pill.style.marginLeft = "auto";
+
+  if (hasNewRec && recCount) addRedDot(pill);
+
+  pill.addEventListener("click", () => {
+    if (recCount === 0) return;
+    setQueryParams({ rec: recOn ? "" : "1", pg: 0, video: "" });
+    populateVideos();
+    scrollToTop();
+  });
+
+  container.appendChild(pill);
+
+  return { selectedKey, dayKeys, byKey };
+}
+/* ===================== FIN FILTRO DÍA ===================== */
+
 function absSeconds(a, b) { return Math.abs((a - b) / 1000); }
 
 async function findOppositeConfig(cfg, locId, canId, ladoId) {
@@ -1573,6 +1851,32 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     title.className = "video-title";
     title.textContent = displayTime;
     card.appendChild(title);
+    // Tags: Recuperado / Nuevo
+    if (entry._isRecovered || entry._isNew) {
+      const tags = document.createElement("div");
+      tags.style.display = "flex";
+      tags.style.gap = "8px";
+      tags.style.alignItems = "center";
+      tags.style.margin = "6px 0 2px";
+    
+      const mkTag = (text) => {
+        const t = document.createElement("span");
+        t.textContent = text;
+        t.style.padding = "4px 8px";
+        t.style.borderRadius = "999px";
+        t.style.fontSize = "0.80rem";
+        t.style.fontWeight = "900";
+        t.style.border = "1px solid rgba(255,255,255,0.18)";
+        t.style.background = "rgba(255,255,255,0.08)";
+        t.style.color = "rgba(255,255,255,0.95)";
+        return t;
+      };
+    
+      if (entry._isRecovered) tags.appendChild(mkTag("↻ Recuperado"));
+      if (entry._isNew) tags.appendChild(mkTag("🔴 Nuevo"));
+    
+      card.appendChild(tags);
+    }
 
     const wrap = document.createElement("div");
     wrap.style.position = "relative";
@@ -1750,9 +2054,50 @@ async function populateVideos() {
       : null;
     ensureOppositeTopButton(oppTopHref, oppInfoCache?.oppName);
 
-    createHourFilterUI(data.videos);
-
-    let list = data.videos || [];
+    const raw = Array.isArray(data.videos) ? data.videos : [];
+    
+    // 1) agrega meta por nombre (ya soporta DDMMYYYY)
+    raw.forEach(v => { v._meta = parseFromName(v.nombre); });
+    
+    // 2) intenta sacar "fecha de subida" (para bolita roja real cuando se pueda)
+    await prefetchUploadTimes(raw, 12);
+    
+    // 3) decide día seleccionado
+    let selectedKey = params.dia || ymdFromDate(new Date());
+    
+    // Si vienes por link con ?video=..., fuerza el día de ese video para que sí aparezca
+    if (targetId) {
+      const tm = parseFromName(targetId);
+      if (tm?.ymd) selectedKey = tm.ymd;
+    }
+    
+    // Render tabs por día (Hoy/Ayer/2d/3d) + pill Recuperados
+    const model = renderDayFilterBar(raw, selectedKey);
+    
+    // si te pasaron un día raro, cae a "Hoy"
+    if (!model.dayKeys.includes(selectedKey)) {
+      selectedKey = model.dayKeys[0] || ymdFromDate(new Date());
+      renderDayFilterBar(raw, selectedKey);
+    }
+    
+    // 4) filtra por día
+    let list = raw.filter(v => v._meta?.ymd === selectedKey);
+    
+    // 5) flag de recuperado/nuevo (para usar más abajo y para badges por card)
+    list.forEach(v => {
+      v._isRecovered = isRecovered(v);
+      v._isNew = isNewVideo(v);
+    });
+    
+    // 6) si el usuario activó "Recuperados", filtra
+    if (getQueryParams().rec === "1") {
+      list = list.filter(v => v._isRecovered);
+    }
+    
+    // 7) el filtro por hora ahora depende del día seleccionado (esto es lo que querías)
+    createHourFilterUI(list);
+    
+    // 8) sigue tu flow normal: filtro por hora (si hay)
     if (filtro) {
       list = list.filter(v => {
         const m = v.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
@@ -1991,476 +2336,3 @@ function initNavbar(){
 document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
 });
-/* ============================================================
-   PUNTAZO · FIX DEFINITIVO (usa JSON videos[nombre,url])
-   - Botones: Todos / Hoy / Ayer / Hace 2 / Hace 3 (si existen)
-   - Conteos correctos desde JSON
-   - Punto rojo: videos NUEVOS desde tu última visita (localStorage)
-   - Badge: RECUPERADO por duración (>= 2:20)
-   ============================================================ */
-(() => {
-  if (window.__PZ_DAYFIX_V2) return;
-  window.__PZ_DAYFIX_V2 = true;
-
-  const CFG = {
-    MAX_DAYS_BACK: 3,
-    NEW_WINDOW_MS: 2 * 60 * 60 * 1000,     // 2h
-    RECOVERED_DURATION_SEC: 140            // >= 2:20 => recuperado (ajustable)
-  };
-
-  const ID_WRAP = "pz-dayfix-wrap";
-  const ID_BAR  = "pz-dayfix-bar";
-  const ID_EMPTY = "pz-dayfix-empty";
-
-  const SEEN_KEY = "pz_seen_videos_v2"; // urlKey -> firstSeenMs
-
-  const $ = (s, r=document) => r.querySelector(s);
-  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-
-  const pad2 = (n) => String(n).padStart(2, "0");
-  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const addDays = (d, delta) => { const x = new Date(d); x.setDate(x.getDate() + delta); return x; };
-  const dayKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-  const nowMs = () => Date.now();
-
-  // --- CSS inline (para que NO tengas que tocar HTML/CSS)
-  function injectCSS() {
-    if ($("#pz-dayfix-style")) return;
-    const st = document.createElement("style");
-    st.id = "pz-dayfix-style";
-    st.textContent = `
-      #${ID_WRAP}{
-        max-width:1100px; margin:10px auto 0; padding:0 16px;
-      }
-      #${ID_BAR}{
-        display:flex; flex-wrap:wrap; gap:10px; align-items:center;
-        margin:10px 0 6px;
-      }
-      .pzdf-btn{
-        position:relative; display:inline-flex; align-items:center; gap:10px;
-        padding:10px 12px; border-radius:999px;
-        border:1px solid rgba(255,255,255,0.16);
-        background:rgba(255,255,255,0.08);
-        color:rgba(255,255,255,0.92);
-        font-weight:900; cursor:pointer; user-select:none;
-        backdrop-filter: blur(6px);
-        transition:transform .12s ease, opacity .12s ease, background .12s ease;
-      }
-      .pzdf-btn:hover{ transform:translateY(-1px); opacity:0.97; }
-      .pzdf-btn.is-active{
-        background:rgba(255,255,255,0.16);
-        border-color:rgba(255,255,255,0.22);
-        color:#fff;
-      }
-      .pzdf-btn.is-disabled{ opacity:0.45; cursor:default; transform:none; }
-      .pzdf-count{
-        display:inline-flex; align-items:center; justify-content:center;
-        min-width:26px; height:22px; padding:0 8px; border-radius:999px;
-        background:rgba(255,255,255,0.10);
-        border:1px solid rgba(255,255,255,0.14);
-        font-weight:900; font-size:0.85rem;
-      }
-      .pzdf-dot{
-        position:absolute; top:6px; right:7px; width:10px; height:10px;
-        border-radius:999px; background:#ff2d2d;
-        box-shadow:0 0 0 2px rgba(0,0,0,0.35);
-      }
-      .pzdf-empty{
-        display:none; margin:10px 0 0; padding:10px 12px;
-        border-radius:16px; border:1px dashed rgba(255,255,255,0.18);
-        color:rgba(255,255,255,0.86);
-      }
-      .pzdf-hide{ display:none !important; }
-
-      /* Badge recuperado */
-      .pzdf-card{ position:relative; }
-      .pzdf-badge{
-        position:absolute; top:10px; left:10px; z-index:3;
-        padding:6px 10px; border-radius:999px;
-        font-weight:950; font-size:0.78rem; letter-spacing:0.3px;
-        color:#111; background:rgba(255,255,255,0.92);
-        border:1px solid rgba(0,0,0,0.12);
-        box-shadow:0 10px 25px rgba(0,0,0,0.30);
-      }
-    `;
-    document.head.appendChild(st);
-  }
-
-  function ensureUI() {
-    injectCSS();
-    const anchor = $("#filtro-horario") || $("#videos-container") || document.body;
-
-    let wrap = $("#" + ID_WRAP);
-    if (!wrap) {
-      wrap = document.createElement("div");
-      wrap.id = ID_WRAP;
-      anchor.parentNode.insertBefore(wrap, anchor);
-    }
-
-    let bar = $("#" + ID_BAR);
-    if (!bar) {
-      bar = document.createElement("div");
-      bar.id = ID_BAR;
-      wrap.appendChild(bar);
-    }
-
-    let empty = $("#" + ID_EMPTY);
-    if (!empty) {
-      empty = document.createElement("div");
-      empty.id = ID_EMPTY;
-      empty.className = "pzdf-empty";
-      empty.textContent = "Aquí no hay videos en ese día. Cambia de pestaña 👆";
-      wrap.appendChild(empty);
-    }
-
-    return { wrap, bar, empty };
-  }
-
-  // Normaliza URL para poder matchear aunque tenga ?raw=1, rlkey, etc.
-  function normUrl(u) {
-    try {
-      const url = new URL(u, location.href);
-      url.hash = "";
-      url.search = "";
-      return url.toString();
-    } catch(e) {
-      return String(u || "").split("?")[0].split("#")[0];
-    }
-  }
-
-  // TU FORMATO REAL: ..._DDMMYYYY_HHMMSS.mp4
-  function parseDDMMYYYY(nombre) {
-    const s = String(nombre || "");
-    const m = s.match(/_(\d{2})(\d{2})(\d{4})_(\d{2})(\d{2})(\d{2})\.mp4/i);
-    if (!m) return null;
-    const dd = +m[1], mm = +m[2], yyyy = +m[3];
-    const HH = +m[4], MM = +m[5], SS = +m[6];
-    if (!yyyy || mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
-    return new Date(yyyy, mm - 1, dd, HH, MM, SS);
-  }
-
-  // --- Índice global desde JSON
-  const index = {
-    items: [],           // {urlKey, url, nombre, dt, dk, isNew}
-    byUrlKey: new Map()  // urlKey -> item
-  };
-
-  // localStorage: detectar “nuevos” desde última visita (no depende de Dropbox)
-  function loadSeen() {
-    try { return JSON.parse(localStorage.getItem(SEEN_KEY) || "{}"); }
-    catch(e){ return {}; }
-  }
-  function saveSeen(obj) {
-    try { localStorage.setItem(SEEN_KEY, JSON.stringify(obj)); } catch(e){}
-  }
-
-  function rebuildIndexFromJson(data) {
-    if (!data || !Array.isArray(data.videos)) return false;
-    const sample = data.videos[0];
-    if (!sample || !sample.nombre || !sample.url) return false;
-
-    const seen = loadSeen();
-    const firstRun = Object.keys(seen).length === 0;
-
-    index.items = [];
-    index.byUrlKey = new Map();
-
-    const tNow = nowMs();
-
-    for (const v of data.videos) {
-      const nombre = v.nombre;
-      const url = v.url;
-      const urlKey = normUrl(url);
-
-      const dt = parseDDMMYYYY(nombre);
-      const dk = dt ? dayKey(dt) : null;
-
-      const had = Object.prototype.hasOwnProperty.call(seen, urlKey);
-      if (!had) seen[urlKey] = tNow;
-
-      const isNew = (!firstRun) && (!had) && ((tNow - seen[urlKey]) <= CFG.NEW_WINDOW_MS);
-
-      const item = { urlKey, url, nombre, dt, dk, isNew };
-      index.items.push(item);
-      index.byUrlKey.set(urlKey, item);
-    }
-
-    saveSeen(seen);
-    return true;
-  }
-
-  // --- Intercepta fetch para capturar el JSON sin tocar tu render
-  const _fetch = window.fetch.bind(window);
-  window.fetch = async (...args) => {
-    const res = await _fetch(...args);
-
-    try {
-      const clone = res.clone();
-      const ct = (clone.headers.get("content-type") || "").toLowerCase();
-      if (ct.includes("application/json")) {
-        const data = await clone.json();
-        const ok = rebuildIndexFromJson(data);
-        if (ok) scheduleRebuild();
-      }
-    } catch(e) {
-      // silencioso
-    }
-
-    return res;
-  };
-
-  // --- UI state
-  const state = {
-    active: "__ALL__" // default: NO filtra (para que nunca vuelva el “no sale nada”)
-  };
-
-  function label(k) {
-    if (k === "__ALL__") return "Todos";
-    const today = dayKey(new Date());
-    const yest  = dayKey(addDays(new Date(), -1));
-    if (k === today) return "Hoy";
-    if (k === yest) return "Ayer";
-
-    const kd = new Date(k + "T00:00:00");
-    const diff = Math.round((startOfDay(new Date()) - startOfDay(kd)) / 86400000);
-    if (diff >= 2) return `Hace ${diff} días`;
-    return k;
-  }
-
-  function dayKeysToShow() {
-    const keys = ["__ALL__"];
-
-    const t = new Date();
-    const k0 = dayKey(t);
-    const k1 = dayKey(addDays(t, -1));
-
-    keys.push(k0, k1);
-
-    for (let i = 2; i <= CFG.MAX_DAYS_BACK; i++) {
-      const ki = dayKey(addDays(t, -i));
-      const hasAny = index.items.some(it => it.dk === ki);
-      if (hasAny) keys.push(ki);
-    }
-    return keys;
-  }
-
-  function aggregate() {
-    const agg = new Map(); // dk -> {total,newCount}
-    let all = { total: 0, newCount: 0 };
-
-    for (const it of index.items) {
-      all.total += 1;
-      if (it.isNew) all.newCount += 1;
-
-      if (!it.dk) continue;
-      if (!agg.has(it.dk)) agg.set(it.dk, { total: 0, newCount: 0 });
-      const a = agg.get(it.dk);
-      a.total += 1;
-      if (it.isNew) a.newCount += 1;
-    }
-    return { all, agg };
-  }
-
-  function setDot(btn, on) {
-    const prev = btn.querySelector(".pzdf-dot");
-    if (prev) prev.remove();
-    if (!on) return;
-    const dot = document.createElement("span");
-    dot.className = "pzdf-dot";
-    btn.appendChild(dot);
-  }
-  function rebuildIndexFromDOM() {
-    const container = document.querySelector("#videos-container");
-    if (!container) return false;
-  
-    const cards = Array.from(container.children).filter(el => el instanceof HTMLElement);
-    if (!cards.length) return false;
-  
-    index.items = [];
-    index.byUrlKey = new Map();
-  
-    const tNow = Date.now();
-  
-    // regex para encontrar filename: _DDMMYYYY_HHMMSS.mp4
-    const reName = /([A-Za-z0-9]+_[A-Za-z0-9]+_[A-Za-z0-9]+_\d{8}_\d{6}\.mp4)/i;
-    // regex para encontrar una URL mp4 en el HTML (dropbox/raw, cloudinary, etc.)
-    const reUrl = /(https?:\/\/[^"' <>\n]+\.mp4[^"' <>\n]*)/i;
-  
-    for (const card of cards) {
-      const html = card.outerHTML;
-  
-      const nm = html.match(reName);
-      const um = html.match(reUrl);
-  
-      const nombre = nm ? nm[1] : "";
-      const url = um ? um[1] : "";
-  
-      if (!nombre) continue;
-  
-      const dt = parseDDMMYYYY(nombre);
-      const dk = dt ? dayKey(dt) : null;
-  
-      // “nuevo” aproximado: por hora del nombre (si no tenemos upload real)
-      const isNew = dt ? ((tNow - dt.getTime()) <= CFG.NEW_WINDOW_MS) : false;
-  
-      const urlKey = normUrl(url || nombre); // si no hay URL, al menos llave por nombre
-      const item = { urlKey, url, nombre, dt, dk, isNew };
-  
-      index.items.push(item);
-      index.byUrlKey.set(urlKey, item);
-    }
-  
-    return index.items.length > 0;
-  }
-
-  function renderBar() {
-    const ui = ensureUI();
-    ui.bar.innerHTML = "";
-
-    const { all, agg } = aggregate();
-    const keys = dayKeysToShow();
-
-    for (const k of keys) {
-      const a = (k === "__ALL__") ? all : (agg.get(k) || { total: 0, newCount: 0 });
-
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "pzdf-btn";
-      btn.dataset.key = k;
-
-      const disabled = (k !== "__ALL__" && a.total === 0);
-      if (disabled) btn.classList.add("is-disabled");
-      if (k === state.active) btn.classList.add("is-active");
-
-      btn.innerHTML = `
-        <span>${label(k)}</span>
-        <span class="pzdf-count">${a.total}</span>
-      `;
-
-      setDot(btn, a.newCount > 0);
-
-      btn.addEventListener("click", () => {
-        if (disabled) return;
-        state.active = k;
-        $$(".pzdf-btn", ui.bar).forEach(b => b.classList.toggle("is-active", b.dataset.key === k));
-        applyFilter();
-      });
-
-      ui.bar.appendChild(btn);
-    }
-
-    applyFilter();
-  }
-
-  // --- Taggea cards con su dayKey usando URL (match contra el índice)
-  function srcFromCard(card) {
-    const v = card.querySelector("video");
-    if (v && (v.currentSrc || v.src)) return (v.currentSrc || v.src);
-
-    const s = card.querySelector("source");
-    if (s && (s.src || s.getAttribute("src"))) return (s.src || s.getAttribute("src"));
-
-    const a = card.querySelector('a[href*="dropbox"], a[href*=".mp4"]');
-    if (a && a.href) return a.href;
-
-    return "";
-  }
-
-  function tagCards() {
-    const container = $("#videos-container");
-    if (!container) return [];
-
-    const cards = Array.from(container.children).filter(el => el instanceof HTMLElement);
-
-    for (const card of cards) {
-      card.classList.add("pzdf-card");
-
-      const src = srcFromCard(card);
-      const key = normUrl(src);
-
-      const it = index.byUrlKey.get(key);
-      if (it && it.dk) card.dataset.pzdfDayKey = it.dk;
-      if (it) card.dataset.pzdfUrlKey = it.urlKey;
-
-      // Badge recuperado por duración
-      const vid = card.querySelector("video");
-      if (vid && !card.dataset.pzdfDurBound) {
-        card.dataset.pzdfDurBound = "1";
-        vid.addEventListener("loadedmetadata", () => {
-          const dur = Number(vid.duration);
-          const isRec = Number.isFinite(dur) && dur >= CFG.RECOVERED_DURATION_SEC;
-
-          let badge = card.querySelector(".pzdf-badge");
-          if (!badge) {
-            badge = document.createElement("div");
-            badge.className = "pzdf-badge";
-            badge.textContent = "RECUPERADO";
-            badge.style.display = "none";
-            card.appendChild(badge);
-          }
-          badge.style.display = isRec ? "inline-flex" : "none";
-        });
-      }
-    }
-
-    return cards;
-  }
-
-  function applyFilter() {
-    const ui = ensureUI();
-    const cards = tagCards();
-
-    // Si no hay cards todavía, no muestres vacío agresivo
-    if (!cards.length) {
-      ui.empty.style.display = "none";
-      return;
-    }
-
-    let shown = 0;
-
-    for (const card of cards) {
-      const dk = card.dataset.pzdfDayKey; // puede faltar si no matcheó
-      const show = (state.active === "__ALL__") || (!dk) || (dk === state.active);
-      card.classList.toggle("pzdf-hide", !show);
-      if (show) shown++;
-    }
-
-    ui.empty.style.display = (shown === 0) ? "block" : "none";
-  }
-
-  // --- Rebuild (debounce)
-  let t = null;
-  function scheduleRebuild() {
-    if (t) clearTimeout(t);
-    t = setTimeout(() => {
-      // 🔥 Si el índice está vacío pero ya hay videos pintados, cuenta desde el DOM
-      if ((!index.items || index.items.length === 0)) {
-        rebuildIndexFromDOM();
-      }
-      renderBar();
-    }, 120);
-  }
-
-
-  // --- Boot
-  function boot() {
-    ensureUI();
-    renderBar();
-
-    const container = $("#videos-container");
-    if (container) {
-      const obs = new MutationObserver(() => scheduleRebuild());
-      obs.observe(container, { childList: true, subtree: false });
-    }
-
-    // Reintentos cortos por si render tarda (sin infinito)
-    let tries = 0;
-    const iv = setInterval(() => {
-      scheduleRebuild();
-      tries++;
-      if (tries >= 12) clearInterval(iv); // ~3s
-    }, 250);
-  }
-
-  document.addEventListener("DOMContentLoaded", boot);
-})();
