@@ -1333,6 +1333,12 @@
       "count": 3
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "date": "2026-02-10",
+      "count": 3
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -2529,6 +2535,12 @@
       "count": 5
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "hour": "08",
+      "count": 5
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "18",
@@ -2691,15 +2703,15 @@
       "count": 3
     },
     {
-      "loc": "interpadel",
-      "can": "cancha4",
-      "hour": "01",
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "hour": "07",
       "count": 3
     },
     {
-      "loc": "breakpoint",
-      "can": "cancha5",
-      "hour": "08",
+      "loc": "interpadel",
+      "can": "cancha4",
+      "hour": "01",
       "count": 3
     },
     {
@@ -2820,12 +2832,6 @@
       "loc": "breakpoint",
       "can": "cancha4",
       "hour": "05",
-      "count": 2
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha5",
-      "hour": "07",
       "count": 2
     },
     {
@@ -5853,7 +5859,16 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "date": "2026-02-10",
+      "counts_por_lado": {
+        "ladoa": 3
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-02-10T08:36:56.428449+00:00"
+  "generated_at_utc": "2026-02-10T16:51:07.617056+00:00"
 }
