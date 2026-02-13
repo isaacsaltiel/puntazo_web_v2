@@ -997,6 +997,12 @@
       "count": 5
     },
     {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "date": "2026-02-12",
+      "count": 5
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-08-31",
@@ -1156,6 +1162,12 @@
       "loc": "interpadel",
       "can": "cancha3",
       "date": "2026-02-09",
+      "count": 4
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "date": "2026-02-12",
       "count": 4
     },
     {
@@ -1681,12 +1693,6 @@
       "count": 2
     },
     {
-      "loc": "interpadel",
-      "can": "cancha6",
-      "date": "2026-02-12",
-      "count": 2
-    },
-    {
       "loc": "breakpoint",
       "can": "cancha4",
       "date": "2026-02-12",
@@ -1966,6 +1972,12 @@
       "loc": "interpadel",
       "can": "cancha5",
       "date": "2026-02-12",
+      "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "date": "2026-02-13",
       "count": 1
     }
   ],
@@ -2523,6 +2535,12 @@
       "count": 8
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "hour": "22",
+      "count": 8
+    },
+    {
       "loc": "interpadel",
       "can": "cancha3",
       "hour": "12",
@@ -2625,12 +2643,6 @@
       "count": 6
     },
     {
-      "loc": "breakpoint",
-      "can": "cancha5",
-      "hour": "22",
-      "count": 6
-    },
-    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "19",
@@ -2688,6 +2700,12 @@
       "loc": "breakpoint",
       "can": "cancha5",
       "hour": "08",
+      "count": 5
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "hour": "22",
       "count": 5
     },
     {
@@ -2754,6 +2772,12 @@
       "loc": "breakpoint",
       "can": "cancha4",
       "hour": "16",
+      "count": 4
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "hour": "21",
       "count": 4
     },
     {
@@ -2830,12 +2854,6 @@
     },
     {
       "loc": "breakpoint",
-      "can": "cancha5",
-      "hour": "21",
-      "count": 3
-    },
-    {
-      "loc": "breakpoint",
       "can": "cancha1",
       "hour": "18",
       "count": 3
@@ -2856,6 +2874,12 @@
       "loc": "interpadel",
       "can": "cancha4",
       "hour": "01",
+      "count": 3
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "hour": "23",
       "count": 3
     },
     {
@@ -2979,12 +3003,6 @@
       "count": 2
     },
     {
-      "loc": "breakpoint",
-      "can": "cancha5",
-      "hour": "23",
-      "count": 2
-    },
-    {
       "loc": "interpadel",
       "can": "cancha5",
       "hour": "11",
@@ -3010,12 +3028,6 @@
     },
     {
       "loc": "interpadel",
-      "can": "cancha6",
-      "hour": "22",
-      "count": 2
-    },
-    {
-      "loc": "interpadel",
       "can": "cancha5",
       "hour": "18",
       "count": 2
@@ -3024,6 +3036,12 @@
       "loc": "interpadel",
       "can": "cancha6",
       "hour": "20",
+      "count": 2
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "hour": "00",
       "count": 2
     },
     {
@@ -3174,12 +3192,6 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "23",
-      "count": 1
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha5",
-      "hour": "00",
       "count": 1
     }
   ],
@@ -6213,7 +6225,7 @@
       "can": "cancha6",
       "date": "2026-02-12",
       "counts_por_lado": {
-        "ladoa": 2
+        "ladoa": 5
       },
       "diff": 0
     },
@@ -6234,7 +6246,25 @@
         "ladoa": 2
       },
       "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "date": "2026-02-12",
+      "counts_por_lado": {
+        "ladoa": 4
+      },
+      "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "date": "2026-02-13",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-02-13T01:07:58.415215+00:00"
+  "generated_at_utc": "2026-02-13T08:29:46.012407+00:00"
 }
