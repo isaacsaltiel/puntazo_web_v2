@@ -338,6 +338,12 @@
     },
     {
       "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2026-02-16",
+      "count": 16
+    },
+    {
+      "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-08-29",
       "count": 15
@@ -1417,6 +1423,12 @@
       "count": 3
     },
     {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "date": "2026-02-16",
+      "count": 3
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -2051,12 +2063,6 @@
       "can": "cancha5",
       "date": "2026-02-15",
       "count": 1
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha5",
-      "date": "2026-02-16",
-      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -2064,13 +2070,13 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "18",
-      "count": 142
+      "count": 144
     },
     {
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "17",
-      "count": 130
+      "count": 142
     },
     {
       "loc": "scorpion",
@@ -2116,15 +2122,15 @@
     },
     {
       "loc": "scorpion",
-      "can": "cancha1",
+      "can": "cancha2",
       "hour": "19",
-      "count": 68
+      "count": 69
     },
     {
       "loc": "scorpion",
-      "can": "cancha2",
+      "can": "cancha1",
       "hour": "19",
-      "count": 67
+      "count": 68
     },
     {
       "loc": "scorpion",
@@ -3276,6 +3282,18 @@
       "loc": "breakpoint",
       "can": "cancha4",
       "hour": "23",
+      "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "hour": "16",
+      "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "hour": "17",
       "count": 1
     }
   ],
@@ -6463,10 +6481,20 @@
       "can": "cancha5",
       "date": "2026-02-16",
       "counts_por_lado": {
-        "ladoa": 1
+        "ladoa": 3
+      },
+      "diff": 0
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2026-02-16",
+      "counts_por_lado": {
+        "ladoa": 8,
+        "ladob": 8
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-02-16T16:28:58.580121+00:00"
+  "generated_at_utc": "2026-02-17T01:03:06.996031+00:00"
 }
