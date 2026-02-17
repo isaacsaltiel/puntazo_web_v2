@@ -224,6 +224,12 @@
     },
     {
       "loc": "scorpion",
+      "can": "cancha2",
+      "date": "2026-02-16",
+      "count": 22
+    },
+    {
+      "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-09-27",
       "count": 21
@@ -334,12 +340,6 @@
       "loc": "breakpoint",
       "can": "cancha4",
       "date": "2026-02-08",
-      "count": 16
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha2",
-      "date": "2026-02-16",
       "count": 16
     },
     {
@@ -2063,6 +2063,12 @@
       "can": "cancha5",
       "date": "2026-02-15",
       "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "date": "2026-02-17",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -2089,6 +2095,12 @@
       "can": "cancha1",
       "hour": "20",
       "count": 79
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "hour": "19",
+      "count": 75
     },
     {
       "loc": "scorpion",
@@ -2119,12 +2131,6 @@
       "can": "cancha2",
       "hour": "10",
       "count": 70
-    },
-    {
-      "loc": "scorpion",
-      "can": "cancha2",
-      "hour": "19",
-      "count": 69
     },
     {
       "loc": "scorpion",
@@ -2727,6 +2733,12 @@
       "count": 6
     },
     {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "hour": "00",
+      "count": 6
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "19",
@@ -2796,12 +2808,6 @@
       "loc": "interpadel",
       "can": "cancha6",
       "hour": "22",
-      "count": 5
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha5",
-      "hour": "00",
       "count": 5
     },
     {
@@ -6490,11 +6496,20 @@
       "can": "cancha2",
       "date": "2026-02-16",
       "counts_por_lado": {
-        "ladoa": 8,
-        "ladob": 8
+        "ladoa": 11,
+        "ladob": 11
+      },
+      "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "date": "2026-02-17",
+      "counts_por_lado": {
+        "ladoa": 1
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-02-17T01:03:06.996031+00:00"
+  "generated_at_utc": "2026-02-17T08:31:26.504744+00:00"
 }
