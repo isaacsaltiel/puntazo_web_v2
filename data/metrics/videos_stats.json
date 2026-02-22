@@ -403,6 +403,12 @@
       "count": 14
     },
     {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "date": "2026-02-21",
+      "count": 14
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-09-22",
@@ -424,12 +430,6 @@
       "loc": "breakpoint",
       "can": "cancha4",
       "date": "2026-01-22",
-      "count": 13
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha6",
-      "date": "2026-02-21",
       "count": 13
     },
     {
@@ -2249,6 +2249,12 @@
       "can": "cancha1",
       "date": "2026-02-21",
       "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "date": "2026-02-22",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -2697,6 +2703,12 @@
       "count": 11
     },
     {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "hour": "00",
+      "count": 11
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "15",
@@ -2730,12 +2742,6 @@
       "loc": "breakpoint",
       "can": "cancha2",
       "hour": "18",
-      "count": 10
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha5",
-      "hour": "00",
       "count": 10
     },
     {
@@ -3201,6 +3207,12 @@
       "count": 3
     },
     {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "hour": "20",
+      "count": 3
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "09",
@@ -3342,12 +3354,6 @@
       "loc": "interpadel",
       "can": "cancha5",
       "hour": "18",
-      "count": 2
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha6",
-      "hour": "20",
       "count": 2
     },
     {
@@ -6986,10 +6992,19 @@
       "can": "cancha6",
       "date": "2026-02-21",
       "counts_por_lado": {
-        "ladoa": 13
+        "ladoa": 14
+      },
+      "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "date": "2026-02-22",
+      "counts_por_lado": {
+        "ladoa": 1
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-02-22T01:03:31.772929+00:00"
+  "generated_at_utc": "2026-02-22T08:17:47.671711+00:00"
 }
