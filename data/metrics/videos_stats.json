@@ -883,6 +883,12 @@
       "count": 7
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "date": "2026-02-26",
+      "count": 7
+    },
+    {
       "loc": "testclub",
       "can": "testcancha",
       "date": "2025-07-16",
@@ -988,6 +994,12 @@
       "loc": "interpadel",
       "can": "cancha3",
       "date": "2026-02-21",
+      "count": 6
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "date": "2026-02-26",
       "count": 6
     },
     {
@@ -1279,14 +1291,14 @@
       "count": 4
     },
     {
-      "loc": "breakpoint",
-      "can": "cancha2",
+      "loc": "interpadel",
+      "can": "cancha4",
       "date": "2026-02-26",
       "count": 4
     },
     {
       "loc": "breakpoint",
-      "can": "cancha4",
+      "can": "cancha3",
       "date": "2026-02-26",
       "count": 4
     },
@@ -1659,12 +1671,6 @@
     {
       "loc": "interpadel",
       "can": "cancha6",
-      "date": "2026-02-26",
-      "count": 3
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha4",
       "date": "2026-02-26",
       "count": 3
     },
@@ -2501,12 +2507,6 @@
       "can": "cancha1",
       "date": "2026-02-26",
       "count": 1
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha3",
-      "date": "2026-02-26",
-      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -2704,6 +2704,12 @@
     },
     {
       "loc": "breakpoint",
+      "can": "cancha4",
+      "hour": "11",
+      "count": 25
+    },
+    {
+      "loc": "breakpoint",
       "can": "cancha1",
       "hour": "09",
       "count": 25
@@ -2713,12 +2719,6 @@
       "can": "cancha4",
       "hour": "07",
       "count": 25
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha4",
-      "hour": "11",
-      "count": 24
     },
     {
       "loc": "breakpoint",
@@ -2860,6 +2860,12 @@
     },
     {
       "loc": "breakpoint",
+      "can": "cancha3",
+      "hour": "11",
+      "count": 14
+    },
+    {
+      "loc": "breakpoint",
       "can": "cancha4",
       "hour": "22",
       "count": 14
@@ -2898,12 +2904,6 @@
       "loc": "breakpoint",
       "can": "cancha3",
       "hour": "12",
-      "count": 12
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha3",
-      "hour": "11",
       "count": 12
     },
     {
@@ -3124,6 +3124,12 @@
     },
     {
       "loc": "breakpoint",
+      "can": "cancha3",
+      "hour": "10",
+      "count": 8
+    },
+    {
+      "loc": "breakpoint",
       "can": "cancha5",
       "hour": "10",
       "count": 8
@@ -3168,12 +3174,6 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "17",
-      "count": 7
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha3",
-      "hour": "10",
       "count": 7
     },
     {
@@ -3322,6 +3322,12 @@
     },
     {
       "loc": "breakpoint",
+      "can": "cancha4",
+      "hour": "16",
+      "count": 5
+    },
+    {
+      "loc": "breakpoint",
       "can": "cancha5",
       "hour": "21",
       "count": 5
@@ -3336,6 +3342,12 @@
       "loc": "breakpoint",
       "can": "cancha5",
       "hour": "12",
+      "count": 5
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "hour": "13",
       "count": 5
     },
     {
@@ -3400,12 +3412,6 @@
     },
     {
       "loc": "breakpoint",
-      "can": "cancha4",
-      "hour": "16",
-      "count": 4
-    },
-    {
-      "loc": "breakpoint",
       "can": "cancha3",
       "hour": "23",
       "count": 4
@@ -3433,6 +3439,12 @@
       "can": "cancha5",
       "hour": "19",
       "count": 4
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "hour": "17",
+      "count": 3
     },
     {
       "loc": "interpadel",
@@ -3539,12 +3551,6 @@
     {
       "loc": "interpadel",
       "can": "cancha4",
-      "hour": "17",
-      "count": 2
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha4",
       "hour": "13",
       "count": 2
     },
@@ -3581,12 +3587,6 @@
     {
       "loc": "breakpoint",
       "can": "cancha3",
-      "hour": "13",
-      "count": 2
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha2",
       "hour": "13",
       "count": 2
     },
@@ -7628,7 +7628,7 @@
       "can": "cancha4",
       "date": "2026-02-26",
       "counts_por_lado": {
-        "ladoa": 3
+        "ladoa": 4
       },
       "diff": 0
     },
@@ -7646,7 +7646,7 @@
       "can": "cancha2",
       "date": "2026-02-26",
       "counts_por_lado": {
-        "ladoa": 4
+        "ladoa": 7
       },
       "diff": 0
     },
@@ -7664,7 +7664,7 @@
       "can": "cancha4",
       "date": "2026-02-26",
       "counts_por_lado": {
-        "ladoa": 4
+        "ladoa": 6
       },
       "diff": 0
     },
@@ -7673,10 +7673,10 @@
       "can": "cancha3",
       "date": "2026-02-26",
       "counts_por_lado": {
-        "ladoa": 1
+        "ladoa": 4
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-02-26T16:43:05.119768+00:00"
+  "generated_at_utc": "2026-02-27T01:01:07.608166+00:00"
 }
