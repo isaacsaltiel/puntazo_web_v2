@@ -1711,6 +1711,18 @@
       "count": 3
     },
     {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "date": "2026-02-28",
+      "count": 3
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "date": "2026-02-28",
+      "count": 3
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -2092,6 +2104,12 @@
       "loc": "interpadel",
       "can": "cancha3",
       "date": "2026-02-27",
+      "count": 2
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2026-02-28",
       "count": 2
     },
     {
@@ -2555,6 +2573,12 @@
       "can": "cancha1",
       "date": "2026-02-27",
       "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "date": "2026-02-28",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -2866,6 +2890,12 @@
     },
     {
       "loc": "interpadel",
+      "can": "cancha5",
+      "hour": "00",
+      "count": 17
+    },
+    {
+      "loc": "interpadel",
       "can": "cancha4",
       "hour": "00",
       "count": 16
@@ -2874,12 +2904,6 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "13",
-      "count": 16
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha5",
-      "hour": "00",
       "count": 16
     },
     {
@@ -2943,6 +2967,12 @@
       "count": 13
     },
     {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "00",
+      "count": 13
+    },
+    {
       "loc": "breakpoint",
       "can": "cancha4",
       "hour": "20",
@@ -2970,6 +3000,12 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "06",
+      "count": 12
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "hour": "01",
       "count": 12
     },
     {
@@ -3030,12 +3066,6 @@
       "loc": "interpadel",
       "can": "cancha6",
       "hour": "10",
-      "count": 11
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha3",
-      "hour": "00",
       "count": 11
     },
     {
@@ -3138,12 +3168,6 @@
       "loc": "breakpoint",
       "can": "cancha3",
       "hour": "06",
-      "count": 9
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha4",
-      "hour": "01",
       "count": 9
     },
     {
@@ -3312,6 +3336,12 @@
       "loc": "interpadel",
       "can": "cancha6",
       "hour": "18",
+      "count": 6
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "hour": "00",
       "count": 6
     },
     {
@@ -3496,12 +3526,6 @@
     },
     {
       "loc": "interpadel",
-      "can": "cancha6",
-      "hour": "00",
-      "count": 4
-    },
-    {
-      "loc": "interpadel",
       "can": "cancha4",
       "hour": "17",
       "count": 3
@@ -3564,6 +3588,12 @@
       "loc": "interpadel",
       "can": "cancha6",
       "hour": "20",
+      "count": 3
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "hour": "01",
       "count": 3
     },
     {
@@ -3702,12 +3732,6 @@
       "loc": "interpadel",
       "can": "cancha3",
       "hour": "23",
-      "count": 2
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha6",
-      "hour": "01",
       "count": 2
     },
     {
@@ -7796,7 +7820,43 @@
         "ladoa": 3
       },
       "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "date": "2026-02-28",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2026-02-28",
+      "counts_por_lado": {
+        "ladoa": 2
+      },
+      "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "date": "2026-02-28",
+      "counts_por_lado": {
+        "ladoa": 3
+      },
+      "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "date": "2026-02-28",
+      "counts_por_lado": {
+        "ladoa": 3
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-02-28T00:55:04.562145+00:00"
+  "generated_at_utc": "2026-02-28T08:15:00.447960+00:00"
 }
