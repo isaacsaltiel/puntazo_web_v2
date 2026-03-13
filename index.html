@@ -59,8 +59,7 @@ nav{
 .nav-logo-text{font-size:1.05rem;font-weight:900;letter-spacing:1px;color:#fff;}
 .nav-links{display:flex;gap:1.75rem;list-style:none;}
 .nav-links a{color:var(--muted);text-decoration:none;font-size:0.82rem;font-weight:600;transition:color .2s;}
-.nav-links a:hover{color:#fff;}
-.nav-links a.active{color:#fff;}
+.nav-links a:hover,.nav-links a.active{color:#fff;}
 .nav-right{display:flex;align-items:center;gap:1rem;}
 .menu-toggle{display:none;background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;padding:4px 8px;}
 .nav-cta{
@@ -103,7 +102,6 @@ main{
 @media(max-width:600px){main{padding:6rem 1.25rem 3rem;}}
 
 /* ── PAGE HEADER ── */
-.page-header{margin-bottom:2.5rem;}
 .page-tag{
   display:inline-block;
   background:rgba(0,79,200,0.12);
@@ -113,96 +111,125 @@ main{
   margin-bottom:0.75rem;text-transform:uppercase;
   letter-spacing:1.5px;font-weight:700;
 }
+.page-header{margin-bottom:2rem;}
 .page-header h1{
   font-size:clamp(1.6rem,4vw,2.4rem);
   font-weight:900;letter-spacing:-1px;color:#fff;
   margin-bottom:0.4rem;
 }
-.page-header p{color:var(--muted);font-size:0.88rem;line-height:1.6;}
+.page-header p{color:var(--muted);font-size:0.88rem;}
 
 /* ── REGISTER BANNER ── */
 .register-banner{
-  background:rgba(0,79,200,0.1);
+  background:rgba(0,79,200,0.10);
   border:1px solid rgba(0,79,200,0.3);
   border-radius:18px;
   padding:1.25rem 1.5rem;
   display:flex;align-items:center;justify-content:space-between;
-  gap:1rem;flex-wrap:wrap;
+  gap:1.25rem;flex-wrap:wrap;
   margin-bottom:2.5rem;
 }
-.register-banner-text h3{font-size:0.92rem;font-weight:800;color:#fff;margin-bottom:0.2rem;}
-.register-banner-text p{font-size:0.78rem;color:var(--muted);}
-.register-banner-btns{display:flex;gap:0.75rem;flex-wrap:wrap;flex-shrink:0;}
+.register-banner-text h3{
+  font-size:0.92rem;font-weight:800;color:#fff;margin-bottom:0.2rem;
+}
+.register-banner-text p{font-size:0.78rem;color:var(--muted);line-height:1.5;}
+.register-banner-btns{
+  display:flex;gap:0.75rem;flex-wrap:wrap;flex-shrink:0;
+  align-items:center;
+}
 .btn-register{
   display:inline-flex;align-items:center;gap:0.4rem;
   background:var(--blue);color:#fff;
-  padding:0.6rem 1.25rem;border-radius:50px;
-  text-decoration:none;font-size:0.8rem;font-weight:800;
+  padding:0.65rem 1.4rem;border-radius:50px;
+  text-decoration:none;font-size:0.82rem;font-weight:800;
   border:1px solid var(--blue2);
   box-shadow:0 0 18px rgba(0,79,200,0.4);
   transition:all .2s;white-space:nowrap;
+  font-family:'Montserrat',sans-serif;
+  cursor:pointer;
 }
 .btn-register:hover{background:var(--blue2);transform:translateY(-1px);}
 .btn-recover{
   display:inline-flex;align-items:center;gap:0.4rem;
   background:transparent;color:var(--muted);
-  padding:0.6rem 1.25rem;border-radius:50px;
-  text-decoration:none;font-size:0.8rem;font-weight:600;
+  padding:0.65rem 1.4rem;border-radius:50px;
+  text-decoration:none;font-size:0.82rem;font-weight:600;
   border:1px solid var(--border2);
   transition:all .2s;white-space:nowrap;
+  font-family:'Montserrat',sans-serif;
 }
 .btn-recover:hover{color:#fff;border-color:rgba(255,255,255,0.25);}
+@media(max-width:600px){
+  .register-banner{flex-direction:column;align-items:flex-start;}
+  .register-banner-btns{width:100%;}
+  .btn-register,.btn-recover{flex:1;justify-content:center;}
+}
 
-/* ── LOCACIONES GRID ── */
-.locs-grid{
+/* ── LOCACIONES: override del script.js ──
+   El script genera <li> con <a class="link-blanco"> dentro de #locaciones-lista.
+   Lo convertimos en grid de cards sin tocar el JS.
+*/
+#locaciones-lista{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  grid-template-columns:repeat(auto-fill, minmax(210px, 1fr));
   gap:1rem;
+  list-style:none;
+  padding:0;margin:0;
 }
-.loc-card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:18px;padding:1.5rem;
-  text-decoration:none;color:inherit;
-  display:flex;flex-direction:column;gap:0.75rem;
-  transition:all .2s;cursor:pointer;
-  position:relative;overflow:hidden;
+#locaciones-lista li{
+  margin:0 !important;
+  padding:0 !important;
 }
-.loc-card::before{
+#locaciones-lista li a,
+#locaciones-lista a.link-blanco{
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:0.75rem;
+  background:rgba(0,79,200,0.07);
+  border:1px solid rgba(0,79,200,0.25);
+  border-radius:18px;
+  padding:1.5rem;
+  text-decoration:none;
+  color:#fff;
+  font-weight:800;
+  font-size:0.95rem;
+  transition:all .2s;
+  min-height:110px;
+  position:relative;
+  overflow:hidden;
+}
+#locaciones-lista li a::before,
+#locaciones-lista a.link-blanco::before{
   content:'';position:absolute;top:0;left:0;right:0;height:2px;
   background:linear-gradient(90deg,transparent,var(--blue),transparent);
   opacity:0;transition:opacity .3s;
 }
-.loc-card:hover{border-color:rgba(0,79,200,0.55);transform:translateY(-3px);}
-.loc-card:hover::before{opacity:1;}
-.loc-icon-wrap{
-  width:48px;height:48px;border-radius:14px;
-  background:rgba(0,79,200,0.15);
-  border:1px solid rgba(0,79,200,0.25);
-  display:flex;align-items:center;justify-content:center;
-  font-size:1.4rem;
+#locaciones-lista li a:hover,
+#locaciones-lista a.link-blanco:hover{
+  border-color:rgba(0,79,200,0.55);
+  transform:translateY(-3px);
 }
-.loc-card h3{font-size:0.95rem;font-weight:800;color:#fff;}
-.loc-card p{font-size:0.78rem;color:var(--muted);line-height:1.5;}
-.loc-arrow{
+#locaciones-lista li a:hover::before,
+#locaciones-lista a.link-blanco:hover::before{opacity:1;}
+
+/* Icono de flecha automático al final de cada card */
+#locaciones-lista li a::after,
+#locaciones-lista a.link-blanco::after{
+  content:'Ver canchas →';
+  font-size:0.72rem;
+  font-weight:700;
+  color:var(--blue3);
   margin-top:auto;
-  font-size:0.78rem;color:var(--blue3);font-weight:700;
-  display:flex;align-items:center;gap:0.3rem;
 }
 
-/* ── EMPTY STATE ── */
-.empty-state{
-  grid-column:1/-1;
-  text-align:center;padding:4rem 2rem;
-  color:var(--muted);
-}
-.empty-state p{font-size:0.9rem;margin-top:0.75rem;}
-
-/* ── LOADING ── */
+/* ── LOADING state ── */
+#locaciones-lista:empty::after,
 .loading-wrap{
-  display:flex;align-items:center;justify-content:center;
-  gap:0.75rem;padding:3rem;color:var(--muted);font-size:0.85rem;
   grid-column:1/-1;
+  display:flex;align-items:center;justify-content:center;
+  gap:0.75rem;padding:3rem;
+  color:var(--muted);font-size:0.85rem;
 }
 .spinner{
   width:20px;height:20px;border-radius:50%;
@@ -212,11 +239,10 @@ main{
 }
 @keyframes spin{to{transform:rotate(360deg);}}
 
-/* ── 24H NOTE ── */
+/* ── NOTE ── */
 .note-24h{
   text-align:center;padding:2rem 0 0;
   font-size:0.75rem;color:rgba(234,242,255,0.3);
-  letter-spacing:0.3px;
 }
 
 /* ── FOOTER ── */
@@ -225,8 +251,7 @@ footer{
   padding:1.5rem 2.5rem;
   display:flex;justify-content:space-between;align-items:center;
   flex-wrap:wrap;gap:1rem;
-  position:relative;z-index:1;
-  margin-top:3rem;
+  position:relative;z-index:1;margin-top:3rem;
 }
 .foot-logo{display:flex;align-items:center;gap:0.5rem;text-decoration:none;}
 .foot-logo img{height:24px;width:auto;}
@@ -237,7 +262,6 @@ footer{
 .foot-copy{color:rgba(234,242,255,0.25);font-size:0.72rem;}
 @media(max-width:600px){
   footer{flex-direction:column;text-align:center;padding:1.25rem;}
-  .register-banner{flex-direction:column;align-items:flex-start;}
 }
 </style>
 </head>
@@ -270,7 +294,7 @@ footer{
     <p>Selecciona tu club para ver los videos disponibles de hoy.</p>
   </div>
 
-  <!-- Banner registrar / recuperar -->
+  <!-- Banner: FUERA del #locaciones-lista para que el script no lo borre -->
   <div class="register-banner">
     <div class="register-banner-text">
       <h3>📲 ¿Acabas de jugar?</h3>
@@ -292,18 +316,17 @@ footer{
     </div>
   </div>
 
-  <!-- Locaciones -->
-  <div class="locs-grid" id="locaciones-lista">
+  <!-- El script.js llena este <ul> con <li><a class="link-blanco"> -->
+  <ul id="locaciones-lista">
     <div class="loading-wrap">
       <div class="spinner"></div>
       Cargando locaciones...
     </div>
-  </div>
+  </ul>
 
   <p class="note-24h">Los videos se borran pasadas 24 horas de subida.</p>
 </main>
 
-<!-- Footer -->
 <footer>
   <a href="inicio.html" class="foot-logo">
     <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
@@ -318,20 +341,5 @@ footer{
 </footer>
 
 <script src="assets/script.js"></script>
-<script>
-  const menuToggle = document.getElementById('menu-toggle');
-  const navMenu = document.getElementById('nav-menu');
-  menuToggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    navMenu.classList.toggle('show');
-  });
-  document.addEventListener('click', (e) => {
-    if (navMenu.classList.contains('show') && !navMenu.contains(e.target) && e.target !== menuToggle)
-      navMenu.classList.remove('show');
-  });
-  window.addEventListener('scroll', () => {
-    if (navMenu.classList.contains('show')) navMenu.classList.remove('show');
-  });
-</script>
 </body>
 </html>
