@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<base href="/" />
+<title>Puntazo · Botón</title>
+
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/android-icon-192x192.png" />
+<link rel="manifest" href="/assets/icons/manifest.json" />
+<meta name="msapplication-TileColor" content="#004FC8" />
+<meta name="theme-color" content="#050914" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+
+<!-- CSS compartido -->
+<link rel="stylesheet" href="assets/estilo.css" />
+
+<style>
+/* ══════════════════════════════════════════
+   BOTÓN PUNTAZO — fullscreen app experience
+══════════════════════════════════════════ */
+
+/* Override: esta página es fullscreen, no scrollable */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Safe areas para iPhone notch */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ── APP WRAPPER ── */
+.app-wrap {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(18px + var(--safe-top)) 18px calc(18px + var(--safe-bottom));
+}
+
+/* ── BACKGROUND ÉPICO ── */
+.btn-bg {
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(900px 600px at 18% 10%, rgba(0,79,200,.30), transparent 55%),
+    radial-gradient(1000px 700px at 85% 15%, rgba(11,124,255,.20), transparent 55%),
+    radial-gradient(900px 700px at 40% 95%, rgba(34,197,94,.10), transparent 55%),
+    linear-gradient(180deg, #050914, #060a18 55%, #050914);
+  filter: saturate(1.2);
+}
+.btn-grid-glow {
+  position: fixed; inset: -40px; z-index: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  opacity: .10;
+  transform: rotate(12deg) scale(1.2);
+  pointer-events: none;
+  mask-image: radial-gradient(circle at 50% 40%, black 0%, rgba(0,0,0,.9) 35%, transparent 68%);
+}
+
+/* ── VIEWS ── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ══════════════════════════════════════════
+   SETUP VIEW — selección de club/cancha
+══════════════════════════════════════════ */
+.setup-card {
+  position: relative; z-index: 1;
+  width: min(520px, 100%);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 30px 90px rgba(0,0,0,.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.setup-brand {
+  display: flex; gap: 12px; align-items: center;
+  font-weight: 900; letter-spacing: .7px;
+  font-size: 18px; color: #fff;
+  margin-bottom: 6px;
+}
+.setup-dot {
+  width: 16px; height: 16px;
+  background: radial-gradient(circle at 30% 30%, #ffffff, var(--blue));
+  border-radius: 999px;
+  box-shadow: 0 0 0 6px rgba(0,79,200,.12), 0 0 32px rgba(0,79,200,.55);
+  flex-shrink: 0;
+}
+.setup-subtitle {
+  color: var(--muted); font-size: 0.95rem;
+  line-height: 1.4; margin-bottom: 20px;
+}
+.setup-label {
+  display: block; margin: 16px 0 8px;
+  font-size: 0.82rem; color: var(--muted);
+  font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.setup-select {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.25);
+  color: var(--text);
+  padding: 15px 14px;
+  font-size: 1.05rem;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.setup-select:focus {
+  border-color: rgba(0,79,200,.75);
+  box-shadow: 0 0 0 3px rgba(0,79,200,.25);
+}
+
+/* Botón Continuar */
+.setup-continue {
+  width: 100%;
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(180deg, var(--blue2), var(--blue));
+  color: #fff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 18px 45px rgba(0,79,200,.35);
+  transition: transform .08s ease, filter .15s ease;
+}
+.setup-continue:active { transform: translateY(1px) scale(.995); }
+
+/* Botones secundarios */
+.setup-row {
+  display: flex; gap: 10px; margin-top: 12px;
+}
+.setup-link {
+  flex: 1;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.18);
+  color: var(--text);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all .2s;
+}
+.setup-link:active { transform: translateY(1px); }
+.setup-link.videos {
+  border-color: rgba(34,197,94,.45);
+  box-shadow: 0 16px 46px rgba(34,197,94,.10);
+  animation: ctaPulse 2.3s infinite;
+}
+@keyframes ctaPulse {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.setup-status {
+  margin-top: 14px;
+  min-height: 20px;
+  font-size: 0.88rem;
+  color: var(--muted);
+  text-align: center;
+}
+.setup-status.ok { color: #22c55e; }
+.setup-status.bad { color: #ef4444; }
+
+.setup-hint {
+  text-align: center; margin-top: 10px;
+  color: rgba(234,242,255,.35);
+  font-size: 0.78rem;
+}
+
+/* ══════════════════════════════════════════
+   BUTTON VIEW — pantalla del botón gigante
+══════════════════════════════════════════ */
+.button-overlay {
+  position: fixed; inset: 0; z-index: 2;
+  padding: calc(14px + var(--safe-top)) 14px calc(14px + var(--safe-bottom));
+  background: transparent;
+}
+.button-overlay.view.active {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* HUD top */
+.btn-hud {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px; padding: 2px 2px 0;
+}
+.btn-hud-brand {
+  display: flex; gap: 10px; align-items: center;
+  font-weight: 900; letter-spacing: .7px;
+  font-size: 16px; color: #fff;
+}
+.btn-hud-where {
+  font-size: 0.88rem; color: var(--muted); line-height: 1.15;
+  margin-top: 4px;
+}
+.btn-hud-where b { color: var(--text); }
+.btn-edit {
+  font-size: 0.82rem; padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.18);
+  color: var(--text); cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700; white-space: nowrap;
+  width: auto;
+}
+
+/* Center — el botón */
+.btn-center {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 0 6px;
+}
+.btn-wrap {
+  position: relative;
+  width: min(88vw, 480px);
+  aspect-ratio: 1 / 1;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Ring giratorio */
+.btn-ring {
+  position: absolute; inset: -12px;
+  border-radius: 999px;
+  background: conic-gradient(from 180deg,
+    rgba(255,255,255,.18),
+    rgba(0,79,200,.9),
+    rgba(11,124,255,.8),
+    rgba(255,255,255,.18));
+  opacity: .85;
+  animation: ringSpin 4.2s linear infinite;
+  mask-image: radial-gradient(circle, transparent 63%, black 64%);
+  pointer-events: none;
+}
+@keyframes ringSpin { to { transform: rotate(360deg); } }
+
+/* Pulse glow */
+.btn-pulse {
+  position: absolute; inset: 0;
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 0 rgba(0,79,200,.35),
+    0 0 85px rgba(0,79,200,.30),
+    0 22px 90px rgba(0,0,0,.55);
+  animation: btnPulse 2.25s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes btnPulse {
+  0%  { box-shadow: 0 0 0 0 rgba(0,79,200,.35), 0 0 85px rgba(0,79,200,.26), 0 22px 90px rgba(0,0,0,.55); }
+  70% { box-shadow: 0 0 0 22px rgba(0,79,200,0), 0 0 115px rgba(0,79,200,.32), 0 22px 90px rgba(0,0,0,.55); }
+  100%{ box-shadow: 0 0 0 0 rgba(0,79,200,0), 0 0 85px rgba(0,79,200,.26), 0 22px 90px rgba(0,0,0,.55); }
+}
+
+/* THE BIG BUTTON */
+.big-btn {
+  position: relative;
+  width: 100%; height: 100%;
+  border-radius: 999px; border: none;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255,255,255,.22), rgba(255,255,255,0) 35%),
+    radial-gradient(circle at 70% 75%, rgba(0,0,0,.30), rgba(0,0,0,0) 50%),
+    linear-gradient(180deg, var(--blue2), var(--blue));
+  color: white;
+  cursor: pointer; user-select: none;
+  box-shadow: 0 30px 110px rgba(0,79,200,.40);
+  transition: transform .10s ease, filter .15s ease;
+  transform: translateZ(0);
+  font-family: 'Montserrat', sans-serif;
+}
+.big-btn::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: 999px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.12),
+    inset 0 -16px 30px rgba(0,0,0,.28),
+    0 30px 110px rgba(0,79,200,.40);
+  transition: opacity .18s ease;
+  pointer-events: none;
+}
+.big-btn.pressed {
+  transform: scale(.965) translateY(10px);
+  filter: brightness(.98) saturate(1.05);
+  box-shadow: none !important;
+}
+.big-btn.pressed::before {
+  opacity: .98;
+  box-shadow:
+    inset 0 26px 50px rgba(0,0,0,.40),
+    inset 0 0 0 1px rgba(255,255,255,.10);
+}
+.big-btn.success {
+  box-shadow: 0 0 0 18px rgba(34,197,94,.07), 0 24px 100px rgba(0,79,200,.35);
+}
+.big-btn.error {
+  box-shadow: 0 0 0 18px rgba(239,68,68,.08), 0 24px 100px rgba(0,79,200,.25);
+}
+
+.big-inner {
+  height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 10px; padding: 18px;
+}
+.big-main {
+  font-size: clamp(28px, 7vw, 48px);
+  font-weight: 900; letter-spacing: 2px;
+  line-height: 1;
+  text-shadow: 0 2px 12px rgba(0,0,0,.35);
+  text-align: center;
+}
+.big-sub {
+  font-size: clamp(14px, 3.5vw, 18px);
+  font-weight: 800; letter-spacing: .9px;
+  color: rgba(255,255,255,.88);
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* Spinner inside button */
+.big-spinner {
+  position: absolute;
+  left: 50%; top: 65%;
+  transform: translate(-50%,-50%);
+  width: 36px; height: 36px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+.big-spinner-inner {
+  width: 36px; height: 36px;
+  border-radius: 999px;
+  border: 4px solid rgba(255,255,255,.22);
+  border-top-color: rgba(255,255,255,.95);
+  animation: ringSpin 700ms linear infinite;
+}
+.big-btn.loading .big-spinner { opacity: 1; }
+
+/* Ripple effect */
+.big-ripple {
+  position: absolute; inset: 0;
+  border-radius: 999px;
+  overflow: hidden; pointer-events: none;
+}
+.big-ripple span {
+  position: absolute;
+  width: 18px; height: 18px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.35);
+  transform: translate(-50%,-50%) scale(0);
+  animation: rippleOut 560ms ease-out;
+}
+@keyframes rippleOut {
+  to { transform: translate(-50%,-50%) scale(20); opacity: 0; }
+}
+
+/* Text swap animation */
+@keyframes textSwap {
+  from { opacity: .2; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.big-main.swap, .big-sub.swap {
+  animation: textSwap 170ms ease-out;
+}
+
+/* Success pop */
+@keyframes successPop {
+  0% { transform: scale(.985); }
+  35% { transform: scale(1.03); }
+  100% { transform: scale(1.00); }
+}
+.big-btn.success .big-main {
+  animation: successPop 420ms ease-out;
+}
+
+/* Bottom area */
+.btn-bottom {
+  padding: 6px 4px 0;
+  min-height: 50px;
+  display: flex; flex-direction: column;
+  gap: 10px; justify-content: center; align-items: center;
+  color: var(--muted); font-size: 0.88rem; text-align: center;
+}
+.btn-go-videos {
+  width: min(520px, 100%);
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(34,197,94,.45);
+  background: linear-gradient(180deg, rgba(34,197,94,.22), rgba(0,0,0,.18));
+  color: var(--text);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem; font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 16px 46px rgba(34,197,94,.10);
+  transition: transform .08s;
+}
+.btn-go-videos:active { transform: translateY(1px) scale(.995); }
+
+/* Flash effect */
+.btn-flash {
+  position: fixed; inset: 0; z-index: 50;
+  background: radial-gradient(circle at 50% 45%, rgba(34,197,94,.65), rgba(34,197,94,0) 72%);
+  opacity: 0; pointer-events: none;
+  transition: opacity .35s ease;
+}
+.btn-flash.on { opacity: 1; }
+
+/* Confetti */
+.btn-confetti {
+  position: fixed; inset: 0; z-index: 51;
+  pointer-events: none; overflow: hidden;
+}
+.btn-confetti i {
+  position: absolute;
+  width: 9px; height: 16px;
+  border-radius: 3px; opacity: .98;
+  animation: confettiFly 1400ms cubic-bezier(.18,.9,.2,1) forwards;
+  filter: blur(.12px);
+  transform: translate(-50%, -50%);
+}
+@keyframes confettiFly {
+  0%   { transform: translate(-50%,-50%) translate(0,0) rotate(0deg); opacity: 1; }
+  75%  { opacity: 1; }
+  100% { transform: translate(-50%,-50%) translate(var(--dx),var(--dy)) rotate(var(--rot)); opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="btn-bg"></div>
+<div class="btn-grid-glow"></div>
+<div id="flash" class="btn-flash"></div>
+<div id="confetti" class="btn-confetti"></div>
+
+<div class="app-wrap">
+
+  <!-- ══════════ SETUP VIEW ══════════ -->
+  <div id="setupView" class="setup-card view active">
+    <div class="setup-brand">
+      <div class="setup-dot"></div>
+      PUNTAZO · BOTÓN
+    </div>
+    <div class="setup-subtitle">
+      Selecciona <b>Club</b> y <b>Cancha</b>. Luego dale <b>Continuar</b>.
+    </div>
+
+    <label class="setup-label">Club</label>
+    <select id="club" class="setup-select"></select>
+
+    <label class="setup-label">Cancha</label>
+    <select id="cancha" class="setup-select"></select>
+
+    <button class="setup-continue" id="btnContinue">Continuar</button>
+
+    <div class="setup-row">
+      <a href="index.html" class="setup-link videos">Ver videos ▶</a>
+    </div>
+
+    <div id="setupStatus" class="setup-status"></div>
+    <div class="setup-hint">Tip: esta es la forma más confiable de guardar el puntazo ✅</div>
+  </div>
+
+  <!-- ══════════ BUTTON VIEW ══════════ -->
+  <div id="buttonView" class="button-overlay view">
+
+    <div class="btn-hud">
+      <div>
+        <div class="btn-hud-brand">
+          <div class="setup-dot"></div>
+          PUNTAZO
+        </div>
+        <div class="btn-hud-where" id="whereText"></div>
+      </div>
+      <button class="btn-edit" id="btnEdit">Editar</button>
+    </div>
+
+    <div class="btn-center">
+      <div class="btn-wrap">
+        <div class="btn-ring"></div>
+        <div class="btn-pulse"></div>
+
+        <button id="bigBtn" class="big-btn">
+          <div class="big-inner">
+            <div id="bigMain" class="big-main">REGISTRAR PUNTAZO</div>
+            <div id="bigSub" class="big-sub">Toca para guardarlo</div>
+          </div>
+          <div id="bigSpinner" class="big-spinner">
+            <div class="big-spinner-inner"></div>
+          </div>
+        </button>
+
+        <div class="big-ripple" id="ripple"></div>
+      </div>
+    </div>
+
+    <div class="btn-bottom">
+      <div id="confirmText"></div>
+      <button class="btn-go-videos" id="btnGoVideos">Ver mis puntazos ▶</button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT — fetch a Apps Script
+══════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+
+  // ══════════════════════════════════════════
+  // 🔧 CONFIGURA AQUÍ TU URL DE APPS SCRIPT
+  // ══════════════════════════════════════════
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyB4AWfD7bqJGBkglYNfwJ6nmHMeOuvh5MVfxFMzAWmsl5uj_DOB33eUGmBaWdZPV58Sw/exec';
+
+  // ── Elements ──
+  const $setup    = document.getElementById('setupView');
+  const $button   = document.getElementById('buttonView');
+  const $club     = document.getElementById('club');
+  const $cancha   = document.getElementById('cancha');
+  const $status   = document.getElementById('setupStatus');
+  const $where    = document.getElementById('whereText');
+  const $bigBtn   = document.getElementById('bigBtn');
+  const $bigMain  = document.getElementById('bigMain');
+  const $bigSub   = document.getElementById('bigSub');
+  const $spinner  = document.getElementById('bigSpinner');
+  const $confirm  = document.getElementById('confirmText');
+  const $flash    = document.getElementById('flash');
+  const $confetti = document.getElementById('confetti');
+  const $ripple   = document.getElementById('ripple');
+
+  let CONFIG = { clubs: {}, videosUrl: 'index.html' };
+  let busy = false;
+
+  // ── Helpers ──
+  function setStatus(msg, type) {
+    $status.className = 'setup-status ' + (type || '');
+    $status.textContent = msg || '';
+  }
+
+  function setConfirm(msg, type) {
+    $confirm.style.color = type === 'ok' ? 'rgba(34,197,94,.95)' :
+                           type === 'bad' ? 'rgba(239,68,68,.95)' :
+                           'rgba(234,242,255,.70)';
+    $confirm.textContent = msg || '';
+  }
+
+  function swapText(el, text) {
+    el.textContent = text;
+    el.classList.remove('swap');
+    void el.offsetWidth;
+    el.classList.add('swap');
+  }
+
+  function setState(state) {
+    $bigBtn.classList.remove('loading', 'success', 'error');
+    if (state === 'idle') {
+      swapText($bigMain, 'REGISTRAR PUNTAZO');
+      swapText($bigSub, 'Toca para guardarlo');
+      $spinner.style.opacity = 0;
+    } else if (state === 'loading') {
+      $bigBtn.classList.add('loading');
+      swapText($bigMain, 'GUARDANDO…');
+      swapText($bigSub, 'Espera un momento');
+      $spinner.style.opacity = 1;
+    } else if (state === 'success') {
+      $bigBtn.classList.add('success');
+      swapText($bigMain, 'GUARDADO ✅');
+      swapText($bigSub, 'Listo');
+      $spinner.style.opacity = 0;
+    } else if (state === 'error') {
+      $bigBtn.classList.add('error');
+      swapText($bigMain, 'ERROR ❌');
+      swapText($bigSub, 'Intenta otra vez');
+      $spinner.style.opacity = 0;
+    }
+  }
+
+  // ── Press feel ──
+  const down = () => { if (!busy) $bigBtn.classList.add('pressed'); };
+  const up = () => setTimeout(() => $bigBtn.classList.remove('pressed'), 90);
+  $bigBtn.addEventListener('pointerdown', down);
+  $bigBtn.addEventListener('pointerup', up);
+  $bigBtn.addEventListener('pointercancel', up);
+  $bigBtn.addEventListener('pointerleave', up);
+
+  // ── Ripple ──
+  function rippleAt(evt) {
+    const rect = $bigBtn.getBoundingClientRect();
+    const x = (evt?.clientX ?? (rect.left + rect.width / 2)) - rect.left;
+    const y = (evt?.clientY ?? (rect.top + rect.height / 2)) - rect.top;
+    const s = document.createElement('span');
+    s.style.left = x + 'px';
+    s.style.top = y + 'px';
+    $ripple.appendChild(s);
+    setTimeout(() => s.remove(), 650);
+  }
+
+  // ── Beep + vibrate ──
+  function tinyBeep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = 740; g.gain.value = 0.08;
+      o.connect(g); g.connect(ctx.destination);
+      o.start();
+      setTimeout(() => { o.stop(); ctx.close(); }, 95);
+    } catch (e) {}
+  }
+
+  function vibe() {
+    try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) {}
+  }
+
+  // ── Flash + confetti ──
+  function showFlash() {
+    $flash.classList.add('on');
+    setTimeout(() => $flash.classList.remove('on'), 420);
+  }
+
+  function confettiBurst() {
+    $confetti.innerHTML = '';
+    const rect = $bigBtn.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const colors = ['rgba(255,255,255,.96)', 'rgba(0,79,200,.96)', 'rgba(11,124,255,.96)', 'rgba(34,197,94,.96)'];
+
+    for (let i = 0; i < 60; i++) {
+      const el = document.createElement('i');
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 260 + Math.random() * 360;
+      el.style.left = cx + 'px';
+      el.style.top = cy + 'px';
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.setProperty('--dx', (Math.cos(angle) * dist).toFixed(1) + 'px');
+      el.style.setProperty('--dy', (Math.sin(angle) * dist).toFixed(1) + 'px');
+      el.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+      el.style.animationDelay = (Math.random() * 110) + 'ms';
+      $confetti.appendChild(el);
+    }
+    setTimeout(() => { $confetti.innerHTML = ''; }, 1600);
+  }
+
+  // ── LocalStorage ──
+  function saveSelection() {
+    localStorage.setItem('puntazo_btn_last', JSON.stringify({
+      club: $club.value, cancha: $cancha.value
+    }));
+  }
+  function loadSelection() {
+    try {
+      return JSON.parse(localStorage.getItem('puntazo_btn_last'));
+    } catch (e) { return null; }
+  }
+
+  // ── Fill selects ──
+  function fillClubs() {
+    $club.innerHTML = '';
+    Object.keys(CONFIG.clubs || {}).sort().forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      $club.appendChild(opt);
+    });
+  }
+  function fillCanchas(club) {
+    $cancha.innerHTML = '';
+    (CONFIG.clubs[club] || []).forEach(x => {
+      const opt = document.createElement('option');
+      opt.value = x; opt.textContent = x;
+      $cancha.appendChild(opt);
+    });
+  }
+  $club.addEventListener('change', () => {
+    fillCanchas($club.value);
+    setStatus('');
+  });
+
+  // ── Views ──
+  function enterButtonMode() {
+    if (!$club.value || !$cancha.value) {
+      setStatus('Selecciona club y cancha.', 'bad');
+      return;
+    }
+    saveSelection();
+    $where.innerHTML = '📍 <b>' + $club.value + '</b> · Cancha <b>' + $cancha.value + '</b>';
+    $setup.classList.remove('active');
+    $button.classList.add('active');
+    setState('idle');
+    setConfirm('');
+  }
+
+  function backToSetup() {
+    $button.classList.remove('active');
+    $setup.classList.add('active');
+    setStatus('Listo. Puedes cambiar club/cancha.', '');
+  }
+
+  function goVideos() {
+    window.location.href = CONFIG.videosUrl || 'index.html';
+  }
+
+  // ── Wire up buttons ──
+  document.getElementById('btnContinue').addEventListener('click', enterButtonMode);
+  document.getElementById('btnEdit').addEventListener('click', backToSetup);
+  document.getElementById('btnGoVideos').addEventListener('click', goVideos);
+
+  // ══════════════════════════════════════════
+  // 🔥 CLICK PRINCIPAL — fetch a Apps Script
+  // ══════════════════════════════════════════
+  $bigBtn.addEventListener('click', async function(evt) {
+    if (busy) return;
+    busy = true;
+
+    rippleAt(evt);
+    tinyBeep();
+    vibe();
+
+    $bigBtn.classList.add('pressed');
+    setTimeout(() => $bigBtn.classList.remove('pressed'), 120);
+
+    setState('loading');
+    $bigBtn.disabled = true;
+    setConfirm('');
+
+    try {
+      // Apps Script con redirect: usamos GET con parámetros para compatibilidad CORS
+      const url = APPS_SCRIPT_URL
+        + '?action=save'
+        + '&club=' + encodeURIComponent($club.value)
+        + '&cancha=' + encodeURIComponent($cancha.value);
+
+      const res = await fetch(url, { redirect: 'follow' });
+      const data = await res.json();
+
+      if (data.ok) {
+        showFlash();
+        confettiBurst();
+        setState('success');
+        setConfirm('✅ Puntazo guardado', 'ok');
+      } else {
+        throw new Error(data.error || 'Error desconocido');
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      setState('error');
+      setConfirm('No se pudo guardar. Intenta otra vez.', 'bad');
+    }
+
+    setTimeout(() => {
+      busy = false;
+      $bigBtn.disabled = false;
+      setState('idle');
+      setConfirm('');
+    }, 1200);
+  });
+
+  // ══════════════════════════════════════════
+  // 🚀 INIT — carga config desde Apps Script
+  // ══════════════════════════════════════════
+  async function init() {
+    try {
+      const res = await fetch(APPS_SCRIPT_URL + '?action=config', { redirect: 'follow' });
+      const data = await res.json();
+      CONFIG = data || CONFIG;
+    } catch (err) {
+      console.warn('No se pudo cargar config, usando defaults:', err);
+      // Fallback hardcoded por si el fetch falla
+      CONFIG = {
+        clubs: {
+          "BreakPoint": ["1","2","3","4","5"],
+          "Interpadel": ["3","4","5","6"]
+        },
+        videosUrl: "index.html"
+      };
+    }
+
+    fillClubs();
+    const clubs = Object.keys(CONFIG.clubs || {}).sort();
+    if (clubs.length) {
+      $club.value = clubs[0];
+      fillCanchas($club.value);
+    }
+
+    const last = loadSelection();
+    if (last) {
+      if (CONFIG.clubs[last.club]) {
+        $club.value = last.club;
+        fillCanchas($club.value);
+      }
+      if ((CONFIG.clubs[$club.value] || []).includes(last.cancha)) {
+        $cancha.value = last.cancha;
+      }
+      setStatus('Listo ✅', 'ok');
+    } else {
+      setStatus('Configura y dale Continuar.', '');
+    }
+  }
+
+  init();
+
+})();
+</script>
+</body>
+</html>
