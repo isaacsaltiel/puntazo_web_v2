@@ -102,19 +102,30 @@ main{
 @media(max-width:600px){main{padding:6rem 1.25rem 3rem;}}
 
 /* ── BREADCRUMB ── */
+.breadcrumb-row{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:0.75rem;
+  margin-bottom:1.25rem;
+}
 .breadcrumb{
-  display:flex;align-items:center;gap:0.5rem;
-  flex-wrap:wrap;
-  margin-bottom:1.5rem;
+  display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;
 }
 .breadcrumb a{
   color:var(--muted);text-decoration:none;
-  font-size:0.8rem;font-weight:600;
-  transition:color .2s;
+  font-size:0.8rem;font-weight:600;transition:color .2s;
 }
 .breadcrumb a:hover{color:#fff;}
 .breadcrumb-sep{color:rgba(234,242,255,0.2);font-size:0.8rem;}
 .breadcrumb-current{color:#fff;font-size:0.8rem;font-weight:700;}
+.recover-mini{
+  display:inline-flex;align-items:center;gap:0.3rem;
+  color:var(--muted);font-size:0.75rem;font-weight:600;
+  text-decoration:none;
+  border-bottom:1px dashed rgba(255,255,255,0.2);
+  padding-bottom:1px;transition:color .2s;
+  white-space:nowrap;
+}
+.recover-mini:hover{color:#fff;}
 
 /* ── BACK BTN ── */
 .btn-back{
@@ -123,12 +134,11 @@ main{
   font-size:0.8rem;font-weight:600;
   padding:0.5rem 1rem;border-radius:50px;
   border:1px solid var(--border2);
-  transition:all .2s;margin-bottom:2rem;
+  transition:all .2s;margin-bottom:1.75rem;
 }
 .btn-back:hover{color:#fff;border-color:rgba(255,255,255,0.2);}
 
 /* ── PAGE HEADER ── */
-.page-header{margin-bottom:2rem;}
 .page-tag{
   display:inline-block;
   background:rgba(0,79,200,0.12);
@@ -138,69 +148,84 @@ main{
   margin-bottom:0.75rem;text-transform:uppercase;
   letter-spacing:1.5px;font-weight:700;
 }
+.page-header{margin-bottom:2rem;}
 .page-header h1{
   font-size:clamp(1.6rem,4vw,2.4rem);
   font-weight:900;letter-spacing:-1px;color:#fff;
-  margin-bottom:0.4rem;
+  margin-bottom:0.3rem;
 }
 .page-header p{color:var(--muted);font-size:0.85rem;}
 
-/* ── RECOVER MINI ── */
-.recover-mini{
-  display:inline-flex;align-items:center;gap:0.4rem;
-  color:var(--muted);font-size:0.78rem;font-weight:600;
-  text-decoration:none;
-  border-bottom:1px dashed rgba(255,255,255,0.2);
-  padding-bottom:1px;
-  transition:color .2s;
-  margin-bottom:2rem;
-  float:right;
-}
-.recover-mini:hover{color:#fff;}
-.clearfix::after{content:'';display:table;clear:both;}
-
-/* ── CANCHAS GRID ── */
-.canchas-grid{
+/* ── CANCHAS: override del script.js ──
+   El script genera <li><a class="link-blanco"> dentro de #canchas-lista.
+   Lo convertimos en grid de cards sin tocar el JS.
+*/
+#canchas-lista{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
   gap:1rem;
-  clear:both;
+  list-style:none;
+  padding:0;margin:0;
 }
-.cancha-card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:18px;padding:1.5rem;
-  text-decoration:none;color:inherit;
-  display:flex;flex-direction:column;gap:0.75rem;
+#canchas-lista li{
+  margin:0 !important;
+  padding:0 !important;
+}
+#canchas-lista li a,
+#canchas-lista a.link-blanco{
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:0.75rem;
+  background:rgba(0,79,200,0.07);
+  border:1px solid rgba(0,79,200,0.25);
+  border-radius:18px;
+  padding:1.5rem;
+  text-decoration:none;
+  color:#fff;
+  font-weight:800;
+  font-size:0.92rem;
   transition:all .2s;
-  position:relative;overflow:hidden;
+  min-height:110px;
+  position:relative;
+  overflow:hidden;
 }
-.cancha-card::before{
+#canchas-lista li a::before,
+#canchas-lista a.link-blanco::before{
   content:'';position:absolute;top:0;left:0;right:0;height:2px;
   background:linear-gradient(90deg,transparent,var(--blue),transparent);
   opacity:0;transition:opacity .3s;
 }
-.cancha-card:hover{border-color:rgba(0,79,200,0.55);transform:translateY(-3px);}
-.cancha-card:hover::before{opacity:1;}
-.cancha-num{
-  width:44px;height:44px;border-radius:12px;
-  background:rgba(0,79,200,0.15);
-  border:1px solid rgba(0,79,200,0.25);
-  display:flex;align-items:center;justify-content:center;
-  font-size:1.1rem;font-weight:900;color:var(--blue2);
+#canchas-lista li a:hover,
+#canchas-lista a.link-blanco:hover{
+  border-color:rgba(0,79,200,0.55);
+  transform:translateY(-3px);
 }
-.cancha-card h3{font-size:0.92rem;font-weight:800;color:#fff;}
-.cancha-card p{font-size:0.75rem;color:var(--muted);}
-.cancha-arrow{
+#canchas-lista li a:hover::before,
+#canchas-lista a.link-blanco:hover::before{opacity:1;}
+
+/* Texto de acción al final de cada card */
+#canchas-lista li a::after,
+#canchas-lista a.link-blanco::after{
+  content:'Ver clips →';
+  font-size:0.72rem;
+  font-weight:700;
+  color:var(--blue3);
   margin-top:auto;
-  font-size:0.75rem;color:var(--blue3);font-weight:700;
 }
 
-/* ── LOADING / EMPTY ── */
+/* Número de cancha — ícono automático antes del nombre */
+#canchas-lista li a::before{
+  /* Reseteamos el before del gradiente para no conflicto — 
+     el gradiente lo hacemos con outline en hover */
+}
+
+/* ── LOADING ── */
 .loading-wrap{
-  display:flex;align-items:center;justify-content:center;
-  gap:0.75rem;padding:3rem;color:var(--muted);font-size:0.85rem;
   grid-column:1/-1;
+  display:flex;align-items:center;justify-content:center;
+  gap:0.75rem;padding:3rem;
+  color:var(--muted);font-size:0.85rem;
 }
 .spinner{
   width:20px;height:20px;border-radius:50%;
@@ -214,7 +239,6 @@ main{
 .note-24h{
   text-align:center;padding:2rem 0 0;
   font-size:0.75rem;color:rgba(234,242,255,0.3);
-  letter-spacing:0.3px;
 }
 
 /* ── FOOTER ── */
@@ -223,18 +247,17 @@ footer{
   padding:1.5rem 2.5rem;
   display:flex;justify-content:space-between;align-items:center;
   flex-wrap:wrap;gap:1rem;
-  position:relative;z-index:1;
-  margin-top:3rem;
+  position:relative;z-index:1;margin-top:3rem;
 }
 .foot-logo{display:flex;align-items:center;gap:0.5rem;text-decoration:none;}
 .foot-logo img{height:24px;width:auto;}
 .foot-logo-text{font-size:0.9rem;font-weight:900;letter-spacing:1px;color:#fff;}
-.foot-links{display:flex;gap:1.5rem;flex-wrap:wrap;}
-.foot-links a{color:var(--muted);text-decoration:none;font-size:0.78rem;font-weight:500;transition:color .2s;}
-.foot-links a:hover{color:#fff;}
 .foot-note{font-size:0.75rem;color:var(--muted);text-align:center;}
 .foot-note a{color:var(--blue3);text-decoration:none;}
 .foot-note a:hover{text-decoration:underline;}
+.foot-links{display:flex;gap:1.5rem;flex-wrap:wrap;}
+.foot-links a{color:var(--muted);text-decoration:none;font-size:0.78rem;font-weight:500;transition:color .2s;}
+.foot-links a:hover{color:#fff;}
 .foot-copy{color:rgba(234,242,255,0.25);font-size:0.72rem;}
 @media(max-width:600px){
   footer{flex-direction:column;text-align:center;padding:1.25rem;}
@@ -263,12 +286,15 @@ footer{
 </nav>
 
 <main>
-  <!-- Breadcrumb -->
-  <div class="breadcrumb clearfix">
-    <a href="index.html">Locaciones</a>
-    <span class="breadcrumb-sep">›</span>
-    <span class="breadcrumb-current" id="nombre-locacion">Club</span>
 
+  <!-- Breadcrumb + recover mini — ambos FUERA de #canchas-lista -->
+  <div class="breadcrumb-row">
+    <div class="breadcrumb">
+      <a href="index.html">Locaciones</a>
+      <span class="breadcrumb-sep">›</span>
+      <!-- El script.js llena #nombre-locacion con el nombre del club -->
+      <span class="breadcrumb-current" id="nombre-locacion">Club</span>
+    </div>
     <a
       href="https://forms.gle/TsGHKaSjBnpu65SQA"
       target="_blank" rel="noopener"
@@ -277,18 +303,18 @@ footer{
     >¿No aparece tu clip? Recuperar →</a>
   </div>
 
-  <!-- Back -->
-  <a href="#" id="btn-volver" class="btn-back">← Regresar a locaciones</a>
+  <!-- Botón volver — el script.js le asigna el href correcto -->
+  <a href="index.html" id="btn-volver" class="btn-back">← Regresar a locaciones</a>
 
-  <!-- Header -->
+  <!-- Header — el nombre se actualiza via #nombre-locacion del breadcrumb -->
   <div class="page-header">
     <div class="page-tag">Selecciona tu cancha</div>
-    <h1 id="nombre-locacion-title">Canchas</h1>
+    <h1 id="titulo-locacion">Canchas</h1>
     <p>Elige la cancha donde jugaste para ver tus clips de hoy.</p>
   </div>
 
-  <!-- Canchas -->
-  <ul id="canchas-lista" class="canchas-grid">
+  <!-- El script.js llena este <ul> con <li><a class="link-blanco"> -->
+  <ul id="canchas-lista">
     <div class="loading-wrap">
       <div class="spinner"></div>
       Cargando canchas...
@@ -298,7 +324,6 @@ footer{
   <p class="note-24h">Los videos se borran pasadas 24 horas de subida.</p>
 </main>
 
-<!-- Footer -->
 <footer>
   <a href="inicio.html" class="foot-logo">
     <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
@@ -319,27 +344,15 @@ footer{
 
 <script src="assets/script.js"></script>
 <script>
-  const menuToggle = document.getElementById('menu-toggle');
-  const navMenu = document.getElementById('nav-menu');
-  menuToggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    navMenu.classList.toggle('show');
-  });
-  document.addEventListener('click', (e) => {
-    if (navMenu.classList.contains('show') && !navMenu.contains(e.target) && e.target !== menuToggle)
-      navMenu.classList.remove('show');
-  });
-  window.addEventListener('scroll', () => {
-    if (navMenu.classList.contains('show')) navMenu.classList.remove('show');
-  });
-
-  /* Sincronizar título con el breadcrumb */
+  /* Sincronizar el h1 con el nombre que pone el script en #nombre-locacion */
   const nombreEl = document.getElementById('nombre-locacion');
-  const titleEl = document.getElementById('nombre-locacion-title');
-  const observer = new MutationObserver(() => {
-    if (titleEl && nombreEl) titleEl.textContent = nombreEl.textContent;
-  });
-  if (nombreEl) observer.observe(nombreEl, { childList: true, characterData: true, subtree: true });
+  const tituloEl = document.getElementById('titulo-locacion');
+  if (nombreEl && tituloEl) {
+    new MutationObserver(() => {
+      const t = nombreEl.textContent.trim();
+      if (t && t !== 'Club') tituloEl.textContent = t;
+    }).observe(nombreEl, { childList: true, characterData: true, subtree: true });
+  }
 </script>
 </body>
 </html>
