@@ -1,1077 +1,657 @@
-/* assets/estilo.css – versión organizada y consistente */
+/* ══════════════════════════════════════════════════════════════
+   PUNTAZO — estilo.css
+   CSS centralizado para index.html, locacion.html, lado.html
+   (inicio.html usa este + su propio <style> para hero/features)
+══════════════════════════════════════════════════════════════ */
 
-/* 1) Fuentes y variables */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap');
-
+/* ── RESET + TOKENS ── */
+*{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --ink:#ffffff;
-  --ink-soft:#e1e1e1;
-  --muted:#9ca3af;
-  --bg-glass:rgba(0,0,0,.55);
-  --bg-glass-strong:rgba(0,0,0,.75);
-  --primary:#55c1e7;        /* azul claro de acentos */
-  --primary-hover:#2b9fc5;
-  --brand-blue:#27459d;     /* azul solicitado para botones */
-  --brand-blue-hover:#1f347a;
-  --danger:#cc0000;         /* rojo para CTA navbar y hero */
-  --danger-hover:#990000;
-  --success:#1abc9c;        /* descargar (si lo mantienes verde) */
-  --shadow:0 4px 20px rgba(0,0,0,.3);
+  --blue:#004FC8;
+  --blue2:#0B7CFF;
+  --blue3:#3395FF;
+  --dark:#050914;
+  --card:rgba(0,79,200,0.07);
+  --border:rgba(0,79,200,0.25);
+  --border2:rgba(255,255,255,0.09);
+  --text:#eaf2ff;
+  --muted:rgba(234,242,255,0.55);
+  --radius:18px;
 }
-
-*{margin:0; padding:0; box-sizing:border-box}
-html,body{
+html{scroll-behavior:smooth;}
+body{
   font-family:'Montserrat',sans-serif;
-  color:var(--ink);
+  background:var(--dark);
+  color:var(--text);
+  line-height:1.6;
   min-height:100vh;
-  scroll-behavior:smooth;
-  position:relative;
+  overflow-x:hidden;
 }
 
-/* 2) Fondo global (nuevo asset) */
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  background:url('/assets/degradado.jpg') center top/cover no-repeat;
-  z-index:-1;
-  pointer-events:none;
+/* ── PAGE BG ── */
+.page-bg{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 15%, rgba(0,79,200,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 80%, rgba(11,124,255,0.08) 0%, transparent 60%);
 }
 
-/* 3) Header / navegación */
+/* ══════════════════════════════════════════
+   NAV — compartido entre TODAS las páginas
+   El logo ya incluye el texto, no se pone <span> adicional
+══════════════════════════════════════════ */
+nav,
 .site-header{
-  display:flex; align-items:center; justify-content:space-between;
-  background:var(--bg-glass);
-  padding:10px 20px;
-  position:sticky; top:0; z-index:1000;
-  transition:background .3s ease;
-  -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
-}
-.site-header:hover{ background:var(--bg-glass-strong); }
-.site-header .logo{
-  height:50px; cursor:pointer; transition:transform .2s ease;
-}
-.site-header .logo:hover{ transform:scale(1.06); }
-
-.empresa-nombre{
-  font-size:1.8rem; font-weight:700; color:#fff; cursor:pointer; text-decoration:none;
-  text-transform:uppercase; letter-spacing:2px;
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0.85rem 2rem;
+  background:rgba(5,9,20,0.90);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border2);
+  gap:1rem;
 }
 
-.menu-toggle{ display:none; background:none; border:none; font-size:1.8rem; color:#fff; cursor:pointer; }
-.logo-link, .empresa-nombre, .menu-toggle{ z-index:1100; }
-
-.navbar{ display:flex; gap:1.5rem; }
-.navbar a{
-  color:#fff; margin-left:20px; text-decoration:none; font-weight:500; font-size:1rem; position:relative; transition:color .2s ease;
+/* Logo — solo imagen, sin texto duplicado */
+.nav-logo,
+.logo-link{
+  display:flex;align-items:center;gap:0.5rem;
+  text-decoration:none;flex-shrink:0;
 }
-.navbar a::after{
-  content:''; position:absolute; width:0; height:2px; background:#fff; left:0; bottom:-4px; transition:width .25s ease;
+.nav-logo img,
+.logo-link img{
+  height:32px;width:auto;
 }
-.navbar a:hover{ color:var(--primary); }
-.navbar a:hover::after{ width:100%; }
+/* Fallback si la imagen no carga */
+.nav-logo-fallback{
+  display:none;
+  width:11px;height:11px;border-radius:50%;
+  background:var(--blue2);
+  box-shadow:0 0 14px rgba(11,124,255,0.7);
+}
+/* Ocultar texto PUNTAZO al lado del logo — el logo ya lo dice */
+.nav-logo-text,
+.logo-link-text{
+  display:none;
+}
 
-/* Botón destacado de navbar: rojo + borde blanco */
+/* Nav links */
+.navbar,
+.nav-links{
+  display:flex;align-items:center;gap:1.75rem;
+  list-style:none;
+}
+.navbar a,
+.nav-links a{
+  color:var(--muted);text-decoration:none;
+  font-size:0.95rem;font-weight:600;
+  transition:color .2s;white-space:nowrap;
+}
+.navbar a:hover,
+.nav-links a:hover,
+.nav-links a.active{color:#fff;}
+
+/* Nav CTA button */
+.nav-cta,
 .highlight-btn{
-  padding:6px 14px;
-  background:var(--danger);
-  color:#fff;
-  border:1px solid #fff;
-  border-radius:6px;
-  font-weight:700;
+  background:var(--blue);color:#fff !important;
+  padding:0.55rem 1.3rem;border-radius:50px;
+  font-size:0.95rem !important;font-weight:800 !important;
+  border:1px solid var(--blue2);
+  box-shadow:0 0 18px rgba(0,79,200,0.4);
+  transition:all .2s !important;
+  text-decoration:none;white-space:nowrap;
 }
-.highlight-btn:hover{ background:var(--danger-hover); }
+.nav-cta:hover,
+.highlight-btn:hover{background:var(--blue2) !important;}
 
-.breadcrumb-link{ color:#fff; text-decoration:none; font-weight:700; }
-.breadcrumb-link:hover{ color:var(--primary); text-decoration:underline; }
+.nav-right{display:flex;align-items:center;gap:1rem;}
 
-@media (max-width:768px){
-  .menu-toggle{ display:block; }
-  .navbar{
-    display:none;
-    flex-direction:column;
-    background:var(--bg-glass-strong);
-    position:absolute;
-    top:100%; right:0;
-    width:80vw; max-width:280px;
-    padding:14px; margin:10px;
-    border-radius:12px; box-shadow:var(--shadow);
-    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+/* Hamburger */
+.menu-toggle{
+  display:none;background:none;border:none;
+  color:#fff;font-size:1.5rem;cursor:pointer;
+  padding:4px 8px;flex-shrink:0;line-height:1;
+}
+
+/* Mobile nav */
+@media(max-width:860px){
+  .navbar,
+  .nav-links{
+    display:none;position:fixed;top:58px;left:0;right:0;
+    background:rgba(5,9,20,0.97);
+    border-bottom:1px solid var(--border2);
+    flex-direction:column;align-items:stretch;gap:0;
+    padding:0.5rem 0;z-index:99;
   }
-  .navbar.show{ display:flex; }
+  .navbar.show,
+  .nav-links.show{display:flex;}
+  .navbar a,
+  .nav-links a{
+    padding:0.9rem 1.75rem;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+    font-size:1rem !important;
+  }
+  .menu-toggle{display:block;}
+  nav,
+  .site-header{padding:0.85rem 1.25rem;}
 }
 
-/* 4) Contenido base */
-.site-content{ padding:20px; min-height:calc(100vh - 140px); }
-h2{ color:#fff; margin-bottom:12px; font-weight:700; }
-.fade-in{ animation:fadeIn .6s ease-in-out; }
-@keyframes fadeIn{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
+/* ══════════════════════════════════════════
+   MAIN WRAPPER — páginas internas
+══════════════════════════════════════════ */
+.site-content{
+  position:relative;z-index:1;
+  padding:5.5rem 1.25rem 4rem;
+  max-width:780px;
+  margin:0 auto;
+}
+@media(min-width:600px){.site-content{padding:5.5rem 2rem 4rem;}}
 
-/* 5) Listas (locaciones/canchas/lados) */
-ul{ list-style:none; padding-left:0; }
-ul li{ margin-bottom:8px; }
-ul li a{ color:#fff; font-size:1.1rem; text-decoration:none; transition:color .2s ease; }
-ul li a:hover{ color:var(--primary); }
+/* Para index y locacion que usan <main> directo */
+main{
+  position:relative;z-index:1;
+  padding:7rem 2rem 4rem;
+  max-width:1100px;
+  margin:0 auto;
+}
+@media(max-width:600px){main{padding:6rem 1.25rem 3rem;}}
 
-.lados-lista, .canchas-lista{
-  display:flex; flex-direction:column; gap:16px; padding:0; margin-top:20px; max-width:800px; margin-inline:auto;
+/* ══════════════════════════════════════════
+   BREADCRUMB
+══════════════════════════════════════════ */
+.top-row{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:0.5rem;
+  margin-bottom:0.75rem;
 }
-.lados-lista li, .canchas-lista li{
-  background:rgba(255,255,255,.08);
-  padding:12px 20px;
-  border-radius:10px;
-  transition:background .25s ease, transform .2s ease;
+.titulo-club{
+  display:flex;align-items:center;gap:0.5rem;
+  flex-wrap:wrap;font-size:1rem;font-weight:600;
 }
-.lados-lista li:hover, .canchas-lista li:hover{
-  background:rgba(255,255,255,.12);
-  transform:scale(1.02);
+.breadcrumb-link{
+  color:var(--muted);text-decoration:none;transition:color .2s;
 }
-.lados-lista li a, .canchas-lista li a{
-  color:#fff; font-size:1.2rem; font-weight:500; text-decoration:none; display:block;
-}
+.breadcrumb-link:hover{color:#fff;}
+.breadcrumb-sep-char{color:rgba(234,242,255,0.2);}
 
-/* 6) Bloques de títulos y avisos */
-.titulo-lado{
-  background:rgba(0,0,0,.5);
-  padding:20px;
-  border-radius:12px;
-  margin-bottom:20px;
-  text-align:center;
+/* Para locacion.html breadcrumb */
+.breadcrumb-row{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:0.75rem;
+  margin-bottom:1.25rem;
 }
-.titulo-club{ font-size:2rem; font-weight:700; color:#fff; }
-.titulo-cancha{ font-size:1.2rem; font-weight:500; color:#fff; margin-top:6px; text-transform:uppercase; }
-.aviso{ text-align:right; font-style:italic; color:var(--ink-soft); margin-bottom:20px; }
+.breadcrumb{
+  display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;
+}
+.breadcrumb a{
+  color:var(--muted);text-decoration:none;
+  font-size:0.95rem;font-weight:600;transition:color .2s;
+}
+.breadcrumb a:hover{color:#fff;}
+.breadcrumb-sep{color:rgba(234,242,255,0.2);font-size:0.95rem;}
+.breadcrumb-current{color:#fff;font-size:0.95rem;font-weight:700;}
 
-/* 7) Tarjetas de video */
-.video-grid{
-  display:grid; grid-template-columns:1fr; gap:24px; margin-top:30px;
-  max-width:1100px; margin-inline:auto;
-}
-.video-card{
-  background:rgba(0,0,0,.5);
-  border-radius:12px;
-  padding:16px;
-  margin:20px auto;
-  box-shadow:var(--shadow);
-  position:relative;
-  animation:fadeIn .5s ease;
-}
-.video-card video{
-  width:100%; height:auto; border-radius:8px; display:block; margin-bottom:12px;
-}
-.video-title{
-  font-size:1.25rem; font-weight:700; color:#fff; margin-bottom:8px; text-align:center;
-}
-
-/* 8) Botones (regresar como antes + nuevos estilos pedidos) */
-.btn-volver{
-  display:inline-block;
-  color:#ffffff;
-  background:rgba(0,0,0,0.6);
-  padding:10px 20px;
-  border-radius:6px;
+.recover-mini{
+  display:inline-flex;align-items:center;gap:0.3rem;
+  color:var(--muted);font-size:0.88rem;font-weight:600;
   text-decoration:none;
-  font-weight:600;
-  transition:background .25s ease, transform .15s ease, color .25s ease;
+  border-bottom:1px dashed rgba(255,255,255,0.18);
+  padding-bottom:1px;transition:color .2s;
+  white-space:nowrap;flex-shrink:0;
 }
-.btn-volver:hover{
-  background:rgba(0,0,0,0.8);
-  transform:translateY(-1px);
-  color:#55c1e7;
-}
+.recover-mini:hover{color:#fff;}
 
-/* Descargar (si prefieres mantener verde) */
-.btn-download{
-  display:block;
-  background:var(--success);
-  color:#fff;
-  padding:10px 20px;
-  font-weight:600;
-  border-radius:8px;
-  text-decoration:none;
-  transition:transform .15s ease, background .25s ease;
-  width:100%;
-  text-align:center;
-  margin-top:12px;
+/* ══════════════════════════════════════════
+   BOTONES DE NAVEGACIÓN
+══════════════════════════════════════════ */
+.btn-volver-container{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:0.75rem;flex-wrap:wrap;
+  margin-bottom:1.25rem;
 }
-.btn-download:hover{ background:#16a085; transform:translateY(-1px); }
-
-/* Compartir | Descargar (botón grande unificado) */
-.btn-share-large{
-  display:inline-block;
-  background:var(--brand-blue);
-  color:#fff;
-  padding:12px 28px;               /* un poco más ancho que el otro */
-  border:1px solid #fff;           /* borde blanco fino */
-  border-radius:10px;
-  font-weight:700;
-  cursor:pointer;
-  text-decoration:none;
-  transition:background .25s ease, transform .15s ease;
-  width:100%;
-  text-align:center;
+.btn-volver,
+.btn-back{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  color:var(--muted);text-decoration:none;
+  font-size:1rem;font-weight:600;
+  padding:0.6rem 1.2rem;border-radius:50px;
+  border:1px solid var(--border2);
+  transition:all .2s;white-space:nowrap;
 }
-.btn-share-large:hover{ background:var(--brand-blue-hover); transform:translateY(-1px); }
+.btn-volver:hover,
+.btn-back:hover{color:#fff;border-color:rgba(255,255,255,0.22);}
 
-/* Ver otra perspectiva (sólido, un poco más angosto) */
+.btn-back{margin-bottom:1.75rem;}
+
+/* "Ir al lado opuesto" / "Ver otra perspectiva" */
 .btn-alt{
-  display:inline-block;
-  background:var(--brand-blue);
-  color:#fff;
-  padding:10px 18px;               /* más angosto para no competir */
-  border:1px solid #fff;
-  border-radius:8px;
-  font-weight:600;
-  cursor:pointer;
-  text-decoration:none;
-  transition:background .2s ease, transform .1s ease;
-  margin-left:10px;
+  display:inline-flex;align-items:center;gap:0.4rem;
+  color:var(--blue3);text-decoration:none;
+  font-size:1rem;font-weight:700;
+  padding:0.6rem 1.2rem;border-radius:50px;
+  border:1px solid rgba(0,79,200,0.35);
+  background:rgba(0,79,200,0.08);
+  transition:all .2s;white-space:nowrap;
 }
-.btn-alt:hover{ background:var(--brand-blue-hover); transform:translateY(-1px); }
-.btn-alt[disabled]{ opacity:.6; cursor:default; }
+.btn-alt:hover{background:rgba(0,79,200,0.18);border-color:rgba(0,79,200,0.55);}
 
-/* El botón pequeño de share no se usa */
-.btn-share{ display:none; }
+/* ══════════════════════════════════════════
+   PAGE HEADER (index, locacion)
+══════════════════════════════════════════ */
+.page-tag{
+  display:inline-block;
+  background:rgba(0,79,200,0.12);
+  border:1px solid rgba(0,79,200,0.3);
+  border-radius:50px;padding:0.3rem 1rem;
+  font-size:0.75rem;color:var(--blue3);
+  margin-bottom:0.75rem;text-transform:uppercase;
+  letter-spacing:1.5px;font-weight:700;
+}
+.page-header{margin-bottom:2rem;}
+.page-header h1{
+  font-size:clamp(1.6rem,4vw,2.4rem);
+  font-weight:900;letter-spacing:-1px;color:#fff;
+  margin-bottom:0.4rem;
+}
+.page-header p{color:var(--muted);font-size:0.95rem;}
 
-/* 9) Filtros por hora */
-#filtro-horario{
-  display:none; flex-wrap:wrap; justify-content:center; gap:10px; margin:20px auto; max-width:800px; padding:4px 0;
+/* ══════════════════════════════════════════
+   FILTROS DÍA + HORA
+══════════════════════════════════════════ */
+#filtro-dia,
+#filtro-horario,
+#filtro-horario-bottom{
+  display:flex;flex-wrap:wrap;gap:10px;
+  margin-bottom:0.75rem;
 }
 .btn-filtro{
-  background:rgba(255,255,255,.08); color:#fff; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600; transition:background .2s ease;
+  display:inline-flex;align-items:center;
+  padding:11px 20px;
+  border-radius:50px;
+  border:1px solid var(--border2);
+  background:rgba(255,255,255,0.05);
+  color:var(--text);
+  font-family:'Montserrat',sans-serif;
+  font-size:1rem;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  position:relative;white-space:nowrap;
 }
-.btn-filtro:hover{ background:rgba(255,255,255,.18); }
-.btn-filtro.activo{ background:var(--primary); color:#000; box-shadow:0 0 8px rgba(85,193,231,.7); }
-.btn-filtro.quitar{ background:#aa3333; }
-.btn-filtro.quitar:hover{ background:#cc4444; }
+.btn-filtro:hover{background:rgba(255,255,255,0.10);border-color:rgba(255,255,255,0.22);}
+.btn-filtro.activo{
+  background:rgba(0,79,200,0.2);
+  border-color:rgba(0,79,200,0.55);
+  color:#fff;
+}
+.btn-filtro.quitar{
+  color:var(--muted);
+  border-color:var(--border2);
+  background:transparent;
+}
+.btn-filtro.quitar:hover{color:#fff;}
 
-/* 10) Preview y video real */
-.video-preview{
-  width:100%; border-radius:8px; object-fit:cover; cursor:pointer; display:block; position:relative; z-index:1; opacity:.97; transition:opacity .25s ease;
-}
-.video-preview:hover{ opacity:1; }
-video.real{ display:block; position:relative; z-index:0; }
-
-/* 11) Scroll-top */
-.scroll-top{
-  position:fixed; bottom:30px; right:30px; z-index:1000;
-  background:rgba(255,255,255,.1); color:#fff;
-  border:1px solid #fff; padding:10px 12px; font-size:1.2rem;
-  border-radius:50%; cursor:pointer; display:none;
-  transition:background .25s ease, border-color .25s ease;
-}
-.scroll-top:hover{ background:var(--primary); border-color:var(--primary); }
-
-/* 12) Footer (como el de inicio) */
-.site-footer{
-  background:#111;
-  color:#ccc;
-  padding:25px;
-  text-align:center;
-}
-.site-footer a{
-  color:#55c1e7;
-  margin:0 8px;
-  text-decoration:none;
-}
-.site-footer a:hover{ text-decoration:underline; }
-.footer-copy{ font-size:.875rem; margin-top:15px; color:#bbb; }
-
-/* 13) Accesibilidad general */
-a:focus-visible, button:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
-
-/* 14) Responsivo fino */
-@media (max-width:1024px){
-  .video-grid{ padding:0 10px; }
-  .video-card{ padding:14px; }
-}
-/* Asegurar jerarquía de importancia y anchos en ambos tamaños */
-.btn-share-large {
-  font-size: 1rem;
-  white-space: nowrap;
-}
-.btn-alt {
-  font-size: 0.95rem;     /* un poco más chico */
-  white-space: nowrap;
+/* Override botones de día inyectados con inline styles por script */
+#filtro-dia button{
+  font-size:1rem !important;
+  padding:11px 16px !important;
+  font-family:'Montserrat',sans-serif !important;
 }
 
-/* Cuando estén juntos dentro de la tarjeta de video, forzar proporciones */
-.video-card .btn-share-large { flex: 1 1 65%; }  /* más ancho */
-.video-card .btn-alt        { flex: 0 0 auto; }  /* se adapta a su texto */
-
-@media (max-width: 768px) {
-  .video-card .btn-share-large { flex: 1 1 auto; min-width: 60%; }
-  .video-card .btn-alt { flex: 0 0 auto; }
+/* ══════════════════════════════════════════
+   BANNER "REGISTRAR EN VIVO"
+══════════════════════════════════════════ */
+.live-banner,
+.register-banner{
+  background:rgba(0,79,200,0.10);
+  border:1px solid rgba(0,79,200,0.30);
+  border-radius:var(--radius);
+  padding:1.25rem 1.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:1.25rem;flex-wrap:wrap;
+  margin-bottom:1.5rem;
+  position:relative;overflow:hidden;
 }
-/* --- 1) Quitar cualquier scroll horizontal accidental en móvil --- */
-html, body { overflow-x: hidden; }
-
-/* --- 2) Contenedor de botones dentro de cada tarjeta de video --- */
-/* Tu script crea ese contenedor como el último <div> dentro de .video-card */
-.video-card > div:last-child{
-  display: flex;
-  align-items: stretch;
-  gap: 12px;
-  width: 100%;
-  box-sizing: border-box;
+.live-banner::before,
+.register-banner::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(to bottom, var(--blue2), var(--blue));
+  border-radius:3px 0 0 3px;
 }
-
-/* Hacer que las sombras / bordes nunca empujen el ancho */
-.video-card,
-.video-card .btn-share-large,
-.video-card .btn-alt{
-  max-width: 100%;
-  box-sizing: border-box;
+.live-banner-text,
+.register-banner-text{padding-left:0.25rem;}
+.live-banner-text h3,
+.register-banner-text h3{
+  font-size:1.05rem;font-weight:800;color:#fff;margin-bottom:0.25rem;
 }
-
-/* --- 3) Jerarquía y tamaños de botones: misma tipografía, share un poco más “fuerte” --- */
-.btn-share-large{ font-size: 1rem; font-weight: 700; }
-.btn-alt{ font-size: 1rem; font-weight: 600; }  /* mismo tamaño de letra, un poco menos de peso */
-
-/* Desktop: el de compartir ocupa más horizontal */
-@media (min-width: 769px){
-  .video-card .btn-share-large{ flex: 1 1 65%; }
-  .video-card .btn-alt{ flex: 0 0 auto; }
+.live-banner-text p,
+.register-banner-text p{
+  font-size:0.95rem;color:var(--muted);line-height:1.5;
 }
-
-/* Móvil: que NO se desborden. Los apilamos verticalmente. */
-@media (max-width: 768px){
-  .video-card > div:last-child{
-    flex-direction: column;
-    gap: 10px;
-  }
-  .video-card .btn-share-large,
-  .video-card .btn-alt{
-    width: 100%;
-  }
+.live-banner-btns,
+.register-banner-btns{
+  display:flex;gap:0.75rem;flex-wrap:wrap;flex-shrink:0;
+  align-items:center;
 }
-
-/* --- 4) Por si algún video rompe el layout, lo contenemos --- */
-.video-card{ overflow: hidden; }
-.video-card video,
-.video-card .video-preview{ max-width: 100%; height: auto; }
-
-/* --- 5) (ya lo tenías) Botones azules con borde blanco --- */
-.btn-share-large{
-  background: #27459d;
-  border: 1px solid #fff;
+.btn-live-sm,
+.btn-register{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  background:var(--blue);color:#fff;
+  padding:0.7rem 1.4rem;border-radius:50px;
+  text-decoration:none;font-size:1rem;font-weight:800;
+  border:1px solid var(--blue2);
+  box-shadow:0 0 16px rgba(0,79,200,0.35);
+  transition:all .2s;white-space:nowrap;
+  font-family:'Montserrat',sans-serif;
+  cursor:pointer;
 }
-.btn-share-large:hover{ background: #1f347a; }
-
-.btn-alt{
-  background: #27459d;
-  border: 1px solid #fff;
+.btn-live-sm:hover,
+.btn-register:hover{background:var(--blue2);transform:translateY(-1px);}
+.btn-recover{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  background:transparent;color:var(--muted);
+  padding:0.7rem 1.4rem;border-radius:50px;
+  text-decoration:none;font-size:1rem;font-weight:600;
+  border:1px solid var(--border2);
+  transition:all .2s;white-space:nowrap;
+  font-family:'Montserrat',sans-serif;
 }
-.btn-alt:hover{ background: #1f347a; }
+.btn-recover:hover{color:#fff;border-color:rgba(255,255,255,0.25);}
 
-/* === BOTONES DE LAS TARJETAS ====================================== */
-
-/* Compartir | Descargar: centrado vertical y ancho flexible */
-.btn-share-large{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;         /* alto consistente */
-  padding: 12px 28px;       /* simétrico */
-  white-space: nowrap;
-  box-sizing: border-box;
+@media(max-width:520px){
+  .live-banner,
+  .register-banner{flex-direction:column;align-items:flex-start;}
+  .live-banner-btns,
+  .register-banner-btns{width:100%;}
+  .btn-live-sm,
+  .btn-register,
+  .btn-recover{flex:1;justify-content:center;}
 }
 
-/* Ver otra perspectiva: TEXTO CENTRADO y un poco más angosto */
-.btn-alt{
-  display: inline-flex;     /* <- centra perfecto el texto */
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  padding: 10px 18px;       /* más angosto que el de compartir */
-  white-space: nowrap;
-  box-sizing: border-box;
-  font-size: 1rem;          /* igual que compartir */
-  font-weight: 600;         /* un poco menor para jerarquía */
-  background: #27459d;
-  border: 1px solid #fff;
-}
-.btn-alt:hover{ background:#1f347a; }
-
-/* Evitar desbordes en móvil: apilados y 100% de ancho */
-.video-card > div:last-child{
-  display: flex;
-  align-items: stretch;
-  gap: 12px;
-  width: 100%;
-  box-sizing: border-box;
+/* ══════════════════════════════════════════
+   AVISO 24H
+══════════════════════════════════════════ */
+.aviso,
+.note-24h{
+  font-size:0.85rem;color:rgba(234,242,255,0.3);
+  text-align:center;padding:0.5rem 0;
+  margin-bottom:0.75rem;
 }
 
-@media (min-width: 769px){
-  .video-card .btn-share-large{ flex: 1 1 65%; }  /* más ancho en desktop */
-  .video-card .btn-alt{ flex: 0 0 auto; }
+/* ══════════════════════════════════════════
+   LOADING
+══════════════════════════════════════════ */
+#loading{
+  display:none;
+  text-align:center;padding:2rem;
+  font-size:1rem;color:var(--muted);
 }
-@media (max-width: 768px){
-  .video-card > div:last-child{ flex-direction: column; gap: 10px; }
-  .video-card .btn-share-large,
-  .video-card .btn-alt{ width: 100%; }
+.loading-wrap{
+  display:flex;align-items:center;justify-content:center;
+  gap:0.75rem;padding:3rem 0;
+  color:var(--muted);font-size:0.95rem;
 }
-
-/* Cinturón de seguridad: nada puede causar scroll horizontal */
-html, body{ overflow-x:hidden; }
-.video-card,
-.video-card .btn-share-large,
-.video-card .btn-alt{ max-width:100%; box-sizing:border-box; }
-/* ======== BOTONES DE VIDEO – COMPACTOS EN MÓVIL Y SIN DESALINEO ======== */
-
-/* Base: centra texto siempre */
-.btn-share-large,
-.btn-alt{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  white-space: nowrap;
+.spinner{
+  width:20px;height:20px;border-radius:50%;
+  border:2px solid var(--border2);
+  border-top-color:var(--blue2);
+  animation:spin 0.7s linear infinite;
 }
 
-/* Desktop: compartir un poco más “importante” */
-@media (min-width: 769px){
-  .video-card > div:last-child{
-    display: flex;
-    align-items: stretch;
-    gap: 12px;
-    width: 100%;
-  }
-  .video-card .btn-share-large{ flex: 1 1 65%; font-size: 1rem; min-height: 48px; padding: 12px 24px; }
-  .video-card .btn-alt        { flex: 0 0 auto;  font-size: 1rem; min-height: 48px; padding: 10px 18px; }
+/* ══════════════════════════════════════════
+   VIDEO GRID + CARDS
+══════════════════════════════════════════ */
+.video-grid{
+  display:flex;flex-direction:column;
+  gap:1.25rem;
+}
+.video-card{
+  background:rgba(0,79,200,0.06);
+  border:1px solid rgba(0,79,200,0.22);
+  border-radius:var(--radius);
+  padding:1.25rem;
+  transition:border-color .2s;
+  position:relative;overflow:hidden;
+}
+.video-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--blue),transparent);
+  opacity:0;transition:opacity .3s;
+}
+.video-card:hover{border-color:rgba(0,79,200,0.45);}
+.video-card:hover::before{opacity:1;}
+
+.video-title{
+  font-size:1.25rem;font-weight:800;color:#fff;
+  margin-bottom:0.6rem;letter-spacing:-0.3px;
 }
 
-/* MÓVIL: más chicos, 100% de ancho, apilados y ALINEADOS */
-@media (max-width: 768px){
-  .video-card > div:last-child{
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;                 /* más compacto */
-    width: 100%;
-  }
-
-  .video-card .btn-share-large,
-  .video-card .btn-alt{
-    width: 100%;
-    font-size: .95rem;        /* texto un poco menor */
-    min-height: 42px;         /* más bajitos para que luzca el video */
-    padding: 10px 14px;       /* simétrico -> se alinean perfecto */
-    border-radius: 10px;      /* mismo radio en ambos */
-    border-width: 1px;        /* misma línea en ambos */
-  }
+/* Tags inline del script (mkTag) */
+.video-card div[style*="gap: 8px"] > span,
+.video-card span[style*="border-radius: 999px"]{
+  font-family:'Montserrat',sans-serif !important;
+  font-size:0.9rem !important;
+  padding:5px 13px !important;
+  background:rgba(0,79,200,0.15) !important;
+  border:1px solid rgba(0,79,200,0.35) !important;
+  color:var(--blue3) !important;
+  border-radius:50px !important;
+  font-weight:800 !important;
 }
 
-/* Cinturón anti-scroll horizontal por si acaso */
-html, body{ overflow-x: hidden; }
-.video-card,
-.video-card .btn-share-large,
-.video-card .btn-alt{ max-width: 100%; box-sizing: border-box; }
-
-/* Colores (por si se han sobrescrito) */
-.btn-share-large{ background:#27459d; border:1px solid #fff; }
-.btn-share-large:hover{ background:#1f347a; }
-.btn-alt{ background:#27459d; border:1px solid #fff; }
-.btn-alt:hover{ background:#1f347a; }
-/* ==== NORMALIZAR ambos tipos (button y <a>) para que midan igual ==== */
-.video-card .btn-share-large,
-.video-card .btn-alt{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  white-space: nowrap;
-  appearance: none;
-  -webkit-appearance: none;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 600;
-  line-height: 1.1;
-  border: 1px solid #fff;   /* mismos bordes */
-  border-radius: 10px;      /* mismo radio */
-  background: #27459d;
-  color: #fff;
+/* Video elements */
+video.video-preview,
+video.real{
+  width:100%;
+  border-radius:12px;
+  display:block;
+  background:#000;
+  object-fit:contain;
 }
+video.real{display:none;}
 
-/* Desktop: compartir “manda” un poco más */
-@media (min-width: 769px){
-  .video-card > div:last-child{
-    display:flex; align-items:stretch; gap:12px; width:100%;
-  }
-  .video-card .btn-share-large{ flex:1 1 65%; font-size:1rem;  min-height:44px; padding:10px 22px; }
-  .video-card .btn-alt        { flex:0 0 auto;  font-size:1rem;  min-height:44px; padding:10px 18px; }
-}
-
-/* MÓVIL: más chicos y perfectamente alineados (¡sin scroll horizontal!) */
-@media (max-width: 768px){
-  .video-card > div:last-child{
-    display:flex; flex-direction:column; align-items:stretch; gap:8px; width:100%;
-  }
-  .video-card .btn-share-large,
-  .video-card .btn-alt{
-    width:100%;
-    font-size:.90rem;      /* más discretos para que luzca el video */
-    min-height:38px;       /* bajitos */
-    padding:8px 14px;      /* simétricos -> alinean perfecto */
-  }
-}
-
-/* cinturón antidesbordes */
-html, body{ overflow-x:hidden; }
-.video-card,
-.video-card .btn-share-large,
-.video-card .btn-alt{ max-width:100%; box-sizing:border-box; }
-.botones-container {
-  display: flex;
-  justify-content: center; /* centra horizontalmente */
-  align-items: center;     /* centra verticalmente */
-  gap: 15px;               /* espacio entre los botones */
-}
-
-.boton-compartir, .boton-perspectiva {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-/* ===== FIX DEFINITIVO DE BOTONES EN TARJETA ===== */
-
-/* Usa SIEMPRE el contenedor que genera tu script */
+/* ── Botones de acción por video ── */
 .botones-container{
   display:flex;
-  align-items:stretch;
-  gap:12px;
-  width:100%;
-}
-
-/* Normalizamos ambos (button y <a>) */
-.botones-container .btn-share-large,
-.botones-container .btn-alt{
-  display:inline-flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:1rem;
   align-items:center;
-  justify-content:center;
-  box-sizing:border-box;
+}
+.btn-share-large{
+  flex:1;min-width:160px;
+  display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;
+  background:var(--blue);color:#fff;
+  padding:0.85rem 1.4rem;border-radius:50px;
+  border:1px solid var(--blue2);
   font-family:'Montserrat',sans-serif;
-  line-height:1;                 /* clave para centrar vertical */
+  font-size:1rem;font-weight:800;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 0 16px rgba(0,79,200,0.3);
+}
+.btn-share-large:hover{background:var(--blue2);transform:translateY(-1px);}
+.btn-share-large:disabled{opacity:0.6;cursor:default;transform:none;}
+
+/* Progress bar */
+.btn-progress{
+  display:flex;align-items:center;gap:6px;
+  width:100%;font-size:0.88rem;flex-wrap:wrap;
+}
+.btn-progress__label{color:rgba(255,255,255,0.85);white-space:nowrap;}
+.btn-progress__percent{color:#fff;font-weight:700;min-width:32px;text-align:right;white-space:nowrap;}
+.btn-progress__bar{
+  flex:1;min-width:60px;height:5px;
+  background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden;
+}
+.btn-progress__fill{
+  height:100%;background:var(--blue2);border-radius:4px;
+  transition:width .2s ease;
+}
+.btn-progress__spinner{
+  display:none;
+  width:16px;height:16px;border-radius:50%;
+  border:2px solid rgba(255,255,255,0.25);
+  border-top-color:#fff;
+  animation:spin 0.7s linear infinite;
+}
+.btn-progress__cancel{
+  background:none;border:none;color:rgba(255,255,255,0.5);
+  font-size:0.85rem;cursor:pointer;padding:0 2px;font-family:'Montserrat',sans-serif;
   white-space:nowrap;
-  min-height:42px;               /* tamaño compacto en móvil */
-  border:1px solid #fff;
-  border-radius:10px;
-  background:#27459d;
+}
+.btn-progress__cancel:hover{color:#fff;}
+
+/* Promo buttons */
+.btn-promo{
+  font-family:'Montserrat',sans-serif !important;
+  border-radius:50px !important;
+  font-size:1rem !important;
+  font-weight:800 !important;
+  cursor:pointer;
+  transition:filter .15s, transform .15s !important;
+}
+.btn-promo:hover{filter:brightness(1.08);transform:translateY(-1px);}
+
+/* ══════════════════════════════════════════
+   LOCACIONES / CANCHAS GRID
+   Override para <li><a class="link-blanco"> del script
+══════════════════════════════════════════ */
+#locaciones-lista,
+#canchas-lista{
+  list-style:none;padding:0;
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
+  gap:1rem;
+}
+#locaciones-lista li,
+#canchas-lista li{
+  list-style:none;
+}
+#locaciones-lista .link-blanco,
+#canchas-lista .link-blanco{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.1rem 1.4rem;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  color:#fff;text-decoration:none;
+  font-size:1.05rem;font-weight:700;
+  transition:all .2s;
+  position:relative;overflow:hidden;
+}
+#locaciones-lista .link-blanco::after,
+#canchas-lista .link-blanco::after{
+  content:'→';
+  font-size:1.1rem;font-weight:400;
+  color:var(--muted);transition:color .2s, transform .2s;
+}
+#locaciones-lista .link-blanco:hover,
+#canchas-lista .link-blanco:hover{
+  border-color:rgba(0,79,200,0.55);
+  background:rgba(0,79,200,0.10);
+  transform:translateY(-2px);
+}
+#locaciones-lista .link-blanco:hover::after,
+#canchas-lista .link-blanco:hover::after{
+  color:#fff;transform:translateX(3px);
+}
+
+/* ══════════════════════════════════════════
+   PAGINADOR
+══════════════════════════════════════════ */
+#bottom-controls{margin:1.5rem 0 0.5rem;}
+#paginator-bottom>div{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+}
+#paginator-bottom button{
+  padding:11px 18px;
+  border:1px solid var(--border2);
+  border-radius:50px;
+  background:rgba(255,255,255,0.05);
+  color:var(--text);
+  font-family:'Montserrat',sans-serif;
+  font-size:1rem;font-weight:700;
+  cursor:pointer;transition:all .2s;
+}
+#paginator-bottom button:hover:not(:disabled){
+  background:rgba(0,79,200,0.15);border-color:rgba(0,79,200,0.4);
+}
+#paginator-bottom button:disabled{
+  opacity:0.5;cursor:default;
+  background:rgba(0,79,200,0.12);
+  border-color:rgba(0,79,200,0.3);
   color:#fff;
-  text-decoration:none;
-  margin:0;                      /* elimina desajustes heredados */
+}
+#paginator-bottom span{
+  font-size:0.88rem;color:var(--muted);margin-left:auto;
 }
 
-/* Quita el pequeño empuje que tenías en .btn-alt */
-.botones-container .btn-alt{ margin-left:0 !important; }
+/* ══════════════════════════════════════════
+   SCROLL TO TOP
+══════════════════════════════════════════ */
+.scroll-top{
+  position:fixed;bottom:1.5rem;right:1.25rem;z-index:90;
+  width:50px;height:50px;border-radius:50%;
+  background:var(--blue);color:#fff;
+  border:1px solid var(--blue2);
+  font-size:1.25rem;font-weight:700;
+  cursor:pointer;
+  box-shadow:0 0 18px rgba(0,79,200,0.5);
+  transition:all .2s;
+  display:none;
+}
+.scroll-top:hover{background:var(--blue2);transform:translateY(-2px);}
 
-/* Jerarquía: compartir un poco más importante en desktop */
-@media (min-width:769px){
-  .botones-container .btn-share-large{ flex:1 1 66%; padding:12px 24px; font-size:1rem;  font-weight:700; }
-  .botones-container .btn-alt        { flex:0 0 auto;  padding:10px 18px; font-size:1rem;  font-weight:600; }
+/* ══════════════════════════════════════════
+   FOOTER — compartido
+══════════════════════════════════════════ */
+.site-footer,
+footer{
+  border-top:1px solid var(--border2);
+  padding:1.75rem 2rem;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:1rem;
+  position:relative;z-index:1;margin-top:2rem;
+}
+.site-footer{max-width:780px;margin-left:auto;margin-right:auto;}
+
+.footer-info p,
+.foot-note{font-size:0.92rem;color:var(--muted);line-height:1.7;}
+.footer-info a,
+.foot-note a{color:var(--blue3);text-decoration:none;}
+.footer-info a:hover,
+.foot-note a:hover{text-decoration:underline;}
+.foot-note{text-align:center;}
+
+.footer-redes,
+.foot-links{display:flex;gap:1.5rem;flex-wrap:wrap;}
+.footer-redes a,
+.foot-links a{
+  color:var(--muted);text-decoration:none;
+  font-size:0.92rem;font-weight:500;transition:color .2s;
+}
+.footer-redes a:hover,
+.foot-links a:hover{color:#fff;}
+
+.footer-copy,
+.foot-copy{color:rgba(234,242,255,0.25);font-size:0.78rem;width:100%;}
+
+/* Footer logo (no text) */
+.foot-logo{display:flex;align-items:center;gap:0.6rem;text-decoration:none;}
+.foot-logo img{height:26px;width:auto;}
+.foot-logo-text{display:none;}
+
+@media(max-width:600px){
+  .site-footer,
+  footer{flex-direction:column;text-align:center;padding:1.25rem;}
+  .footer-copy,
+  .foot-copy{text-align:center;}
 }
 
-/* Móvil: apilar, 100% de ancho y MISMO look (sin desalineo) */
-@media (max-width:768px){
-  .botones-container{ flex-direction:column; gap:8px; }
-  .botones-container .btn-share-large,
-  .botones-container .btn-alt{
-    width:100%;
-    padding:9px 14px;
-    font-size:.95rem;
-  }
-}
-/* ================== Variables rápidas (ajusta a tu tema) ================== */
-:root {
-  --chip-bg: rgba(255,255,255,0.08);
-  --chip-bg-hover: rgba(255,255,255,0.18);
-  --chip-outline: rgba(255,255,255,0.28);
-  --chip-active-outline: rgba(255,255,255,0.6);
-  --chip-text: #fff;
-
-  --btn-fg: #fff;
-  --btn-bg: rgba(255,255,255,0.12);
-  --btn-bg-hover: rgba(255,255,255,0.22);
-
-  --bar-bg: rgba(255,255,255,0.25);
-  --bar-fill: rgba(255,255,255,0.9);
-}
-
-/* ================== Paginadores (arriba y abajo) ================== */
-#paginator-top, #paginator-bottom {
-  margin: 8px 0;
-}
-#paginator-top > div, #paginator-bottom > div {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-#paginator-top button,
-#paginator-bottom button {
-  appearance: none;
-  background: var(--chip-bg);
-  color: var(--chip-text);
-  border: 1px solid var(--chip-outline);
-  border-radius: 999px;
-  padding: 6px 10px;
-  cursor: pointer;
-  transition: background .15s ease, transform .08s ease;
-}
-#paginator-top button:hover,
-#paginator-bottom button:hover { background: var(--chip-bg-hover); }
-#paginator-top button:disabled,
-#paginator-bottom button:disabled {
-  opacity: .55; cursor: default; transform: none;
-}
-#paginator-top button:active:not(:disabled),
-#paginator-bottom button:active:not(:disabled) { transform: translateY(1px); }
-
-/* Número de página activo (JS le pone estilo inline; reforzamos aquí) */
-#paginator-top button[style*="font-weight: 700"],
-#paginator-bottom button[style*="font-weight: 700"] {
-  outline: 1px solid var(--chip-active-outline) !important;
-}
-
-/* Link "Ir al lado opuesto" estilizado como chip */
-#paginator-top a, #paginator-bottom a {
-  text-decoration: none;
-  color: var(--chip-text);
-  background: var(--chip-bg);
-  border: 1px solid var(--chip-outline);
-  border-radius: 999px;
-  padding: 6px 10px;
-  transition: background .15s ease;
-}
-#paginator-top a:hover, #paginator-bottom a:hover { background: var(--chip-bg-hover); }
-
-/* Info de rango ("Mostrando X–Y de Z") */
-#paginator-top span:last-child,
-#paginator-bottom span:last-child {
-  margin-left: auto;
-  opacity: .8;
-  font-size: .95em;
-}
-
-/* ================== Botón Compartir/Descargar con progreso ================== */
-.btn-share-large {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--chip-outline);
-  background: var(--btn-bg);
-  color: var(--btn-fg);
-  cursor: pointer;
-  transition: background .15s ease, transform .08s ease;
-}
-.btn-share-large:hover { background: var(--btn-bg-hover); }
-.btn-share-large:active { transform: translateY(1px); }
-.btn-share-large:disabled { opacity: .6; cursor: default; transform: none; }
-
-/* Contenido de progreso dentro del botón */
-.btn-progress {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-}
-.btn-progress__label {
-  font-weight: 600;
-  letter-spacing: .2px;
-}
-.btn-progress__percent {
-  min-width: 3ch;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-/* Barra */
-.btn-progress__bar {
-  position: relative;
-  flex: 1;
-  height: 6px;
-  min-width: 100px;
-  border-radius: 999px;
-  background: var(--bar-bg);
-  overflow: hidden;
-}
-.btn-progress__fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 0%;
-  background: var(--bar-fill);
-  border-radius: inherit;
-  transition: width 120ms linear, opacity 120ms linear;
-}
-/* Spinner (cuando no hay Content-Length) */
-.btn-progress__spinner {
-  display: none;
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  border: 2px solid var(--bar-fill);
-  border-top-color: transparent;
-  animation: spin 0.9s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Botón cancelar dentro del botón principal */
-.btn-progress__cancel {
-  appearance: none;
-  background: var(--chip-bg);
-  color: var(--chip-text);
-  border: 1px solid var(--chip-outline);
-  border-radius: 8px;
-  padding: 4px 8px;
-  cursor: pointer;
-  transition: background .15s ease;
-}
-.btn-progress__cancel:hover { background: var(--chip-bg-hover); }
-
-/* ================== Filtros (si quieres pulirlos un poco) ================== */
-.btn-filtro {
-  background: var(--chip-bg);
-  color: var(--chip-text);
-  border: 1px solid var(--chip-outline);
-  border-radius: 999px;
-  padding: 6px 10px;
-  margin: 4px 6px 0 0;
-  cursor: pointer;
-  transition: background .15s ease, transform .08s ease;
-}
-.btn-filtro:hover { background: var(--chip-bg-hover); }
-.btn-filtro.activo {
-  outline: 1px solid var(--chip-active-outline);
-  font-weight: 700;
-}
-.btn-filtro.quitar { opacity: .9; }
-
-/* Respeta preferencias de movimiento reducido */
-@media (prefers-reduced-motion: reduce) {
-  .btn-progress__fill { transition: none; }
-  .btn-share-large, #paginator-top button, #paginator-bottom button { transition: none; }
-}
-/* --- Ajustes anti-overflow para el botón de progreso --- */
-.btn-share-large {
-  box-sizing: border-box;
-}
-
-/* Móvil: que el botón pueda ocupar el ancho completo y permitir wrap */
-@media (max-width: 480px) {
-  .btn-share-large { width: 100%; }
-
-  .btn-progress {
-    flex-wrap: wrap;      /* permite que la barra baje a la segunda línea */
-    gap: 6px;
-  }
-  .btn-progress__bar {
-    flex: 1 1 100%;       /* barra ocupa toda la línea si hace wrap */
-    min-width: 0;         /* evita forzar ancho mínimo que cause overflow */
-    margin-top: 4px;      /* separa visualmente en la segunda línea */
-  }
-  .btn-progress__cancel {
-    padding: 4px 6px;
-    font-size: 0.95em;
-  }
-}
-
-/* Pantallas MUY angostas: quitar la palabra “Descargando…” */
-@media (max-width: 360px) {
-  .btn-progress__label { display: none; }
-}
-
-/* Ultra-compacto: si aún falta espacio, ocultar también el % */
-@media (max-width: 320px) {
-  .btn-progress__percent { display: none; }
-}
-
-/* Cinturón anti-scroll horizontal (por si acaso) */
-html,body{ overflow-x:hidden; }
-.btn-promo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border: 1px solid #fff;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 1rem;
-  text-decoration: none;
-  color: white;
-  cursor: pointer;
-  transition: background .25s ease, transform .15s ease;
-  width: 100%;
-}
-
-.btn-promo:hover {
-  transform: translateY(-1px);
-}
-
-.btn-promo img {
-  height: 20px;
-  width: auto;
-  object-fit: contain;
-}
-/* Botón instalar en footer */
-.footer-install-btn{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  white-space: nowrap;
-}
-
-/* Modal instalación */
-.install-modal{
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  padding: 18px;
-}
-
-.install-modal.show{
-  display: flex;
-}
-
-.install-backdrop{
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
-}
-
-.install-card{
-  position: relative;
-  width: min(520px, 100%);
-  background: #0f0f10;
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 12px 35px rgba(0,0,0,0.35);
-  color: #fff;
-  text-align: left;
-}
-
-.install-card h3{
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.install-steps{
-  margin: 12px 0 14px 18px;
-  line-height: 1.35;
-  opacity: 0.95;
-}
-/* =========================
-   PUNTAZO · Filtro por días
-   ========================= */
-.pz-day-wrap{
-  max-width: 1100px;
-  margin: 10px auto 0;
-  padding: 0 16px;
-}
-
-.pz-daybar{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: flex-start;
-  margin: 10px 0 6px;
-}
-
-.pz-daybtn{
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.92);
-  font-weight: 900;
-  cursor: pointer;
-  user-select: none;
-  backdrop-filter: blur(6px);
-  transition: transform .12s ease, opacity .12s ease, background .12s ease;
-}
-
-.pz-daybtn:hover{ transform: translateY(-1px); opacity: 0.97; }
-.pz-daybtn.is-active{
-  background: rgba(255,255,255,0.16);
-  border-color: rgba(255,255,255,0.22);
-  color: #fff;
-}
-
-.pz-daybtn.is-disabled{
-  opacity: 0.45;
-  cursor: default;
-  transform: none;
-}
-
-.pz-count{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-width: 26px;
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.10);
-  border: 1px solid rgba(255,255,255,0.14);
-  font-weight: 900;
-  font-size: 0.85rem;
-}
-
-.pz-dot{
-  position: absolute;
-  top: 6px;
-  right: 7px;
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: #ff2d2d;
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.35);
-}
-
-.pz-dot.pulse{
-  animation: pzPulse 1.2s ease-in-out infinite;
-}
-
-@keyframes pzPulse{
-  0%{ transform: scale(1); opacity: .85; }
-  50%{ transform: scale(1.25); opacity: 1; }
-  100%{ transform: scale(1); opacity: .85; }
-}
-
-.pz-recoverbar{
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin: 6px 0 4px;
-  opacity: 0.92;
-}
-
-.pz-mini{
-  font-size: 0.92rem;
-  color: rgba(255,255,255,0.88);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.pz-toggle{
-  border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.92);
-  font-weight: 900;
-  padding: 8px 10px;
-  border-radius: 14px;
-  cursor: pointer;
-}
-.pz-toggle.is-on{
-  background: rgba(255,255,255,0.16);
-  color: #fff;
-}
-
-.pz-empty{
-  margin: 10px 0 0;
-  padding: 10px 12px;
-  border-radius: 16px;
-  border: 1px dashed rgba(255,255,255,0.18);
-  color: rgba(255,255,255,0.86);
-  opacity: 0.95;
-}
-
-/* Badge de recuperado sobre cada card */
-.pz-card{ position: relative; }
-.pz-badge{
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 3;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-weight: 950;
-  font-size: 0.78rem;
-  letter-spacing: 0.3px;
-  color: #111;
-  background: rgba(255,255,255,0.92);
-  border: 1px solid rgba(0,0,0,0.12);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.30);
-}
-
-.pz-hide-by-day{ display: none !important; }
-
-/* ========== GRID CARDS (Locaciones / Canchas / Lados) ========== */
-.grid-cards{
-  list-style: none;
-  padding: 0;
-  margin: 0;
-
-  display: grid;
-  gap: 14px;
-
-  /* 2 columnas cuando se pueda, 1 en pantallas chicas */
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-}
-
-/* cada <li> no necesita estilos, pero por si acaso */
-.grid-cards > li{
-  margin: 0 !important; /* mata el marginBottom inline que mete JS */
-  padding: 0;
-}
-
-/* el link se vuelve “tarjeta” */
-.grid-cards > li > a{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-
-  min-height: 72px;
-  padding: 16px 14px;
-  border-radius: 16px;
-
-  text-decoration: none;
-
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.14);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.22);
-
-  transition: transform .12s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
-}
-
-/* hover elegante (no feria) */
-.grid-cards > li > a:hover{
-  transform: translateY(-2px);
-  background: rgba(255,255,255,0.11);
-  border-color: rgba(255,255,255,0.22);
-  opacity: 0.98;
-}
-
-/* opcional: que el texto se vea más “botón” */
-.grid-cards > li > a.link-blanco{
-  font-weight: 800;
-  letter-spacing: 0.2px;
-}
-
-/* en móvil, tarjetas más compactas */
-@media (max-width: 520px){
-  .grid-cards > li > a{
-    min-height: 64px;
-    padding: 14px 12px;
-    border-radius: 14px;
-  }
-}
-
-
-
+/* ══════════════════════════════════════════
+   ANIMATIONS
+══════════════════════════════════════════ */
+.fade-in{animation:fadeIn 0.4s ease both;}
+.fade-section{opacity:0;transform:translateY(24px);transition:opacity 0.55s ease,transform 0.55s ease;}
+.fade-section.visible{opacity:1;transform:translateY(0);}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+@keyframes spin{to{transform:rotate(360deg);}}
