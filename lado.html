@@ -90,12 +90,12 @@ body{
 .logo-link img{height:28px;width:auto;}
 .logo-link-text{font-size:1rem;font-weight:900;letter-spacing:1px;color:#fff;}
 .navbar{display:flex;align-items:center;gap:1.5rem;}
-.navbar a{color:var(--muted);text-decoration:none;font-size:0.8rem;font-weight:600;transition:color .2s;white-space:nowrap;}
+.navbar a{color:var(--muted);text-decoration:none;font-size:0.88rem;font-weight:600;transition:color .2s;white-space:nowrap;}
 .navbar a:hover{color:#fff;}
 .highlight-btn{
   background:var(--blue);color:#fff !important;
-  padding:0.4rem 1rem;border-radius:50px;
-  font-size:0.78rem !important;font-weight:800 !important;
+  padding:0.5rem 1.2rem;border-radius:50px;
+  font-size:0.88rem !important;font-weight:800 !important;
   border:1px solid var(--blue2);
   box-shadow:0 0 16px rgba(0,79,200,0.4);
   transition:all .2s !important;
@@ -115,7 +115,7 @@ body{
     padding:0.5rem 0;z-index:99;
   }
   .navbar.show{display:flex;}
-  .navbar a{padding:0.85rem 1.75rem;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.88rem !important;}
+  .navbar a{padding:0.85rem 1.75rem;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.95rem !important;}
   .menu-toggle{display:block;}
   .site-header{padding:0.85rem 1.25rem;}
 }
@@ -132,7 +132,7 @@ body{
 @media(min-width:600px){.site-content{padding:5.5rem 2rem 4rem;}}
 
 /* ══════════════════════════════════════════
-   BREADCRUMB ROW
+   BREADCRUMB ROW  — MÁS GRANDE
 ══════════════════════════════════════════ */
 .top-row{
   display:flex;align-items:center;justify-content:space-between;
@@ -141,7 +141,7 @@ body{
 }
 .titulo-club{
   display:flex;align-items:center;gap:0.4rem;
-  flex-wrap:wrap;font-size:0.78rem;font-weight:600;
+  flex-wrap:wrap;font-size:0.92rem;font-weight:600;
 }
 .breadcrumb-link{
   color:var(--muted);text-decoration:none;transition:color .2s;
@@ -151,7 +151,7 @@ body{
 #nombre-lado{color:#fff;font-weight:700;}
 .recover-mini{
   display:inline-flex;align-items:center;gap:0.3rem;
-  color:var(--muted);font-size:0.72rem;font-weight:600;
+  color:var(--muted);font-size:0.82rem;font-weight:600;
   text-decoration:none;
   border-bottom:1px dashed rgba(255,255,255,0.18);
   padding-bottom:1px;transition:color .2s;
@@ -160,7 +160,7 @@ body{
 .recover-mini:hover{color:#fff;}
 
 /* ══════════════════════════════════════════
-   BTN VOLVER + LADO OPUESTO (fila)
+   BTN VOLVER + LADO OPUESTO (fila) — MÁS GRANDE
 ══════════════════════════════════════════ */
 .btn-volver-container{
   display:flex;align-items:center;justify-content:space-between;
@@ -170,18 +170,19 @@ body{
 .btn-volver{
   display:inline-flex;align-items:center;gap:0.35rem;
   color:var(--muted);text-decoration:none;
-  font-size:0.78rem;font-weight:600;
-  padding:0.45rem 0.9rem;border-radius:50px;
+  font-size:0.92rem;font-weight:600;
+  padding:0.55rem 1.1rem;border-radius:50px;
   border:1px solid var(--border2);
   transition:all .2s;white-space:nowrap;
 }
 .btn-volver:hover{color:#fff;border-color:rgba(255,255,255,0.22);}
+
 /* btn-alt = "Ir al lado opuesto" — el script.js lo inyecta con esta clase */
 .btn-alt{
   display:inline-flex;align-items:center;gap:0.35rem;
   color:var(--blue3);text-decoration:none;
-  font-size:0.78rem;font-weight:700;
-  padding:0.45rem 0.9rem;border-radius:50px;
+  font-size:0.92rem;font-weight:700;
+  padding:0.55rem 1.1rem;border-radius:50px;
   border:1px solid rgba(0,79,200,0.35);
   background:rgba(0,79,200,0.08);
   transition:all .2s;white-space:nowrap;
@@ -189,8 +190,7 @@ body{
 .btn-alt:hover{background:rgba(0,79,200,0.18);border-color:rgba(0,79,200,0.55);}
 
 /* ══════════════════════════════════════════
-   FILTRO DÍA + HORA
-   El script.js inyecta botones con .btn-filtro dentro de #filtro-dia y #filtro-horario
+   FILTRO DÍA + HORA  — MÁS GRANDE
 ══════════════════════════════════════════ */
 #filtro-dia,
 #filtro-horario,
@@ -201,13 +201,13 @@ body{
 /* Botones que genera el script */
 .btn-filtro{
   display:inline-flex;align-items:center;
-  padding:7px 14px;
+  padding:10px 18px;
   border-radius:50px;
   border:1px solid var(--border2);
   background:rgba(255,255,255,0.05);
   color:var(--text);
   font-family:'Montserrat',sans-serif;
-  font-size:0.78rem;font-weight:700;
+  font-size:0.92rem;font-weight:700;
   cursor:pointer;transition:all .2s;
   position:relative;white-space:nowrap;
 }
@@ -225,8 +225,7 @@ body{
 .btn-filtro.quitar:hover{color:#fff;}
 
 /* ══════════════════════════════════════════
-   BANNER "REGISTRAR EN VIVO"
-   Integrado, no agresivo — azul Puntazo
+   BANNER "REGISTRAR EN VIVO"  — INTEGRADO
 ══════════════════════════════════════════ */
 .live-banner{
   background:rgba(0,79,200,0.10);
@@ -245,15 +244,15 @@ body{
 }
 .live-banner-text{padding-left:0.25rem;}
 .live-banner-text h3{
-  font-size:0.88rem;font-weight:800;color:#fff;margin-bottom:0.2rem;
+  font-size:1rem;font-weight:800;color:#fff;margin-bottom:0.2rem;
 }
-.live-banner-text p{font-size:0.75rem;color:var(--muted);line-height:1.5;}
+.live-banner-text p{font-size:0.88rem;color:var(--muted);line-height:1.5;}
 .live-banner-btns{display:flex;gap:0.6rem;flex-wrap:wrap;flex-shrink:0;}
 .btn-live-sm{
   display:inline-flex;align-items:center;gap:0.35rem;
   background:var(--blue);color:#fff;
-  padding:0.55rem 1.1rem;border-radius:50px;
-  text-decoration:none;font-size:0.78rem;font-weight:800;
+  padding:0.65rem 1.3rem;border-radius:50px;
+  text-decoration:none;font-size:0.92rem;font-weight:800;
   border:1px solid var(--blue2);
   box-shadow:0 0 14px rgba(0,79,200,0.35);
   transition:all .2s;white-space:nowrap;
@@ -270,7 +269,7 @@ body{
    AVISO 24H
 ══════════════════════════════════════════ */
 .aviso{
-  font-size:0.72rem;color:rgba(234,242,255,0.3);
+  font-size:0.82rem;color:rgba(234,242,255,0.3);
   text-align:center;padding:0.5rem 0;
   margin-bottom:0.75rem;
 }
@@ -281,12 +280,11 @@ body{
 #loading{
   display:none;
   text-align:center;padding:2rem;
-  font-size:0.85rem;color:var(--muted);
+  font-size:0.95rem;color:var(--muted);
 }
 
 /* ══════════════════════════════════════════
-   VIDEO GRID
-   El script.js llena #videos-container con .video-card
+   VIDEO GRID  — VIDEOS MÁS GRANDES
 ══════════════════════════════════════════ */
 .video-grid{
   display:flex;flex-direction:column;
@@ -310,20 +308,20 @@ body{
 .video-card:hover{border-color:rgba(0,79,200,0.45);}
 .video-card:hover::before{opacity:1;}
 
-/* Título (hora) */
+/* Título (hora) — MÁS GRANDE */
 .video-title{
-  font-size:1rem;font-weight:800;color:#fff;
+  font-size:1.2rem;font-weight:800;color:#fff;
   margin-bottom:0.6rem;letter-spacing:-0.3px;
 }
 
-/* Tags nuevo / recuperado */
+/* Tags nuevo / recuperado — MÁS GRANDES */
 .video-card [style*="display: flex"][style*="gap: 8px"]{
   margin-bottom:0.6rem !important;
 }
 .video-card span[style*="border-radius: 999px"]{
   font-family:'Montserrat',sans-serif !important;
-  font-size:0.7rem !important;
-  padding:3px 10px !important;
+  font-size:0.85rem !important;
+  padding:5px 12px !important;
   background:rgba(0,79,200,0.15) !important;
   border:1px solid rgba(0,79,200,0.35) !important;
   color:var(--blue3) !important;
@@ -331,54 +329,50 @@ body{
   font-weight:800 !important;
 }
 
-/* Videos */
+/* Videos — SIN max-height restrictivo, más grandes */
 video.video-preview,
 video.real{
   width:100%;
   border-radius:12px;
   display:block;
   background:#000;
-  max-height:65vw;
   object-fit:contain;
 }
 video.real{display:none;}
 
-/* ── Botones de acción por video ── */
+/* ── Botones de acción por video — MÁS GRANDES ── */
 .botones-container{
   display:flex;
   flex-wrap:wrap;
-  gap:8px;
-  margin-top:0.9rem;
+  gap:10px;
+  margin-top:1rem;
   align-items:center;
 }
 
-/* Compartir | Descargar */
+/* Compartir | Descargar — MÁS GRANDE */
 .btn-share-large{
   flex:1;min-width:160px;
-  display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;
+  display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;
   background:var(--blue);color:#fff;
-  padding:0.65rem 1.1rem;border-radius:50px;
+  padding:0.85rem 1.3rem;border-radius:50px;
   border:1px solid var(--blue2);
   font-family:'Montserrat',sans-serif;
-  font-size:0.8rem;font-weight:800;
+  font-size:0.95rem;font-weight:800;
   cursor:pointer;transition:all .2s;
   box-shadow:0 0 16px rgba(0,79,200,0.3);
 }
 .btn-share-large:hover{background:var(--blue2);transform:translateY(-1px);}
 .btn-share-large:disabled{opacity:0.6;cursor:default;transform:none;}
 
-/* "Ver otra perspectiva" — inyectado por script con .btn-alt */
-/* ya definido arriba */
-
-/* Barra de progreso de descarga — inyectada por script */
+/* Barra de progreso de descarga */
 .btn-progress{
   display:flex;align-items:center;gap:6px;
-  width:100%;font-size:0.75rem;flex-wrap:wrap;
+  width:100%;font-size:0.85rem;flex-wrap:wrap;
 }
 .btn-progress__label{color:rgba(255,255,255,0.85);white-space:nowrap;}
 .btn-progress__percent{color:#fff;font-weight:700;min-width:32px;text-align:right;white-space:nowrap;}
 .btn-progress__bar{
-  flex:1;min-width:60px;height:4px;
+  flex:1;min-width:60px;height:5px;
   background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden;
 }
 .btn-progress__fill{
@@ -387,24 +381,23 @@ video.real{display:none;}
 }
 .btn-progress__spinner{
   display:none;
-  width:14px;height:14px;border-radius:50%;
+  width:16px;height:16px;border-radius:50%;
   border:2px solid rgba(255,255,255,0.25);
   border-top-color:#fff;
   animation:spin 0.7s linear infinite;
 }
 .btn-progress__cancel{
   background:none;border:none;color:rgba(255,255,255,0.5);
-  font-size:0.7rem;cursor:pointer;padding:0 2px;font-family:'Montserrat',sans-serif;
+  font-size:0.82rem;cursor:pointer;padding:0 2px;font-family:'Montserrat',sans-serif;
   white-space:nowrap;
 }
 .btn-progress__cancel:hover{color:#fff;}
 
-/* Botones de promo — el script usa stylePromoButton() que inyecta inline styles.
-   Solo forzamos la fuente y radio para consistencia */
+/* Botones de promo — consistencia */
 .btn-promo{
   font-family:'Montserrat',sans-serif !important;
   border-radius:50px !important;
-  font-size:0.8rem !important;
+  font-size:0.95rem !important;
   font-weight:800 !important;
   cursor:pointer;
   transition:filter .15s, transform .15s !important;
@@ -412,21 +405,20 @@ video.real{display:none;}
 .btn-promo:hover{filter:brightness(1.08);transform:translateY(-1px);}
 
 /* ══════════════════════════════════════════
-   PAGINADOR
-   El script inyecta botones dentro de #paginator-bottom
+   PAGINADOR — MÁS GRANDE
 ══════════════════════════════════════════ */
 #bottom-controls{margin:1.5rem 0 0.5rem;}
 #paginator-bottom>div{
-  display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
 }
 #paginator-bottom button{
-  padding:7px 12px;
+  padding:10px 16px;
   border:1px solid var(--border2);
   border-radius:50px;
   background:rgba(255,255,255,0.05);
   color:var(--text);
   font-family:'Montserrat',sans-serif;
-  font-size:0.78rem;font-weight:700;
+  font-size:0.92rem;font-weight:700;
   cursor:pointer;transition:all .2s;
 }
 #paginator-bottom button:hover:not(:disabled){
@@ -439,18 +431,18 @@ video.real{display:none;}
   color:#fff;
 }
 #paginator-bottom span{
-  font-size:0.72rem;color:var(--muted);margin-left:auto;
+  font-size:0.82rem;color:var(--muted);margin-left:auto;
 }
 
 /* ══════════════════════════════════════════
-   SCROLL TO TOP
+   SCROLL TO TOP — MÁS GRANDE
 ══════════════════════════════════════════ */
 .scroll-top{
   position:fixed;bottom:1.5rem;right:1.25rem;z-index:90;
-  width:40px;height:40px;border-radius:50%;
+  width:48px;height:48px;border-radius:50%;
   background:var(--blue);color:#fff;
   border:1px solid var(--blue2);
-  font-size:1rem;font-weight:700;
+  font-size:1.2rem;font-weight:700;
   cursor:pointer;
   box-shadow:0 0 18px rgba(0,79,200,0.5);
   transition:all .2s;
@@ -469,13 +461,13 @@ video.real{display:none;}
   position:relative;z-index:1;margin-top:2rem;
   max-width:780px;margin-left:auto;margin-right:auto;
 }
-.footer-info p{font-size:0.78rem;color:var(--muted);line-height:1.7;}
+.footer-info p{font-size:0.88rem;color:var(--muted);line-height:1.7;}
 .footer-info a{color:var(--blue3);text-decoration:none;}
 .footer-info a:hover{text-decoration:underline;}
 .footer-redes{display:flex;gap:1.25rem;flex-wrap:wrap;}
-.footer-redes a{color:var(--muted);text-decoration:none;font-size:0.78rem;font-weight:500;transition:color .2s;}
+.footer-redes a{color:var(--muted);text-decoration:none;font-size:0.88rem;font-weight:500;transition:color .2s;}
 .footer-redes a:hover{color:#fff;}
-.footer-copy{color:rgba(234,242,255,0.25);font-size:0.72rem;width:100%;}
+.footer-copy{color:rgba(234,242,255,0.25);font-size:0.78rem;width:100%;}
 @media(max-width:600px){
   .site-footer{flex-direction:column;padding:1.25rem;}
   .footer-copy{text-align:center;}
@@ -486,8 +478,28 @@ video.real{display:none;}
 ══════════════════════════════════════════ */
 .fade-in{animation:fadeIn 0.4s ease both;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
-
 @keyframes spin{to{transform:rotate(360deg);}}
+
+/* ══════════════════════════════════════════
+   OVERRIDE: dayBtnStyles inyectados por script
+   El script usa inline styles, los overrideamos
+══════════════════════════════════════════ */
+#filtro-dia button{
+  font-size:0.92rem !important;
+  padding:10px 14px !important;
+  font-family:'Montserrat',sans-serif !important;
+}
+
+/* ══════════════════════════════════════════
+   OVERRIDE: Tags inline del script (mkTag)
+   El script crea spans con inline styles.
+   Aseguramos que se vean grandes.
+══════════════════════════════════════════ */
+.video-card div[style*="gap: 8px"] > span{
+  font-size:0.88rem !important;
+  padding:5px 12px !important;
+  font-weight:800 !important;
+}
 </style>
 </head>
 <body>
@@ -530,16 +542,15 @@ video.real{display:none;}
     >¿No aparece? Recuperar →</a>
   </div>
 
-  <!-- Volver + lado opuesto (el script inyecta #btn-opposite-top con .btn-alt aquí) -->
+  <!-- Volver + lado opuesto -->
   <div class="btn-volver-container">
     <a href="#" id="btn-volver" class="btn-volver">← Regresar</a>
-    <!-- script.js inyecta btn-opposite-top como hermano dentro de este div -->
   </div>
 
-  <!-- Filtro días (script inyecta #filtro-dia antes de #filtro-horario) -->
+  <!-- Filtro días -->
   <div id="filtro-horario"></div>
 
-  <!-- Banner registrar en vivo — integrado, no agresivo -->
+  <!-- Banner registrar en vivo -->
   <div class="live-banner">
     <div class="live-banner-text">
       <h3>📲 Tu teléfono ya es el botón</h3>
@@ -561,7 +572,7 @@ video.real{display:none;}
   <!-- Aviso 24h -->
   <div class="aviso">Los videos se borran pasadas 24 horas de subida.</div>
 
-  <!-- Videos — llenado por script.js -->
+  <!-- Videos -->
   <section id="videos-container" class="video-grid"></section>
 
 </main>
@@ -591,6 +602,134 @@ video.real{display:none;}
 </footer>
 
 <script src="assets/script.js?v=20260209_4"></script>
+
+<!-- ══════════════════════════════════════════════════════════
+     PARCHES DE PERFORMANCE Y PRIORIDAD DE REPRODUCCIÓN
+     — No modifica script.js, solo parchea comportamiento
+══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+
+  // ───────────────────────────────────────────
+  // 1) PRIORIDAD DE REPRODUCCIÓN: cuando un video "real" da play,
+  //    TODOS los previews se pausan y se les quita el src temporalmente
+  //    para liberar recursos de decodificación de video.
+  // ───────────────────────────────────────────
+  const container = document.getElementById('videos-container');
+  if (container) {
+    // Usar event delegation para capturar play en cualquier video.real
+    container.addEventListener('play', function(e) {
+      const target = e.target;
+      if (!target || !target.classList.contains('real')) return;
+
+      // Pausar TODOS los previews para dar recursos al video real
+      document.querySelectorAll('video.video-preview').forEach(function(prev) {
+        try {
+          prev.pause();
+          // Guardar src si no lo hemos guardado
+          if (prev.src && !prev.dataset.pausedSrc) {
+            prev.dataset.pausedSrc = prev.src;
+            prev.removeAttribute('src');
+            prev.load(); // Libera el buffer de decodificación
+          }
+        } catch(err) {}
+      });
+
+      // También pausar otros videos reales
+      document.querySelectorAll('video.real').forEach(function(other) {
+        if (other !== target) {
+          try { other.pause(); } catch(err) {}
+        }
+      });
+    }, true); // useCapture=true para interceptar antes
+
+    // Cuando el video real se pausa o termina, restaurar los previews
+    container.addEventListener('pause', function(e) {
+      const target = e.target;
+      if (!target || !target.classList.contains('real')) return;
+
+      // Solo restaurar si NO hay otro video real reproduciéndose
+      const anyRealPlaying = Array.from(document.querySelectorAll('video.real')).some(function(v) {
+        return !v.paused;
+      });
+      if (anyRealPlaying) return;
+
+      // Restaurar los previews que estaban visibles
+      document.querySelectorAll('video.video-preview').forEach(function(prev) {
+        if (prev.dataset.pausedSrc) {
+          prev.src = prev.dataset.pausedSrc;
+          delete prev.dataset.pausedSrc;
+          // No hacemos auto-play; el IntersectionObserver se encargará
+        }
+      });
+    }, true);
+
+    container.addEventListener('ended', function(e) {
+      const target = e.target;
+      if (!target || !target.classList.contains('real')) return;
+      // Disparar la misma lógica de restaurar previews
+      target.dispatchEvent(new Event('pause', { bubbles: false }));
+    }, true);
+  }
+
+  // ───────────────────────────────────────────
+  // 2) CARGA MÁS RÁPIDA: Override loadPreviewsSequentially
+  //    para cargar previews en lotes de 3 en paralelo
+  //    en lugar de 1 por 1 secuencial.
+  // ───────────────────────────────────────────
+  if (typeof window.loadPreviewsSequentially !== 'undefined') {
+    // Guardar referencia original por si acaso
+    window._originalLoadPreviews = window.loadPreviewsSequentially;
+  }
+
+  window.loadPreviewsSequentially = async function(previews) {
+    const BATCH_SIZE = 3;
+    for (let i = 0; i < previews.length; i += BATCH_SIZE) {
+      const batch = previews.slice(i, i + BATCH_SIZE);
+      await Promise.all(batch.map(function(v) {
+        return new Promise(function(resolve) {
+          v.preload = 'metadata';
+          const timeout = setTimeout(resolve, 4000); // Max 4s por video
+          v.addEventListener('loadedmetadata', function() {
+            clearTimeout(timeout);
+            resolve();
+          }, { once: true });
+          v.addEventListener('error', function() {
+            clearTimeout(timeout);
+            resolve();
+          }, { once: true });
+          v.load();
+        });
+      }));
+    }
+  };
+
+  // ───────────────────────────────────────────
+  // 3) LIMITAR PREVIEWS ACTIVOS: Solo permitir que 1 preview
+  //    se reproduzca a la vez (refuerzo del IntersectionObserver)
+  // ───────────────────────────────────────────
+  let lastActivePreview = null;
+  const origPlay = HTMLVideoElement.prototype.play;
+  HTMLVideoElement.prototype.play = function() {
+    if (this.classList.contains('video-preview')) {
+      // Si hay un video real reproduciéndose, no permitir que arranque el preview
+      const anyRealPlaying = document.querySelector('video.real:not([paused])');
+      if (anyRealPlaying && !anyRealPlaying.paused) {
+        return Promise.resolve(); // No-op
+      }
+      // Pausar preview anterior
+      if (lastActivePreview && lastActivePreview !== this) {
+        try { lastActivePreview.pause(); } catch(e) {}
+      }
+      lastActivePreview = this;
+    }
+    return origPlay.call(this);
+  };
+
+})();
+</script>
+
 <script>
   /* ── Navbar mobile ── */
   document.addEventListener('DOMContentLoaded', () => {
