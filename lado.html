@@ -1,443 +1,610 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <base href="/" />
-  <title>Puntazo</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<base href="/" />
+<title>Puntazo</title>
 
-  <!-- Favicon principal -->
-  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-7HTMSTJ035'); 
-  </script>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-7HTMSTJ035');
+</script>
 
-  <!-- Favicons Apple -->
-  <link rel="apple-touch-icon" sizes="57x57" href="/assets/icons/apple-icon-57x57.png" />
-  <link rel="apple-touch-icon" sizes="60x60" href="/assets/icons/apple-icon-60x60.png" />
-  <link rel="apple-touch-icon" sizes="72x72" href="/assets/icons/apple-icon-72x72.png" />
-  <link rel="apple-touch-icon" sizes="76x76" href="/assets/icons/apple-icon-76x76.png" />
-  <link rel="apple-touch-icon" sizes="114x114" href="/assets/icons/apple-icon-114x114.png" />
-  <link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/apple-icon-120x120.png" />
-  <link rel="apple-touch-icon" sizes="144x144" href="/assets/icons/apple-icon-144x144.png" />
-  <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-icon-152x152.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="apple-touch-icon" sizes="57x57"   href="/assets/icons/apple-icon-57x57.png" />
+<link rel="apple-touch-icon" sizes="60x60"   href="/assets/icons/apple-icon-60x60.png" />
+<link rel="apple-touch-icon" sizes="72x72"   href="/assets/icons/apple-icon-72x72.png" />
+<link rel="apple-touch-icon" sizes="76x76"   href="/assets/icons/apple-icon-76x76.png" />
+<link rel="apple-touch-icon" sizes="114x114" href="/assets/icons/apple-icon-114x114.png" />
+<link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/apple-icon-120x120.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="/assets/icons/apple-icon-144x144.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/android-icon-192x192.png" />
+<link rel="icon" type="image/png" sizes="32x32"   href="/assets/icons/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="96x96"   href="/assets/icons/favicon-96x96.png" />
+<link rel="icon" type="image/png" sizes="16x16"   href="/assets/icons/favicon-16x16.png" />
+<link rel="manifest" href="/assets/icons/manifest.json" />
+<meta name="msapplication-TileColor" content="#004FC8" />
+<meta name="msapplication-TileImage" content="/assets/icons/ms-icon-144x144.png" />
+<meta name="theme-color" content="#050914" />
 
-  <!-- Favicons Android / otros -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/android-icon-192x192.png" />
-  <link rel="icon" type="image/png" sizes="96x96" href="/assets/icons/favicon-96x96.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
 
-  <!-- Manifest y color de tema -->
-  <link rel="manifest" href="/assets/icons/manifest.json" />
-  <meta name="msapplication-TileColor" content="#ffffff" />
-  <meta name="msapplication-TileImage" content="/assets/icons/ms-icon-144x144.png" />
-  <meta name="theme-color" content="#ffffff" />
+<style>
+/* ══════════════════════════════════════════
+   RESET + TOKENS
+══════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --blue:#004FC8;
+  --blue2:#0B7CFF;
+  --blue3:#3395FF;
+  --dark:#050914;
+  --card:rgba(0,79,200,0.07);
+  --border:rgba(0,79,200,0.25);
+  --border2:rgba(255,255,255,0.09);
+  --text:#eaf2ff;
+  --muted:rgba(234,242,255,0.55);
+  --radius:18px;
+}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'Montserrat',sans-serif;
+  background:var(--dark);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
 
-  <!-- Estilos -->
-  <link rel="stylesheet" href="/assets/estilo.css" />
-  <link rel="stylesheet" href="/assets/inicio.css" />
+/* ══════════════════════════════════════════
+   PAGE BG
+══════════════════════════════════════════ */
+.page-bg{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 15%, rgba(0,79,200,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 80%, rgba(11,124,255,0.08) 0%, transparent 60%);
+}
 
-  <!-- NUEVO: Banner mega llamativo + recuperar discreto -->
-  <style>
-    /* Recover mini, discretito */
-    .recover-mini-wrap{
-      max-width: 1100px;
-      margin: 6px auto 0;
-      padding: 0 16px;
-      display: flex;
-      justify-content: flex-end;
-    }
-    .recover-mini{
-      font-size: 0.90rem;
-      opacity: 0.78;
-      color: rgba(255,255,255,0.88);
-      text-decoration: none;
-      border-bottom: 1px dashed rgba(255,255,255,0.28);
-      padding-bottom: 2px;
-      white-space: nowrap;
-    }
-    .recover-mini:hover{
-      opacity: 1;
-      color:#fff;
-      border-bottom-color: rgba(255,255,255,0.55);
-    }
+/* ══════════════════════════════════════════
+   NAV
+══════════════════════════════════════════ */
+.site-header{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0.85rem 2rem;
+  background:rgba(5,9,20,0.90);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border2);
+  gap:1rem;
+}
+.logo-link{display:flex;align-items:center;gap:0.5rem;text-decoration:none;flex-shrink:0;}
+.logo-link img{height:28px;width:auto;}
+.logo-link-text{font-size:1rem;font-weight:900;letter-spacing:1px;color:#fff;}
+.navbar{display:flex;align-items:center;gap:1.5rem;}
+.navbar a{color:var(--muted);text-decoration:none;font-size:0.8rem;font-weight:600;transition:color .2s;white-space:nowrap;}
+.navbar a:hover{color:#fff;}
+.highlight-btn{
+  background:var(--blue);color:#fff !important;
+  padding:0.4rem 1rem;border-radius:50px;
+  font-size:0.78rem !important;font-weight:800 !important;
+  border:1px solid var(--blue2);
+  box-shadow:0 0 16px rgba(0,79,200,0.4);
+  transition:all .2s !important;
+}
+.highlight-btn:hover{background:var(--blue2) !important;}
+.menu-toggle{
+  display:none;background:none;border:none;
+  color:#fff;font-size:1.4rem;cursor:pointer;padding:4px 6px;
+  flex-shrink:0;
+}
+@media(max-width:860px){
+  .navbar{
+    display:none;position:fixed;top:58px;left:0;right:0;
+    background:rgba(5,9,20,0.97);
+    border-bottom:1px solid var(--border2);
+    flex-direction:column;align-items:stretch;gap:0;
+    padding:0.5rem 0;z-index:99;
+  }
+  .navbar.show{display:flex;}
+  .navbar a{padding:0.85rem 1.75rem;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.88rem !important;}
+  .menu-toggle{display:block;}
+  .site-header{padding:0.85rem 1.25rem;}
+}
 
-    /* MEGA BANNER: el protagonista absoluto */
-    .live-mega{
-      max-width: 1100px;
-      margin: 18px auto 14px;
-      padding: 0 16px;
-    }
+/* ══════════════════════════════════════════
+   MAIN WRAPPER
+══════════════════════════════════════════ */
+.site-content{
+  position:relative;z-index:1;
+  padding:5.5rem 1.25rem 4rem;
+  max-width:780px;
+  margin:0 auto;
+}
+@media(min-width:600px){.site-content{padding:5.5rem 2rem 4rem;}}
 
-    .live-mega-card{
-      position: relative;
-      overflow: hidden;
-      border-radius: 22px;
-      padding: 18px;
-      border: 1px solid rgba(255,255,255,0.14);
-      box-shadow: 0 18px 55px rgba(0,0,0,0.35);
-      background:
-        radial-gradient(1200px 500px at 20% 0%, rgba(255,255,255,0.14), rgba(0,0,0,0)),
-        radial-gradient(900px 400px at 90% 30%, rgba(255,255,255,0.10), rgba(0,0,0,0)),
-        linear-gradient(135deg, rgba(18,18,18,0.98), rgba(30,30,30,0.98));
-    }
+/* ══════════════════════════════════════════
+   BREADCRUMB ROW
+══════════════════════════════════════════ */
+.top-row{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:0.5rem;
+  margin-bottom:0.75rem;
+}
+.titulo-club{
+  display:flex;align-items:center;gap:0.4rem;
+  flex-wrap:wrap;font-size:0.78rem;font-weight:600;
+}
+.breadcrumb-link{
+  color:var(--muted);text-decoration:none;transition:color .2s;
+}
+.breadcrumb-link:hover{color:#fff;}
+.breadcrumb-sep-char{color:rgba(234,242,255,0.2);}
+#nombre-lado{color:#fff;font-weight:700;}
+.recover-mini{
+  display:inline-flex;align-items:center;gap:0.3rem;
+  color:var(--muted);font-size:0.72rem;font-weight:600;
+  text-decoration:none;
+  border-bottom:1px dashed rgba(255,255,255,0.18);
+  padding-bottom:1px;transition:color .2s;
+  white-space:nowrap;flex-shrink:0;
+}
+.recover-mini:hover{color:#fff;}
 
-    /* Brillos tipo “folleto / promo” */
-    .live-mega-card::before{
-      content:"";
-      position:absolute;
-      inset:-40%;
-      background:
-        conic-gradient(from 180deg, rgba(255,255,255,0.00), rgba(255,255,255,0.20), rgba(255,255,255,0.00));
-      animation: sweep 4.5s linear infinite;
-      opacity: 0.55;
-      pointer-events: none;
-    }
+/* ══════════════════════════════════════════
+   BTN VOLVER + LADO OPUESTO (fila)
+══════════════════════════════════════════ */
+.btn-volver-container{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:0.75rem;flex-wrap:wrap;
+  margin-bottom:1.25rem;
+}
+.btn-volver{
+  display:inline-flex;align-items:center;gap:0.35rem;
+  color:var(--muted);text-decoration:none;
+  font-size:0.78rem;font-weight:600;
+  padding:0.45rem 0.9rem;border-radius:50px;
+  border:1px solid var(--border2);
+  transition:all .2s;white-space:nowrap;
+}
+.btn-volver:hover{color:#fff;border-color:rgba(255,255,255,0.22);}
+/* btn-alt = "Ir al lado opuesto" — el script.js lo inyecta con esta clase */
+.btn-alt{
+  display:inline-flex;align-items:center;gap:0.35rem;
+  color:var(--blue3);text-decoration:none;
+  font-size:0.78rem;font-weight:700;
+  padding:0.45rem 0.9rem;border-radius:50px;
+  border:1px solid rgba(0,79,200,0.35);
+  background:rgba(0,79,200,0.08);
+  transition:all .2s;white-space:nowrap;
+}
+.btn-alt:hover{background:rgba(0,79,200,0.18);border-color:rgba(0,79,200,0.55);}
 
-    /* Confetti sutil (sin parecer piñata) */
-    .live-mega-card::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      background-image:
-        radial-gradient(circle at 12% 18%, rgba(255,255,255,0.15) 0 2px, transparent 3px),
-        radial-gradient(circle at 82% 22%, rgba(255,255,255,0.14) 0 2px, transparent 3px),
-        radial-gradient(circle at 70% 76%, rgba(255,255,255,0.10) 0 2px, transparent 3px),
-        radial-gradient(circle at 20% 72%, rgba(255,255,255,0.10) 0 2px, transparent 3px);
-      opacity: 0.55;
-      pointer-events:none;
-    }
+/* ══════════════════════════════════════════
+   FILTRO DÍA + HORA
+   El script.js inyecta botones con .btn-filtro dentro de #filtro-dia y #filtro-horario
+══════════════════════════════════════════ */
+#filtro-dia,
+#filtro-horario,
+#filtro-horario-bottom{
+  display:flex;flex-wrap:wrap;gap:8px;
+  margin-bottom:0.75rem;
+}
+/* Botones que genera el script */
+.btn-filtro{
+  display:inline-flex;align-items:center;
+  padding:7px 14px;
+  border-radius:50px;
+  border:1px solid var(--border2);
+  background:rgba(255,255,255,0.05);
+  color:var(--text);
+  font-family:'Montserrat',sans-serif;
+  font-size:0.78rem;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  position:relative;white-space:nowrap;
+}
+.btn-filtro:hover{background:rgba(255,255,255,0.10);border-color:rgba(255,255,255,0.22);}
+.btn-filtro.activo{
+  background:rgba(0,79,200,0.2);
+  border-color:rgba(0,79,200,0.55);
+  color:#fff;
+}
+.btn-filtro.quitar{
+  color:var(--muted);
+  border-color:var(--border2);
+  background:transparent;
+}
+.btn-filtro.quitar:hover{color:#fff;}
 
-    @keyframes sweep{
-      0%{ transform: rotate(0deg); }
-      100%{ transform: rotate(360deg); }
-    }
+/* ══════════════════════════════════════════
+   BANNER "REGISTRAR EN VIVO"
+   Integrado, no agresivo — azul Puntazo
+══════════════════════════════════════════ */
+.live-banner{
+  background:rgba(0,79,200,0.10);
+  border:1px solid rgba(0,79,200,0.30);
+  border-radius:var(--radius);
+  padding:1.1rem 1.25rem;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:1rem;flex-wrap:wrap;
+  margin-bottom:1.5rem;
+  position:relative;overflow:hidden;
+}
+.live-banner::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(to bottom, var(--blue2), var(--blue));
+  border-radius:3px 0 0 3px;
+}
+.live-banner-text{padding-left:0.25rem;}
+.live-banner-text h3{
+  font-size:0.88rem;font-weight:800;color:#fff;margin-bottom:0.2rem;
+}
+.live-banner-text p{font-size:0.75rem;color:var(--muted);line-height:1.5;}
+.live-banner-btns{display:flex;gap:0.6rem;flex-wrap:wrap;flex-shrink:0;}
+.btn-live-sm{
+  display:inline-flex;align-items:center;gap:0.35rem;
+  background:var(--blue);color:#fff;
+  padding:0.55rem 1.1rem;border-radius:50px;
+  text-decoration:none;font-size:0.78rem;font-weight:800;
+  border:1px solid var(--blue2);
+  box-shadow:0 0 14px rgba(0,79,200,0.35);
+  transition:all .2s;white-space:nowrap;
+  font-family:'Montserrat',sans-serif;
+}
+.btn-live-sm:hover{background:var(--blue2);transform:translateY(-1px);}
+@media(max-width:520px){
+  .live-banner{flex-direction:column;align-items:flex-start;}
+  .live-banner-btns{width:100%;}
+  .btn-live-sm{flex:1;justify-content:center;}
+}
 
-    .live-mega-inner{
-      position: relative;
-      z-index: 2;
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 16px;
-      align-items: center;
-    }
+/* ══════════════════════════════════════════
+   AVISO 24H
+══════════════════════════════════════════ */
+.aviso{
+  font-size:0.72rem;color:rgba(234,242,255,0.3);
+  text-align:center;padding:0.5rem 0;
+  margin-bottom:0.75rem;
+}
 
-    .live-badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 7px 12px;
-      border-radius: 999px;
-      font-size: 0.80rem;
-      font-weight: 900;
-      letter-spacing: 0.5px;
-      background: rgba(255,255,255,0.14);
-      border: 1px solid rgba(255,255,255,0.18);
-      width: fit-content;
-      backdrop-filter: blur(6px);
-    }
+/* ══════════════════════════════════════════
+   LOADING
+══════════════════════════════════════════ */
+#loading{
+  display:none;
+  text-align:center;padding:2rem;
+  font-size:0.85rem;color:var(--muted);
+}
 
-    .live-title{
-      margin: 10px 0 6px 0;
-      font-size: 1.55rem;
-      line-height: 1.1;
-      font-weight: 900;
-      color:#fff;
-    }
+/* ══════════════════════════════════════════
+   VIDEO GRID
+   El script.js llena #videos-container con .video-card
+══════════════════════════════════════════ */
+.video-grid{
+  display:flex;flex-direction:column;
+  gap:1.25rem;
+}
 
-    .live-subtitle{
-      margin: 0;
-      font-size: 1.02rem;
-      opacity: 0.92;
-      line-height: 1.35;
-      color: rgba(255,255,255,0.92);
-    }
+/* ── Video card ── */
+.video-card{
+  background:rgba(0,79,200,0.06);
+  border:1px solid rgba(0,79,200,0.22);
+  border-radius:var(--radius);
+  padding:1.25rem;
+  transition:border-color .2s;
+  position:relative;overflow:hidden;
+}
+.video-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--blue),transparent);
+  opacity:0;transition:opacity .3s;
+}
+.video-card:hover{border-color:rgba(0,79,200,0.45);}
+.video-card:hover::before{opacity:1;}
 
-    .live-steps{
-      display:flex;
-      gap:10px;
-      flex-wrap: wrap;
-      margin-top: 12px;
-    }
+/* Título (hora) */
+.video-title{
+  font-size:1rem;font-weight:800;color:#fff;
+  margin-bottom:0.6rem;letter-spacing:-0.3px;
+}
 
-    .step-pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 10px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.10);
-      border: 1px solid rgba(255,255,255,0.14);
-      font-weight: 700;
-      font-size: 0.92rem;
-      color:#fff;
-      white-space: nowrap;
-    }
+/* Tags nuevo / recuperado */
+.video-card [style*="display: flex"][style*="gap: 8px"]{
+  margin-bottom:0.6rem !important;
+}
+.video-card span[style*="border-radius: 999px"]{
+  font-family:'Montserrat',sans-serif !important;
+  font-size:0.7rem !important;
+  padding:3px 10px !important;
+  background:rgba(0,79,200,0.15) !important;
+  border:1px solid rgba(0,79,200,0.35) !important;
+  color:var(--blue3) !important;
+  border-radius:50px !important;
+  font-weight:800 !important;
+}
 
-    .live-actions{
-      display:flex;
-      flex-direction: column;
-      gap: 10px;
-      align-items: stretch;
-      justify-content: center;
-    }
+/* Videos */
+video.video-preview,
+video.real{
+  width:100%;
+  border-radius:12px;
+  display:block;
+  background:#000;
+  max-height:65vw;
+  object-fit:contain;
+}
+video.real{display:none;}
 
-    .live-btn-main{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      padding: 14px 16px;
-      border-radius: 16px;
-      font-weight: 900;
-      text-decoration:none;
-      background:#fff;
-      color:#111;
-      box-shadow: 0 14px 34px rgba(0,0,0,0.40);
-      border: 1px solid rgba(255,255,255,0.35);
-      transform: translateY(0);
-      transition: transform .12s ease, opacity .12s ease;
-      white-space: nowrap;
-    }
-    .live-btn-main:hover{
-      transform: translateY(-1px);
-      opacity: 0.95;
-    }
+/* ── Botones de acción por video ── */
+.botones-container{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:0.9rem;
+  align-items:center;
+}
 
-    .live-btn-secondary{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      padding: 12px 14px;
-      border-radius: 16px;
-      font-weight: 800;
-      text-decoration:none;
-      background: rgba(255,255,255,0.12);
-      color:#fff;
-      border: 1px solid rgba(255,255,255,0.18);
-      opacity: 0.95;
-      white-space: nowrap;
-    }
-    .live-btn-secondary:hover{
-      opacity: 1;
-    }
+/* Compartir | Descargar */
+.btn-share-large{
+  flex:1;min-width:160px;
+  display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;
+  background:var(--blue);color:#fff;
+  padding:0.65rem 1.1rem;border-radius:50px;
+  border:1px solid var(--blue2);
+  font-family:'Montserrat',sans-serif;
+  font-size:0.8rem;font-weight:800;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 0 16px rgba(0,79,200,0.3);
+}
+.btn-share-large:hover{background:var(--blue2);transform:translateY(-1px);}
+.btn-share-large:disabled{opacity:0.6;cursor:default;transform:none;}
 
-    .live-note{
-      font-size: 0.86rem;
-      opacity: 0.85;
-      line-height: 1.25;
-      text-align: center;
-      color: rgba(255,255,255,0.88);
-    }
+/* "Ver otra perspectiva" — inyectado por script con .btn-alt */
+/* ya definido arriba */
 
-    @media (max-width: 860px){
-      .live-mega-inner{
-        grid-template-columns: 1fr;
-      }
-      .live-title{
-        font-size: 1.35rem;
-      }
-    }
-  </style>
+/* Barra de progreso de descarga — inyectada por script */
+.btn-progress{
+  display:flex;align-items:center;gap:6px;
+  width:100%;font-size:0.75rem;flex-wrap:wrap;
+}
+.btn-progress__label{color:rgba(255,255,255,0.85);white-space:nowrap;}
+.btn-progress__percent{color:#fff;font-weight:700;min-width:32px;text-align:right;white-space:nowrap;}
+.btn-progress__bar{
+  flex:1;min-width:60px;height:4px;
+  background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden;
+}
+.btn-progress__fill{
+  height:100%;background:var(--blue2);border-radius:4px;
+  transition:width .2s ease;
+}
+.btn-progress__spinner{
+  display:none;
+  width:14px;height:14px;border-radius:50%;
+  border:2px solid rgba(255,255,255,0.25);
+  border-top-color:#fff;
+  animation:spin 0.7s linear infinite;
+}
+.btn-progress__cancel{
+  background:none;border:none;color:rgba(255,255,255,0.5);
+  font-size:0.7rem;cursor:pointer;padding:0 2px;font-family:'Montserrat',sans-serif;
+  white-space:nowrap;
+}
+.btn-progress__cancel:hover{color:#fff;}
+
+/* Botones de promo — el script usa stylePromoButton() que inyecta inline styles.
+   Solo forzamos la fuente y radio para consistencia */
+.btn-promo{
+  font-family:'Montserrat',sans-serif !important;
+  border-radius:50px !important;
+  font-size:0.8rem !important;
+  font-weight:800 !important;
+  cursor:pointer;
+  transition:filter .15s, transform .15s !important;
+}
+.btn-promo:hover{filter:brightness(1.08);transform:translateY(-1px);}
+
+/* ══════════════════════════════════════════
+   PAGINADOR
+   El script inyecta botones dentro de #paginator-bottom
+══════════════════════════════════════════ */
+#bottom-controls{margin:1.5rem 0 0.5rem;}
+#paginator-bottom>div{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+}
+#paginator-bottom button{
+  padding:7px 12px;
+  border:1px solid var(--border2);
+  border-radius:50px;
+  background:rgba(255,255,255,0.05);
+  color:var(--text);
+  font-family:'Montserrat',sans-serif;
+  font-size:0.78rem;font-weight:700;
+  cursor:pointer;transition:all .2s;
+}
+#paginator-bottom button:hover:not(:disabled){
+  background:rgba(0,79,200,0.15);border-color:rgba(0,79,200,0.4);
+}
+#paginator-bottom button:disabled{
+  opacity:0.5;cursor:default;
+  background:rgba(0,79,200,0.12);
+  border-color:rgba(0,79,200,0.3);
+  color:#fff;
+}
+#paginator-bottom span{
+  font-size:0.72rem;color:var(--muted);margin-left:auto;
+}
+
+/* ══════════════════════════════════════════
+   SCROLL TO TOP
+══════════════════════════════════════════ */
+.scroll-top{
+  position:fixed;bottom:1.5rem;right:1.25rem;z-index:90;
+  width:40px;height:40px;border-radius:50%;
+  background:var(--blue);color:#fff;
+  border:1px solid var(--blue2);
+  font-size:1rem;font-weight:700;
+  cursor:pointer;
+  box-shadow:0 0 18px rgba(0,79,200,0.5);
+  transition:all .2s;
+  display:none;
+}
+.scroll-top:hover{background:var(--blue2);transform:translateY(-2px);}
+
+/* ══════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════ */
+.site-footer{
+  border-top:1px solid var(--border2);
+  padding:1.5rem 2rem;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:1rem;
+  position:relative;z-index:1;margin-top:2rem;
+  max-width:780px;margin-left:auto;margin-right:auto;
+}
+.footer-info p{font-size:0.78rem;color:var(--muted);line-height:1.7;}
+.footer-info a{color:var(--blue3);text-decoration:none;}
+.footer-info a:hover{text-decoration:underline;}
+.footer-redes{display:flex;gap:1.25rem;flex-wrap:wrap;}
+.footer-redes a{color:var(--muted);text-decoration:none;font-size:0.78rem;font-weight:500;transition:color .2s;}
+.footer-redes a:hover{color:#fff;}
+.footer-copy{color:rgba(234,242,255,0.25);font-size:0.72rem;width:100%;}
+@media(max-width:600px){
+  .site-footer{flex-direction:column;padding:1.25rem;}
+  .footer-copy{text-align:center;}
+}
+
+/* ══════════════════════════════════════════
+   FADE IN
+══════════════════════════════════════════ */
+.fade-in{animation:fadeIn 0.4s ease both;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
 </head>
-
 <body>
-  <header class="site-header">
-    <a href="inicio.html" class="logo-link">
-      <img src="assets/logo.png" alt=" " class="logo" />
-    </a>
-    <a href="inicio.html" class="empresa-nombre"></a>
 
-    <button class="menu-toggle" aria-label="Abrir menú">☰</button>
+<div class="page-bg"></div>
 
-    <nav class="navbar">
-      <a href="inicio.html#quienes-somos">Quiénes somos</a>
-      <a href="inicio.html#servicios">Servicios</a>
-      <a href="inicio.html#ventajas">Ventajas</a>
-      <a href="inicio.html#contacto">Contacto</a>
-      <a href="index.html" class="highlight-btn">Encuentra tus clips</a>
-    </nav>
-  </header>
+<!-- ── NAV ── -->
+<header class="site-header">
+  <a href="inicio.html" class="logo-link">
+    <img src="assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
+    <span class="logo-link-text">PUNTAZO</span>
+  </a>
 
-  <main class="site-content fade-in">
+  <button class="menu-toggle" aria-label="Abrir menú">☰</button>
 
-    <!-- Breadcrumbs (lo primero que ves) -->
-    <div class="titulo-lado">
-      <div class="titulo-club">
-        <a id="link-club" class="breadcrumb-link" href="#"></a>
-        <span id="breadcrumb-sep1"> – </span>
-        <a id="link-cancha" class="breadcrumb-link" href="#"></a>
-        <span id="breadcrumb-sep2"> – </span>
-        <span id="nombre-lado"></span>
-      </div>
+  <nav class="navbar">
+    <a href="inicio.html">Inicio</a>
+    <a href="inicio.html#clubs">Para clubs</a>
+    <a href="index.html" class="highlight-btn">Mis clips</a>
+  </nav>
+</header>
+
+<!-- ── CONTENIDO ── -->
+<main class="site-content fade-in">
+
+  <!-- Breadcrumb + recover mini -->
+  <div class="top-row">
+    <div class="titulo-club">
+      <a id="link-club"   class="breadcrumb-link" href="#"></a>
+      <span id="breadcrumb-sep1" class="breadcrumb-sep-char"> › </span>
+      <a id="link-cancha" class="breadcrumb-link" href="#"></a>
+      <span id="breadcrumb-sep2" class="breadcrumb-sep-char"> › </span>
+      <span id="nombre-lado"></span>
     </div>
+    <a
+      class="recover-mini"
+      href="https://forms.gle/TsGHKaSjBnpu65SQA"
+      target="_blank" rel="noopener"
+      onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'top_discreto'});}catch(e){}"
+    >¿No aparece? Recuperar →</a>
+  </div>
 
-    <!-- Recuperar clip DISCRETO (sí existe, pero no grita) -->
-    <div class="recover-mini-wrap">
+  <!-- Volver + lado opuesto (el script inyecta #btn-opposite-top con .btn-alt aquí) -->
+  <div class="btn-volver-container">
+    <a href="#" id="btn-volver" class="btn-volver">← Regresar</a>
+    <!-- script.js inyecta btn-opposite-top como hermano dentro de este div -->
+  </div>
+
+  <!-- Filtro días (script inyecta #filtro-dia antes de #filtro-horario) -->
+  <div id="filtro-horario"></div>
+
+  <!-- Banner registrar en vivo — integrado, no agresivo -->
+  <div class="live-banner">
+    <div class="live-banner-text">
+      <h3>📲 Tu teléfono ya es el botón</h3>
+      <p>Registra tu puntazo al instante desde tu celular — úsalo justo cuando cae el punto.</p>
+    </div>
+    <div class="live-banner-btns">
       <a
-        class="recover-mini"
-        href="https://forms.gle/TsGHKaSjBnpu65SQA"
-        target="_blank"
-        rel="noopener"
-        onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'top_discreto'});}catch(e){}"
-      >
-        ¿No aparece tu clip? Recuperar
-      </a>
+        href="https://script.google.com/macros/s/AKfycbyB4AWfD7bqJGBkglYNfwJ6nmHMeOuvh5MVfxFMzAWmsl5uj_DOB33eUGmBaWdZPV58Sw/exec"
+        target="_blank" rel="noopener"
+        class="btn-live-sm"
+        onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'lado_banner'});}catch(e){}"
+      >Registrar en vivo</a>
     </div>
+  </div>
 
-    <!-- Regresar -->
-    <div class="btn-volver-container">
-      <a href="#" id="btn-volver" class="btn-volver">← Regresar a la cancha</a>
-    </div>
+  <!-- Loading -->
+  <div id="loading" class="aviso">Cargando videos...</div>
 
-    <!-- Filtro horario (antes del anuncio) -->
-    <div id="filtro-horario"></div>
+  <!-- Aviso 24h -->
+  <div class="aviso">Los videos se borran pasadas 24 horas de subida.</div>
 
-    <!-- MEGA ANUNCIO: LO MÁS IMPORTANTE DE LA PÁGINA -->
-    <section class="live-mega" aria-label="Registrar puntazo en vivo">
-      <div class="live-mega-card">
-        <div class="live-mega-inner">
-          <div>
-            <div class="live-badge">🚀 NUEVO · REGISTRO EN VIVO</div>
-            <h2 class="live-title">Tu teléfono ya es el botón 📲🔥</h2>
-            <p class="live-subtitle">
-              Ahora puedes <strong>registrar tu puntazo al instante</strong> desde tu celular, sin depender del botón físico.
-              <br /><strong>Prúebalo ya</strong> y haz que tu mejor punto sí aparezca aquí 😮‍💨
-            </p>
+  <!-- Videos — llenado por script.js -->
+  <section id="videos-container" class="video-grid"></section>
 
-            <div class="live-steps">
-              <span class="step-pill">1️⃣ Abre</span>
-              <span class="step-pill">2️⃣ Pícale en el momento</span>
-              <span class="step-pill">3️⃣ Listo ✅</span>
-            </div>
-          </div>
+</main>
 
-          <div class="live-actions">
-            <a
-              class="live-btn-main"
-              href="https://script.google.com/macros/s/AKfycbyB4AWfD7bqJGBkglYNfwJ6nmHMeOuvh5MVfxFMzAWmsl5uj_DOB33eUGmBaWdZPV58Sw/exec"
-              target="_blank"
-              rel="noopener"
-              onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'mega_banner'});}catch(e){}"
-            >
-              📲 Registrar puntazo en vivo
-            </a>
+<!-- ── FOOTER ── -->
+<footer class="site-footer" id="contacto">
+  <div class="footer-info">
+    <p>¿Te interesa que estemos en tu club?
+      <a href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo!%20Me%20interesa%20llevar%20Puntazo%20a%20mi%20club." target="_blank" rel="noopener">Escríbenos</a>
+    </p>
+    <p style="margin-top:6px;">
+      ¿Faltó tu clip?
+      <a href="https://forms.gle/TsGHKaSjBnpu65SQA" target="_blank" rel="noopener"
+        onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'footer_form'});}catch(e){}">Recupéralo aquí</a>
+      ·
+      <a href="https://script.google.com/macros/s/AKfycbyB4AWfD7bqJGBkglYNfwJ6nmHMeOuvh5MVfxFMzAWmsl5uj_DOB33eUGmBaWdZPV58Sw/exec" target="_blank" rel="noopener"
+        onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'footer_whatsapp'});}catch(e){}">WhatsApp</a>
+    </p>
+  </div>
+  <div class="footer-redes">
+    <a href="https://tiktok.com/@puntazoclips"   target="_blank" rel="noopener">TikTok</a>
+    <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
+    <a href="https://wa.me/522206804856?text=Hola%20Puntazo!" target="_blank" rel="noopener">WhatsApp</a>
+    <a href="mailto:isaacsaltiel@gmail.com">Email</a>
+  </div>
+  <p class="footer-copy">© 2026 Puntazo – Todos los derechos reservados</p>
+</footer>
 
-            <a
-              class="live-btn-secondary"
-              href="https://script.google.com/macros/s/AKfycbyB4AWfD7bqJGBkglYNfwJ6nmHMeOuvh5MVfxFMzAWmsl5uj_DOB33eUGmBaWdZPV58Sw/exec"
-              target="_blank"
-              rel="noopener"
-              onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'mega_banner_secondary'});}catch(e){}"
-            >
-              ⚡ Probar ahora mismo
-            </a>
-
-            <div class="live-note">
-              Tip: úsalo justo cuando cae el punto 💥
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Mensaje de carga -->
-    <div id="loading" class="aviso" style="display:none;">Cargando videos...</div>
-
-    <!-- Aviso -->
-    <div class="aviso">Recuerda que los videos se borran pasadas 24 horas de subida.</div>
-
-    <!-- Videos -->
-    <section id="videos-container" class="video-grid"></section>
-  </main>
-
-  <!-- Footer interno -->
-  <footer class="site-footer" id="contacto">
-    <div class="footer-info">
-      <p>
-        ¿Te interesa que estemos en tu club?
-        <a
-          href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo!%20Me%20interesa%20llevar%20Puntazo%20a%20mi%20club.%0AClub%3A%20____%0ACiudad%3A%20____%0A%23%20de%20canchas%3A%20____%0AMi%20nombre%3A%20____%0ATel%3A%20____%0AGracias!"
-          target="_blank"
-          rel="noopener"
-        >Escríbenos</a>
-      </p>
-
-      <p>Recuerda que los videos se borran pasadas 24 horas.</p>
-
-      <!-- Recuperar puntazo (DISCRETO) -->
-      <p style="margin-top:10px; font-size:0.92rem; opacity:0.88;">
-        ¿Faltó tu clip?
-        <a
-          href="https://forms.gle/TsGHKaSjBnpu65SQA"
-          target="_blank"
-          rel="noopener"
-          style="color:#fff; text-decoration:none; border-bottom:1px dashed rgba(255,255,255,0.35); padding-bottom:2px;"
-          onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'footer_form'});}catch(e){}"
-        >Recupéralo aquí</a>
-        <span style="opacity:0.7;">·</span>
-        <a
-          href="https://script.google.com/macros/s/AKfycbyB4AWfD7bqJGBkglYNfwJ6nmHMeOuvh5MVfxFMzAWmsl5uj_DOB33eUGmBaWdZPV58Sw/exec"
-          target="_blank"
-          rel="noopener"
-          style="color:#fff; text-decoration:none; border-bottom:1px dashed rgba(255,255,255,0.35); padding-bottom:2px;"
-          onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'footer_whatsapp'});}catch(e){}"
-        >WhatsApp</a>
-      </p>
-    </div>
-
-    <div class="footer-redes">
-      <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
-      <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
-
-      <a
-        href="https://wa.me/522206804856?text=Hola%20Puntazo!%20Quiero%20mas%20informacion."
-        target="_blank"
-        rel="noopener"
-      >WhatsApp</a>
-
-      <a
-        href="mailto:isaacsaltiel@gmail.com?subject=Quiero%20información%20de%20Puntazo&body=Hola%20equipo%20Puntazo,%0D%0A%0D%0AMe%20interesa%20que%20mis%20canchas%20formen%20parte.%0D%0A%0D%0ANombre:%0D%0ATel%C3%A9fono:%0D%0A%0D%0A%C2%A1Gracias!"
-      >Email</a>
-    </div>
-
-    <p class="footer-copy">© 2026 Puntazo</p>
-  </footer>
-
-  <!-- JS principal -->
-  <script src="assets/script.js?v=20260209_4"></script>
-
-  <!-- Navbar: cerrar al scroll o click fuera -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const btn = document.querySelector('.menu-toggle');
-      const nav = document.querySelector('.navbar');
-
-      if (!btn || !nav) return;
-
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        nav.classList.toggle('show');
-      });
-
-      document.addEventListener('click', (e) => {
-        if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) {
-          nav.classList.remove('show');
-        }
-      });
-
-      window.addEventListener('scroll', () => {
-        if (nav.classList.contains('show')) nav.classList.remove('show');
-      });
+<script src="assets/script.js?v=20260209_4"></script>
+<script>
+  /* ── Navbar mobile ── */
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('.navbar');
+    if (!btn || !nav) return;
+    const close = () => nav.classList.remove('show');
+    btn.addEventListener('click', e => { e.stopPropagation(); nav.classList.toggle('show'); });
+    document.addEventListener('click', e => {
+      if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) close();
     });
-  </script>
+    window.addEventListener('scroll', close);
+    window.addEventListener('resize', () => { if (window.innerWidth > 860) close(); });
+  });
+</script>
 </body>
 </html>
