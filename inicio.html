@@ -1,14 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Puntazo — Tecnología que transforma el deporte</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<base href="/" />
+<title>Puntazo · Tecnología deportiva</title>
 
-<!-- Favicon principal -->
 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-
-<!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -17,114 +15,22 @@
   gtag('config', 'G-7HTMSTJ035');
 </script>
 
-<!-- Favicons Apple -->
-<link rel="apple-touch-icon" sizes="57x57"   href="/assets/icons/apple-icon-57x57.png" />
-<link rel="apple-touch-icon" sizes="60x60"   href="/assets/icons/apple-icon-60x60.png" />
-<link rel="apple-touch-icon" sizes="72x72"   href="/assets/icons/apple-icon-72x72.png" />
-<link rel="apple-touch-icon" sizes="76x76"   href="/assets/icons/apple-icon-76x76.png" />
-<link rel="apple-touch-icon" sizes="114x114" href="/assets/icons/apple-icon-114x114.png" />
-<link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/apple-icon-120x120.png" />
-<link rel="apple-touch-icon" sizes="144x144" href="/assets/icons/apple-icon-144x144.png" />
-<link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-icon-152x152.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
-
-<!-- Favicons Android -->
 <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/android-icon-192x192.png" />
-<link rel="icon" type="image/png" sizes="96x96"   href="/assets/icons/favicon-96x96.png" />
 <link rel="icon" type="image/png" sizes="32x32"   href="/assets/icons/favicon-32x32.png" />
-<link rel="icon" type="image/png" sizes="16x16"   href="/assets/icons/favicon-16x16.png" />
-
-<!-- Manifest -->
 <link rel="manifest" href="/assets/icons/manifest.json" />
 <meta name="msapplication-TileColor" content="#004FC8" />
-<meta name="msapplication-TileImage" content="/assets/icons/ms-icon-144x144.png" />
 <meta name="theme-color" content="#050914" />
 
-<!-- Fuente -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
 
+<!-- CSS CENTRALIZADO (nav, footer, tokens, animations) -->
+<link rel="stylesheet" href="assets/estilo.css" />
+
+<!-- CSS ESPECÍFICO DEL LANDING -->
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-:root{
-  --blue:#004FC8;
-  --blue2:#0B7CFF;
-  --blue3:#3395FF;
-  --dark:#050914;
-  --card:rgba(0,79,200,0.07);
-  --border:rgba(0,79,200,0.25);
-  --border2:rgba(255,255,255,0.09);
-  --text:#eaf2ff;
-  --muted:rgba(234,242,255,0.60);
-}
-html{scroll-behavior:smooth;}
-body{
-  font-family:'Montserrat',sans-serif;
-  background:var(--dark);
-  color:var(--text);
-  line-height:1.6;
-  overflow-x:hidden;
-}
-
-/* ── NAV ── */
-nav{
-  position:fixed;top:0;left:0;right:0;z-index:100;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:1rem 2.5rem;
-  background:rgba(5,9,20,0.85);
-  backdrop-filter:blur(18px);
-  -webkit-backdrop-filter:blur(18px);
-  border-bottom:1px solid var(--border2);
-}
-.nav-logo{display:flex;align-items:center;gap:0.6rem;text-decoration:none;}
-.nav-logo img{height:32px;width:auto;}
-.nav-logo-fallback{
-  display:none;
-  width:11px;height:11px;border-radius:50%;
-  background:var(--blue2);
-  box-shadow:0 0 14px rgba(11,124,255,0.7);
-}
-.nav-logo-text{font-size:1.1rem;font-weight:900;letter-spacing:1px;color:#fff;}
-.nav-links{display:flex;gap:2rem;list-style:none;}
-.nav-links a{color:var(--muted);text-decoration:none;font-size:0.85rem;font-weight:600;transition:color .2s;}
-.nav-links a:hover{color:#fff;}
-.nav-right{display:flex;align-items:center;gap:1rem;}
-.menu-toggle{
-  display:none;
-  background:none;border:none;color:#fff;
-  font-size:1.4rem;cursor:pointer;padding:4px 8px;
-  line-height:1;
-}
-.nav-cta{
-  background:var(--blue);color:#fff;
-  padding:0.5rem 1.4rem;border-radius:50px;
-  text-decoration:none;font-size:0.82rem;font-weight:800;
-  letter-spacing:0.5px;
-  border:1px solid var(--blue2);
-  box-shadow:0 0 20px rgba(0,79,200,0.4);
-  transition:all .2s;
-  white-space:nowrap;
-}
-.nav-cta:hover{background:var(--blue2);box-shadow:0 0 30px rgba(11,124,255,0.6);}
-
-/* Mobile nav */
-@media(max-width:860px){
-  .nav-links{
-    display:none;
-    position:fixed;top:65px;left:0;right:0;
-    background:rgba(5,9,20,0.97);
-    border-bottom:1px solid var(--border2);
-    flex-direction:column;gap:0;
-    padding:0.5rem 0;
-    z-index:99;
-  }
-  .nav-links.show{display:flex;}
-  .nav-links a{padding:0.9rem 2rem;border-bottom:1px solid rgba(255,255,255,0.05);}
-  .menu-toggle{display:block;}
-  nav{padding:1rem 1.5rem;}
-}
-
 /* ── HERO ── */
 .hero{
   min-height:100vh;
@@ -327,67 +233,48 @@ nav{
   display:grid;grid-template-columns:56px 1fr;
   gap:1.25rem;align-items:start;padding-bottom:2rem;
 }
-.step:last-child{padding-bottom:0;}
-.step-left{display:flex;flex-direction:column;align-items:center;}
+.step-left{display:flex;flex-direction:column;align-items:center;gap:0;}
 .step-num{
   width:48px;height:48px;border-radius:50%;
-  border:2px solid var(--blue);
+  background:rgba(0,79,200,0.12);border:1px solid rgba(0,79,200,0.3);
   display:flex;align-items:center;justify-content:center;
-  font-size:1.1rem;font-weight:900;color:var(--blue2);
-  background:rgba(0,79,200,0.1);flex-shrink:0;
+  font-weight:900;color:var(--blue2);font-size:1rem;
 }
 .step-connector{
-  width:2px;flex:1;min-height:28px;
-  background:linear-gradient(to bottom,rgba(0,79,200,0.5),transparent);
-  margin-top:6px;opacity:0.4;
+  width:2px;flex:1;min-height:32px;
+  background:linear-gradient(to bottom,rgba(0,79,200,0.25),transparent);
+  margin-top:4px;
 }
 .step:last-child .step-connector{display:none;}
-.step-body{padding-top:0.65rem;}
-.step-body h3{font-size:0.95rem;font-weight:800;margin-bottom:0.3rem;color:#fff;}
-.step-body p{color:var(--muted);font-size:0.85rem;line-height:1.65;}
-.step-tag{
-  display:inline-block;margin-top:0.5rem;
-  background:rgba(0,79,200,0.12);border:1px solid rgba(0,79,200,0.3);
-  border-radius:50px;padding:0.18rem 0.7rem;
-  font-size:0.68rem;color:var(--blue3);font-weight:700;
-}
+.step-body h3{font-size:0.92rem;font-weight:800;margin-bottom:0.25rem;color:#fff;}
+.step-body p{font-size:0.82rem;color:var(--muted);line-height:1.6;}
+.step-body .badge{margin-top:0.5rem;}
+
+/* Phone mockup */
 .phone-mockup{
-  background:rgba(0,79,200,0.07);
-  border:1px solid var(--border);
-  border-radius:24px;padding:2rem;
-  text-align:center;position:relative;overflow:hidden;
-}
-.phone-mockup::before{
-  content:'';position:absolute;top:-80px;right:-80px;
-  width:220px;height:220px;border-radius:50%;
-  background:radial-gradient(circle,rgba(0,79,200,0.2) 0%,transparent 70%);
+  background:rgba(0,0,0,0.35);border:1px solid var(--border);
+  border-radius:28px;padding:2rem;text-align:center;
+  max-width:320px;margin:0 auto;
 }
 .phone-label-top{
-  font-size:0.72rem;color:var(--blue3);font-weight:700;
-  margin-bottom:1rem;text-transform:uppercase;letter-spacing:1px;
+  font-size:0.72rem;font-weight:700;color:var(--blue3);
+  text-transform:uppercase;letter-spacing:1px;margin-bottom:1.25rem;
 }
-.phone-screen{
-  background:rgba(5,9,20,0.85);border:1px solid rgba(0,79,200,0.3);
-  border-radius:18px;padding:1.5rem;margin-bottom:1rem;
-}
+.phone-screen{display:flex;flex-direction:column;gap:0.75rem;}
 .phone-btn-big{
-  width:100%;padding:1rem;
   background:linear-gradient(135deg,var(--blue2),var(--blue));
-  border:none;border-radius:12px;
-  color:#fff;font-weight:900;font-size:0.9rem;
-  letter-spacing:1px;margin-bottom:0.75rem;cursor:default;
-  box-shadow:0 0 28px rgba(0,79,200,0.5);
-  font-family:'Montserrat',sans-serif;
+  color:#fff;padding:1.1rem;border-radius:16px;
+  font-weight:900;font-size:0.95rem;letter-spacing:0.3px;
+  box-shadow:0 0 28px rgba(0,79,200,0.4);transition:all .2s;
 }
+.phone-btn-big:hover{transform:scale(1.02);box-shadow:0 0 40px rgba(11,124,255,0.6);}
 .phone-clips-btn{
-  width:100%;padding:0.7rem;
-  background:rgba(0,79,200,0.15);
-  border:1px solid rgba(0,79,200,0.3);
-  border-radius:10px;
-  color:var(--blue3);font-weight:700;font-size:0.78rem;
-  cursor:default;font-family:'Montserrat',sans-serif;
+  background:rgba(255,255,255,0.06);border:1px solid var(--border2);
+  color:#fff;padding:0.75rem;border-radius:12px;
+  font-size:0.82rem;font-weight:700;transition:all .2s;
 }
-.phone-note{font-size:0.75rem;color:var(--muted);line-height:1.6;position:relative;z-index:1;}
+.phone-clips-btn:hover{background:rgba(255,255,255,0.10);}
+.phone-note{font-size:0.72rem;color:var(--muted);margin-top:1rem;line-height:1.6;}
 
 /* ── VISIÓN ── */
 .vision-box{
@@ -508,37 +395,17 @@ nav{
 .footer-cta p{color:var(--muted);margin-bottom:2.5rem;font-size:0.95rem;}
 .footer-cta-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
 
-footer{
-  border-top:1px solid var(--border2);
-  padding:1.75rem 2.5rem;
-  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;
-}
-.foot-logo{display:flex;align-items:center;gap:0.6rem;text-decoration:none;}
-.foot-logo img{height:26px;width:auto;}
-.foot-logo-text{font-size:0.95rem;font-weight:900;letter-spacing:1px;color:#fff;}
-.foot-links{display:flex;gap:1.75rem;flex-wrap:wrap;}
-.foot-links a{color:var(--muted);text-decoration:none;font-size:0.8rem;font-weight:500;transition:color .2s;}
-.foot-links a:hover{color:#fff;}
-.foot-copy{color:rgba(234,242,255,0.28);font-size:0.76rem;}
-
 @media(max-width:600px){
-  footer{flex-direction:column;text-align:center;padding:1.5rem;}
   .hero-stats{gap:2rem;}
 }
-
-/* ── FADE IN SECTIONS ── */
-.fade-section{opacity:0;transform:translateY(24px);transition:opacity 0.55s ease,transform 0.55s ease;}
-.fade-section.visible{opacity:1;transform:translateY(0);}
 </style>
 </head>
 <body>
 
-<!-- NAV -->
+<!-- NAV — solo logo, sin texto -->
 <nav>
   <a href="inicio.html" class="nav-logo">
-    <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
-    <div class="nav-logo-fallback"></div>
-    <span class="nav-logo-text">PUNTAZO</span>
+    <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
   </a>
   <ul class="nav-links" id="nav-menu">
     <li><a href="#producto" onclick="closeMenu()">Producto</a></li>
@@ -562,7 +429,8 @@ footer{
     Tecnología deportiva · Pádel y más
   </div>
   <h1>El deporte merece<br><span class="blue">tecnología de punta.</span></h1>
-  <p class="hero-sub">Transformamos la experiencia del deportista con soluciones inteligentes. Somos jóvenes, rápidos e innovadores — y apenas estamos comenzando.</p>
+  <p class="hero-sub">Transformamos la experiencia del deportista con soluciones inteligentes.
+Somos jóvenes, rápidos e innovadores — y apenas estamos comenzando.</p>
   <div class="hero-btns">
     <a href="index.html" class="btn-clips" onclick="try{gtag('event','hero_cta_clips',{event_category:'CTA',event_label:'hero'});}catch(e){}">▶ Encuentra tus clips</a>
     <a href="https://script.google.com/macros/s/AKfycbyB4AWfD7bqJGBkglYNfwJ6nmHMeOuvh5MVfxFMzAWmsl5uj_DOB33eUGmBaWdZPV58Sw/exec" target="_blank" rel="noopener" class="btn-live" onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'hero'});}catch(e){}">📲 Registrar puntazo en vivo</a>
@@ -616,15 +484,15 @@ footer{
         <svg viewBox="0 0 24 24"><path d="M15 10l4.553-2.069A1 1 0 0121 8.87V15.13a1 1 0 01-1.447.9L15 14"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg>
       </div>
       <h3>Transmisión en vivo</h3>
-      <p>Para torneos y eventos. El club selecciona la cancha y el stream arranca automáticamente — sin tecnicismos.</p>
+      <p>Para torneos y eventos. Transmisión automática desde la cámara del club, sin configurar nada.</p>
       <span class="badge badge-live">● Live</span>
     </div>
     <div class="feat-card">
       <div class="feat-icon">
         <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       </div>
-      <h3>Detección por gestos</h3>
-      <p>Visión artificial que detecta tu pose o gesto con la mano. Sin botón. Sin teléfono. Solo juegas y el sistema actúa.</p>
+      <h3>Detección de gestos</h3>
+      <p>Visión artificial que detecta tu gesto o pose para guardar la jugada — sin tocar ningún botón. Próximamente.</p>
       <span class="badge badge-dev">En desarrollo</span>
     </div>
   </div>
@@ -633,29 +501,30 @@ footer{
 <!-- CÓMO FUNCIONA -->
 <div class="section-wrap fade-section">
   <div class="section-tag">Cómo funciona</div>
-  <div class="section-title">Juega.<br>Registra. Revive.</div>
+  <div class="section-title">Así de simple.</div>
+  <p class="section-sub">Desde que juegas hasta que compartes tu jugada, todo sucede en segundos.</p>
   <div class="steps-wrap">
     <div class="steps">
       <div class="step">
         <div class="step-left"><div class="step-num">1</div><div class="step-connector"></div></div>
         <div class="step-body">
-          <h3>Entra a la cancha y juega</h3>
-          <p>Nuestro sistema está instalado y grabando. No cambias nada en tu rutina — solo enfócate en ganar.</p>
+          <h3>Juega como siempre</h3>
+          <p>La cámara graba automáticamente. Tú solo concéntrate en el juego.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">2</div><div class="step-connector"></div></div>
         <div class="step-body">
-          <h3>Registra tu puntazo</h3>
-          <p>Cuando haces un punto épico, actívalo como quieras: botón físico en la cancha, tu teléfono, o pronto un simple gesto de mano.</p>
-          <span class="step-tag">El minuto previo queda guardado automáticamente</span>
+          <h3>Toca el botón</h3>
+          <p>Presiona el botón físico en la cancha o usa tu teléfono. El sistema guarda el minuto previo al instante.</p>
+          <span class="badge badge-dev">Próximamente: activación por gestos 🤚</span>
         </div>
       </div>
       <div class="step">
         <div class="step-left"><div class="step-num">3</div><div class="step-connector"></div></div>
         <div class="step-body">
-          <h3>Escanea el QR de tu cancha</h3>
-          <p>Al terminar el partido, escanea el código. Todos tus clips al instante, desde tu teléfono.</p>
+          <h3>Escanea el QR o entra al sitio</h3>
+          <p>Todos tus clips al instante, desde tu teléfono.</p>
         </div>
       </div>
       <div class="step">
@@ -706,7 +575,7 @@ footer{
       </div>
       <div class="vision-item">
         <h4>Patrocinios integrados <span class="tag-sm tag-dev">Dev</span></h4>
-        <p>Marcas en los videos de forma natural. Así se financia el ecosistema.</p>
+        <p>Marcas en los videos de forma natural. Ingreso para el club sin cobrarle al jugador.</p>
       </div>
     </div>
   </div>
@@ -715,51 +584,44 @@ footer{
 <!-- PARA CLUBS -->
 <div class="section-wrap fade-section" id="clubs">
   <div class="section-tag">Para clubs</div>
-  <div class="section-title">Tecnología premium.<br>Inversión mínima.</div>
+  <div class="section-title">Dale más a tus jugadores.<br>Cobra menos.</div>
+  <p class="section-sub">Implementamos Puntazo en tu club con un costo mínimo. Nuestro modelo se basa en generar contenido — no en cobrarte.</p>
   <div class="clubs-grid">
     <div class="clubs-feats">
       <div class="club-feat">
-        <div class="club-feat-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        <div class="club-feat-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        </div>
         <div>
-          <h4>Instalación y mantenimiento incluidos</h4>
-          <p>Nosotros nos encargamos de todo. Tu club no necesita equipo técnico ni infraestructura especial.</p>
+          <h4>Instalación sin complicaciones</h4>
+          <p>Nosotros ponemos todo el hardware y el software. Tú solo das el espacio.</p>
         </div>
       </div>
       <div class="club-feat">
-        <div class="club-feat-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="club-feat-icon">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
         <div>
-          <h4>Costo muy bajo de entrada</h4>
-          <p>Cobramos poco porque nuestro modelo se basa en el contenido generado, no en lo que paga tu club.</p>
+          <h4>Costo mínimo para el club</h4>
+          <p>Cobramos muy poco. Nuestro modelo real es generar volumen de videos y meter patrocinadores.</p>
         </div>
       </div>
       <div class="club-feat">
-        <div class="club-feat-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-        <div>
-          <h4>Valor diferenciado para tus jugadores</h4>
-          <p>Ofrece algo que ninguna otra cancha da hoy. Atrae socios nuevos y fideliza los que ya tienes.</p>
+        <div class="club-feat-icon">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
         </div>
-      </div>
-      <div class="club-feat">
-        <div class="club-feat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 1 21 12"/><path d="M4.93 4.93A10 10 0 0 0 3 12"/><path d="M12 21a10 10 0 0 1-7.07-2.93"/><path d="M12 21a10 10 0 0 0 7.07-2.93"/></svg></div>
         <div>
-          <h4>Nos adaptamos a ti</h4>
-          <p>Diseñamos e implementamos la solución ideal para tu club, tus canchas y tu operación.</p>
-        </div>
-      </div>
-      <div class="club-feat">
-        <div class="club-feat-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
-        <div>
-          <h4>Interfaz de livestream lista</h4>
-          <p>Para tus torneos y eventos — tu staff elige la cancha y el stream arranca automáticamente.</p>
+          <h4>Nos adaptamos a tu club</h4>
+          <p>Somos rápidos, flexibles y siempre estamos mejorando. Tu feedback moldea el producto.</p>
         </div>
       </div>
     </div>
     <div class="clubs-cta-box">
-      <p class="price-text">El costo para tu club</p>
-      <div class="price-tag">Casi nada.</div>
-      <p class="price-sub">Ganamos cuando generamos contenido de calidad.<br>Tu éxito es literalmente el nuestro.</p>
+      <p class="price-text">Costo mensual por cancha</p>
+      <div class="price-tag">Mínimo</div>
+      <p class="price-sub">No te cobramos por jugador ni por clip.<br>Tú pones la cancha, nosotros el sistema.</p>
       <a
-        href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo!%20Me%20interesa%20llevar%20Puntazo%20a%20mi%20club.%0AClub%3A%20____%0ACiudad%3A%20____%0A%23%20de%20canchas%3A%20____%0AMi%20nombre%3A%20____%0ATel%3A%20____%0AGracias!"
+        href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo!%20Me%20interesa%20llevar%20Puntazo%20a%20mi%20club."
         target="_blank" rel="noopener"
         class="wa-btn"
         onclick="try{gtag('event','clubs_whatsapp_click',{event_category:'CTA',event_label:'clubs_box'});}catch(e){}"
@@ -826,7 +688,6 @@ footer{
 <footer>
   <a href="inicio.html" class="foot-logo">
     <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
-    <span class="foot-logo-text">PUNTAZO</span>
   </a>
   <div class="foot-links">
     <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
@@ -839,7 +700,6 @@ footer{
 
 <!-- Scripts -->
 <script>
-  /* ── Navbar mobile toggle ── */
   const menuToggle = document.getElementById('menu-toggle');
   const navMenu = document.getElementById('nav-menu');
 
@@ -858,7 +718,6 @@ footer{
 
   function closeMenu() { navMenu.classList.remove('show'); }
 
-  /* ── Fade-in sections ── */
   const observer = new IntersectionObserver(
     entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
     { threshold: 0.1 }
