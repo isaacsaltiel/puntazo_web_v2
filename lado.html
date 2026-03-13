@@ -37,480 +37,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
 
-<style>
-/* ══════════════════════════════════════════
-   RESET + TOKENS
-══════════════════════════════════════════ */
-*{margin:0;padding:0;box-sizing:border-box;}
-:root{
-  --blue:#004FC8;
-  --blue2:#0B7CFF;
-  --blue3:#3395FF;
-  --dark:#050914;
-  --card:rgba(0,79,200,0.07);
-  --border:rgba(0,79,200,0.25);
-  --border2:rgba(255,255,255,0.09);
-  --text:#eaf2ff;
-  --muted:rgba(234,242,255,0.55);
-  --radius:18px;
-}
-html{scroll-behavior:smooth;}
-body{
-  font-family:'Montserrat',sans-serif;
-  background:var(--dark);
-  color:var(--text);
-  min-height:100vh;
-  overflow-x:hidden;
-}
-
-/* ══════════════════════════════════════════
-   PAGE BG
-══════════════════════════════════════════ */
-.page-bg{
-  position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:
-    radial-gradient(ellipse 70% 50% at 15% 15%, rgba(0,79,200,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 85% 80%, rgba(11,124,255,0.08) 0%, transparent 60%);
-}
-
-/* ══════════════════════════════════════════
-   NAV
-══════════════════════════════════════════ */
-.site-header{
-  position:fixed;top:0;left:0;right:0;z-index:100;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0.85rem 2rem;
-  background:rgba(5,9,20,0.90);
-  backdrop-filter:blur(18px);
-  -webkit-backdrop-filter:blur(18px);
-  border-bottom:1px solid var(--border2);
-  gap:1rem;
-}
-.logo-link{display:flex;align-items:center;gap:0.5rem;text-decoration:none;flex-shrink:0;}
-.logo-link img{height:28px;width:auto;}
-.logo-link-text{font-size:1rem;font-weight:900;letter-spacing:1px;color:#fff;}
-.navbar{display:flex;align-items:center;gap:1.5rem;}
-.navbar a{color:var(--muted);text-decoration:none;font-size:0.88rem;font-weight:600;transition:color .2s;white-space:nowrap;}
-.navbar a:hover{color:#fff;}
-.highlight-btn{
-  background:var(--blue);color:#fff !important;
-  padding:0.5rem 1.2rem;border-radius:50px;
-  font-size:0.88rem !important;font-weight:800 !important;
-  border:1px solid var(--blue2);
-  box-shadow:0 0 16px rgba(0,79,200,0.4);
-  transition:all .2s !important;
-}
-.highlight-btn:hover{background:var(--blue2) !important;}
-.menu-toggle{
-  display:none;background:none;border:none;
-  color:#fff;font-size:1.4rem;cursor:pointer;padding:4px 6px;
-  flex-shrink:0;
-}
-@media(max-width:860px){
-  .navbar{
-    display:none;position:fixed;top:58px;left:0;right:0;
-    background:rgba(5,9,20,0.97);
-    border-bottom:1px solid var(--border2);
-    flex-direction:column;align-items:stretch;gap:0;
-    padding:0.5rem 0;z-index:99;
-  }
-  .navbar.show{display:flex;}
-  .navbar a{padding:0.85rem 1.75rem;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.95rem !important;}
-  .menu-toggle{display:block;}
-  .site-header{padding:0.85rem 1.25rem;}
-}
-
-/* ══════════════════════════════════════════
-   MAIN WRAPPER
-══════════════════════════════════════════ */
-.site-content{
-  position:relative;z-index:1;
-  padding:5.5rem 1.25rem 4rem;
-  max-width:780px;
-  margin:0 auto;
-}
-@media(min-width:600px){.site-content{padding:5.5rem 2rem 4rem;}}
-
-/* ══════════════════════════════════════════
-   BREADCRUMB ROW  — MÁS GRANDE
-══════════════════════════════════════════ */
-.top-row{
-  display:flex;align-items:center;justify-content:space-between;
-  flex-wrap:wrap;gap:0.5rem;
-  margin-bottom:0.75rem;
-}
-.titulo-club{
-  display:flex;align-items:center;gap:0.4rem;
-  flex-wrap:wrap;font-size:0.92rem;font-weight:600;
-}
-.breadcrumb-link{
-  color:var(--muted);text-decoration:none;transition:color .2s;
-}
-.breadcrumb-link:hover{color:#fff;}
-.breadcrumb-sep-char{color:rgba(234,242,255,0.2);}
-#nombre-lado{color:#fff;font-weight:700;}
-.recover-mini{
-  display:inline-flex;align-items:center;gap:0.3rem;
-  color:var(--muted);font-size:0.82rem;font-weight:600;
-  text-decoration:none;
-  border-bottom:1px dashed rgba(255,255,255,0.18);
-  padding-bottom:1px;transition:color .2s;
-  white-space:nowrap;flex-shrink:0;
-}
-.recover-mini:hover{color:#fff;}
-
-/* ══════════════════════════════════════════
-   BTN VOLVER + LADO OPUESTO (fila) — MÁS GRANDE
-══════════════════════════════════════════ */
-.btn-volver-container{
-  display:flex;align-items:center;justify-content:space-between;
-  gap:0.75rem;flex-wrap:wrap;
-  margin-bottom:1.25rem;
-}
-.btn-volver{
-  display:inline-flex;align-items:center;gap:0.35rem;
-  color:var(--muted);text-decoration:none;
-  font-size:0.92rem;font-weight:600;
-  padding:0.55rem 1.1rem;border-radius:50px;
-  border:1px solid var(--border2);
-  transition:all .2s;white-space:nowrap;
-}
-.btn-volver:hover{color:#fff;border-color:rgba(255,255,255,0.22);}
-
-/* btn-alt = "Ir al lado opuesto" — el script.js lo inyecta con esta clase */
-.btn-alt{
-  display:inline-flex;align-items:center;gap:0.35rem;
-  color:var(--blue3);text-decoration:none;
-  font-size:0.92rem;font-weight:700;
-  padding:0.55rem 1.1rem;border-radius:50px;
-  border:1px solid rgba(0,79,200,0.35);
-  background:rgba(0,79,200,0.08);
-  transition:all .2s;white-space:nowrap;
-}
-.btn-alt:hover{background:rgba(0,79,200,0.18);border-color:rgba(0,79,200,0.55);}
-
-/* ══════════════════════════════════════════
-   FILTRO DÍA + HORA  — MÁS GRANDE
-══════════════════════════════════════════ */
-#filtro-dia,
-#filtro-horario,
-#filtro-horario-bottom{
-  display:flex;flex-wrap:wrap;gap:8px;
-  margin-bottom:0.75rem;
-}
-/* Botones que genera el script */
-.btn-filtro{
-  display:inline-flex;align-items:center;
-  padding:10px 18px;
-  border-radius:50px;
-  border:1px solid var(--border2);
-  background:rgba(255,255,255,0.05);
-  color:var(--text);
-  font-family:'Montserrat',sans-serif;
-  font-size:0.92rem;font-weight:700;
-  cursor:pointer;transition:all .2s;
-  position:relative;white-space:nowrap;
-}
-.btn-filtro:hover{background:rgba(255,255,255,0.10);border-color:rgba(255,255,255,0.22);}
-.btn-filtro.activo{
-  background:rgba(0,79,200,0.2);
-  border-color:rgba(0,79,200,0.55);
-  color:#fff;
-}
-.btn-filtro.quitar{
-  color:var(--muted);
-  border-color:var(--border2);
-  background:transparent;
-}
-.btn-filtro.quitar:hover{color:#fff;}
-
-/* ══════════════════════════════════════════
-   BANNER "REGISTRAR EN VIVO"  — INTEGRADO
-══════════════════════════════════════════ */
-.live-banner{
-  background:rgba(0,79,200,0.10);
-  border:1px solid rgba(0,79,200,0.30);
-  border-radius:var(--radius);
-  padding:1.1rem 1.25rem;
-  display:flex;align-items:center;justify-content:space-between;
-  gap:1rem;flex-wrap:wrap;
-  margin-bottom:1.5rem;
-  position:relative;overflow:hidden;
-}
-.live-banner::before{
-  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
-  background:linear-gradient(to bottom, var(--blue2), var(--blue));
-  border-radius:3px 0 0 3px;
-}
-.live-banner-text{padding-left:0.25rem;}
-.live-banner-text h3{
-  font-size:1rem;font-weight:800;color:#fff;margin-bottom:0.2rem;
-}
-.live-banner-text p{font-size:0.88rem;color:var(--muted);line-height:1.5;}
-.live-banner-btns{display:flex;gap:0.6rem;flex-wrap:wrap;flex-shrink:0;}
-.btn-live-sm{
-  display:inline-flex;align-items:center;gap:0.35rem;
-  background:var(--blue);color:#fff;
-  padding:0.65rem 1.3rem;border-radius:50px;
-  text-decoration:none;font-size:0.92rem;font-weight:800;
-  border:1px solid var(--blue2);
-  box-shadow:0 0 14px rgba(0,79,200,0.35);
-  transition:all .2s;white-space:nowrap;
-  font-family:'Montserrat',sans-serif;
-}
-.btn-live-sm:hover{background:var(--blue2);transform:translateY(-1px);}
-@media(max-width:520px){
-  .live-banner{flex-direction:column;align-items:flex-start;}
-  .live-banner-btns{width:100%;}
-  .btn-live-sm{flex:1;justify-content:center;}
-}
-
-/* ══════════════════════════════════════════
-   AVISO 24H
-══════════════════════════════════════════ */
-.aviso{
-  font-size:0.82rem;color:rgba(234,242,255,0.3);
-  text-align:center;padding:0.5rem 0;
-  margin-bottom:0.75rem;
-}
-
-/* ══════════════════════════════════════════
-   LOADING
-══════════════════════════════════════════ */
-#loading{
-  display:none;
-  text-align:center;padding:2rem;
-  font-size:0.95rem;color:var(--muted);
-}
-
-/* ══════════════════════════════════════════
-   VIDEO GRID  — VIDEOS MÁS GRANDES
-══════════════════════════════════════════ */
-.video-grid{
-  display:flex;flex-direction:column;
-  gap:1.25rem;
-}
-
-/* ── Video card ── */
-.video-card{
-  background:rgba(0,79,200,0.06);
-  border:1px solid rgba(0,79,200,0.22);
-  border-radius:var(--radius);
-  padding:1.25rem;
-  transition:border-color .2s;
-  position:relative;overflow:hidden;
-}
-.video-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--blue),transparent);
-  opacity:0;transition:opacity .3s;
-}
-.video-card:hover{border-color:rgba(0,79,200,0.45);}
-.video-card:hover::before{opacity:1;}
-
-/* Título (hora) — MÁS GRANDE */
-.video-title{
-  font-size:1.2rem;font-weight:800;color:#fff;
-  margin-bottom:0.6rem;letter-spacing:-0.3px;
-}
-
-/* Tags nuevo / recuperado — MÁS GRANDES */
-.video-card [style*="display: flex"][style*="gap: 8px"]{
-  margin-bottom:0.6rem !important;
-}
-.video-card span[style*="border-radius: 999px"]{
-  font-family:'Montserrat',sans-serif !important;
-  font-size:0.85rem !important;
-  padding:5px 12px !important;
-  background:rgba(0,79,200,0.15) !important;
-  border:1px solid rgba(0,79,200,0.35) !important;
-  color:var(--blue3) !important;
-  border-radius:50px !important;
-  font-weight:800 !important;
-}
-
-/* Videos — SIN max-height restrictivo, más grandes */
-video.video-preview,
-video.real{
-  width:100%;
-  border-radius:12px;
-  display:block;
-  background:#000;
-  object-fit:contain;
-}
-video.real{display:none;}
-
-/* ── Botones de acción por video — MÁS GRANDES ── */
-.botones-container{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-top:1rem;
-  align-items:center;
-}
-
-/* Compartir | Descargar — MÁS GRANDE */
-.btn-share-large{
-  flex:1;min-width:160px;
-  display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;
-  background:var(--blue);color:#fff;
-  padding:0.85rem 1.3rem;border-radius:50px;
-  border:1px solid var(--blue2);
-  font-family:'Montserrat',sans-serif;
-  font-size:0.95rem;font-weight:800;
-  cursor:pointer;transition:all .2s;
-  box-shadow:0 0 16px rgba(0,79,200,0.3);
-}
-.btn-share-large:hover{background:var(--blue2);transform:translateY(-1px);}
-.btn-share-large:disabled{opacity:0.6;cursor:default;transform:none;}
-
-/* Barra de progreso de descarga */
-.btn-progress{
-  display:flex;align-items:center;gap:6px;
-  width:100%;font-size:0.85rem;flex-wrap:wrap;
-}
-.btn-progress__label{color:rgba(255,255,255,0.85);white-space:nowrap;}
-.btn-progress__percent{color:#fff;font-weight:700;min-width:32px;text-align:right;white-space:nowrap;}
-.btn-progress__bar{
-  flex:1;min-width:60px;height:5px;
-  background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden;
-}
-.btn-progress__fill{
-  height:100%;background:var(--blue2);border-radius:4px;
-  transition:width .2s ease;
-}
-.btn-progress__spinner{
-  display:none;
-  width:16px;height:16px;border-radius:50%;
-  border:2px solid rgba(255,255,255,0.25);
-  border-top-color:#fff;
-  animation:spin 0.7s linear infinite;
-}
-.btn-progress__cancel{
-  background:none;border:none;color:rgba(255,255,255,0.5);
-  font-size:0.82rem;cursor:pointer;padding:0 2px;font-family:'Montserrat',sans-serif;
-  white-space:nowrap;
-}
-.btn-progress__cancel:hover{color:#fff;}
-
-/* Botones de promo — consistencia */
-.btn-promo{
-  font-family:'Montserrat',sans-serif !important;
-  border-radius:50px !important;
-  font-size:0.95rem !important;
-  font-weight:800 !important;
-  cursor:pointer;
-  transition:filter .15s, transform .15s !important;
-}
-.btn-promo:hover{filter:brightness(1.08);transform:translateY(-1px);}
-
-/* ══════════════════════════════════════════
-   PAGINADOR — MÁS GRANDE
-══════════════════════════════════════════ */
-#bottom-controls{margin:1.5rem 0 0.5rem;}
-#paginator-bottom>div{
-  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
-}
-#paginator-bottom button{
-  padding:10px 16px;
-  border:1px solid var(--border2);
-  border-radius:50px;
-  background:rgba(255,255,255,0.05);
-  color:var(--text);
-  font-family:'Montserrat',sans-serif;
-  font-size:0.92rem;font-weight:700;
-  cursor:pointer;transition:all .2s;
-}
-#paginator-bottom button:hover:not(:disabled){
-  background:rgba(0,79,200,0.15);border-color:rgba(0,79,200,0.4);
-}
-#paginator-bottom button:disabled{
-  opacity:0.5;cursor:default;
-  background:rgba(0,79,200,0.12);
-  border-color:rgba(0,79,200,0.3);
-  color:#fff;
-}
-#paginator-bottom span{
-  font-size:0.82rem;color:var(--muted);margin-left:auto;
-}
-
-/* ══════════════════════════════════════════
-   SCROLL TO TOP — MÁS GRANDE
-══════════════════════════════════════════ */
-.scroll-top{
-  position:fixed;bottom:1.5rem;right:1.25rem;z-index:90;
-  width:48px;height:48px;border-radius:50%;
-  background:var(--blue);color:#fff;
-  border:1px solid var(--blue2);
-  font-size:1.2rem;font-weight:700;
-  cursor:pointer;
-  box-shadow:0 0 18px rgba(0,79,200,0.5);
-  transition:all .2s;
-  display:none;
-}
-.scroll-top:hover{background:var(--blue2);transform:translateY(-2px);}
-
-/* ══════════════════════════════════════════
-   FOOTER
-══════════════════════════════════════════ */
-.site-footer{
-  border-top:1px solid var(--border2);
-  padding:1.5rem 2rem;
-  display:flex;justify-content:space-between;align-items:center;
-  flex-wrap:wrap;gap:1rem;
-  position:relative;z-index:1;margin-top:2rem;
-  max-width:780px;margin-left:auto;margin-right:auto;
-}
-.footer-info p{font-size:0.88rem;color:var(--muted);line-height:1.7;}
-.footer-info a{color:var(--blue3);text-decoration:none;}
-.footer-info a:hover{text-decoration:underline;}
-.footer-redes{display:flex;gap:1.25rem;flex-wrap:wrap;}
-.footer-redes a{color:var(--muted);text-decoration:none;font-size:0.88rem;font-weight:500;transition:color .2s;}
-.footer-redes a:hover{color:#fff;}
-.footer-copy{color:rgba(234,242,255,0.25);font-size:0.78rem;width:100%;}
-@media(max-width:600px){
-  .site-footer{flex-direction:column;padding:1.25rem;}
-  .footer-copy{text-align:center;}
-}
-
-/* ══════════════════════════════════════════
-   FADE IN
-══════════════════════════════════════════ */
-.fade-in{animation:fadeIn 0.4s ease both;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
-@keyframes spin{to{transform:rotate(360deg);}}
-
-/* ══════════════════════════════════════════
-   OVERRIDE: dayBtnStyles inyectados por script
-   El script usa inline styles, los overrideamos
-══════════════════════════════════════════ */
-#filtro-dia button{
-  font-size:0.92rem !important;
-  padding:10px 14px !important;
-  font-family:'Montserrat',sans-serif !important;
-}
-
-/* ══════════════════════════════════════════
-   OVERRIDE: Tags inline del script (mkTag)
-   El script crea spans con inline styles.
-   Aseguramos que se vean grandes.
-══════════════════════════════════════════ */
-.video-card div[style*="gap: 8px"] > span{
-  font-size:0.88rem !important;
-  padding:5px 12px !important;
-  font-weight:800 !important;
-}
-</style>
+<!-- CSS CENTRALIZADO -->
+<link rel="stylesheet" href="assets/estilo.css" />
 </head>
 <body>
 
 <div class="page-bg"></div>
 
-<!-- ── NAV ── -->
+<!-- ── NAV — solo logo, sin texto "PUNTAZO" ── -->
 <header class="site-header">
   <a href="inicio.html" class="logo-link">
     <img src="assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
-    <span class="logo-link-text">PUNTAZO</span>
   </a>
 
   <button class="menu-toggle" aria-label="Abrir menú">☰</button>
@@ -525,14 +62,21 @@ video.real{display:none;}
 <!-- ── CONTENIDO ── -->
 <main class="site-content fade-in">
 
-  <!-- Breadcrumb + recover mini -->
+  <!--
+    BREADCRUMB: Club › Cancha (sin "lado")
+    - link-club: clickeable → locacion.html
+    - link-cancha: NO clickeable (ya estás aquí, se muestra como texto blanco)
+    - sep2 y nombre-lado: ocultos (el script los llena pero no se muestran)
+  -->
   <div class="top-row">
     <div class="titulo-club">
-      <a id="link-club"   class="breadcrumb-link" href="#"></a>
+      <a id="link-club" class="breadcrumb-link" href="#"></a>
       <span id="breadcrumb-sep1" class="breadcrumb-sep-char"> › </span>
-      <a id="link-cancha" class="breadcrumb-link" href="#"></a>
-      <span id="breadcrumb-sep2" class="breadcrumb-sep-char"> › </span>
-      <span id="nombre-lado"></span>
+      <a id="link-cancha" class="breadcrumb-link" href="#"
+         style="color:#fff;pointer-events:none;cursor:default;font-weight:700;"></a>
+      <!-- Ocultos — el script los llena pero ya no existen visualmente -->
+      <span id="breadcrumb-sep2" style="display:none;"></span>
+      <span id="nombre-lado" style="display:none;"></span>
     </div>
     <a
       class="recover-mini"
@@ -542,19 +86,19 @@ video.real{display:none;}
     >¿No aparece? Recuperar →</a>
   </div>
 
-  <!-- Volver + lado opuesto -->
+  <!-- Volver -->
   <div class="btn-volver-container">
     <a href="#" id="btn-volver" class="btn-volver">← Regresar</a>
   </div>
 
-  <!-- Filtro días -->
+  <!-- Filtro días (script inyecta #filtro-dia antes de #filtro-horario) -->
   <div id="filtro-horario"></div>
 
-  <!-- Banner registrar en vivo -->
+  <!-- Banner: para cuando ESTÁS JUGANDO, no después -->
   <div class="live-banner">
     <div class="live-banner-text">
-      <h3>📲 Tu teléfono ya es el botón</h3>
-      <p>Registra tu puntazo al instante desde tu celular — úsalo justo cuando cae el punto.</p>
+      <h3>📲 ¿Estás jugando? Tu teléfono es el botón</h3>
+      <p>Registra tu puntazo al instante desde tu celular — tócalo justo cuando cae el punto.</p>
     </div>
     <div class="live-banner-btns">
       <a
@@ -572,7 +116,7 @@ video.real{display:none;}
   <!-- Aviso 24h -->
   <div class="aviso">Los videos se borran pasadas 24 horas de subida.</div>
 
-  <!-- Videos -->
+  <!-- Videos — llenado por script.js -->
   <section id="videos-container" class="video-grid"></section>
 
 </main>
@@ -605,62 +149,50 @@ video.real{display:none;}
 
 <!-- ══════════════════════════════════════════════════════════
      PARCHES DE PERFORMANCE Y PRIORIDAD DE REPRODUCCIÓN
-     — No modifica script.js, solo parchea comportamiento
-══════════════════════════════════════════════════════════════ -->
+     Sin modificar script.js — solo overrides post-carga
+══════════════════════════════════════════════════════════ -->
 <script>
 (function() {
   'use strict';
 
-  // ───────────────────────────────────────────
-  // 1) PRIORIDAD DE REPRODUCCIÓN: cuando un video "real" da play,
-  //    TODOS los previews se pausan y se les quita el src temporalmente
-  //    para liberar recursos de decodificación de video.
-  // ───────────────────────────────────────────
+  // 1) PRIORIDAD: video real → pausar todos los previews y liberar decoders
   const container = document.getElementById('videos-container');
   if (container) {
-    // Usar event delegation para capturar play en cualquier video.real
     container.addEventListener('play', function(e) {
       const target = e.target;
       if (!target || !target.classList.contains('real')) return;
 
-      // Pausar TODOS los previews para dar recursos al video real
       document.querySelectorAll('video.video-preview').forEach(function(prev) {
         try {
           prev.pause();
-          // Guardar src si no lo hemos guardado
           if (prev.src && !prev.dataset.pausedSrc) {
             prev.dataset.pausedSrc = prev.src;
             prev.removeAttribute('src');
-            prev.load(); // Libera el buffer de decodificación
+            prev.load();
           }
         } catch(err) {}
       });
 
-      // También pausar otros videos reales
       document.querySelectorAll('video.real').forEach(function(other) {
         if (other !== target) {
           try { other.pause(); } catch(err) {}
         }
       });
-    }, true); // useCapture=true para interceptar antes
+    }, true);
 
-    // Cuando el video real se pausa o termina, restaurar los previews
     container.addEventListener('pause', function(e) {
       const target = e.target;
       if (!target || !target.classList.contains('real')) return;
 
-      // Solo restaurar si NO hay otro video real reproduciéndose
       const anyRealPlaying = Array.from(document.querySelectorAll('video.real')).some(function(v) {
         return !v.paused;
       });
       if (anyRealPlaying) return;
 
-      // Restaurar los previews que estaban visibles
       document.querySelectorAll('video.video-preview').forEach(function(prev) {
         if (prev.dataset.pausedSrc) {
           prev.src = prev.dataset.pausedSrc;
           delete prev.dataset.pausedSrc;
-          // No hacemos auto-play; el IntersectionObserver se encargará
         }
       });
     }, true);
@@ -668,29 +200,19 @@ video.real{display:none;}
     container.addEventListener('ended', function(e) {
       const target = e.target;
       if (!target || !target.classList.contains('real')) return;
-      // Disparar la misma lógica de restaurar previews
       target.dispatchEvent(new Event('pause', { bubbles: false }));
     }, true);
   }
 
-  // ───────────────────────────────────────────
-  // 2) CARGA MÁS RÁPIDA: Override loadPreviewsSequentially
-  //    para cargar previews en lotes de 3 en paralelo
-  //    en lugar de 1 por 1 secuencial.
-  // ───────────────────────────────────────────
-  if (typeof window.loadPreviewsSequentially !== 'undefined') {
-    // Guardar referencia original por si acaso
-    window._originalLoadPreviews = window.loadPreviewsSequentially;
-  }
-
+  // 2) CARGA: previews en lotes de 3 con timeout de 4s
   window.loadPreviewsSequentially = async function(previews) {
-    const BATCH_SIZE = 3;
-    for (let i = 0; i < previews.length; i += BATCH_SIZE) {
-      const batch = previews.slice(i, i + BATCH_SIZE);
+    const BATCH = 3;
+    for (let i = 0; i < previews.length; i += BATCH) {
+      const batch = previews.slice(i, i + BATCH);
       await Promise.all(batch.map(function(v) {
         return new Promise(function(resolve) {
           v.preload = 'metadata';
-          const timeout = setTimeout(resolve, 4000); // Max 4s por video
+          const timeout = setTimeout(resolve, 4000);
           v.addEventListener('loadedmetadata', function() {
             clearTimeout(timeout);
             resolve();
@@ -705,20 +227,15 @@ video.real{display:none;}
     }
   };
 
-  // ───────────────────────────────────────────
-  // 3) LIMITAR PREVIEWS ACTIVOS: Solo permitir que 1 preview
-  //    se reproduzca a la vez (refuerzo del IntersectionObserver)
-  // ───────────────────────────────────────────
+  // 3) Bloquear play de previews si hay video real activo
   let lastActivePreview = null;
   const origPlay = HTMLVideoElement.prototype.play;
   HTMLVideoElement.prototype.play = function() {
     if (this.classList.contains('video-preview')) {
-      // Si hay un video real reproduciéndose, no permitir que arranque el preview
       const anyRealPlaying = document.querySelector('video.real:not([paused])');
       if (anyRealPlaying && !anyRealPlaying.paused) {
-        return Promise.resolve(); // No-op
+        return Promise.resolve();
       }
-      // Pausar preview anterior
       if (lastActivePreview && lastActivePreview !== this) {
         try { lastActivePreview.pause(); } catch(e) {}
       }
@@ -730,8 +247,8 @@ video.real{display:none;}
 })();
 </script>
 
+<!-- ── Navbar mobile ── -->
 <script>
-  /* ── Navbar mobile ── */
   document.addEventListener('DOMContentLoaded', () => {
     const btn = document.querySelector('.menu-toggle');
     const nav = document.querySelector('.navbar');
