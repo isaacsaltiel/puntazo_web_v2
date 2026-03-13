@@ -1,443 +1,331 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <base href="/" />
-  <title>Puntazo</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<base href="/" />
+<title>Puntazo</title>
 
-  <!-- Favicon principal -->
-  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-7HTMSTJ035'); 
-  </script>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-7HTMSTJ035');
+</script>
 
-  <!-- Favicons Apple -->
-  <link rel="apple-touch-icon" sizes="57x57" href="/assets/icons/apple-icon-57x57.png" />
-  <link rel="apple-touch-icon" sizes="60x60" href="/assets/icons/apple-icon-60x60.png" />
-  <link rel="apple-touch-icon" sizes="72x72" href="/assets/icons/apple-icon-72x72.png" />
-  <link rel="apple-touch-icon" sizes="76x76" href="/assets/icons/apple-icon-76x76.png" />
-  <link rel="apple-touch-icon" sizes="114x114" href="/assets/icons/apple-icon-114x114.png" />
-  <link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/apple-icon-120x120.png" />
-  <link rel="apple-touch-icon" sizes="144x144" href="/assets/icons/apple-icon-144x144.png" />
-  <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-icon-152x152.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="apple-touch-icon" sizes="57x57"   href="/assets/icons/apple-icon-57x57.png" />
+<link rel="apple-touch-icon" sizes="60x60"   href="/assets/icons/apple-icon-60x60.png" />
+<link rel="apple-touch-icon" sizes="72x72"   href="/assets/icons/apple-icon-72x72.png" />
+<link rel="apple-touch-icon" sizes="76x76"   href="/assets/icons/apple-icon-76x76.png" />
+<link rel="apple-touch-icon" sizes="114x114" href="/assets/icons/apple-icon-114x114.png" />
+<link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/apple-icon-120x120.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="/assets/icons/apple-icon-144x144.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/android-icon-192x192.png" />
+<link rel="icon" type="image/png" sizes="32x32"   href="/assets/icons/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="96x96"   href="/assets/icons/favicon-96x96.png" />
+<link rel="icon" type="image/png" sizes="16x16"   href="/assets/icons/favicon-16x16.png" />
+<link rel="manifest" href="/assets/icons/manifest.json" />
+<meta name="msapplication-TileColor" content="#004FC8" />
+<meta name="msapplication-TileImage" content="/assets/icons/ms-icon-144x144.png" />
+<meta name="theme-color" content="#050914" />
 
-  <!-- Favicons Android / otros -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/android-icon-192x192.png" />
-  <link rel="icon" type="image/png" sizes="96x96" href="/assets/icons/favicon-96x96.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
 
-  <!-- Manifest y color de tema -->
-  <link rel="manifest" href="/assets/icons/manifest.json" />
-  <meta name="msapplication-TileColor" content="#ffffff" />
-  <meta name="msapplication-TileImage" content="/assets/icons/ms-icon-144x144.png" />
-  <meta name="theme-color" content="#ffffff" />
-
-  <!-- Estilos -->
-  <link rel="stylesheet" href="/assets/estilo.css" />
-  <link rel="stylesheet" href="/assets/inicio.css" />
-
-  <!-- NUEVO: Banner mega llamativo + recuperar discreto -->
-  <style>
-    /* Recover mini, discretito */
-    .recover-mini-wrap{
-      max-width: 1100px;
-      margin: 6px auto 0;
-      padding: 0 16px;
-      display: flex;
-      justify-content: flex-end;
-    }
-    .recover-mini{
-      font-size: 0.90rem;
-      opacity: 0.78;
-      color: rgba(255,255,255,0.88);
-      text-decoration: none;
-      border-bottom: 1px dashed rgba(255,255,255,0.28);
-      padding-bottom: 2px;
-      white-space: nowrap;
-    }
-    .recover-mini:hover{
-      opacity: 1;
-      color:#fff;
-      border-bottom-color: rgba(255,255,255,0.55);
-    }
-
-    /* MEGA BANNER: el protagonista absoluto */
-    .live-mega{
-      max-width: 1100px;
-      margin: 18px auto 14px;
-      padding: 0 16px;
-    }
-
-    .live-mega-card{
-      position: relative;
-      overflow: hidden;
-      border-radius: 22px;
-      padding: 18px;
-      border: 1px solid rgba(255,255,255,0.14);
-      box-shadow: 0 18px 55px rgba(0,0,0,0.35);
-      background:
-        radial-gradient(1200px 500px at 20% 0%, rgba(255,255,255,0.14), rgba(0,0,0,0)),
-        radial-gradient(900px 400px at 90% 30%, rgba(255,255,255,0.10), rgba(0,0,0,0)),
-        linear-gradient(135deg, rgba(18,18,18,0.98), rgba(30,30,30,0.98));
-    }
-
-    /* Brillos tipo “folleto / promo” */
-    .live-mega-card::before{
-      content:"";
-      position:absolute;
-      inset:-40%;
-      background:
-        conic-gradient(from 180deg, rgba(255,255,255,0.00), rgba(255,255,255,0.20), rgba(255,255,255,0.00));
-      animation: sweep 4.5s linear infinite;
-      opacity: 0.55;
-      pointer-events: none;
-    }
-
-    /* Confetti sutil (sin parecer piñata) */
-    .live-mega-card::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      background-image:
-        radial-gradient(circle at 12% 18%, rgba(255,255,255,0.15) 0 2px, transparent 3px),
-        radial-gradient(circle at 82% 22%, rgba(255,255,255,0.14) 0 2px, transparent 3px),
-        radial-gradient(circle at 70% 76%, rgba(255,255,255,0.10) 0 2px, transparent 3px),
-        radial-gradient(circle at 20% 72%, rgba(255,255,255,0.10) 0 2px, transparent 3px);
-      opacity: 0.55;
-      pointer-events:none;
-    }
-
-    @keyframes sweep{
-      0%{ transform: rotate(0deg); }
-      100%{ transform: rotate(360deg); }
-    }
-
-    .live-mega-inner{
-      position: relative;
-      z-index: 2;
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 16px;
-      align-items: center;
-    }
-
-    .live-badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 7px 12px;
-      border-radius: 999px;
-      font-size: 0.80rem;
-      font-weight: 900;
-      letter-spacing: 0.5px;
-      background: rgba(255,255,255,0.14);
-      border: 1px solid rgba(255,255,255,0.18);
-      width: fit-content;
-      backdrop-filter: blur(6px);
-    }
-
-    .live-title{
-      margin: 10px 0 6px 0;
-      font-size: 1.55rem;
-      line-height: 1.1;
-      font-weight: 900;
-      color:#fff;
-    }
-
-    .live-subtitle{
-      margin: 0;
-      font-size: 1.02rem;
-      opacity: 0.92;
-      line-height: 1.35;
-      color: rgba(255,255,255,0.92);
-    }
-
-    .live-steps{
-      display:flex;
-      gap:10px;
-      flex-wrap: wrap;
-      margin-top: 12px;
-    }
-
-    .step-pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 10px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.10);
-      border: 1px solid rgba(255,255,255,0.14);
-      font-weight: 700;
-      font-size: 0.92rem;
-      color:#fff;
-      white-space: nowrap;
-    }
-
-    .live-actions{
-      display:flex;
-      flex-direction: column;
-      gap: 10px;
-      align-items: stretch;
-      justify-content: center;
-    }
-
-    .live-btn-main{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      padding: 14px 16px;
-      border-radius: 16px;
-      font-weight: 900;
-      text-decoration:none;
-      background:#fff;
-      color:#111;
-      box-shadow: 0 14px 34px rgba(0,0,0,0.40);
-      border: 1px solid rgba(255,255,255,0.35);
-      transform: translateY(0);
-      transition: transform .12s ease, opacity .12s ease;
-      white-space: nowrap;
-    }
-    .live-btn-main:hover{
-      transform: translateY(-1px);
-      opacity: 0.95;
-    }
-
-    .live-btn-secondary{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      padding: 12px 14px;
-      border-radius: 16px;
-      font-weight: 800;
-      text-decoration:none;
-      background: rgba(255,255,255,0.12);
-      color:#fff;
-      border: 1px solid rgba(255,255,255,0.18);
-      opacity: 0.95;
-      white-space: nowrap;
-    }
-    .live-btn-secondary:hover{
-      opacity: 1;
-    }
-
-    .live-note{
-      font-size: 0.86rem;
-      opacity: 0.85;
-      line-height: 1.25;
-      text-align: center;
-      color: rgba(255,255,255,0.88);
-    }
-
-    @media (max-width: 860px){
-      .live-mega-inner{
-        grid-template-columns: 1fr;
-      }
-      .live-title{
-        font-size: 1.35rem;
-      }
-    }
-  </style>
+<!-- CSS CENTRALIZADO -->
+<link rel="stylesheet" href="assets/estilo.css" />
 </head>
-
 <body>
-  <header class="site-header">
-    <a href="inicio.html" class="logo-link">
-      <img src="assets/logo.png" alt=" " class="logo" />
-    </a>
-    <a href="inicio.html" class="empresa-nombre"></a>
 
-    <button class="menu-toggle" aria-label="Abrir menú">☰</button>
+<div class="page-bg"></div>
 
-    <nav class="navbar">
-      <a href="inicio.html#quienes-somos">Quiénes somos</a>
-      <a href="inicio.html#servicios">Servicios</a>
-      <a href="inicio.html#ventajas">Ventajas</a>
-      <a href="inicio.html#contacto">Contacto</a>
-      <a href="index.html" class="highlight-btn">Encuentra tus clips</a>
-    </nav>
-  </header>
+<!-- ── NAV ── -->
+<header class="site-header">
+  <a href="inicio.html" class="logo-link">
+    <img src="assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
+  </a>
+  <button class="menu-toggle" aria-label="Abrir menú">☰</button>
+  <nav class="navbar">
+    <a href="inicio.html">Inicio</a>
+    <a href="inicio.html#clubs">Para clubs</a>
+    <a href="index.html" class="highlight-btn">Mis clips</a>
+  </nav>
+</header>
 
-  <main class="site-content fade-in">
+<!-- ── CONTENIDO ── -->
+<main class="site-content fade-in">
 
-    <!-- Breadcrumbs (lo primero que ves) -->
-    <div class="titulo-lado">
-      <div class="titulo-club">
-        <a id="link-club" class="breadcrumb-link" href="#"></a>
-        <span id="breadcrumb-sep1"> – </span>
-        <a id="link-cancha" class="breadcrumb-link" href="#"></a>
-        <span id="breadcrumb-sep2"> – </span>
-        <span id="nombre-lado"></span>
-      </div>
+  <!-- BREADCRUMB: Club › Cancha (sin "lado") -->
+  <div class="top-row">
+    <div class="titulo-club">
+      <a id="link-club" class="breadcrumb-link" href="#"></a>
+      <span id="breadcrumb-sep1" class="breadcrumb-sep-char"> › </span>
+      <a id="link-cancha" class="breadcrumb-link" href="#"
+         style="color:#fff;pointer-events:none;cursor:default;font-weight:700;"></a>
+      <span id="breadcrumb-sep2" style="display:none;"></span>
+      <span id="nombre-lado" style="display:none;"></span>
     </div>
+    <a class="recover-mini"
+      href="https://forms.gle/TsGHKaSjBnpu65SQA"
+      target="_blank" rel="noopener"
+      onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'top_discreto'});}catch(e){}"
+    >¿No aparece? Recuperar →</a>
+  </div>
 
-    <!-- Recuperar clip DISCRETO (sí existe, pero no grita) -->
-    <div class="recover-mini-wrap">
-      <a
-        class="recover-mini"
-        href="https://forms.gle/TsGHKaSjBnpu65SQA"
-        target="_blank"
-        rel="noopener"
-        onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'top_discreto'});}catch(e){}"
-      >
-        ¿No aparece tu clip? Recuperar
-      </a>
+  <!-- Volver -->
+  <div class="btn-volver-container">
+    <a href="#" id="btn-volver" class="btn-volver">← Regresar</a>
+  </div>
+
+  <!-- Filtro días -->
+  <div id="filtro-horario"></div>
+
+  <!-- Banner: mientras juegas -->
+  <div class="live-banner">
+    <div class="live-banner-text">
+      <h3>📲 ¿Estás jugando? Tu teléfono es el botón</h3>
+      <p>Registra tu puntazo al instante desde tu celular — tócalo justo cuando cae el punto.</p>
     </div>
-
-    <!-- Regresar -->
-    <div class="btn-volver-container">
-      <a href="#" id="btn-volver" class="btn-volver">← Regresar a la cancha</a>
+    <div class="live-banner-btns">
+      <a href="boton.html" target="_blank" rel="noopener" class="btn-live-sm"
+        onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'lado_banner'});}catch(e){}"
+      >Registrar en vivo</a>
     </div>
+  </div>
 
-    <!-- Filtro horario (antes del anuncio) -->
-    <div id="filtro-horario"></div>
+  <!-- Loading -->
+  <div id="loading" class="aviso">Cargando videos...</div>
 
-    <!-- MEGA ANUNCIO: LO MÁS IMPORTANTE DE LA PÁGINA -->
-    <section class="live-mega" aria-label="Registrar puntazo en vivo">
-      <div class="live-mega-card">
-        <div class="live-mega-inner">
-          <div>
-            <div class="live-badge">🚀 NUEVO · REGISTRO EN VIVO</div>
-            <h2 class="live-title">Tu teléfono ya es el botón 📲🔥</h2>
-            <p class="live-subtitle">
-              Ahora puedes <strong>registrar tu puntazo al instante</strong> desde tu celular, sin depender del botón físico.
-              <br /><strong>Prúebalo ya</strong> y haz que tu mejor punto sí aparezca aquí 😮‍💨
-            </p>
+  <!-- Aviso 24h -->
+  <div class="aviso">Los videos se borran pasadas 24 horas de subida.</div>
 
-            <div class="live-steps">
-              <span class="step-pill">1️⃣ Abre</span>
-              <span class="step-pill">2️⃣ Pícale en el momento</span>
-              <span class="step-pill">3️⃣ Listo ✅</span>
-            </div>
-          </div>
+  <!-- Videos -->
+  <section id="videos-container" class="video-grid"></section>
 
-          <div class="live-actions">
-            <a
-              class="live-btn-main"
-              href="https://script.google.com/macros/s/AKfycbyB4AWfD7bqJGBkglYNfwJ6nmHMeOuvh5MVfxFMzAWmsl5uj_DOB33eUGmBaWdZPV58Sw/exec"
-              target="_blank"
-              rel="noopener"
-              onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'mega_banner'});}catch(e){}"
-            >
-              📲 Registrar puntazo en vivo
-            </a>
+</main>
 
-            <a
-              class="live-btn-secondary"
-              href="https://script.google.com/macros/s/AKfycbyB4AWfD7bqJGBkglYNfwJ6nmHMeOuvh5MVfxFMzAWmsl5uj_DOB33eUGmBaWdZPV58Sw/exec"
-              target="_blank"
-              rel="noopener"
-              onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'mega_banner_secondary'});}catch(e){}"
-            >
-              ⚡ Probar ahora mismo
-            </a>
+<!-- ── FOOTER ── -->
+<footer class="site-footer" id="contacto">
+  <div class="footer-info">
+    <p>¿Te interesa que estemos en tu club?
+      <a href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo!%20Me%20interesa%20llevar%20Puntazo%20a%20mi%20club." target="_blank" rel="noopener">Escríbenos</a>
+    </p>
+    <p style="margin-top:6px;">
+      ¿Faltó tu clip?
+      <a href="https://forms.gle/TsGHKaSjBnpu65SQA" target="_blank" rel="noopener"
+        onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'footer_form'});}catch(e){}">Recupéralo aquí</a>
+      ·
+      <a href="https://wa.me/522206804856?text=Hola%20Puntazo!" target="_blank" rel="noopener">WhatsApp</a>
+    </p>
+  </div>
+  <div class="footer-redes">
+    <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
+    <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
+    <a href="https://wa.me/522206804856?text=Hola%20Puntazo!" target="_blank" rel="noopener">WhatsApp</a>
+    <a href="mailto:isaacsaltiel@gmail.com">Email</a>
+  </div>
+  <p class="footer-copy">© 2026 Puntazo – Todos los derechos reservados</p>
+</footer>
 
-            <div class="live-note">
-              Tip: úsalo justo cuando cae el punto 💥
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+<script src="assets/script.js?v=20260209_4"></script>
 
-    <!-- Mensaje de carga -->
-    <div id="loading" class="aviso" style="display:none;">Cargando videos...</div>
+<!-- ══════════════════════════════════════════════════════════
+     PARCHES AGRESIVOS DE PERFORMANCE + PRIORIDAD
+     Sin modificar script.js
+══════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
 
-    <!-- Aviso -->
-    <div class="aviso">Recuerda que los videos se borran pasadas 24 horas de subida.</div>
+  // ───────────────────────────────────────────
+  // GLOBAL: flag para saber si hay descarga activa
+  // ───────────────────────────────────────────
+  window._puntazoDownloading = false;
 
-    <!-- Videos -->
-    <section id="videos-container" class="video-grid"></section>
-  </main>
+  // ───────────────────────────────────────────
+  // 1) PRIORIDAD DE REPRODUCCIÓN:
+  //    Video real → pausar y liberar TODOS los previews
+  // ───────────────────────────────────────────
+  const container = document.getElementById('videos-container');
+  if (container) {
+    container.addEventListener('play', function(e) {
+      const target = e.target;
+      if (!target || !target.classList.contains('real')) return;
 
-  <!-- Footer interno -->
-  <footer class="site-footer" id="contacto">
-    <div class="footer-info">
-      <p>
-        ¿Te interesa que estemos en tu club?
-        <a
-          href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo!%20Me%20interesa%20llevar%20Puntazo%20a%20mi%20club.%0AClub%3A%20____%0ACiudad%3A%20____%0A%23%20de%20canchas%3A%20____%0AMi%20nombre%3A%20____%0ATel%3A%20____%0AGracias!"
-          target="_blank"
-          rel="noopener"
-        >Escríbenos</a>
-      </p>
-
-      <p>Recuerda que los videos se borran pasadas 24 horas.</p>
-
-      <!-- Recuperar puntazo (DISCRETO) -->
-      <p style="margin-top:10px; font-size:0.92rem; opacity:0.88;">
-        ¿Faltó tu clip?
-        <a
-          href="https://forms.gle/TsGHKaSjBnpu65SQA"
-          target="_blank"
-          rel="noopener"
-          style="color:#fff; text-decoration:none; border-bottom:1px dashed rgba(255,255,255,0.35); padding-bottom:2px;"
-          onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'footer_form'});}catch(e){}"
-        >Recupéralo aquí</a>
-        <span style="opacity:0.7;">·</span>
-        <a
-          href="https://script.google.com/macros/s/AKfycbyB4AWfD7bqJGBkglYNfwJ6nmHMeOuvh5MVfxFMzAWmsl5uj_DOB33eUGmBaWdZPV58Sw/exec"
-          target="_blank"
-          rel="noopener"
-          style="color:#fff; text-decoration:none; border-bottom:1px dashed rgba(255,255,255,0.35); padding-bottom:2px;"
-          onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'footer_whatsapp'});}catch(e){}"
-        >WhatsApp</a>
-      </p>
-    </div>
-
-    <div class="footer-redes">
-      <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
-      <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
-
-      <a
-        href="https://wa.me/522206804856?text=Hola%20Puntazo!%20Quiero%20mas%20informacion."
-        target="_blank"
-        rel="noopener"
-      >WhatsApp</a>
-
-      <a
-        href="mailto:isaacsaltiel@gmail.com?subject=Quiero%20información%20de%20Puntazo&body=Hola%20equipo%20Puntazo,%0D%0A%0D%0AMe%20interesa%20que%20mis%20canchas%20formen%20parte.%0D%0A%0D%0ANombre:%0D%0ATel%C3%A9fono:%0D%0A%0D%0A%C2%A1Gracias!"
-      >Email</a>
-    </div>
-
-    <p class="footer-copy">© 2026 Puntazo</p>
-  </footer>
-
-  <!-- JS principal -->
-  <script src="assets/script.js?v=20260209_4"></script>
-
-  <!-- Navbar: cerrar al scroll o click fuera -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const btn = document.querySelector('.menu-toggle');
-      const nav = document.querySelector('.navbar');
-
-      if (!btn || !nav) return;
-
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        nav.classList.toggle('show');
+      // Pausar y liberar todos los previews
+      document.querySelectorAll('video.video-preview').forEach(function(prev) {
+        try {
+          prev.pause();
+          if (prev.src && !prev.dataset.pausedSrc) {
+            prev.dataset.pausedSrc = prev.src;
+            prev.removeAttribute('src');
+            prev.load(); // libera decoder
+          }
+        } catch(err) {}
       });
 
-      document.addEventListener('click', (e) => {
-        if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) {
-          nav.classList.remove('show');
+      // Pausar otros videos reales
+      document.querySelectorAll('video.real').forEach(function(other) {
+        if (other !== target) {
+          try { other.pause(); } catch(err) {}
         }
       });
+    }, true);
 
-      window.addEventListener('scroll', () => {
-        if (nav.classList.contains('show')) nav.classList.remove('show');
+    // Restaurar previews cuando no hay video real activo
+    container.addEventListener('pause', function(e) {
+      const target = e.target;
+      if (!target || !target.classList.contains('real')) return;
+      var anyPlaying = Array.from(document.querySelectorAll('video.real')).some(function(v) { return !v.paused; });
+      if (anyPlaying) return;
+      document.querySelectorAll('video.video-preview').forEach(function(prev) {
+        if (prev.dataset.pausedSrc) {
+          prev.src = prev.dataset.pausedSrc;
+          delete prev.dataset.pausedSrc;
+        }
       });
+    }, true);
+
+    container.addEventListener('ended', function(e) {
+      var target = e.target;
+      if (!target || !target.classList.contains('real')) return;
+      target.dispatchEvent(new Event('pause', { bubbles: false }));
+    }, true);
+  }
+
+  // ───────────────────────────────────────────
+  // 2) CARGA PROGRESIVA:
+  //    - Tarjetas aparecen INMEDIATAMENTE (script.js ya las crea)
+  //    - Previews se cargan en serie, UNO POR UNO, de arriba a abajo
+  //    - Si hay descarga activa o video reproduciéndose, PAUSAR la carga
+  //    - Timeout de 5s por preview para no bloquear
+  // ───────────────────────────────────────────
+  window.loadPreviewsSequentially = async function(previews) {
+    for (var i = 0; i < previews.length; i++) {
+      // Esperar si hay descarga activa o video real reproduciéndose
+      while (window._puntazoDownloading || isAnyRealPlaying()) {
+        await sleep(500);
+      }
+
+      var v = previews[i];
+      v.preload = 'metadata';
+      await new Promise(function(resolve) {
+        var timeout = setTimeout(resolve, 5000); // max 5s por video
+        v.addEventListener('loadedmetadata', function() {
+          clearTimeout(timeout);
+          resolve();
+        }, { once: true });
+        v.addEventListener('error', function() {
+          clearTimeout(timeout);
+          resolve();
+        }, { once: true });
+        v.load();
+      });
+    }
+  };
+
+  function isAnyRealPlaying() {
+    return Array.from(document.querySelectorAll('video.real')).some(function(v) { return !v.paused; });
+  }
+
+  function sleep(ms) {
+    return new Promise(function(r) { setTimeout(r, ms); });
+  }
+
+  // ───────────────────────────────────────────
+  // 3) PRIORIDAD DE DESCARGA:
+  //    Interceptar el click en btn-share-large para:
+  //    a) Pausar todos los previews y liberar recursos
+  //    b) Setear flag global de descarga
+  //    c) Limpiar flag cuando termine
+  // ───────────────────────────────────────────
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.btn-share-large');
+    if (!btn) return;
+
+    // Si está en estado "downloading" o idle → es inicio de descarga
+    if (btn.dataset.state === 'idle' || !btn.dataset.state) {
+      window._puntazoDownloading = true;
+
+      // Pausar TODOS los previews para dar ancho de banda a la descarga
+      document.querySelectorAll('video.video-preview').forEach(function(prev) {
+        try {
+          prev.pause();
+          if (prev.src && !prev.dataset.pausedSrc) {
+            prev.dataset.pausedSrc = prev.src;
+            prev.removeAttribute('src');
+            prev.load();
+          }
+        } catch(err) {}
+      });
+
+      // Observar cuando el botón cambie de estado para limpiar flag
+      var observer = new MutationObserver(function(mutations) {
+        var state = btn.dataset.state;
+        if (state === 'idle' || state === 'ready' || !btn.dataset.state) {
+          window._puntazoDownloading = false;
+          observer.disconnect();
+
+          // Restaurar previews
+          document.querySelectorAll('video.video-preview').forEach(function(prev) {
+            if (prev.dataset.pausedSrc) {
+              prev.src = prev.dataset.pausedSrc;
+              delete prev.dataset.pausedSrc;
+            }
+          });
+        }
+      });
+      observer.observe(btn, { attributes: true, attributeFilter: ['data-state'] });
+
+      // Safety: limpiar flag después de 60s por si el observer no se dispara
+      setTimeout(function() {
+        window._puntazoDownloading = false;
+        observer.disconnect();
+      }, 60000);
+    }
+  }, true);
+
+  // ───────────────────────────────────────────
+  // 4) Bloquear play de previews si hay video real o descarga activa
+  // ───────────────────────────────────────────
+  var lastActivePreview = null;
+  var origPlay = HTMLVideoElement.prototype.play;
+  HTMLVideoElement.prototype.play = function() {
+    if (this.classList.contains('video-preview')) {
+      // Bloquear si hay descarga o video real activo
+      if (window._puntazoDownloading || isAnyRealPlaying()) {
+        return Promise.resolve();
+      }
+      if (lastActivePreview && lastActivePreview !== this) {
+        try { lastActivePreview.pause(); } catch(e) {}
+      }
+      lastActivePreview = this;
+    }
+    return origPlay.call(this);
+  };
+
+})();
+</script>
+
+<!-- ── Navbar mobile ── -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.querySelector('.menu-toggle');
+    var nav = document.querySelector('.navbar');
+    if (!btn || !nav) return;
+    var close = function() { nav.classList.remove('show'); };
+    btn.addEventListener('click', function(e) { e.stopPropagation(); nav.classList.toggle('show'); });
+    document.addEventListener('click', function(e) {
+      if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) close();
     });
-  </script>
+    window.addEventListener('scroll', close);
+    window.addEventListener('resize', function() { if (window.innerWidth > 860) close(); });
+  });
+</script>
 </body>
 </html>
