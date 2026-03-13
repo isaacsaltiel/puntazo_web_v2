@@ -198,6 +198,22 @@ nav{
   background:var(--blue2);transform:translateY(-2px);
   box-shadow:0 0 45px rgba(11,124,255,0.6),0 12px 40px rgba(0,0,0,0.4);
 }
+.btn-clips{
+  background:linear-gradient(135deg, var(--blue2), var(--blue));
+  color:#fff;
+  padding:1rem 2.2rem;border-radius:50px;
+  text-decoration:none;font-weight:900;font-size:0.92rem;
+  letter-spacing:0.5px;
+  border:1px solid var(--blue2);
+  box-shadow:0 0 35px rgba(0,79,200,0.6), 0 8px 30px rgba(0,0,0,0.4);
+  transition:all .2s;
+  animation:clipsPulse 2.5s ease-in-out infinite;
+}
+.btn-clips:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(11,124,255,0.7);}
+@keyframes clipsPulse{
+  0%,100%{box-shadow:0 0 35px rgba(0,79,200,0.6), 0 8px 30px rgba(0,0,0,0.4);}
+  50%{box-shadow:0 0 55px rgba(11,124,255,0.8), 0 8px 30px rgba(0,0,0,0.4);}
+}
 .btn-live{
   background:#ffffff;color:#000;
   padding:1rem 2.2rem;border-radius:50px;
@@ -548,10 +564,11 @@ footer{
   <h1>El deporte merece<br><span class="blue">tecnología de punta.</span></h1>
   <p class="hero-sub">Transformamos la experiencia del deportista con soluciones inteligentes. Somos jóvenes, rápidos e innovadores — y apenas estamos comenzando.</p>
   <div class="hero-btns">
-    <a href="#producto" class="btn-primary" onclick="try{gtag('event','hero_cta_producto',{event_category:'CTA'});}catch(e){}">Ver cómo funciona</a>
+    <a href="index.html" class="btn-clips" onclick="try{gtag('event','hero_cta_clips',{event_category:'CTA',event_label:'hero'});}catch(e){}">▶ Encuentra tus clips</a>
     <a href="https://script.google.com/macros/s/AKfycbyB4AWfD7bqJGBkglYNfwJ6nmHMeOuvh5MVfxFMzAWmsl5uj_DOB33eUGmBaWdZPV58Sw/exec" target="_blank" rel="noopener" class="btn-live" onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'hero'});}catch(e){}">📲 Registrar puntazo en vivo</a>
     <a href="#clubs" class="btn-secondary" onclick="try{gtag('event','hero_cta_club',{event_category:'CTA'});}catch(e){}">Soy un club →</a>
   </div>
+  <p style="position:relative;z-index:1;font-size:0.75rem;color:var(--muted);margin-top:-1rem;">Ya jugaste hoy? Escanea el QR de tu cancha o toca arriba ↑</p>
   <div class="hero-stats">
     <div class="hero-stat">
       <div class="num">3<span>+</span></div>
@@ -848,6 +865,6 @@ footer{
   );
   document.querySelectorAll('.fade-section').forEach(s => observer.observe(s));
 </script>
-<!-- deploy -->
+
 </body>
 </html>
