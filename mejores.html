@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mejores Momentos · Puntazo</title>
+  <meta name="description" content="Los puntos más épicos del mes en Puntazo" />
+
+  <!-- Google tag (gtag.js) — reemplaza con tu G-ID si tienes -->
+  <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script> -->
+
+  <!-- Favicon -->
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+
+  <!-- Firebase SDK compat v9 -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- Reactions module + estilos -->
+  <link rel="stylesheet" href="/assets/reactions.css" />
+  <script src="/assets/reactions.js"></script>
+
+  <style>
+    /* ── Variables ── */
+    :root {
+      --puntazo:   #004FC8;
+      --puntazo2:  #0B7CFF;
+      --bg:        #050914;
+      --card:      rgba(255,255,255,.06);
+      --border:    rgba(255,255,255,.10);
+      --text:      #eaf2ff;
+      --muted:     rgba(234,242,255,.55);
+      --gold:      #ffe066;
+    }
+
+    /* ── Reset + base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── Fondo ── */
+    .bg-glow {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(900px 500px at 15% 10%, rgba(0,79,200,.20), transparent 55%),
+        radial-gradient(800px 600px at 88% 8%,  rgba(11,124,255,.12), transparent 55%),
+        radial-gradient(700px 500px at 45% 92%, rgba(255,190,0,.06),  transparent 55%),
+        linear-gradient(180deg, #050914, #060a18 60%, #050914);
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px;
+      background: rgba(5,9,20,.88);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 900; font-size: 16px; letter-spacing: .6px;
+      text-decoration: none; color: var(--text);
+    }
+
+    .nav-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #fff, var(--puntazo));
+      box-shadow: 0 0 0 5px rgba(0,79,200,.12), 0 0 24px rgba(0,79,200,.5);
+    }
+
+    .nav-back {
+      font-size: 13px; color: var(--muted);
+      text-decoration: none; padding: 6px 12px;
+      border: 1px solid var(--border); border-radius: 999px;
+      transition: color .15s, border-color .15s;
+    }
+    .nav-back:hover { color: var(--text); border-color: rgba(255,255,255,.22); }
+
+    /* ── Layout principal ── */
+    main {
+      position: relative; z-index: 1;
+      max-width: 900px; margin: 0 auto;
+      padding: 32px 16px 80px;
+    }
+
+    /* ── Header de la página ── */
+    .page-header {
+      margin-bottom: 32px; text-align: center;
+    }
+
+    .page-eyebrow {
+      font-size: 12px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--gold); opacity: .8;
+      margin-bottom: 10px;
+    }
+
+    .page-title {
+      font-size: clamp(26px, 5vw, 40px);
+      font-weight: 900; letter-spacing: -.5px;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fff 30%, rgba(234,242,255,.6));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .page-sub {
+      margin-top: 10px; font-size: 15px; color: var(--muted); max-width: 420px; margin-inline: auto;
+    }
+
+    /* ── Filtro de mes ── */
+    .month-filter {
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .month-btn {
+      padding: 7px 16px; border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--muted);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all .15s;
+    }
+    .month-btn:hover { color: var(--text); border-color: rgba(255,255,255,.22); }
+    .month-btn.active {
+      background: rgba(0,79,200,.25);
+      border-color: rgba(11,124,255,.55);
+      color: #eaf2ff;
+    }
+
+    /* ── Skeleton / loading ── */
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .skeleton-card {
+      border-radius: 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      animation: shimmer 1.5s infinite;
+    }
+
+    .skeleton-thumb {
+      width: 100%; padding-top: 56.25%;
+      background: rgba(255,255,255,.04);
+    }
+
+    .skeleton-body { padding: 14px; }
+    .skeleton-line {
+      height: 12px; border-radius: 6px;
+      background: rgba(255,255,255,.06);
+      margin-bottom: 8px;
+    }
+    .skeleton-line.short { width: 55%; }
+
+    @keyframes shimmer {
+      0%,100% { opacity: 1; }
+      50%      { opacity: .6; }
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center; padding: 60px 20px; display: none;
+    }
+
+    .empty-icon { font-size: 48px; margin-bottom: 14px; }
+    .empty-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .empty-sub { color: var(--muted); font-size: 15px; max-width: 320px; margin-inline: auto; }
+
+    /* ── Grid de videos ── */
+    .videos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    /* ── Card de video ── */
+    .video-card {
+      border-radius: 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: transform .2s ease, box-shadow .2s ease;
+      position: relative;
+    }
+
+    .video-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 48px rgba(0,0,0,.45);
+    }
+
+    /* Posición del ranking */
+    .rank-badge {
+      position: absolute; top: 10px; left: 10px; z-index: 2;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: rgba(0,0,0,.65);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 900;
+    }
+
+    .rank-badge.top1 { background: rgba(255,190,0,.25); border-color: rgba(255,190,0,.5); color: var(--gold); }
+    .rank-badge.top2 { background: rgba(180,180,180,.20); border-color: rgba(200,200,200,.4); color: #d0d0d0; }
+    .rank-badge.top3 { background: rgba(180,100,30,.22); border-color: rgba(200,120,40,.4); color: #e09060; }
+
+    /* Thumbnail / video ── */
+    .card-video-wrap {
+      position: relative; width: 100%; padding-top: 56.25%;
+      background: #000; overflow: hidden;
+    }
+
+    .card-video-wrap video {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+
+    .card-play-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,.25);
+      opacity: 1; transition: opacity .2s;
+    }
+
+    .card-video-wrap:hover .card-play-overlay { opacity: 0; }
+
+    .play-icon {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: rgba(0,0,0,.6); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    /* ── Cuerpo de la card ── */
+    .card-body { padding: 14px 14px 12px; }
+
+    .card-meta {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 8px; flex-wrap: wrap;
+    }
+
+    .card-club {
+      font-size: 13px; font-weight: 700; color: var(--text);
+    }
+
+    .card-sep { color: var(--border); }
+
+    .card-location {
+      font-size: 12px; color: var(--muted);
+    }
+
+    .card-date {
+      font-size: 11px; color: var(--muted); margin-left: auto;
+    }
+
+    /* Viral badge visible en la card */
+    .card-viral {
+      margin-bottom: 8px;
+    }
+
+    /* ── Botón ver video ── */
+    .card-watch-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; margin-top: 10px;
+      padding: 10px 14px; border-radius: 12px;
+      border: 1px solid rgba(11,124,255,.40);
+      background: rgba(0,79,200,.12);
+      color: #eaf2ff; font-size: 14px; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: background .15s, border-color .15s;
+    }
+    .card-watch-btn:hover {
+      background: rgba(0,79,200,.22);
+      border-color: rgba(11,124,255,.65);
+    }
+
+    /* ── Admin panel ── */
+    .admin-bar {
+      display: none;
+      background: rgba(239,68,68,.12);
+      border: 1px solid rgba(239,68,68,.25);
+      border-radius: 12px; padding: 10px 14px;
+      margin-bottom: 20px;
+      font-size: 13px; color: #fca5a5;
+      align-items: center; gap: 8px;
+    }
+    .admin-bar.visible { display: flex; }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .videos-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<!-- Nav -->
+<nav>
+  <a href="/inicio.html" class="nav-brand">
+    <div class="nav-dot"></div>
+    PUNTAZO
+  </a>
+  <a href="/index.html" class="nav-back">← Ver canchas</a>
+</nav>
+
+<main>
+
+  <!-- Header -->
+  <header class="page-header">
+    <p class="page-eyebrow">🏆 Lo mejor del mes</p>
+    <h1 class="page-title">Mejores Momentos</h1>
+    <p class="page-sub">Los puntos más épicos que la comunidad eligió este mes</p>
+  </header>
+
+  <!-- Admin bar -->
+  <div class="admin-bar" id="adminBar">
+    🔐 Modo administrador activo — ves los conteos de reacciones
+  </div>
+
+  <!-- Filtro de mes -->
+  <div class="month-filter" id="monthFilter">
+    <!-- Se llena dinámicamente -->
+  </div>
+
+  <!-- Loading skeletons -->
+  <div class="skeleton-grid" id="skeletonGrid">
+    <div class="skeleton-card">
+      <div class="skeleton-thumb"></div>
+      <div class="skeleton-body">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+      </div>
+    </div>
+    <div class="skeleton-card">
+      <div class="skeleton-thumb"></div>
+      <div class="skeleton-body">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+      </div>
+    </div>
+    <div class="skeleton-card">
+      <div class="skeleton-thumb"></div>
+      <div class="skeleton-body">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">🎾</div>
+    <h2 class="empty-title">Todavía sin puntos virales</h2>
+    <p class="empty-sub">
+      Cuando un punto acumule reacciones de la comunidad, aparecerá aquí. ¡Sé el primero en reaccionar!
+    </p>
+  </div>
+
+  <!-- Grid de videos -->
+  <div class="videos-grid" id="videosGrid" style="display:none"></div>
+
+</main>
+
+<script>
+(function () {
+  const REACTIONS_INFO = [
+    { key: "fuego",     emoji: "🔥" },
+    { key: "risa",      emoji: "😂" },
+    { key: "enojo",     emoji: "😡" },
+    { key: "diversion", emoji: "🎉" },
+    { key: "sorpresa",  emoji: "😮" },
+  ];
+
+  // Esperar a que PuntazoReactions esté listo
+  function waitForReactions(cb, retries = 20) {
+    if (window.PuntazoReactions) return cb();
+    if (retries <= 0) return console.error("[Mejores] PuntazoReactions no cargó.");
+    setTimeout(() => waitForReactions(cb, retries - 1), 150);
+  }
+
+  waitForReactions(function () {
+    const db     = PuntazoReactions.db();
+    const admin  = PuntazoReactions.isAdmin();
+    const MIN    = PuntazoReactions.MIN_FOR_BEST;
+
+    const $skeleton = document.getElementById("skeletonGrid");
+    const $grid     = document.getElementById("videosGrid");
+    const $empty    = document.getElementById("emptyState");
+    const $filter   = document.getElementById("monthFilter");
+    const $adminBar = document.getElementById("adminBar");
+
+    if (admin) $adminBar.classList.add("visible");
+
+    // ── Generar filtros de los últimos 4 meses ──
+    const months = [];
+    const now = new Date();
+    for (let i = 0; i < 4; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key   = d.toISOString().slice(0, 7); // "2025-03"
+      const label = d.toLocaleDateString("es-MX", { month: "long", year: "numeric" });
+      months.push({ key, label });
+    }
+
+    let activeMonth = months[0].key;
+
+    months.forEach((m, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "month-btn" + (idx === 0 ? " active" : "");
+      btn.textContent = m.label;
+      btn.dataset.month = m.key;
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".month-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeMonth = m.key;
+        loadVideos(m.key);
+      });
+      $filter.appendChild(btn);
+    });
+
+    // ── Cargar videos ──
+    function loadVideos(monthKey) {
+      $skeleton.style.display = "grid";
+      $grid.style.display     = "none";
+      $empty.style.display    = "none";
+      $grid.innerHTML         = "";
+
+      db.collection("reactions")
+        .where("total", ">=", MIN)
+        .orderBy("total", "desc")
+        .limit(50)
+        .get()
+        .then(snapshot => {
+          $skeleton.style.display = "none";
+
+          // Filtrar por mes si la fecha está disponible
+          let docs = [];
+          snapshot.forEach(doc => {
+            const d = doc.data();
+            // Si tiene fecha y no coincide con el mes activo, skip
+            if (d.fecha && !d.fecha.startsWith(monthKey)) return;
+            docs.push(d);
+          });
+
+          // Si no hay videos con fecha, mostramos todos (fallback)
+          if (docs.length === 0 && monthKey === months[0].key) {
+            snapshot.forEach(doc => docs.push(doc.data()));
+          }
+
+          if (docs.length === 0) {
+            $empty.style.display = "block";
+            return;
+          }
+
+          $grid.style.display = "grid";
+
+          docs.forEach((data, idx) => {
+            const card = buildCard(data, idx + 1, admin);
+            $grid.appendChild(card);
+
+            // Attach reacciones a la card
+            PuntazoReactions.attach(card.querySelector(".card-reactions-target"), {
+              videoId: data.videoId,
+              videoUrl: data.videoUrl,
+              club:    data.club,
+              cancha:  data.cancha,
+              lado:    data.lado,
+              fecha:   data.fecha,
+            });
+          });
+        })
+        .catch(err => {
+          console.error("[Mejores] Error cargando videos:", err);
+          $skeleton.style.display = "none";
+          $empty.style.display    = "block";
+          $empty.querySelector(".empty-sub").textContent =
+            "Hubo un error cargando los mejores momentos. Intenta de nuevo.";
+        });
+    }
+
+    // ── Construir card ──
+    function buildCard(data, rank, admin) {
+      const rankClass  = rank === 1 ? "top1" : rank === 2 ? "top2" : rank === 3 ? "top3" : "";
+      const rankLabel  = rank <= 3 ? ["🥇","🥈","🥉"][rank-1] : "#" + rank;
+      const dateLabel  = data.fecha
+        ? new Date(data.fecha + "T00:00:00").toLocaleDateString("es-MX", { day:"numeric", month:"short" })
+        : "";
+
+      // Emoji summary de reacciones
+      const emojiSummary = REACTIONS_INFO
+        .filter(r => (data[r.key] || 0) > 0)
+        .map(r => admin ? `${r.emoji} ${data[r.key]}` : r.emoji)
+        .join("  ");
+
+      const card = document.createElement("div");
+      card.className = "video-card";
+      card.innerHTML = `
+        <div class="rank-badge ${rankClass}">${rankLabel}</div>
+
+        <div class="card-video-wrap">
+          <video
+            src="${escapeAttr(data.videoUrl || "")}"
+            muted playsinline preload="none"
+            loop
+          ></video>
+          <div class="card-play-overlay">
+            <div class="play-icon">▶</div>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="card-club">${escapeHTML(data.club || "Puntazo")}</span>
+            ${data.cancha ? `<span class="card-sep">·</span><span class="card-location">Cancha ${escapeHTML(data.cancha)} ${data.lado ? data.lado : ""}</span>` : ""}
+            ${dateLabel ? `<span class="card-date">${dateLabel}</span>` : ""}
+          </div>
+
+          ${emojiSummary ? `<div class="card-viral"><span class="pz-viral-badge">${emojiSummary}</span></div>` : ""}
+
+          <!-- Aquí se montan las reacciones -->
+          <div class="card-reactions-target"></div>
+
+          ${data.videoUrl
+            ? `<a class="card-watch-btn" href="${escapeAttr(data.videoUrl)}" target="_blank" rel="noopener">▶ Ver video completo</a>`
+            : ""
+          }
+        </div>
+      `;
+
+      // Hover play
+      const video = card.querySelector("video");
+      const overlay = card.querySelector(".card-play-overlay");
+
+      card.addEventListener("mouseenter", () => {
+        video.play().catch(() => {});
+        overlay.style.opacity = "0";
+      });
+      card.addEventListener("mouseleave", () => {
+        video.pause();
+        video.currentTime = 0;
+        overlay.style.opacity = "1";
+      });
+
+      // Tap en móvil
+      card.querySelector(".card-video-wrap").addEventListener("click", () => {
+        if (video.paused) {
+          video.play().catch(() => {});
+          overlay.style.opacity = "0";
+        } else {
+          video.pause();
+          overlay.style.opacity = "1";
+        }
+      });
+
+      return card;
+    }
+
+    function escapeHTML(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function escapeAttr(str) {
+      return String(str || "").replace(/"/g, "&quot;");
+    }
+
+    // ── Iniciar ──
+    loadVideos(activeMonth);
+
+  }); // end waitForReactions
+})();
+</script>
+
+</body>
+</html>
