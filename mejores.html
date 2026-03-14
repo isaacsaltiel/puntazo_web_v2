@@ -6,10 +6,6 @@
   <title>Mejores Momentos · Puntazo</title>
   <meta name="description" content="Los puntos más épicos del mes en Puntazo" />
 
-  <!-- Google tag (gtag.js) — reemplaza con tu G-ID si tienes -->
-  <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script> -->
-
-  <!-- Favicon -->
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 
   <!-- Firebase SDK compat v9 -->
@@ -21,7 +17,6 @@
   <script src="/assets/reactions.js"></script>
 
   <style>
-    /* ── Variables ── */
     :root {
       --puntazo:   #004FC8;
       --puntazo2:  #0B7CFF;
@@ -33,7 +28,6 @@
       --gold:      #ffe066;
     }
 
-    /* ── Reset + base ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
@@ -44,7 +38,6 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ── Fondo ── */
     .bg-glow {
       position: fixed; inset: 0; pointer-events: none; z-index: 0;
       background:
@@ -54,10 +47,10 @@
         linear-gradient(180deg, #050914, #060a18 60%, #050914);
     }
 
-    /* ── Nav ── */
     nav {
       position: sticky; top: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
+      gap: 14px;
       padding: 14px 20px;
       background: rgba(5,9,20,.88);
       backdrop-filter: blur(18px);
@@ -65,33 +58,69 @@
     }
 
     .nav-brand {
-      display: flex; align-items: center; gap: 10px;
-      font-weight: 900; font-size: 16px; letter-spacing: .6px;
-      text-decoration: none; color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      color: var(--text);
+      min-width: 0;
     }
 
-    .nav-dot {
-      width: 12px; height: 12px; border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #fff, var(--puntazo));
-      box-shadow: 0 0 0 5px rgba(0,79,200,.12), 0 0 24px rgba(0,79,200,.5);
+    .nav-logo {
+      height: 34px;
+      width: auto;
+      display: block;
+      filter: drop-shadow(0 0 18px rgba(0,79,200,.18));
+    }
+
+    .nav-actions {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
     }
 
     .nav-back {
-      font-size: 13px; color: var(--muted);
-      text-decoration: none; padding: 6px 12px;
-      border: 1px solid var(--border); border-radius: 999px;
-      transition: color .15s, border-color .15s;
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      transition: color .15s, border-color .15s, background .15s;
+      white-space:nowrap;
     }
-    .nav-back:hover { color: var(--text); border-color: rgba(255,255,255,.22); }
 
-    /* ── Layout principal ── */
+    .nav-back:hover {
+      color: var(--text);
+      border-color: rgba(255,255,255,.22);
+      background: rgba(255,255,255,.03);
+    }
+
+    .nav-primary {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(255,190,0,.16), rgba(0,79,200,.22));
+      border: 1px solid rgba(255,190,0,.26);
+      transition: all .15s;
+      white-space:nowrap;
+    }
+
+    .nav-primary:hover {
+      border-color: rgba(255,190,0,.42);
+      background: linear-gradient(135deg, rgba(255,190,0,.24), rgba(0,79,200,.28));
+    }
+
     main {
       position: relative; z-index: 1;
       max-width: 900px; margin: 0 auto;
       padding: 32px 16px 80px;
     }
 
-    /* ── Header de la página ── */
     .page-header {
       margin-bottom: 32px; text-align: center;
     }
@@ -112,10 +141,9 @@
     }
 
     .page-sub {
-      margin-top: 10px; font-size: 15px; color: var(--muted); max-width: 420px; margin-inline: auto;
+      margin-top: 10px; font-size: 15px; color: var(--muted); max-width: 460px; margin-inline: auto;
     }
 
-    /* ── Filtro de mes ── */
     .month-filter {
       display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
       margin-bottom: 28px;
@@ -135,7 +163,6 @@
       color: #eaf2ff;
     }
 
-    /* ── Skeleton / loading ── */
     .skeleton-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -168,7 +195,6 @@
       50%      { opacity: .6; }
     }
 
-    /* ── Empty state ── */
     .empty-state {
       text-align: center; padding: 60px 20px; display: none;
     }
@@ -177,14 +203,12 @@
     .empty-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
     .empty-sub { color: var(--muted); font-size: 15px; max-width: 320px; margin-inline: auto; }
 
-    /* ── Grid de videos ── */
     .videos-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 20px;
     }
 
-    /* ── Card de video ── */
     .video-card {
       border-radius: 18px;
       background: var(--card);
@@ -199,7 +223,6 @@
       box-shadow: 0 18px 48px rgba(0,0,0,.45);
     }
 
-    /* Posición del ranking */
     .rank-badge {
       position: absolute; top: 10px; left: 10px; z-index: 2;
       width: 30px; height: 30px; border-radius: 50%;
@@ -214,7 +237,6 @@
     .rank-badge.top2 { background: rgba(180,180,180,.20); border-color: rgba(200,200,200,.4); color: #d0d0d0; }
     .rank-badge.top3 { background: rgba(180,100,30,.22); border-color: rgba(200,120,40,.4); color: #e09060; }
 
-    /* Thumbnail / video ── */
     .card-video-wrap {
       position: relative; width: 100%; padding-top: 56.25%;
       background: #000; overflow: hidden;
@@ -242,7 +264,6 @@
       font-size: 18px;
     }
 
-    /* ── Cuerpo de la card ── */
     .card-body { padding: 14px 14px 12px; }
 
     .card-meta {
@@ -264,12 +285,10 @@
       font-size: 11px; color: var(--muted); margin-left: auto;
     }
 
-    /* Viral badge visible en la card */
     .card-viral {
       margin-bottom: 8px;
     }
 
-    /* ── Botón ver video ── */
     .card-watch-btn {
       display: flex; align-items: center; justify-content: center; gap: 8px;
       width: 100%; margin-top: 10px;
@@ -285,7 +304,6 @@
       border-color: rgba(11,124,255,.65);
     }
 
-    /* ── Admin panel ── */
     .admin-bar {
       display: none;
       background: rgba(239,68,68,.12);
@@ -297,9 +315,29 @@
     }
     .admin-bar.visible { display: flex; }
 
-    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      nav{
+        padding: 12px 14px;
+      }
+
+      .nav-logo{
+        height: 30px;
+      }
+
+      .nav-actions{
+        gap:8px;
+      }
+
+      .nav-back,
+      .nav-primary{
+        font-size:12px;
+        padding:7px 10px;
+      }
+    }
+
     @media (max-width: 480px) {
       .videos-grid { grid-template-columns: 1fr; }
+      .nav-primary{ display:none; }
     }
   </style>
 </head>
@@ -307,35 +345,31 @@
 
 <div class="bg-glow"></div>
 
-<!-- Nav -->
 <nav>
-  <a href="/inicio.html" class="nav-brand">
-    <div class="nav-dot"></div>
-    PUNTAZO
+  <a href="/inicio.html" class="nav-brand" aria-label="Puntazo">
+    <img src="/assets/logo.png" alt="Puntazo" class="nav-logo" onerror="this.style.display='none'">
   </a>
-  <a href="/index.html" class="nav-back">← Ver canchas</a>
+
+  <div class="nav-actions">
+    <a href="/inicio.html" class="nav-primary">Inicio</a>
+    <a href="/index.html" class="nav-back">← Ver canchas</a>
+  </div>
 </nav>
 
 <main>
 
-  <!-- Header -->
   <header class="page-header">
-    <p class="page-eyebrow">🏆 Lo mejor del mes</p>
+    <p class="page-eyebrow">🏆 Mejores puntos del mes</p>
     <h1 class="page-title">Mejores Momentos</h1>
     <p class="page-sub">Los puntos más épicos que la comunidad eligió este mes</p>
   </header>
 
-  <!-- Admin bar -->
   <div class="admin-bar" id="adminBar">
     🔐 Modo administrador activo — ves los conteos de reacciones
   </div>
 
-  <!-- Filtro de mes -->
-  <div class="month-filter" id="monthFilter">
-    <!-- Se llena dinámicamente -->
-  </div>
+  <div class="month-filter" id="monthFilter"></div>
 
-  <!-- Loading skeletons -->
   <div class="skeleton-grid" id="skeletonGrid">
     <div class="skeleton-card">
       <div class="skeleton-thumb"></div>
@@ -360,7 +394,6 @@
     </div>
   </div>
 
-  <!-- Empty state -->
   <div class="empty-state" id="emptyState">
     <div class="empty-icon">🎾</div>
     <h2 class="empty-title">Todavía sin puntos virales</h2>
@@ -369,7 +402,6 @@
     </p>
   </div>
 
-  <!-- Grid de videos -->
   <div class="videos-grid" id="videosGrid" style="display:none"></div>
 
 </main>
@@ -384,7 +416,6 @@
     { key: "sorpresa",  emoji: "😮" },
   ];
 
-  // Esperar a que PuntazoReactions esté listo
   function waitForReactions(cb, retries = 20) {
     if (window.PuntazoReactions) return cb();
     if (retries <= 0) return console.error("[Mejores] PuntazoReactions no cargó.");
@@ -404,12 +435,11 @@
 
     if (admin) $adminBar.classList.add("visible");
 
-    // ── Generar filtros de los últimos 4 meses ──
     const months = [];
     const now = new Date();
     for (let i = 0; i < 4; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key   = d.toISOString().slice(0, 7); // "2025-03"
+      const key   = d.toISOString().slice(0, 7);
       const label = d.toLocaleDateString("es-MX", { month: "long", year: "numeric" });
       months.push({ key, label });
     }
@@ -430,7 +460,6 @@
       $filter.appendChild(btn);
     });
 
-    // ── Cargar videos ──
     function loadVideos(monthKey) {
       $skeleton.style.display = "grid";
       $grid.style.display     = "none";
@@ -445,16 +474,13 @@
         .then(snapshot => {
           $skeleton.style.display = "none";
 
-          // Filtrar por mes si la fecha está disponible
           let docs = [];
           snapshot.forEach(doc => {
             const d = doc.data();
-            // Si tiene fecha y no coincide con el mes activo, skip
             if (d.fecha && !d.fecha.startsWith(monthKey)) return;
             docs.push(d);
           });
 
-          // Si no hay videos con fecha, mostramos todos (fallback)
           if (docs.length === 0 && monthKey === months[0].key) {
             snapshot.forEach(doc => docs.push(doc.data()));
           }
@@ -470,7 +496,6 @@
             const card = buildCard(data, idx + 1, admin);
             $grid.appendChild(card);
 
-            // Attach reacciones a la card
             PuntazoReactions.attach(card.querySelector(".card-reactions-target"), {
               videoId: data.videoId,
               videoUrl: data.videoUrl,
@@ -490,7 +515,6 @@
         });
     }
 
-    // ── Construir card ──
     function buildCard(data, rank, admin) {
       const rankClass  = rank === 1 ? "top1" : rank === 2 ? "top2" : rank === 3 ? "top3" : "";
       const rankLabel  = rank <= 3 ? ["🥇","🥈","🥉"][rank-1] : "#" + rank;
@@ -498,7 +522,6 @@
         ? new Date(data.fecha + "T00:00:00").toLocaleDateString("es-MX", { day:"numeric", month:"short" })
         : "";
 
-      // Emoji summary de reacciones
       const emojiSummary = REACTIONS_INFO
         .filter(r => (data[r.key] || 0) > 0)
         .map(r => admin ? `${r.emoji} ${data[r.key]}` : r.emoji)
@@ -529,7 +552,6 @@
 
           ${emojiSummary ? `<div class="card-viral"><span class="pz-viral-badge">${emojiSummary}</span></div>` : ""}
 
-          <!-- Aquí se montan las reacciones -->
           <div class="card-reactions-target"></div>
 
           ${data.videoUrl
@@ -539,7 +561,6 @@
         </div>
       `;
 
-      // Hover play
       const video = card.querySelector("video");
       const overlay = card.querySelector(".card-play-overlay");
 
@@ -553,7 +574,6 @@
         overlay.style.opacity = "1";
       });
 
-      // Tap en móvil
       card.querySelector(".card-video-wrap").addEventListener("click", () => {
         if (video.paused) {
           video.play().catch(() => {});
@@ -578,10 +598,9 @@
       return String(str || "").replace(/"/g, "&quot;");
     }
 
-    // ── Iniciar ──
     loadVideos(activeMonth);
 
-  }); // end waitForReactions
+  });
 })();
 </script>
 
