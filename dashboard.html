@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<!-- saved from url=(0056)file:///Users/gabrielzonenszain/Downloads/dashboard.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puntazo — Videos Dashboard</title>
+  <link href="./Puntazo — Videos Dashboard_files/css2" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Open Sans', sans-serif;
+      background: linear-gradient(135deg, #074e7a 0%, #0a5f94 50%, #074e7a 100%);
+      min-height: 100vh;
+      padding: 24px 20px;
+      color: white;
+    }
+    .header { text-align: center; margin-bottom: 28px; }
+    .header h1 { font-size: 26px; font-weight: 700; letter-spacing: 1px; color: white; }
+    .header p { font-size: 13px; color: #5ab4eb; margin-top: 4px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-group label { font-size: 11px; color: #5ab4eb; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .filter-group select, .filter-group input[type="date"] {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(90,180,235,0.4);
+      border-radius: 8px;
+      color: white;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: 'Open Sans', sans-serif;
+      outline: none;
+      min-width: 140px;
+      -webkit-appearance: none;
+      appearance: none;
+      color-scheme: dark;
+    }
+    .filter-group select option { background: #074e7a; color: white; }
+    .reset-btn {
+      background: rgba(204,1,0,0.3);
+      border: 1px solid #cc0100;
+      border-radius: 8px;
+      color: white;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-family: 'Open Sans', sans-serif;
+      font-size: 13px;
+    }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .kpi-card { background: rgba(255,255,255,0.1); border: 1px solid rgba(90,180,235,0.3); border-radius: 12px; padding: 16px; text-align: center; }
+    .kpi-card .kpi-val { font-size: 32px; font-weight: 700; color: #5ab4eb; }
+    .kpi-card .kpi-label { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-card.accent { border-color: #cc0100; }
+    .kpi-card.accent .kpi-val { color: #ff4444; }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .chart-card { background: rgba(255,255,255,0.08); border: 1px solid rgba(90,180,235,0.25); border-radius: 12px; padding: 16px; }
+    .chart-card.full { grid-column: 1 / -1; }
+    .chart-card h3 { font-size: 13px; font-weight: 600; color: #5ab4eb; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .chart-wrap { position: relative; width: 100%; }
+    .error-box { background: rgba(204,1,0,0.2); border: 1px solid #cc0100; border-radius: 12px; padding: 16px; color: #ff9999; font-size: 13px; margin-bottom: 16px; }
+    .last-update { text-align: center; font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 16px; }
+    @media (max-width: 600px) {
+      .charts-grid { grid-template-columns: 1fr; }
+      .chart-card.full { grid-column: 1; }
+      .kpis { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>PUNTAZO — Videos Dashboard</h1>
+    <p id="subtitle">3,675 registros totales · Se actualiza cada hora</p>
+  </div>
+  <div id="error-container"></div>
+  <div class="filters">
+    <div class="filter-group">
+      <label>Club</label>
+      <select id="filter-club"><option value="">Todos los clubes</option><option value="Scorpion">Scorpion</option><option value="breakpoint">breakpoint</option><option value="frondoso">frondoso</option><option value="interpadel">interpadel</option><option value="puntazo">puntazo</option><option value="scorpion">scorpion</option><option value="testclub">testclub</option><option value="vistahorizonte">vistahorizonte</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Desde</label>
+      <input type="date" id="filter-from">
+    </div>
+    <div class="filter-group">
+      <label>Hasta</label>
+      <input type="date" id="filter-to">
+    </div>
+    <div class="filter-group">
+      <button class="reset-btn" onclick="resetFilters()">Limpiar filtros</button>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi-card"><div class="kpi-val" id="kpi-total">3,675</div><div class="kpi-label">Total Videos</div></div>
+    <div class="kpi-card"><div class="kpi-val" id="kpi-clubs">8</div><div class="kpi-label">Clubes</div></div>
+    <div class="kpi-card"><div class="kpi-val" id="kpi-canchas">17</div><div class="kpi-label">Canchas</div></div>
+    <div class="kpi-card accent"><div class="kpi-val" id="kpi-peak">17:00</div><div class="kpi-label">Hora Pico</div></div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Videos por Club</h3>
+      <div class="chart-wrap" style="height:220px;"><canvas id="chartClub" width="968" height="440" style="display: block; box-sizing: border-box; height: 220px; width: 484px;"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Videos por Cancha</h3>
+      <div class="chart-wrap" style="height:220px;"><canvas id="chartCancha" width="968" height="440" style="display: block; box-sizing: border-box; height: 220px; width: 484px;"></canvas></div>
+    </div>
+    <div class="chart-card full">
+      <h3>Tendencia Diaria</h3>
+      <div class="chart-wrap" style="height:200px;"><canvas id="chartTrend" width="2036" height="400" style="display: block; box-sizing: border-box; height: 200px; width: 1018px;"></canvas></div>
+    </div>
+    <div class="chart-card full">
+      <h3>Actividad por Hora del Día</h3>
+      <div class="chart-wrap" style="height:180px;"><canvas id="chartHour" width="2036" height="360" style="display: block; box-sizing: border-box; height: 180px; width: 1018px;"></canvas></div>
+    </div>
+  </div>
+  <div class="last-update" id="last-update">Última carga: 14/3/2026, 12:59:58 a.m.</div>
+
+  <script src="./Puntazo — Videos Dashboard_files/chart.umd.js"></script>
+  <script src="./Puntazo — Videos Dashboard_files/papaparse.min.js"></script>
+  <script>
+    const CSV_URL = 'https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/master/data/metrics/videos_log.csv';
+    const BLUE = '#3289cb';
+    const LIGHT_BLUE = '#5ab4eb';
+    const WHITE = 'rgba(255,255,255,0.9)';
+    const GRID = 'rgba(255,255,255,0.1)';
+
+    let allData = [];
+    let charts = {};
+
+    function parseCSV(text) {
+      return Papa.parse(text, { header: true, skipEmptyLines: true }).data;
+    }
+
+    function getFiltered() {
+      const club = document.getElementById('filter-club').value;
+      const from = document.getElementById('filter-from').value;
+      const to = document.getElementById('filter-to').value;
+      return allData.filter(r => {
+        if (club && r.loc !== club) return false;
+        if (from && r.local_date < from) return false;
+        if (to && r.local_date > to) return false;
+        return true;
+      });
+    }
+
+    function count(arr, key) {
+      return arr.reduce((acc, r) => { acc[r[key]] = (acc[r[key]] || 0) + 1; return acc; }, {});
+    }
+
+    function destroyChart(id) {
+      if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+    }
+
+    const tickStyle = { color: WHITE, font: { size: 11, family: "'Open Sans', sans-serif" } };
+    const gridStyle = { color: GRID };
+    const borderTransparent = { color: 'transparent' };
+
+    function makeBarChart(id, labels, data, color) {
+      destroyChart(id);
+      const ctx = document.getElementById(id);
+      if (!ctx) return;
+      charts[id] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 6, borderSkipped: false }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { ...tickStyle, autoSkip: false, maxRotation: 30 }, grid: gridStyle, border: borderTransparent },
+            y: { ticks: tickStyle, grid: gridStyle, border: borderTransparent }
+          }
+        }
+      });
+    }
+
+    function makeLineChart(id, labels, data) {
+      destroyChart(id);
+      const ctx = document.getElementById(id);
+      if (!ctx) return;
+      charts[id] = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{ data, borderColor: LIGHT_BLUE, backgroundColor: 'rgba(90,180,235,0.15)', fill: true, tension: 0.4, pointRadius: data.length > 60 ? 0 : 3, pointBackgroundColor: LIGHT_BLUE }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { ...tickStyle, maxTicksLimit: 10 }, grid: gridStyle, border: borderTransparent },
+            y: { ticks: tickStyle, grid: gridStyle, border: borderTransparent }
+          }
+        }
+      });
+    }
+
+    function makeHourChart(id, hourCounts) {
+      destroyChart(id);
+      const ctx = document.getElementById(id);
+      if (!ctx) return;
+      const labels = Array.from({length: 24}, (_, i) => i + 'h');
+      const data = labels.map((_, i) => hourCounts[i] || 0);
+      const maxVal = Math.max(...data);
+      const colors = data.map(v => {
+        const intensity = maxVal > 0 ? v / maxVal : 0;
+        const r = Math.round(50 + intensity * 154);
+        const g = Math.round(137 - intensity * 136);
+        const b = Math.round(203 - intensity * 203);
+        return `rgb(${r},${g},${b})`;
+      });
+      charts[id] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 4, borderSkipped: false }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { ...tickStyle, autoSkip: false, maxRotation: 0 }, grid: gridStyle, border: borderTransparent },
+            y: { ticks: tickStyle, grid: gridStyle, border: borderTransparent }
+          }
+        }
+      });
+    }
+
+    function updateDashboard() {
+      const filtered = getFiltered();
+      document.getElementById('kpi-total').textContent = filtered.length.toLocaleString();
+      const clubs = new Set(filtered.map(r => r.loc));
+      const canchas = new Set(filtered.map(r => r.loc + r.can));
+      document.getElementById('kpi-clubs').textContent = clubs.size;
+      document.getElementById('kpi-canchas').textContent = canchas.size;
+      const hourCounts = count(filtered, 'local_hour');
+      const peakHour = Object.entries(hourCounts).sort((a,b) => b[1]-a[1])[0];
+      document.getElementById('kpi-peak').textContent = peakHour ? peakHour[0] + ':00' : '—';
+
+      const clubEntries = Object.entries(count(filtered, 'loc')).sort((a,b) => b[1]-a[1]);
+      makeBarChart('chartClub', clubEntries.map(e=>e[0]), clubEntries.map(e=>e[1]), BLUE);
+
+      const canchaEntries = Object.entries(count(filtered, 'can')).sort((a,b) => {
+        return (parseInt(a[0].replace(/\D/g,''))||0) - (parseInt(b[0].replace(/\D/g,''))||0);
+      });
+      makeBarChart('chartCancha', canchaEntries.map(e=>e[0]), canchaEntries.map(e=>e[1]), LIGHT_BLUE);
+
+      const dateEntries = Object.entries(count(filtered, 'local_date')).sort((a,b) => a[0].localeCompare(b[0]));
+      makeLineChart('chartTrend', dateEntries.map(e=>e[0]), dateEntries.map(e=>e[1]));
+
+      makeHourChart('chartHour', hourCounts);
+    }
+
+    function resetFilters() {
+      document.getElementById('filter-club').value = '';
+      const dates = allData.map(r => r.local_date).filter(Boolean).sort();
+      if (dates.length) {
+        document.getElementById('filter-from').value = dates[0];
+        document.getElementById('filter-to').value = dates[dates.length-1];
+      }
+      updateDashboard();
+    }
+
+    async function loadData() {
+      try {
+        const res = await fetch(CSV_URL);
+        if (!res.ok) throw new Error('No se pudo cargar el CSV');
+        const text = await res.text();
+        allData = parseCSV(text);
+
+        const clubs = [...new Set(allData.map(r => r.loc))].sort();
+        const sel = document.getElementById('filter-club');
+        clubs.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+
+        const dates = allData.map(r => r.local_date).filter(Boolean).sort();
+        if (dates.length) {
+          document.getElementById('filter-from').value = dates[0];
+          document.getElementById('filter-to').value = dates[dates.length-1];
+        }
+
+        document.getElementById('filter-club').addEventListener('change', updateDashboard);
+        document.getElementById('filter-from').addEventListener('change', updateDashboard);
+        document.getElementById('filter-to').addEventListener('change', updateDashboard);
+
+        document.getElementById('subtitle').textContent = allData.length.toLocaleString() + ' registros totales · Se actualiza cada hora';
+        document.getElementById('last-update').textContent = 'Última carga: ' + new Date().toLocaleString('es-MX');
+        updateDashboard();
+      } catch(e) {
+        document.getElementById('error-container').innerHTML = `<div class="error-box">Error al cargar datos: ${e.message}</div>`;
+        document.getElementById('subtitle').textContent = 'Error de conexión';
+      }
+    }
+
+    loadData();
+  </script>
+
+
+</body></html>
