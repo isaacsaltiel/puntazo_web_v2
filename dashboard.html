@@ -243,13 +243,9 @@ function updateDashboard() {
 }
 
 function resetFilters() {
-  document.getElementById('filter-club').value = '';
-  const dates = allData.map(r => r.local_date).filter(Boolean).sort();
-  if (dates.length) {
-    document.getElementById('filter-from').value = dates[0];
-    document.getElementById('filter-to').value = dates[dates.length-1];
-  }
-  updateDashboard();
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('filter-from').value = today;
+  document.getElementById('filter-to').value = today;
 }
 
 async function loadData() {
