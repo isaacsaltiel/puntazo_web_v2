@@ -39,12 +39,283 @@
 
 <!-- CSS CENTRALIZADO -->
 <link rel="stylesheet" href="assets/estilo.css" />
-</head>
-<!-- Firebase + Reacciones (pegar justo antes de </body>) -->
+
+<!-- Reacciones -->
 <link rel="stylesheet" href="/assets/reactions.css" />
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/reactions.js"></script>
+
+<style>
+  /* ─────────────────────────────────────────────
+     Jerarquía visual nueva: club/cancha > filtros
+  ───────────────────────────────────────────── */
+  .top-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+
+  .top-row-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+
+  .titulo-club{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px;
+    font-size:1.15rem;
+    line-height:1.2;
+  }
+
+  #link-club{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:0.62rem 1rem;
+    border-radius:999px;
+    background:rgba(0,79,200,0.15);
+    border:1px solid rgba(11,124,255,0.28);
+    color:#eaf2ff !important;
+    text-decoration:none;
+    font-weight:900;
+    font-size:1rem;
+    letter-spacing:0.2px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.18);
+    transition:all .18s ease;
+  }
+
+  #link-club:hover{
+    transform:translateY(-1px);
+    border-color:rgba(11,124,255,0.48);
+    background:rgba(0,79,200,0.22);
+  }
+
+  #link-cancha{
+    color:#fff !important;
+    pointer-events:none;
+    cursor:default;
+    font-weight:900 !important;
+    font-size:1.35rem !important;
+    letter-spacing:-0.2px;
+    line-height:1.1;
+  }
+
+  #breadcrumb-sep1{
+    color:rgba(255,255,255,0.45);
+    font-size:1rem;
+    font-weight:700;
+  }
+
+  .recover-mini{
+    white-space:nowrap;
+  }
+
+  .btn-top-mini{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:0.62rem 0.95rem;
+    border-radius:999px;
+    text-decoration:none;
+    font-weight:800;
+    font-size:0.86rem;
+    color:#fff;
+    background:linear-gradient(135deg, rgba(255,190,0,.18), rgba(0,79,200,.22));
+    border:1px solid rgba(255,190,0,.26);
+    box-shadow:0 8px 24px rgba(0,0,0,0.20);
+    transition:all .18s ease;
+  }
+
+  .btn-top-mini:hover{
+    transform:translateY(-1px);
+    border-color:rgba(255,190,0,.42);
+    box-shadow:0 12px 28px rgba(0,0,0,0.24);
+  }
+
+  /* Header CTA nuevo */
+  .top-month-nav-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:.58rem 1rem;
+    border-radius:999px;
+    text-decoration:none;
+    font-weight:800;
+    font-size:.88rem;
+    color:#fff;
+    background:linear-gradient(135deg, rgba(255,190,0,.16), rgba(0,79,200,.22));
+    border:1px solid rgba(255,190,0,.26);
+    transition:all .18s ease;
+    white-space:nowrap;
+  }
+
+  .top-month-nav-btn:hover{
+    transform:translateY(-1px);
+    border-color:rgba(255,190,0,.42);
+    background:linear-gradient(135deg, rgba(255,190,0,.24), rgba(0,79,200,.28));
+  }
+
+  /* Banner nuevo para mejores puntos */
+  .month-top-banner{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    margin:14px 0 18px;
+    padding:1rem 1.1rem;
+    border-radius:18px;
+    background:linear-gradient(135deg, rgba(255,190,0,.08), rgba(0,79,200,.12));
+    border:1px solid rgba(255,255,255,0.10);
+    box-shadow:0 12px 34px rgba(0,0,0,.18);
+  }
+
+  .month-top-copy h3{
+    margin:0 0 6px;
+    color:#fff;
+    font-size:1rem;
+    font-weight:900;
+    letter-spacing:-0.2px;
+  }
+
+  .month-top-copy p{
+    margin:0;
+    color:rgba(255,255,255,.72);
+    font-size:0.86rem;
+    line-height:1.55;
+    max-width:650px;
+  }
+
+  .btn-top-month{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:0.92rem 1.2rem;
+    border-radius:999px;
+    text-decoration:none;
+    font-weight:900;
+    font-size:0.92rem;
+    color:#fff;
+    background:linear-gradient(135deg, #0B7CFF, #004FC8);
+    border:1px solid rgba(11,124,255,.45);
+    box-shadow:0 0 28px rgba(0,79,200,.28), 0 8px 26px rgba(0,0,0,.22);
+    transition:all .2s ease;
+    white-space:nowrap;
+  }
+
+  .btn-top-month:hover{
+    transform:translateY(-2px);
+    box-shadow:0 0 38px rgba(11,124,255,.35), 0 12px 30px rgba(0,0,0,.26);
+  }
+
+  /* Hacer los filtros de día más discretos */
+  #filtro-horario{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin:0 0 16px;
+  }
+
+  #filtro-horario button,
+  #filtro-horario a,
+  #filtro-horario .filtro-btn,
+  #filtro-horario .day-btn,
+  #filtro-horario .filtro-dia,
+  #filtro-horario .filter-btn{
+    font-size:0.76rem !important;
+    font-weight:700 !important;
+    padding:0.42rem 0.72rem !important;
+    min-height:auto !important;
+    border-radius:999px !important;
+    line-height:1.1 !important;
+  }
+
+  /* Badge top 3 del mes dentro de cards */
+  .pz-top-month-badge{
+    position:absolute;
+    top:10px;
+    right:10px;
+    z-index:8;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:0.45rem 0.72rem;
+    border-radius:999px;
+    font-size:0.72rem;
+    font-weight:900;
+    letter-spacing:0.2px;
+    color:#fff;
+    backdrop-filter:blur(10px);
+    box-shadow:0 8px 24px rgba(0,0,0,.28);
+    border:1px solid rgba(255,255,255,.16);
+  }
+
+  .pz-top-month-badge.rank-1{
+    background:rgba(255,190,0,.22);
+    border-color:rgba(255,190,0,.42);
+    color:#ffe89a;
+  }
+
+  .pz-top-month-badge.rank-2{
+    background:rgba(180,180,180,.18);
+    border-color:rgba(220,220,220,.28);
+    color:#efefef;
+  }
+
+  .pz-top-month-badge.rank-3{
+    background:rgba(180,100,30,.24);
+    border-color:rgba(220,140,60,.30);
+    color:#ffd0a3;
+  }
+
+  .pz-top-month-badge small{
+    font-size:0.68rem;
+    opacity:.95;
+  }
+
+  /* Por si las cards no son relative */
+  #videos-container > *,
+  #videos-container .video-card,
+  #videos-container .clip-card,
+  #videos-container article,
+  #videos-container .video-item{
+    position:relative;
+  }
+
+  @media (max-width: 860px){
+    .titulo-club{
+      width:100%;
+    }
+
+    .top-row-actions{
+      width:100%;
+      justify-content:flex-start;
+    }
+
+    #link-cancha{
+      font-size:1.15rem !important;
+    }
+
+    .month-top-banner{
+      align-items:flex-start;
+    }
+
+    .btn-top-month{
+      width:100%;
+    }
+  }
+</style>
+</head>
 <body>
 
 <div class="page-bg"></div>
@@ -58,6 +329,9 @@
   <nav class="navbar">
     <a href="inicio.html">Inicio</a>
     <a href="inicio.html#clubs">Para clubs</a>
+    <a href="mejores.html" class="top-month-nav-btn"
+      onclick="try{gtag('event','ver_mejores_del_mes_click',{event_category:'CTA',event_label:'header_club_cancha'});}catch(e){}"
+    >🏆 Mejores del mes</a>
     <a href="index.html" class="highlight-btn">Mis clips</a>
   </nav>
 </header>
@@ -65,21 +339,29 @@
 <!-- ── CONTENIDO ── -->
 <main class="site-content fade-in">
 
-  <!-- BREADCRUMB: Club › Cancha (sin "lado") -->
+  <!-- BREADCRUMB -->
   <div class="top-row">
     <div class="titulo-club">
       <a id="link-club" class="breadcrumb-link" href="#"></a>
-      <span id="breadcrumb-sep1" class="breadcrumb-sep-char"> › </span>
+      <span id="breadcrumb-sep1" class="breadcrumb-sep-char">›</span>
       <a id="link-cancha" class="breadcrumb-link" href="#"
-         style="color:#fff;pointer-events:none;cursor:default;font-weight:700;"></a>
+         style="pointer-events:none;cursor:default;"></a>
       <span id="breadcrumb-sep2" style="display:none;"></span>
       <span id="nombre-lado" style="display:none;"></span>
     </div>
-    <a class="recover-mini"
-      href="https://forms.gle/TsGHKaSjBnpu65SQA"
-      target="_blank" rel="noopener"
-      onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'top_discreto'});}catch(e){}"
-    >¿No aparece? Recuperar →</a>
+
+    <div class="top-row-actions">
+      <a class="btn-top-mini"
+        href="mejores.html"
+        onclick="try{gtag('event','ver_mejores_del_mes_click',{event_category:'CTA',event_label:'top_row_club_cancha'});}catch(e){}"
+      >🏆 Mejores del mes</a>
+
+      <a class="recover-mini"
+        href="https://forms.gle/TsGHKaSjBnpu65SQA"
+        target="_blank" rel="noopener"
+        onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'top_discreto'});}catch(e){}"
+      >¿No aparece? Recuperar →</a>
+    </div>
   </div>
 
   <!-- Volver -->
@@ -101,6 +383,21 @@
         onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'lado_banner'});}catch(e){}"
       >Registrar en vivo</a>
     </div>
+  </div>
+
+  <!-- Banner nuevo: mejores puntos -->
+  <div class="month-top-banner">
+    <div class="month-top-copy">
+      <h3>🏆 Ya puedes ver los mejores puntos del mes</h3>
+      <p>
+        Los clips con más reacción de la comunidad suben automáticamente al ranking.
+        Y si uno de los videos de esta cancha entra al <strong style="color:#fff;">Top 3</strong>,
+        aquí también se marca.
+      </p>
+    </div>
+    <a href="mejores.html" class="btn-top-month"
+      onclick="try{gtag('event','ver_mejores_del_mes_click',{event_category:'CTA',event_label:'banner_club_cancha'});}catch(e){}"
+    >Ver mejores puntos del mes</a>
   </div>
 
   <!-- Loading -->
@@ -141,40 +438,30 @@
 
 <!-- ══════════════════════════════════════════════════════════
      PARCHES AGRESIVOS DE PERFORMANCE + PRIORIDAD
-     Sin modificar script.js
 ══════════════════════════════════════════════════════════ -->
 <script>
 (function() {
   'use strict';
 
-  // ───────────────────────────────────────────
-  // GLOBAL: flag para saber si hay descarga activa
-  // ───────────────────────────────────────────
   window._puntazoDownloading = false;
 
-  // ───────────────────────────────────────────
-  // 1) PRIORIDAD DE REPRODUCCIÓN:
-  //    Video real → pausar y liberar TODOS los previews
-  // ───────────────────────────────────────────
   const container = document.getElementById('videos-container');
   if (container) {
     container.addEventListener('play', function(e) {
       const target = e.target;
       if (!target || !target.classList.contains('real')) return;
 
-      // Pausar y liberar todos los previews
       document.querySelectorAll('video.video-preview').forEach(function(prev) {
         try {
           prev.pause();
           if (prev.src && !prev.dataset.pausedSrc) {
             prev.dataset.pausedSrc = prev.src;
             prev.removeAttribute('src');
-            prev.load(); // libera decoder
+            prev.load();
           }
         } catch(err) {}
       });
 
-      // Pausar otros videos reales
       document.querySelectorAll('video.real').forEach(function(other) {
         if (other !== target) {
           try { other.pause(); } catch(err) {}
@@ -182,7 +469,6 @@
       });
     }, true);
 
-    // Restaurar previews cuando no hay video real activo
     container.addEventListener('pause', function(e) {
       const target = e.target;
       if (!target || !target.classList.contains('real')) return;
@@ -203,16 +489,8 @@
     }, true);
   }
 
-  // ───────────────────────────────────────────
-  // 2) CARGA PROGRESIVA:
-  //    - Tarjetas aparecen INMEDIATAMENTE (script.js ya las crea)
-  //    - Previews se cargan en serie, UNO POR UNO, de arriba a abajo
-  //    - Si hay descarga activa o video reproduciéndose, PAUSAR la carga
-  //    - Timeout de 5s por preview para no bloquear
-  // ───────────────────────────────────────────
   window.loadPreviewsSequentially = async function(previews) {
     for (var i = 0; i < previews.length; i++) {
-      // Esperar si hay descarga activa o video real reproduciéndose
       while (window._puntazoDownloading || isAnyRealPlaying()) {
         await sleep(500);
       }
@@ -220,7 +498,7 @@
       var v = previews[i];
       v.preload = 'metadata';
       await new Promise(function(resolve) {
-        var timeout = setTimeout(resolve, 5000); // max 5s por video
+        var timeout = setTimeout(resolve, 5000);
         v.addEventListener('loadedmetadata', function() {
           clearTimeout(timeout);
           resolve();
@@ -242,22 +520,13 @@
     return new Promise(function(r) { setTimeout(r, ms); });
   }
 
-  // ───────────────────────────────────────────
-  // 3) PRIORIDAD DE DESCARGA:
-  //    Interceptar el click en btn-share-large para:
-  //    a) Pausar todos los previews y liberar recursos
-  //    b) Setear flag global de descarga
-  //    c) Limpiar flag cuando termine
-  // ───────────────────────────────────────────
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('.btn-share-large');
     if (!btn) return;
 
-    // Si está en estado "downloading" o idle → es inicio de descarga
     if (btn.dataset.state === 'idle' || !btn.dataset.state) {
       window._puntazoDownloading = true;
 
-      // Pausar TODOS los previews para dar ancho de banda a la descarga
       document.querySelectorAll('video.video-preview').forEach(function(prev) {
         try {
           prev.pause();
@@ -269,14 +538,12 @@
         } catch(err) {}
       });
 
-      // Observar cuando el botón cambie de estado para limpiar flag
-      var observer = new MutationObserver(function(mutations) {
+      var observer = new MutationObserver(function() {
         var state = btn.dataset.state;
         if (state === 'idle' || state === 'ready' || !btn.dataset.state) {
           window._puntazoDownloading = false;
           observer.disconnect();
 
-          // Restaurar previews
           document.querySelectorAll('video.video-preview').forEach(function(prev) {
             if (prev.dataset.pausedSrc) {
               prev.src = prev.dataset.pausedSrc;
@@ -287,7 +554,6 @@
       });
       observer.observe(btn, { attributes: true, attributeFilter: ['data-state'] });
 
-      // Safety: limpiar flag después de 60s por si el observer no se dispara
       setTimeout(function() {
         window._puntazoDownloading = false;
         observer.disconnect();
@@ -295,14 +561,10 @@
     }
   }, true);
 
-  // ───────────────────────────────────────────
-  // 4) Bloquear play de previews si hay video real o descarga activa
-  // ───────────────────────────────────────────
   var lastActivePreview = null;
   var origPlay = HTMLVideoElement.prototype.play;
   HTMLVideoElement.prototype.play = function() {
     if (this.classList.contains('video-preview')) {
-      // Bloquear si hay descarga o video real activo
       if (window._puntazoDownloading || isAnyRealPlaying()) {
         return Promise.resolve();
       }
@@ -314,6 +576,176 @@
     return origPlay.call(this);
   };
 
+})();
+</script>
+
+<!-- ── Badge Top 3 del mes dentro de cards de club/cancha ── -->
+<script>
+(function(){
+  function waitForDeps(fn, retries){
+    retries = retries || 40;
+    if (window.PuntazoReactions && window.PuntazoReactions.db) return fn();
+    if (retries <= 0) return;
+    setTimeout(function(){ waitForDeps(fn, retries - 1); }, 180);
+  }
+
+  function getCurrentMonthKey(){
+    var d = new Date();
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    return y + '-' + m;
+  }
+
+  function normalizeUrl(raw){
+    if (!raw) return '';
+    try{
+      var u = new URL(raw, window.location.origin);
+      return (u.origin + u.pathname).replace(/\/+$/, '').toLowerCase();
+    }catch(e){
+      return String(raw).split('?')[0].replace(/\/+$/, '').toLowerCase();
+    }
+  }
+
+  function firstNonEmpty(arr){
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i]) return arr[i];
+    }
+    return '';
+  }
+
+  waitForDeps(function(){
+    var db = PuntazoReactions.db();
+    var MIN = (window.PuntazoReactions && PuntazoReactions.MIN_FOR_BEST) || 2;
+    var monthKey = getCurrentMonthKey();
+    var topEntries = [];
+    var container = document.getElementById('videos-container');
+    if (!container) return;
+
+    function buildTop3(){
+      db.collection('reactions')
+        .where('total', '>=', MIN)
+        .orderBy('total', 'desc')
+        .limit(50)
+        .get()
+        .then(function(snapshot){
+          var docs = [];
+          snapshot.forEach(function(doc){
+            var d = doc.data() || {};
+            if (d.fecha && String(d.fecha).startsWith(monthKey)) docs.push(d);
+          });
+
+          if (!docs.length) {
+            snapshot.forEach(function(doc){
+              docs.push(doc.data() || {});
+            });
+          }
+
+          topEntries = docs.slice(0, 3).map(function(d, idx){
+            return {
+              rank: idx + 1,
+              videoId: String(d.videoId || '').trim(),
+              videoUrl: normalizeUrl(d.videoUrl || ''),
+              label: idx === 0 ? '🥇 Top 1 del mes' : idx === 1 ? '🥈 Top 2 del mes' : '🥉 Top 3 del mes'
+            };
+          });
+
+          annotateAll();
+          observeChanges();
+        })
+        .catch(function(err){
+          console.error('[Top3 badge] Error consultando mejores:', err);
+          observeChanges();
+        });
+    }
+
+    function getCardCandidates(card){
+      var candidates = [];
+
+      var directUrl = firstNonEmpty([
+        card.getAttribute('data-video-url'),
+        card.dataset ? card.dataset.videoUrl : '',
+        card.dataset ? card.dataset.src : ''
+      ]);
+      if (directUrl) candidates.push(normalizeUrl(directUrl));
+
+      var directId = firstNonEmpty([
+        card.getAttribute('data-video-id'),
+        card.dataset ? card.dataset.videoId : ''
+      ]);
+      if (directId) candidates.push('id:' + String(directId).trim());
+
+      card.querySelectorAll('[data-video-id],[data-video-url],[data-src],video,source,a[href],button[data-url]').forEach(function(el){
+        var vid = firstNonEmpty([
+          el.getAttribute('data-video-id'),
+          el.dataset ? el.dataset.videoId : ''
+        ]);
+        if (vid) candidates.push('id:' + String(vid).trim());
+
+        var rawUrl = firstNonEmpty([
+          el.getAttribute('data-video-url'),
+          el.getAttribute('data-src'),
+          el.dataset ? el.dataset.videoUrl : '',
+          el.dataset ? el.dataset.src : '',
+          el.getAttribute('src'),
+          el.getAttribute('href'),
+          el.getAttribute('data-url')
+        ]);
+        if (rawUrl) candidates.push(normalizeUrl(rawUrl));
+      });
+
+      return Array.from(new Set(candidates.filter(Boolean)));
+    }
+
+    function getRankForCard(card){
+      var candidates = getCardCandidates(card);
+      if (!candidates.length || !topEntries.length) return null;
+
+      for (var i = 0; i < topEntries.length; i++) {
+        var t = topEntries[i];
+        var idToken = t.videoId ? ('id:' + t.videoId) : '';
+        for (var j = 0; j < candidates.length; j++) {
+          var c = candidates[j];
+          if (idToken && c === idToken) return t;
+          if (t.videoUrl && c === t.videoUrl) return t;
+          if (t.videoUrl && c && c.indexOf(t.videoUrl) !== -1) return t;
+          if (t.videoUrl && c && t.videoUrl.indexOf(c) !== -1) return t;
+        }
+      }
+      return null;
+    }
+
+    function injectBadge(card, topInfo){
+      if (!card || !topInfo) return;
+      if (card.querySelector('.pz-top-month-badge')) return;
+
+      var badge = document.createElement('div');
+      badge.className = 'pz-top-month-badge rank-' + topInfo.rank;
+      badge.innerHTML = '<span>' + (topInfo.rank === 1 ? '🥇' : topInfo.rank === 2 ? '🥈' : '🥉') + '</span><small>Top ' + topInfo.rank + ' del mes</small>';
+
+      card.insertBefore(badge, card.firstChild);
+    }
+
+    function annotateAll(){
+      var possibleCards = Array.from(container.children);
+      possibleCards.forEach(function(card){
+        var topInfo = getRankForCard(card);
+        if (topInfo) injectBadge(card, topInfo);
+      });
+    }
+
+    function observeChanges(){
+      var mo = new MutationObserver(function(){
+        annotateAll();
+      });
+      mo.observe(container, { childList: true, subtree: true });
+
+      setTimeout(annotateAll, 800);
+      setTimeout(annotateAll, 1800);
+      setTimeout(annotateAll, 3200);
+    }
+
+    buildTop3();
+  });
 })();
 </script>
 
