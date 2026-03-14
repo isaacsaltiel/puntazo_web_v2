@@ -555,7 +555,7 @@
           <div class="card-reactions-target"></div>
 
           ${data.videoUrl
-            ? `<a class="card-watch-btn" href="${escapeAttr(data.videoUrl)}" target="_blank" rel="noopener">▶ Ver video completo</a>`
+            ? `<a class="card-watch-btn" href="${escapeAttr(buildLadoLink(data))}">▶ Ver video en su cancha</a>`
             : ""
           }
         </div>
@@ -597,6 +597,13 @@
     function escapeAttr(str) {
       return String(str || "").replace(/"/g, "&quot;");
     }
+    function buildLadoLink(data) {
+    const loc  = encodeURIComponent(data.club || "");
+    const can  = encodeURIComponent(data.cancha || "");
+    const lado = encodeURIComponent(data.lado || "");
+    const dia  = String(data.fecha || "").replaceAll("-", "");
+    return `/lado.html?loc=${loc}&can=${can}&lado=${lado}&dia=${dia}&pg=0`;
+  }
 
     loadVideos(activeMonth);
 
