@@ -1475,15 +1475,7 @@ async function loadPreviewsSequentially(previews) {
     });
   }
 }
-  function renderVideoCard(video) {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <video src="${video.url}" ...></video>
-      <div class="video-info">...</div>
-      <div class="video-actions">...</div>  ← botones de compartir/descargar
-    `;
-    return li;
-  }
+
 
 function pauseAllVideos() {
   try { if (currentPreviewActive) currentPreviewActive.pause(); } catch {}
@@ -1962,6 +1954,28 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     })();
 
     card.appendChild(btnContainer);
+    card.appendChild(btnContainer);
+
+    // ── REACCIONES PUNTAZO ──
+    if (window.PuntazoReactions) {
+      const reactTarget = document.createElement("div");
+      card.appendChild(reactTarget);
+
+      const fecha = entry._meta
+        ? `${entry._meta.Y}-${entry._meta.M}-${entry._meta.D}`
+        : "";
+
+      PuntazoReactions.attach(reactTarget, {
+        videoId:  entry.nombre,
+        videoUrl: entry.url,
+        club:     loc,
+        cancha:   can,
+        lado:     lado,
+        fecha:    fecha,
+      });
+    }
+    // ── FIN REACCIONES ──
+
     contenedorVideos.appendChild(card);
     allVideos.push(real);
   }
