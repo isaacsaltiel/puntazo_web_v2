@@ -1475,6 +1475,15 @@ async function loadPreviewsSequentially(previews) {
     });
   }
 }
+  function renderVideoCard(video) {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <video src="${video.url}" ...></video>
+      <div class="video-info">...</div>
+      <div class="video-actions">...</div>  ← botones de compartir/descargar
+    `;
+    return li;
+  }
 
 function pauseAllVideos() {
   try { if (currentPreviewActive) currentPreviewActive.pause(); } catch {}
