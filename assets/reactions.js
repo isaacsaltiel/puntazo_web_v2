@@ -47,7 +47,7 @@ const FIREBASE_CONFIG = {
 const ADMIN_PASS = "puntazo2025";
 
 // Mínimo de reacciones para aparecer en mejores.html
-const MIN_REACTIONS_FOR_BEST = 2;
+const MIN_REACTIONS_FOR_BEST = 1;
 
 // Reacciones disponibles
 const REACTIONS = [
