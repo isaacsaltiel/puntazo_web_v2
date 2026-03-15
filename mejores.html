@@ -1,23 +1,309 @@
-Perfecto. Sí, en `mejores.html` te lo voy a dejar con **la misma lógica fina que ya aprobaste en `lado.html`**:
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mejores Momentos · Puntazo</title>
+  <meta name="description" content="Los puntos más épicos del mes en Puntazo" />
 
-* botón **solo visible cuando el video ya se está reproduciendo**
-* texto corto: **`↔ Horizontal`**
-* entra a fullscreen
-* intenta landscape
-* al salir hace unlock
-* centrado y limpio, sin invadir la card
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 
-No voy a mezclar todavía perfil aquí. Primero cerramos `mejores.html` bien.
+  <!-- Firebase SDK compat v9 -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
----
+  <!-- Reactions module + estilos -->
+  <link rel="stylesheet" href="/assets/reactions.css" />
+  <script src="/assets/reactions.js"></script>
 
-# CAMBIO 1
+  <style>
+    :root {
+      --puntazo:   #004FC8;
+      --puntazo2:  #0B7CFF;
+      --bg:        #050914;
+      --card:      rgba(255,255,255,.06);
+      --border:    rgba(255,255,255,.10);
+      --text:      #eaf2ff;
+      --muted:     rgba(234,242,255,.55);
+      --gold:      #ffe066;
+    }
 
-## Agrega estilos para la fila de acción y el botón fullscreen
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-En el `<style>`, **justo debajo** del bloque de `.card-watch-btn`, agrega esto:
+    html, body {
+      min-height: 100%;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
 
-```css id="h94cm0"
+    .bg-glow {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(900px 500px at 15% 10%, rgba(0,79,200,.20), transparent 55%),
+        radial-gradient(800px 600px at 88% 8%,  rgba(11,124,255,.12), transparent 55%),
+        radial-gradient(700px 500px at 45% 92%, rgba(255,190,0,.06),  transparent 55%),
+        linear-gradient(180deg, #050914, #060a18 60%, #050914);
+    }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px;
+      padding: 14px 20px;
+      background: rgba(5,9,20,.88);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-brand {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      color: var(--text);
+      min-width: 0;
+    }
+
+    .nav-logo {
+      height: 34px;
+      width: auto;
+      display: block;
+      filter: drop-shadow(0 0 18px rgba(0,79,200,.18));
+    }
+
+    .nav-actions {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .nav-back {
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      transition: color .15s, border-color .15s, background .15s;
+      white-space:nowrap;
+    }
+
+    .nav-back:hover {
+      color: var(--text);
+      border-color: rgba(255,255,255,.22);
+      background: rgba(255,255,255,.03);
+    }
+
+    .nav-primary {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(255,190,0,.16), rgba(0,79,200,.22));
+      border: 1px solid rgba(255,190,0,.26);
+      transition: all .15s;
+      white-space:nowrap;
+    }
+
+    .nav-primary:hover {
+      border-color: rgba(255,190,0,.42);
+      background: linear-gradient(135deg, rgba(255,190,0,.24), rgba(0,79,200,.28));
+    }
+
+    main {
+      position: relative; z-index: 1;
+      max-width: 900px; margin: 0 auto;
+      padding: 32px 16px 80px;
+    }
+
+    .page-header {
+      margin-bottom: 32px; text-align: center;
+    }
+
+    .page-eyebrow {
+      font-size: 12px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--gold); opacity: .8;
+      margin-bottom: 10px;
+    }
+
+    .page-title {
+      font-size: clamp(26px, 5vw, 40px);
+      font-weight: 900; letter-spacing: -.5px;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fff 30%, rgba(234,242,255,.6));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .page-sub {
+      margin-top: 10px; font-size: 15px; color: var(--muted); max-width: 460px; margin-inline: auto;
+    }
+
+    .month-filter {
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .month-btn {
+      padding: 7px 16px; border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--muted);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all .15s;
+    }
+    .month-btn:hover { color: var(--text); border-color: rgba(255,255,255,.22); }
+    .month-btn.active {
+      background: rgba(0,79,200,.25);
+      border-color: rgba(11,124,255,.55);
+      color: #eaf2ff;
+    }
+
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .skeleton-card {
+      border-radius: 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      animation: shimmer 1.5s infinite;
+    }
+
+    .skeleton-thumb {
+      width: 100%; padding-top: 56.25%;
+      background: rgba(255,255,255,.04);
+    }
+
+    .skeleton-body { padding: 14px; }
+    .skeleton-line {
+      height: 12px; border-radius: 6px;
+      background: rgba(255,255,255,.06);
+      margin-bottom: 8px;
+    }
+    .skeleton-line.short { width: 55%; }
+
+    @keyframes shimmer {
+      0%,100% { opacity: 1; }
+      50%      { opacity: .6; }
+    }
+
+    .empty-state {
+      text-align: center; padding: 60px 20px; display: none;
+    }
+
+    .empty-icon { font-size: 48px; margin-bottom: 14px; }
+    .empty-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .empty-sub { color: var(--muted); font-size: 15px; max-width: 320px; margin-inline: auto; }
+
+    .videos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .video-card {
+      border-radius: 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: transform .2s ease, box-shadow .2s ease;
+      position: relative;
+    }
+
+    .video-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 48px rgba(0,0,0,.45);
+    }
+
+    .rank-badge {
+      position: absolute; top: 10px; left: 10px; z-index: 2;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: rgba(0,0,0,.65);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 900;
+    }
+
+    .rank-badge.top1 { background: rgba(255,190,0,.25); border-color: rgba(255,190,0,.5); color: var(--gold); }
+    .rank-badge.top2 { background: rgba(180,180,180,.20); border-color: rgba(200,200,200,.4); color: #d0d0d0; }
+    .rank-badge.top3 { background: rgba(180,100,30,.22); border-color: rgba(200,120,40,.4); color: #e09060; }
+
+    .card-video-wrap {
+      position: relative; width: 100%; padding-top: 56.25%;
+      background: #000; overflow: hidden;
+    }
+
+    .card-video-wrap video {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+
+    .card-play-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,.25);
+      opacity: 1; transition: opacity .2s;
+    }
+
+    .card-video-wrap:hover .card-play-overlay { opacity: 0; }
+
+    .play-icon {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: rgba(0,0,0,.6); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    .card-body { padding: 14px 14px 12px; }
+
+    .card-meta {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 8px; flex-wrap: wrap;
+    }
+
+    .card-club {
+      font-size: 13px; font-weight: 700; color: var(--text);
+    }
+
+    .card-sep { color: var(--border); }
+
+    .card-location {
+      font-size: 12px; color: var(--muted);
+    }
+
+    .card-date {
+      font-size: 11px; color: var(--muted); margin-left: auto;
+    }
+
+    .card-viral {
+      margin-bottom: 8px;
+    }
+
+    .card-watch-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; margin-top: 10px;
+      padding: 10px 14px; border-radius: 12px;
+      border: 1px solid rgba(11,124,255,.40);
+      background: rgba(0,79,200,.12);
+      color: #eaf2ff; font-size: 14px; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      transition: background .15s, border-color .15s;
+    }
+    .card-watch-btn:hover {
+      background: rgba(0,79,200,.22);
+      border-color: rgba(11,124,255,.65);
+    }
+
     .card-actions {
       display: flex;
       justify-content: center;
@@ -60,23 +346,149 @@ En el `<style>`, **justo debajo** del bloque de `.card-watch-btn`, agrega esto:
       color: #fff;
       box-shadow: 0 0 24px rgba(0,79,200,.18), 0 10px 26px rgba(0,0,0,.22);
     }
-```
 
----
+    .admin-bar {
+      display: none;
+      background: rgba(239,68,68,.12);
+      border: 1px solid rgba(239,68,68,.25);
+      border-radius: 12px; padding: 10px 14px;
+      margin-bottom: 20px;
+      font-size: 13px; color: #fca5a5;
+      align-items: center; gap: 8px;
+    }
+    .admin-bar.visible { display: flex; }
 
-# CAMBIO 2
+    @media (max-width: 640px) {
+      nav{
+        padding: 12px 14px;
+      }
 
-## Agrega los helpers de fullscreen al script
+      .nav-logo{
+        height: 30px;
+      }
 
-Dentro del `<script>`, **después** de esta línea:
+      .nav-actions{
+        gap:8px;
+      }
 
-```javascript id="0f9s1e"
-let activeMonth = months[0].key;
-```
+      .nav-back,
+      .nav-primary{
+        font-size:12px;
+        padding:7px 10px;
+      }
+    }
 
-agrega este bloque completo:
+    @media (max-width: 480px) {
+      .videos-grid { grid-template-columns: 1fr; }
+      .nav-primary{ display:none; }
+    }
+  </style>
+</head>
+<body>
 
-```javascript id="64ss5h"
+<div class="bg-glow"></div>
+
+<nav>
+  <a href="/inicio.html" class="nav-brand" aria-label="Puntazo">
+    <img src="/assets/logo.png" alt="Puntazo" class="nav-logo" onerror="this.style.display='none'">
+  </a>
+
+  <div class="nav-actions">
+    <a href="/inicio.html" class="nav-primary">Inicio</a>
+    <a href="/index.html" class="nav-back">← Ver canchas</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="page-header">
+    <p class="page-eyebrow">🏆 Mejores puntos del mes</p>
+    <h1 class="page-title">Mejores Momentos</h1>
+    <p class="page-sub">Los puntos más épicos que la comunidad eligió este mes</p>
+  </header>
+
+  <div class="admin-bar" id="adminBar">
+    🔐 Modo administrador activo — ves los conteos de reacciones
+  </div>
+
+  <div class="month-filter" id="monthFilter"></div>
+
+  <div class="skeleton-grid" id="skeletonGrid">
+    <div class="skeleton-card">
+      <div class="skeleton-thumb"></div>
+      <div class="skeleton-body">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+      </div>
+    </div>
+    <div class="skeleton-card">
+      <div class="skeleton-thumb"></div>
+      <div class="skeleton-body">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+      </div>
+    </div>
+    <div class="skeleton-card">
+      <div class="skeleton-thumb"></div>
+      <div class="skeleton-body">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">🎾</div>
+    <h2 class="empty-title">Todavía sin puntos virales</h2>
+    <p class="empty-sub">
+      Cuando un punto acumule reacciones de la comunidad, aparecerá aquí. ¡Sé el primero en reaccionar!
+    </p>
+  </div>
+
+  <div class="videos-grid" id="videosGrid" style="display:none"></div>
+
+</main>
+
+<script>
+(function () {
+  const REACTIONS_INFO = [
+    { key: "fuego",     emoji: "🔥" },
+    { key: "risa",      emoji: "😂" },
+    { key: "enojo",     emoji: "😡" },
+    { key: "diversion", emoji: "🎉" },
+    { key: "sorpresa",  emoji: "😮" },
+  ];
+
+  function waitForReactions(cb, retries = 20) {
+    if (window.PuntazoReactions) return cb();
+    if (retries <= 0) return console.error("[Mejores] PuntazoReactions no cargó.");
+    setTimeout(() => waitForReactions(cb, retries - 1), 150);
+  }
+
+  waitForReactions(function () {
+    const db     = PuntazoReactions.db();
+    const admin  = PuntazoReactions.isAdmin();
+    const MIN    = PuntazoReactions.MIN_FOR_BEST;
+
+    const $skeleton = document.getElementById("skeletonGrid");
+    const $grid     = document.getElementById("videosGrid");
+    const $empty    = document.getElementById("emptyState");
+    const $filter   = document.getElementById("monthFilter");
+    const $adminBar = document.getElementById("adminBar");
+
+    if (admin) $adminBar.classList.add("visible");
+
+    const months = [];
+    const now = new Date();
+    for (let i = 0; i < 4; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key   = d.toISOString().slice(0, 7);
+      const label = d.toLocaleDateString("es-MX", { month: "long", year: "numeric" });
+      months.push({ key, label });
+    }
+
+    let activeMonth = months[0].key;
+
     const fullscreenSyncers = new Set();
     let fullscreenEventsBound = false;
 
@@ -240,55 +652,114 @@ agrega este bloque completo:
 
       syncAll();
     }
-```
 
----
+    months.forEach((m, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "month-btn" + (idx === 0 ? " active" : "");
+      btn.textContent = m.label;
+      btn.dataset.month = m.key;
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".month-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeMonth = m.key;
+        loadVideos(m.key);
+      });
+      $filter.appendChild(btn);
+    });
 
-# CAMBIO 3
-
-## Limpia syncers viejos al recargar videos
-
-Dentro de `function loadVideos(monthKey) {`, busca este bloque inicial:
-
-```javascript id="fo3906"
-      $skeleton.style.display = "grid";
-      $grid.style.display     = "none";
-      $empty.style.display    = "none";
-      $grid.innerHTML         = "";
-```
-
-y déjalo así:
-
-```javascript id="aw02ea"
+    function loadVideos(monthKey) {
       $skeleton.style.display = "grid";
       $grid.style.display     = "none";
       $empty.style.display    = "none";
       $grid.innerHTML         = "";
       fullscreenSyncers.clear();
-```
 
-Esto evita que se acumulen callbacks viejos cuando cambias de mes.
+      db.collection("reactions")
+        .where("total", ">=", MIN)
+        .orderBy("total", "desc")
+        .limit(50)
+        .get()
+        .then(snapshot => {
+          $skeleton.style.display = "none";
 
----
+          let docs = [];
+          snapshot.forEach(doc => {
+            const d = doc.data();
+            if (d.fecha && !d.fecha.startsWith(monthKey)) return;
+            docs.push(d);
+          });
 
-# CAMBIO 4
-
-## Agrega el botón a cada card
-
-Dentro de `buildCard(data, rank, admin)`, en el `card.innerHTML`, busca esta parte:
-
-```javascript id="y98swm"
-          <div class="card-reactions-target"></div>
-
-          ${data.videoUrl
-            ? `<a class="card-watch-btn" href="${escapeAttr(buildLadoLink(data))}">▶ Ver video en su cancha</a>`
-            : ""
+          if (docs.length === 0 && monthKey === months[0].key) {
+            snapshot.forEach(doc => docs.push(doc.data()));
           }
-```
 
-y cámbiala por esto:
+          if (docs.length === 0) {
+            $empty.style.display = "block";
+            return;
+          }
 
-```javascript id="45pnj1"
+          $grid.style.display = "grid";
+
+          docs.forEach((data, idx) => {
+            const card = buildCard(data, idx + 1, admin);
+            $grid.appendChild(card);
+
+            PuntazoReactions.attach(card.querySelector(".card-reactions-target"), {
+              videoId: data.videoId,
+              videoUrl: data.videoUrl,
+              club:    data.club,
+              cancha:  data.cancha,
+              lado:    data.lado,
+              fecha:   data.fecha,
+            });
+          });
+        })
+        .catch(err => {
+          console.error("[Mejores] Error cargando videos:", err);
+          $skeleton.style.display = "none";
+          $empty.style.display    = "block";
+          $empty.querySelector(".empty-sub").textContent =
+            "Hubo un error cargando los mejores momentos. Intenta de nuevo.";
+        });
+    }
+
+    function buildCard(data, rank, admin) {
+      const rankClass  = rank === 1 ? "top1" : rank === 2 ? "top2" : rank === 3 ? "top3" : "";
+      const rankLabel  = rank <= 3 ? ["🥇","🥈","🥉"][rank-1] : "#" + rank;
+      const dateLabel  = data.fecha
+        ? new Date(data.fecha + "T00:00:00").toLocaleDateString("es-MX", { day:"numeric", month:"short" })
+        : "";
+
+      const emojiSummary = REACTIONS_INFO
+        .filter(r => (data[r.key] || 0) > 0)
+        .map(r => admin ? `${r.emoji} ${data[r.key]}` : r.emoji)
+        .join("  ");
+
+      const card = document.createElement("div");
+      card.className = "video-card";
+      card.innerHTML = `
+        <div class="rank-badge ${rankClass}">${rankLabel}</div>
+
+        <div class="card-video-wrap">
+          <video
+            src="${escapeAttr(data.videoUrl || "")}"
+            muted playsinline preload="none"
+            loop
+          ></video>
+          <div class="card-play-overlay">
+            <div class="play-icon">▶</div>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="card-meta">
+            <span class="card-club">${escapeHTML(data.club || "Puntazo")}</span>
+            ${data.cancha ? `<span class="card-sep">·</span><span class="card-location">Cancha ${escapeHTML(data.cancha)} ${data.lado ? data.lado : ""}</span>` : ""}
+            ${dateLabel ? `<span class="card-date">${dateLabel}</span>` : ""}
+          </div>
+
+          ${emojiSummary ? `<div class="card-viral"><span class="pz-viral-badge">${emojiSummary}</span></div>` : ""}
+
           <div class="card-reactions-target"></div>
 
           <div class="card-actions">
@@ -301,78 +772,36 @@ y cámbiala por esto:
             ? `<a class="card-watch-btn" href="${escapeAttr(buildLadoLink(data))}">▶ Ver video en su cancha</a>`
             : ""
           }
-```
+        </div>
+      `;
 
----
-
-# CAMBIO 5
-
-## Reemplaza la lógica local del video por la nueva helper
-
-Dentro de `buildCard(...)`, ahorita tienes esto al final:
-
-```javascript id="6ft4cm"
-      const video = card.querySelector("video");
-      const overlay = card.querySelector(".card-play-overlay");
-
-      card.addEventListener("mouseenter", () => {
-        video.play().catch(() => {});
-        overlay.style.opacity = "0";
-      });
-      card.addEventListener("mouseleave", () => {
-        video.pause();
-        video.currentTime = 0;
-        overlay.style.opacity = "1";
-      });
-
-      card.querySelector(".card-video-wrap").addEventListener("click", () => {
-        if (video.paused) {
-          video.play().catch(() => {});
-          overlay.style.opacity = "0";
-        } else {
-          video.pause();
-          overlay.style.opacity = "1";
-        }
-      });
-
-      return card;
-```
-
-**Reemplázalo completo** por esto:
-
-```javascript id="ucrmbj"
       mejorarCardDeVideo(card, data);
       return card;
-```
+    }
 
----
+    function escapeHTML(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
 
-# Qué debe pasar después
+    function escapeAttr(str) {
+      return String(str || "").replace(/"/g, "&quot;");
+    }
+    function buildLadoLink(data) {
+    const loc  = encodeURIComponent(data.club || "");
+    const can  = encodeURIComponent(data.cancha || "");
+    const lado = encodeURIComponent(data.lado || "");
+    const dia  = String(data.fecha || "").replaceAll("-", "");
+    return `/lado.html?loc=${loc}&can=${can}&lado=${lado}&dia=${dia}&pg=0`;
+  }
 
-En `mejores.html`:
+    loadVideos(activeMonth);
 
-* el botón **↔ Horizontal** no se ve al inicio
-* al tocar/clicar el video y empezar reproducción, aparece
-* si lo picas:
+  });
+})();
+</script>
 
-  * entra fullscreen
-  * intenta landscape
-  * al salir vuelve limpio
-* el overlay sigue sincronizado con play/pause
-* el botón queda centrado y discreto
-
----
-
-# Nota importante
-
-Aquí **no metí todavía auth/header/save/share** en `mejores.html`, a propósito.
-No porque no se pueda, sino porque ahorita el objetivo era **replicar la experiencia de fullscreen que ya aprobaste en `lado.html`**, sin meter tres frentes de riesgo en una sola pasada.
-
-Haz estos cambios y pruébalo.
-En cuanto me digas “jalo”, nos vamos directo a **FASE 4: `perfil.html`** y ahí sí te lo construyo ya con:
-
-* header compartido
-* redirect si no hay sesión
-* info del usuario
-* grid de guardados
-* fullscreen incluido desde el arranque
+</body>
+</html>
