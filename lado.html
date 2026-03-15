@@ -321,20 +321,9 @@
 <div class="page-bg"></div>
 
 <!-- ── NAV ── -->
-<header class="site-header">
-  <a href="inicio.html" class="logo-link">
-    <img src="assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
-  </a>
-  <button class="menu-toggle" aria-label="Abrir menú">☰</button>
-  <nav class="navbar">
-    <a href="inicio.html">Inicio</a>
-    <a href="inicio.html#clubs">Para clubs</a>
-    <a href="mejores.html" class="top-month-nav-btn"
-      onclick="try{gtag('event','ver_mejores_del_mes_click',{event_category:'CTA',event_label:'header_club_cancha'});}catch(e){}"
-    >🏆 Mejores del mes</a>
-    <a href="index.html" class="highlight-btn">Mis clips</a>
-  </nav>
-</header>
+<div id="nav-root" data-nav-variant="internal"></div>
+<script src="/assets/header.js"></script>
+
 
 <!-- ── CONTENIDO ── -->
 <main class="site-content fade-in">
