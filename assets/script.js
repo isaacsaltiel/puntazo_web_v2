@@ -1854,7 +1854,7 @@ function ensureFullscreenVideoStyles() {
   style.id = "pz-fullscreen-video-styles";
   style.textContent = `
     .btn-fullscreen-video{
-      display:inline-flex;
+      display:none;
       align-items:center;
       justify-content:center;
       gap:8px;
@@ -1978,11 +1978,16 @@ async function verEnHorizontal(video, card) {
   await requestVideoFullscreen(video);
 
   try {
+    await video.play();
+  } catch {}
+
+  try {
     if (screen.orientation && typeof screen.orientation.lock === "function") {
       await screen.orientation.lock("landscape");
     }
   } catch {}
 }
+
 
 function crearBotonPantallaCompleta(video, card, entry) {
   ensureFullscreenVideoStyles();
@@ -2000,6 +2005,11 @@ function crearBotonPantallaCompleta(video, card, entry) {
     btn.textContent = active ? "✕ Salir" : "⛶ Pantalla completa";
   };
 
+  const syncVisibility = () => {
+    const visible = !video.paused || isThisVideoFullscreen(video);
+    btn.style.display = visible ? "inline-flex" : "none";
+  };
+
   btn.addEventListener("click", async (e) => {
     e.preventDefault();
 
@@ -2008,6 +2018,7 @@ function crearBotonPantallaCompleta(video, card, entry) {
         await exitVideoFullscreen(video);
         safeOrientationUnlock();
         syncLabel();
+        syncVisibility();
 
         trackEvent("video_fullscreen_exit", gaCtx({
           video_name: entry?.nombre || ""
@@ -2017,6 +2028,7 @@ function crearBotonPantallaCompleta(video, card, entry) {
 
       await verEnHorizontal(video, card);
       syncLabel();
+      syncVisibility();
 
       trackEvent("video_fullscreen_open", gaCtx({
         video_name: entry?.nombre || ""
@@ -2027,17 +2039,38 @@ function crearBotonPantallaCompleta(video, card, entry) {
     }
   });
 
-  document.addEventListener("fullscreenchange", syncLabel);
-  document.addEventListener("webkitfullscreenchange", syncLabel);
-  video.addEventListener("webkitbeginfullscreen", syncLabel);
+  video.addEventListener("play", syncVisibility);
+  video.addEventListener("pause", syncVisibility);
+  video.addEventListener("ended", syncVisibility);
+
+  document.addEventListener("fullscreenchange", () => {
+    syncLabel();
+    syncVisibility();
+  });
+
+  document.addEventListener("webkitfullscreenchange", () => {
+    syncLabel();
+    syncVisibility();
+  });
+
+  video.addEventListener("webkitbeginfullscreen", () => {
+    syncLabel();
+    syncVisibility();
+  });
+
   video.addEventListener("webkitendfullscreen", () => {
     safeOrientationUnlock();
     syncLabel();
+    syncVisibility();
   });
 
   syncLabel();
+  syncVisibility();
   return btn;
 }
+
+
+
 async function crearBotonAccionCompartir(entry) {
   const btn = document.createElement("button");
   btn.className = "btn-share-large";
