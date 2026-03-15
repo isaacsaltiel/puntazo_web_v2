@@ -1751,7 +1751,9 @@ async function syncSaveButtonState(btn, meta) {
     const saved = await isVideoSavedForCurrentUser(meta.videoId);
     btn.dataset.saved = saved ? "1" : "0";
     btn.classList.toggle("is-saved", saved);
-    btn.textContent = saved ? "✓ Guardado" : "💾 Guardar video";
+    btn.textContent = saved ? "✅" : "💾";
+    btn.title = saved ? "Guardado en tu perfil" : "Guardar video en tu perfil";
+    btn.setAttribute("aria-label", saved ? "Guardado en tu perfil" : "Guardar video en tu perfil");
   } catch (err) {
     console.warn("[guardados] No se pudo sincronizar botón:", err);
   } finally {
@@ -1769,7 +1771,12 @@ function crearBotonGuardarVideo(entry, loc, can, lado) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "btn-save-video";
-  btn.textContent = "💾 Guardar video";
+  btn.textContent = "💾";
+  btn.title = "Guardar video en tu perfil";
+  btn.setAttribute("aria-label", "Guardar video en tu perfil");
+  btn.style.width = "100%";
+  btn.style.justifyContent = "center";
+  btn.style.textAlign = "center";
   btn.dataset.saved = "0";
   btn.dataset.loading = "0";
 
@@ -1996,13 +2003,16 @@ function crearBotonPantallaCompleta(video, card, entry) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "btn-fullscreen-video";
-  btn.textContent = "⛶ Pantalla completa";
+  btn.textContent = "↔ Horizontal";
+  btn.style.width = "100%";
+  btn.style.justifyContent = "center";
+  btn.style.textAlign = "center";
   btn.setAttribute("aria-label", "Ver video en pantalla completa");
 
   const syncLabel = () => {
     const active = isThisVideoFullscreen(video);
     btn.classList.toggle("is-active", active);
-    btn.textContent = active ? "✕ Salir" : "⛶ Pantalla completa";
+    btn.textContent = active ? "✕ Salir" : "↔ Horizontal";
   };
 
   const syncVisibility = () => {
@@ -2074,9 +2084,15 @@ function crearBotonPantallaCompleta(video, card, entry) {
 async function crearBotonAccionCompartir(entry) {
   const btn = document.createElement("button");
   btn.className = "btn-share-large";
-  btn.textContent = "Compartir | Descargar";
-  btn.title = "Compartir video";
-  btn.setAttribute("aria-label", "Compartir video");
+  btn.textContent = "📤 ⬇️";
+  btn.title = "Compartir o descargar video";
+  btn.setAttribute("aria-label", "Compartir o descargar video");
+  btn.style.width = "100%";
+  btn.style.justifyContent = "center";
+  btn.style.textAlign = "center";
+  btn.style.paddingLeft = "0.9rem";
+  btn.style.paddingRight = "0.9rem";
+  
   btn.dataset.state = "idle";
   btn._shareFile = null;
 
@@ -2144,7 +2160,7 @@ async function crearBotonAccionCompartir(entry) {
 
     btn.dataset.state = "downloading";
     btn.disabled = true;
-    const originalContent = btn.textContent;
+    const originalContent = "📤 ⬇️";
 
     // UI progreso
     btn.textContent = "";
@@ -2245,7 +2261,7 @@ async function crearBotonAccionCompartir(entry) {
         trackEvent("share_success", gaCtx({ video_name: entry?.nombre || "", mode: "auto_share" }));
 
         btn.innerHTML = "";
-        btn.textContent = "Compartido";
+        btn.textContent = "✅";
         setTimeout(() => restoreIdle(originalContent), 1200);
       } else {
         // [GA4] share ready (user needs to tap again)
@@ -2253,7 +2269,7 @@ async function crearBotonAccionCompartir(entry) {
 
         btn._shareFile = file;
         btn.innerHTML = "";
-        btn.textContent = "Listo — Tageanos @puntazoclips !";
+        btn.textContent = "📤 Listo";
         btn.disabled = false;
         btn.dataset.state = "ready";
       }
@@ -2435,20 +2451,24 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
 
     const btnContainer = document.createElement("div");
     btnContainer.className = "botones-container";
-    btnContainer.style.display = "flex";
-    btnContainer.style.alignItems = "center";
-    btnContainer.style.flexWrap = "wrap";
+    btnContainer.style.display = "grid";
+    btnContainer.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
     btnContainer.style.gap = "10px";
     btnContainer.style.marginTop = "12px";
+    btnContainer.style.alignItems = "stretch";
     
     const actionBtn = await crearBotonAccionCompartir(entry);
-    actionBtn.style.removeProperty('flex');
+    actionBtn.style.removeProperty("flex");
+    actionBtn.style.width = "100%";
     btnContainer.appendChild(actionBtn);
-
+    
     const fullscreenBtn = crearBotonPantallaCompleta(real, card, entry);
+    fullscreenBtn.style.width = "100%";
     btnContainer.appendChild(fullscreenBtn);
     
     const saveBtn = crearBotonGuardarVideo(entry, loc, can, lado);
+    saveBtn.style.gridColumn = "1 / -1";
+    saveBtn.style.width = "100%";
     btnContainer.appendChild(saveBtn);
 
 
