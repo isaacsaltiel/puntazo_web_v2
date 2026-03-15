@@ -1844,7 +1844,200 @@ btn.addEventListener("click", async (e) => {
   return btn;
 }
 
+// ---------------- FULLSCREEN / VER EN HORIZONTAL ----------------
+let puntazoFullscreenUnlockBound = false;
 
+function ensureFullscreenVideoStyles() {
+  if (document.getElementById("pz-fullscreen-video-styles")) return;
+
+  const style = document.createElement("style");
+  style.id = "pz-fullscreen-video-styles";
+  style.textContent = `
+    .btn-fullscreen-video{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      min-height:48px;
+      padding:0.9rem 1.12rem;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.06);
+      color:#eaf2ff;
+      font-family:inherit;
+      font-size:0.86rem;
+      font-weight:800;
+      line-height:1;
+      cursor:pointer;
+      text-decoration:none;
+      box-shadow:0 10px 26px rgba(0,0,0,.22);
+      backdrop-filter:blur(16px);
+      transition:all .18s ease;
+      white-space:nowrap;
+    }
+
+    .btn-fullscreen-video:hover{
+      transform:translateY(-1px);
+      border-color:rgba(11,124,255,.34);
+      background:rgba(0,79,200,.14);
+    }
+
+    .btn-fullscreen-video.is-active{
+      background:linear-gradient(135deg, rgba(11,124,255,.18), rgba(0,79,200,.24));
+      border-color:rgba(11,124,255,.40);
+      color:#fff;
+      box-shadow:0 0 24px rgba(0,79,200,.18), 0 10px 26px rgba(0,0,0,.22);
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function safeOrientationUnlock() {
+  try {
+    if (screen.orientation && typeof screen.orientation.unlock === "function") {
+      screen.orientation.unlock();
+    }
+  } catch {}
+}
+
+function bindFullscreenUnlockOnce() {
+  if (puntazoFullscreenUnlockBound) return;
+  puntazoFullscreenUnlockBound = true;
+
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) safeOrientationUnlock();
+  });
+
+  document.addEventListener("webkitfullscreenchange", () => {
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!fsEl) safeOrientationUnlock();
+  });
+}
+
+function isThisVideoFullscreen(video) {
+  return !!(
+    document.fullscreenElement === video ||
+    document.webkitFullscreenElement === video ||
+    video.webkitDisplayingFullscreen
+  );
+}
+
+async function requestVideoFullscreen(video) {
+  if (video.requestFullscreen) {
+    return await video.requestFullscreen();
+  }
+
+  if (video.webkitRequestFullscreen) {
+    return await video.webkitRequestFullscreen();
+  }
+
+  if (video.webkitEnterFullscreen) {
+    video.webkitEnterFullscreen();
+    return;
+  }
+
+  throw new Error("Fullscreen no soportado en este navegador.");
+}
+
+async function exitVideoFullscreen(video) {
+  try {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+        return;
+      }
+      if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+        return;
+      }
+    }
+  } catch {}
+
+  try {
+    if (video.webkitExitFullscreen) {
+      video.webkitExitFullscreen();
+    }
+  } catch {}
+}
+
+async function verEnHorizontal(video, card) {
+  pauseAllVideos();
+
+  const preview = card?.querySelector("video.video-preview");
+  if (preview) {
+    try { preview.pause(); } catch {}
+    preview.style.display = "none";
+  }
+
+  video.style.display = "block";
+
+  try {
+    if (video.readyState < 1) video.load?.();
+  } catch {}
+
+  await requestVideoFullscreen(video);
+
+  try {
+    if (screen.orientation && typeof screen.orientation.lock === "function") {
+      await screen.orientation.lock("landscape");
+    }
+  } catch {}
+}
+
+function crearBotonPantallaCompleta(video, card, entry) {
+  ensureFullscreenVideoStyles();
+  bindFullscreenUnlockOnce();
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn-fullscreen-video";
+  btn.textContent = "⛶ Pantalla completa";
+  btn.setAttribute("aria-label", "Ver video en pantalla completa");
+
+  const syncLabel = () => {
+    const active = isThisVideoFullscreen(video);
+    btn.classList.toggle("is-active", active);
+    btn.textContent = active ? "✕ Salir" : "⛶ Pantalla completa";
+  };
+
+  btn.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    try {
+      if (isThisVideoFullscreen(video)) {
+        await exitVideoFullscreen(video);
+        safeOrientationUnlock();
+        syncLabel();
+
+        trackEvent("video_fullscreen_exit", gaCtx({
+          video_name: entry?.nombre || ""
+        }));
+        return;
+      }
+
+      await verEnHorizontal(video, card);
+      syncLabel();
+
+      trackEvent("video_fullscreen_open", gaCtx({
+        video_name: entry?.nombre || ""
+      }));
+    } catch (err) {
+      console.warn("[fullscreen] No se pudo abrir fullscreen:", err);
+      try { toast("No se pudo abrir pantalla completa"); } catch {}
+    }
+  });
+
+  document.addEventListener("fullscreenchange", syncLabel);
+  document.addEventListener("webkitfullscreenchange", syncLabel);
+  video.addEventListener("webkitbeginfullscreen", syncLabel);
+  video.addEventListener("webkitendfullscreen", () => {
+    safeOrientationUnlock();
+    syncLabel();
+  });
+
+  syncLabel();
+  return btn;
+}
 async function crearBotonAccionCompartir(entry) {
   const btn = document.createElement("button");
   btn.className = "btn-share-large";
@@ -2218,6 +2411,9 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     const actionBtn = await crearBotonAccionCompartir(entry);
     actionBtn.style.removeProperty('flex');
     btnContainer.appendChild(actionBtn);
+
+    const fullscreenBtn = crearBotonPantallaCompleta(real, card, entry);
+    btnContainer.appendChild(fullscreenBtn);
     
     const saveBtn = crearBotonGuardarVideo(entry, loc, can, lado);
     btnContainer.appendChild(saveBtn);
