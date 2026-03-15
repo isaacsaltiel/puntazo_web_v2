@@ -141,11 +141,14 @@ function buildUI(videoId, admin) {
         <div class="pz-comment-input-row">
           <input
             class="pz-comment-input"
+            id="pz-comment-input-${videoId}"
+            name="pz-comment-input-${videoId}"
             type="text"
             placeholder="Escribe un comentario…"
             maxlength="200"
             autocomplete="off"
           />
+
           <button class="pz-send-btn" aria-label="Enviar">➤</button>
         </div>
         <div class="pz-char-count">200</div>
