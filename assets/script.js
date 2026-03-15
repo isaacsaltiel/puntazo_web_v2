@@ -1574,6 +1574,258 @@ async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal
   return new Blob(chunks, { type: defaultType });
 }
 
+// ----------------------- guardados / auth -----------------------
+let puntazoSaveAuthBound = false;
+
+function ensureSavedVideoStyles() {
+  if (document.getElementById("pz-saved-video-styles")) return;
+
+  const style = document.createElement("style");
+  style.id = "pz-saved-video-styles";
+  style.textContent = `
+    .btn-save-video{
+      display:none;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      min-height:48px;
+      padding:0.9rem 1.15rem;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(255,255,255,0.06);
+      color:#eaf2ff;
+      font-family:inherit;
+      font-size:0.88rem;
+      font-weight:800;
+      line-height:1;
+      cursor:pointer;
+      text-decoration:none;
+      box-shadow:0 10px 26px rgba(0,0,0,.22);
+      backdrop-filter:blur(16px);
+      transition:all .18s ease;
+      white-space:nowrap;
+    }
+
+    .btn-save-video:hover{
+      transform:translateY(-1px);
+      border-color:rgba(11,124,255,.34);
+      background:rgba(0,79,200,.14);
+    }
+
+    .btn-save-video.is-saved{
+      background:linear-gradient(135deg, rgba(11,124,255,.22), rgba(0,79,200,.28));
+      border-color:rgba(11,124,255,.42);
+      color:#fff;
+      box-shadow:0 0 24px rgba(0,79,200,.18), 0 10px 26px rgba(0,0,0,.22);
+    }
+
+    .btn-save-video[disabled]{
+      opacity:.78;
+      cursor:wait;
+      transform:none;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function bindSaveButtonsToAuth() {
+  if (puntazoSaveAuthBound) return;
+  puntazoSaveAuthBound = true;
+
+  window.addEventListener("puntazo:auth-changed", () => {
+    document.querySelectorAll(".btn-save-video").forEach(btn => {
+      if (typeof btn._syncSavedState === "function") {
+        btn._syncSavedState();
+      }
+    });
+  });
+}
+
+function getFirestoreDb() {
+  try {
+    if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.firestore === "function") {
+      return firebase.firestore();
+    }
+  } catch {}
+  return null;
+}
+
+function getAuthUser() {
+  try {
+    return window.PuntazoAuth?.currentUser || null;
+  } catch {
+    return null;
+  }
+}
+
+function getFirestoreTimestamp() {
+  try {
+    return firebase.firestore.FieldValue.serverTimestamp();
+  } catch {
+    return new Date();
+  }
+}
+
+function buildSavedVideoMeta(entry, loc, can, lado) {
+  const clubLabel = (document.getElementById("link-club")?.textContent || loc || "").trim();
+  const canchaLabel = (document.getElementById("link-cancha")?.textContent || can || "").trim();
+  const ladoLabel = (document.getElementById("nombre-lado")?.textContent || lado || "").trim();
+
+  const fecha = entry?._meta
+    ? `${entry._meta.Y}-${entry._meta.M}-${entry._meta.D}`
+    : "";
+
+  return {
+    videoId: entry.nombre,
+    videoUrl: entry.url,
+    club: clubLabel,
+    cancha: canchaLabel,
+    lado: ladoLabel,
+    fecha: fecha,
+    savedAt: getFirestoreTimestamp(),
+
+    // extras útiles para perfil.html después
+    locId: loc,
+    canId: can,
+    ladoId: lado,
+    nombreArchivo: entry.nombre
+  };
+}
+
+async function isVideoSavedForCurrentUser(videoId) {
+  const user = getAuthUser();
+  const db = getFirestoreDb();
+  if (!user || !db) return false;
+
+  const snap = await db
+    .collection("usuarios")
+    .doc(user.uid)
+    .collection("guardados")
+    .doc(videoId)
+    .get();
+
+  return snap.exists;
+}
+
+async function saveVideoForCurrentUser(meta) {
+  const user = getAuthUser();
+  const db = getFirestoreDb();
+  if (!user || !db) throw new Error("No hay usuario o Firestore no está listo.");
+
+  await db
+    .collection("usuarios")
+    .doc(user.uid)
+    .collection("guardados")
+    .doc(meta.videoId)
+    .set(meta, { merge: true });
+}
+
+async function unsaveVideoForCurrentUser(videoId) {
+  const user = getAuthUser();
+  const db = getFirestoreDb();
+  if (!user || !db) throw new Error("No hay usuario o Firestore no está listo.");
+
+  await db
+    .collection("usuarios")
+    .doc(user.uid)
+    .collection("guardados")
+    .doc(videoId)
+    .delete();
+}
+
+async function syncSaveButtonState(btn, meta) {
+  const user = getAuthUser();
+
+  if (!user) {
+    btn.style.display = "none";
+    btn.disabled = false;
+    btn.dataset.saved = "0";
+    btn.classList.remove("is-saved");
+    btn.textContent = "💾 Guardar video";
+    return;
+  }
+
+  btn.style.display = "inline-flex";
+
+  if (btn.dataset.loading === "1") return;
+
+  btn.disabled = true;
+
+  try {
+    const saved = await isVideoSavedForCurrentUser(meta.videoId);
+    btn.dataset.saved = saved ? "1" : "0";
+    btn.classList.toggle("is-saved", saved);
+    btn.textContent = saved ? "✓ Guardado" : "💾 Guardar video";
+  } catch (err) {
+    console.warn("[guardados] No se pudo sincronizar botón:", err);
+    btn.dataset.saved = "0";
+    btn.classList.remove("is-saved");
+    btn.textContent = "💾 Guardar video";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function crearBotonGuardarVideo(entry, loc, can, lado) {
+  ensureSavedVideoStyles();
+  bindSaveButtonsToAuth();
+
+  const meta = buildSavedVideoMeta(entry, loc, can, lado);
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn-save-video";
+  btn.textContent = "💾 Guardar video";
+  btn.dataset.saved = "0";
+  btn.dataset.loading = "0";
+
+  btn._syncSavedState = () => syncSaveButtonState(btn, meta);
+
+  btn.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    if (!window.PuntazoAuth || typeof window.PuntazoAuth.requireAuth !== "function") {
+      alert("El login todavía no está listo. Recarga la página.");
+      return;
+    }
+
+    if (!window.PuntazoAuth.currentUser) {
+      window.PuntazoAuth.requireAuth(() => btn._syncSavedState());
+      return;
+    }
+
+    if (btn.dataset.loading === "1") return;
+
+    btn.dataset.loading = "1";
+    btn.disabled = true;
+
+    try {
+      const alreadySaved = btn.dataset.saved === "1";
+
+      if (alreadySaved) {
+        await unsaveVideoForCurrentUser(meta.videoId);
+        trackEvent("unsave_video", gaCtx({ video_name: entry?.nombre || "" }));
+      } else {
+        await saveVideoForCurrentUser(meta);
+        trackEvent("save_video", gaCtx({ video_name: entry?.nombre || "" }));
+      }
+
+      await btn._syncSavedState();
+    } catch (err) {
+      console.warn("[guardados] Error guardando/quitar guardado:", err);
+      btn.textContent = "Error";
+      setTimeout(() => btn._syncSavedState(), 1200);
+    } finally {
+      btn.dataset.loading = "0";
+    }
+  });
+
+  Promise.resolve().then(() => btn._syncSavedState());
+
+  return btn;
+}
+
+
 async function crearBotonAccionCompartir(entry) {
   const btn = document.createElement("button");
   btn.className = "btn-share-large";
@@ -1599,9 +1851,7 @@ async function crearBotonAccionCompartir(entry) {
     return false;
   };
 
-  btn.addEventListener("click", async (e) => {
-    e.preventDefault();
-
+  const runShareFlow = async () => {
     // [GA4] click share/download
     trackEvent("click_share_download", gaCtx({ video_name: entry?.nombre || "" }));
 
@@ -1705,7 +1955,6 @@ async function crearBotonAccionCompartir(entry) {
     });
 
     try {
-      // ✅ AQUÍ VA LA CORRECCIÓN: usar URL directa para fetch
       const directUrl = toDropboxDirectFetchUrl(entry.url);
 
       const blob = await downloadWithProgress(directUrl, {
@@ -1768,16 +2017,15 @@ async function crearBotonAccionCompartir(entry) {
 
       console.warn("Descarga/compartir falló:", err);
 
-      // ✅ FALLBACK: descarga normal (sin fetch) para que nunca muera el botón
+      // fallback: descarga normal
       try {
         const fallbackUrl = toDropboxForceDownloadUrl(entry.url);
 
-        // [GA4] download fallback (dropbox link)
         trackEvent("download_fallback", gaCtx({ video_name: entry?.nombre || "", mode: "dropbox_dl1" }));
 
         const a = document.createElement("a");
         a.href = fallbackUrl;
-        a.download = entry.nombre; // a veces se ignora por cross-origin, pero no estorba
+        a.download = entry.nombre;
         document.body.appendChild(a);
         a.click();
         setTimeout(() => a.remove(), 500);
@@ -1785,18 +2033,38 @@ async function crearBotonAccionCompartir(entry) {
         btn.innerHTML = "";
         btn.textContent = "Descargando…";
         setTimeout(() => restoreIdle(originalContent), 1200);
-        return;
-      } catch {}
-
-      // Si hasta el fallback falla, mostramos error
-      btn.innerHTML = "";
-      btn.textContent = "Error";
-      setTimeout(() => restoreIdle(originalContent), 1500);
+      } catch (fallbackErr) {
+        console.warn("Fallback de descarga también falló:", fallbackErr);
+        btn.innerHTML = "";
+        btn.textContent = "Error";
+        setTimeout(() => restoreIdle(originalContent), 1400);
+      }
     }
+  };
+
+  btn.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    if (!window.PuntazoAuth || typeof window.PuntazoAuth.requireAuth !== "function") {
+      await runShareFlow();
+      return;
+    }
+
+    if (!window.PuntazoAuth.currentUser) {
+      window.PuntazoAuth.requireAuth(() => {
+        runShareFlow().catch(err => {
+          console.warn("Error ejecutando acción pendiente de compartir:", err);
+        });
+      });
+      return;
+    }
+
+    await runShareFlow();
   });
 
   return btn;
 }
+
 
 function limpiarRecursosDePagina() {
   try { if (currentPreviewActive) currentPreviewActive.pause(); } catch {}
@@ -1924,11 +2192,17 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     btnContainer.className = "botones-container";
     btnContainer.style.display = "flex";
     btnContainer.style.alignItems = "center";
+    btnContainer.style.flexWrap = "wrap";
+    btnContainer.style.gap = "10px";
     btnContainer.style.marginTop = "12px";
-
+    
     const actionBtn = await crearBotonAccionCompartir(entry);
     actionBtn.style.removeProperty('flex');
     btnContainer.appendChild(actionBtn);
+    
+    const saveBtn = crearBotonGuardarVideo(entry, loc, can, lado);
+    btnContainer.appendChild(saveBtn);
+
 
     (async () => {
       try {
@@ -1953,7 +2227,6 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
       } catch {}
     })();
 
-    card.appendChild(btnContainer);
     card.appendChild(btnContainer);
 
     // ── REACCIONES PUNTAZO ──
