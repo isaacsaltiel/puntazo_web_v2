@@ -566,12 +566,6 @@
       try {
         await video.play();
       } catch {}
-
-      try {
-        if (screen.orientation && typeof screen.orientation.lock === "function") {
-          await screen.orientation.lock("landscape");
-        }
-      } catch {}
     }
 
     function mejorarCardDeVideo(card, data) {
@@ -589,7 +583,7 @@
       const syncFullscreenUI = () => {
         const active = isThisVideoFullscreen(video);
         fsBtn.classList.toggle("is-active", active);
-        fsBtn.textContent = active ? "✕ Salir" : "↔ Horizontal";
+        fsBtn.textContent = active ? "✕ Salir" : "Pantalla completa";
         fsBtn.style.display = (!video.paused || active) ? "inline-flex" : "none";
       };
 
@@ -751,6 +745,12 @@
           </div>
         </div>
 
+        <div class="card-actions">
+          <button type="button" class="card-fullscreen-btn" aria-label="Pantalla completa">
+            Pantalla completa
+          </button>
+        </div>
+
         <div class="card-body">
           <div class="card-meta">
             <span class="card-club">${escapeHTML(data.club || "Puntazo")}</span>
@@ -761,12 +761,6 @@
           ${emojiSummary ? `<div class="card-viral"><span class="pz-viral-badge">${emojiSummary}</span></div>` : ""}
 
           <div class="card-reactions-target"></div>
-
-          <div class="card-actions">
-            <button type="button" class="card-fullscreen-btn" aria-label="Ver video en horizontal">
-              ↔ Horizontal
-            </button>
-          </div>
 
           ${data.videoUrl
             ? `<a class="card-watch-btn" href="${escapeAttr(buildLadoLink(data))}">▶ Ver video en su cancha</a>`
