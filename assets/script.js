@@ -1747,10 +1747,6 @@ async function syncSaveButtonState(btn, meta) {
 
   btn.style.display = "inline-flex";
 
-  if (btn.dataset.loading === "1") return;
-
-  btn.disabled = true;
-
   try {
     const saved = await isVideoSavedForCurrentUser(meta.videoId);
     btn.dataset.saved = saved ? "1" : "0";
@@ -1758,13 +1754,11 @@ async function syncSaveButtonState(btn, meta) {
     btn.textContent = saved ? "✓ Guardado" : "💾 Guardar video";
   } catch (err) {
     console.warn("[guardados] No se pudo sincronizar botón:", err);
-    btn.dataset.saved = "0";
-    btn.classList.remove("is-saved");
-    btn.textContent = "💾 Guardar video";
   } finally {
     btn.disabled = false;
   }
 }
+
 
 function crearBotonGuardarVideo(entry, loc, can, lado) {
   ensureSavedVideoStyles();
@@ -1781,44 +1775,69 @@ function crearBotonGuardarVideo(entry, loc, can, lado) {
 
   btn._syncSavedState = () => syncSaveButtonState(btn, meta);
 
-  btn.addEventListener("click", async (e) => {
-    e.preventDefault();
+  
+btn.addEventListener("click", async (e) => {
+  e.preventDefault();
 
-    if (!window.PuntazoAuth || typeof window.PuntazoAuth.requireAuth !== "function") {
-      alert("El login todavía no está listo. Recarga la página.");
-      return;
+  if (!window.PuntazoAuth || typeof window.PuntazoAuth.requireAuth !== "function") {
+    alert("El login todavía no está listo. Recarga la página.");
+    return;
+  }
+
+  if (!window.PuntazoAuth.currentUser) {
+    window.PuntazoAuth.requireAuth(() => btn._syncSavedState());
+    return;
+  }
+
+  if (btn.dataset.loading === "1") return;
+
+  btn.dataset.loading = "1";
+  btn.disabled = true;
+
+  try {
+    const alreadySaved = btn.dataset.saved === "1";
+    const willBeSaved = !alreadySaved;
+
+    if (alreadySaved) {
+      await unsaveVideoForCurrentUser(meta.videoId);
+      trackEvent("unsave_video", gaCtx({ video_name: entry?.nombre || "" }));
+    } else {
+      await saveVideoForCurrentUser(meta);
+      trackEvent("save_video", gaCtx({ video_name: entry?.nombre || "" }));
     }
 
-    if (!window.PuntazoAuth.currentUser) {
-      window.PuntazoAuth.requireAuth(() => btn._syncSavedState());
-      return;
-    }
-
-    if (btn.dataset.loading === "1") return;
-
-    btn.dataset.loading = "1";
-    btn.disabled = true;
+    // UI optimista inmediata
+    btn.dataset.saved = willBeSaved ? "1" : "0";
+    btn.classList.toggle("is-saved", willBeSaved);
+    btn.textContent = willBeSaved ? "✓ Guardado" : "💾 Guardar video";
 
     try {
-      const alreadySaved = btn.dataset.saved === "1";
+      toast(willBeSaved ? "Guardado en tu perfil" : "Quitado de guardados");
+    } catch {}
 
-      if (alreadySaved) {
-        await unsaveVideoForCurrentUser(meta.videoId);
-        trackEvent("unsave_video", gaCtx({ video_name: entry?.nombre || "" }));
-      } else {
-        await saveVideoForCurrentUser(meta);
-        trackEvent("save_video", gaCtx({ video_name: entry?.nombre || "" }));
-      }
+    btn.disabled = false;
+    btn.dataset.loading = "0";
 
-      await btn._syncSavedState();
-    } catch (err) {
-      console.warn("[guardados] Error guardando/quitar guardado:", err);
-      btn.textContent = "Error";
-      setTimeout(() => btn._syncSavedState(), 1200);
-    } finally {
-      btn.dataset.loading = "0";
-    }
-  });
+    // Sync silencioso de confirmación
+    setTimeout(() => {
+      btn._syncSavedState().catch(err => {
+        console.warn("[guardados] Sync silencioso falló:", err);
+      });
+    }, 300);
+
+  } catch (err) {
+    console.warn("[guardados] Error guardando/quitar guardado:", err);
+    btn.textContent = "Error";
+    btn.disabled = false;
+    btn.dataset.loading = "0";
+
+    setTimeout(() => {
+      btn._syncSavedState().catch(syncErr => {
+        console.warn("[guardados] Sync tras error falló:", syncErr);
+      });
+    }, 1200);
+  }
+});
 
   Promise.resolve().then(() => btn._syncSavedState());
 
