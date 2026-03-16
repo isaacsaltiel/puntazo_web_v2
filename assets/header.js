@@ -225,7 +225,7 @@
     if (variant === "landing") {
       root.innerHTML = `
         <nav>
-          <a href="index.html" class="nav-logo">
+          <a href="inicio.html" class="nav-logo">
             <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
           </a>
           <ul class="nav-links" id="nav-menu">
@@ -237,6 +237,7 @@
             <li><a href="perfil.html" data-auth-only onclick="closeMenu()">Mis clips</a></li>
           </ul>
           <div class="nav-right">
+            <a href="explorar.html" class="nav-cta" onclick="try{gtag('event','header_cta_explorar',{event_category:'CTA'});}catch(e){}">Encuentra tus clips</a>
             <div class="pz-auth-slot pz-auth-slot--landing" data-auth-slot></div>
             <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú">☰</button>
           </div>
@@ -247,13 +248,13 @@
 
     root.innerHTML = `
       <header class="site-header">
-        <a href="index.html" class="logo-link">
+        <a href="inicio.html" class="logo-link">
           <img src="assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
         </a>
         <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú">☰</button>
         <nav class="navbar" id="nav-menu">
-          <a href="index.html">Inicio</a>
-          <a href="index.html#clubs">Para clubs</a>
+          <a href="inicio.html">Inicio</a>
+          <a href="inicio.html#clubs">Para clubs</a>
           <a href="mejores.html" class="top-month-nav-btn">🏆 Puntazos del mes</a>
           <a href="perfil.html" class="highlight-btn" data-auth-only>Mis clips</a>
         </nav>
