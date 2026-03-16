@@ -2008,7 +2008,7 @@ function crearBotonPantallaCompleta(video, card, entry) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "btn-fullscreen-video";
-  btn.textContent = "↔ Horizontal";
+  btn.textContent = "↔ Pantalla Completa";
   btn.style.width = "100%";
   btn.style.justifyContent = "center";
   btn.style.textAlign = "center";
@@ -2017,7 +2017,7 @@ function crearBotonPantallaCompleta(video, card, entry) {
   const syncLabel = () => {
     const active = isThisVideoFullscreen(video);
     btn.classList.toggle("is-active", active);
-    btn.textContent = active ? "✕ Salir" : "↔ Horizontal";
+    btn.textContent = active ? "✕ Salir" : "⛶ Expandir";
   };
 
   const syncVisibility = () => {
