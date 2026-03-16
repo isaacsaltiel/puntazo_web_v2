@@ -357,20 +357,16 @@
         return !!window.firebase;
       });
 
-      const hasFirebaseApp = !!(window.firebase && firebase.apps && firebase.apps.length);
-
-      if (!hasFirebaseApp) {
-        await ensureScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js", function () {
-          return !!(window.firebase && typeof firebase.firestore === "function");
-        });
-
-        await ensureScript("/assets/reactions.js", function () {
-          return !!(window.PuntazoReactions && window.firebase && firebase.apps && firebase.apps.length);
-        });
-      }
+      await ensureScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js", function () {
+        return !!(window.firebase && typeof firebase.firestore === "function");
+      });
 
       await ensureScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js", function () {
         return !!(window.firebase && typeof firebase.auth === "function");
+      });
+
+      await ensureScript("/assets/firebase-core.js", function () {
+        return !!(window.PuntazoFirebase && typeof window.PuntazoFirebase.ensureApp === "function");
       });
 
       await ensureScript("/assets/auth.js", function () {
