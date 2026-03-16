@@ -39,7 +39,7 @@
 
   injectHeaderStyles();
   renderHeader();
-  attachMenuToggle();
+  setupMenuToggle();
   setupCloseMenuHelper();
   setupDropdownOutsideClose();
   bootstrapAuth();
@@ -362,6 +362,53 @@
 
       window.addEventListener('scroll', function(){ if (nav.classList.contains('show')) nav.classList.remove('show'); });
     }catch(err){/* noop */}
+  }
+
+  // Adds direct listeners to the current header menu toggle (no delegation).
+  // Retries up to 10 times with 100ms delay if elements are not yet in DOM.
+  function setupMenuToggle(){
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    function tryAttach(){
+      attempts++;
+      // fresh queries each attempt
+      const btn = document.querySelector('.menu-toggle') || document.getElementById('menu-toggle');
+      const nav = document.querySelector('.navbar') || document.getElementById('nav-menu');
+
+      if (!btn || !nav) {
+        if (attempts < maxAttempts) {
+          setTimeout(tryAttach, 100);
+        }
+        return;
+      }
+
+      // prevent double-attaching to the same element
+      if (btn.__pz_menu_attached) return;
+      btn.__pz_menu_attached = true;
+
+      // click on the button toggles menu (direct element listener)
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        nav.classList.toggle('show');
+      });
+
+      // click outside closes
+      document.addEventListener('click', function (e) {
+        try {
+          if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) {
+            nav.classList.remove('show');
+          }
+        } catch (err) { /* noop */ }
+      });
+
+      // close on scroll
+      window.addEventListener('scroll', function () {
+        try { if (nav.classList.contains('show')) nav.classList.remove('show'); } catch (e) {}
+      }, { passive: true });
+    }
+
+    tryAttach();
   }
 
   function setupDropdownOutsideClose() {
