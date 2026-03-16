@@ -1,88 +1,20 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<base href="/" />
-<title>Puntazo · Tecnología deportiva</title>
-
-<link rel="icon" href="/favicon.ico" type="image/x-icon" />
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);} 
-  gtag('js', new Date());
-  gtag('config', 'G-7HTMSTJ035');
-</script>
-
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
-<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/android-icon-192x192.png" />
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
-<link rel="manifest" href="/assets/icons/manifest.json" />
-<meta name="msapplication-TileColor" content="#004FC8" />
-<meta name="theme-color" content="#050914" />
-
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
-
-<link rel="stylesheet" href="assets/estilo.css" />
-
-<style>
-/* keep existing inline styles from inicio.html (omitted here for brevity) */
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <base href="/" />
+  <title>Puntazo · Redireccionando</title>
+  <meta http-equiv="refresh" content="0; url=/inicio.html" />
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+  <script>window.location.replace('/inicio.html');</script>
 </head>
 <body>
-
-<div id="nav-root" data-nav-variant="landing"></div>
-<script src="/assets/header.js"></script>
-
-
-<div class="hero">
-  <div class="hero-bg"></div>
-  <div class="grid-bg"></div>
-
-  <div class="hero-tag">
-    <div class="hero-tag-dot"></div>
-    Tecnología deportiva · Pádel y más
-  </div>
-
-  <h1>Encuentra tus clips</h1>
-
-  <p class="hero-sub">Accede a tus jugadas en segundos.</p>
-
-  <div class="hero-btns">
-    <a href="explorar.html" class="primary-cta" onclick="try{gtag('event','hero_cta_clips',{event_category:'CTA',event_label:'hero'});}catch(e){}">▶ Encuentra tus clips</a>
-    <a href="mejores.html" class="secondary-cta" onclick="try{gtag('event','hero_cta_mejores',{event_category:'CTA',event_label:'hero'});}catch(e){}">🏆 Puntazos del mes</a>
-  </div>
-
-  <div class="hero-aux">
-    <a href="https://puntazoclips.com/boton.html" target="_blank" rel="noopener" class="phone-link" onclick="try{gtag('event','hero_cta_phone',{event_category:'CTA',event_label:'hero'});}catch(e){}">📲 Usar teléfono como botón</a>
-  </div>
-
-  <div class="hero-scroll">
-    <div class="scroll-line"></div>
-    scroll
-  </div>
-</div>
-
-<!-- Stats moved slightly lower to reduce visual weight in first fold -->
-<div class="hero-stats subdued">
-  <div class="hero-stat">
-    <div class="num">3<span>+</span></div>
-    <div class="lbl">Clubs activos</div>
-  </div>
-  <div class="hero-stat">
-    <div class="num" style="color:var(--blue2)">24h</div>
-    <div class="lbl">Clips disponibles</div>
-  </div>
-  <div class="hero-stat">
-    <div class="num">5<span>+</span></div>
-    <div class="lbl">Soluciones activas y creciendo</div>
-  </div>
-</div>
-
-<!-- remaining landing content unchanged, with internal links pointing to explorar.html where relevant -->
-
+  <main style="display:flex;align-items:center;justify-content:center;min-height:60vh;padding:2rem;text-align:center;">
+    <div>
+      <h1>Redirigiendo a Puntazo</h1>
+      <p>Si la redirección no ocurre automáticamente, <a href="/inicio.html">haz clic aquí</a>.</p>
+    </div>
+  </main>
 </body>
 </html>
