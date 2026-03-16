@@ -23,9 +23,9 @@ from github import Github, Auth
 
 GITHUB_TOKEN = os.environ.get("PAT_GITHUB")
 GITHUB_REPO  = "isaacsaltiel/puntazo_web_v2"
-CONFIG_PATH  = "data/config_locations.json"
-LOG_PATH     = "data/videos_log.csv"
-OUTPUT_PATH  = "data/stats_summary.json"
+CONFIG_PATH  = "data/metrics/config_locations.json"
+LOG_PATH     = "data/metrics/videos_log.csv"
+OUTPUT_PATH  = "data/metrics/stats_summary.json"
 
 
 def get_repo():
