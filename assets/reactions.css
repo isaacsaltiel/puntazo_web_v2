@@ -1,14 +1,19 @@
 /* =============================================================
    reactions.css — Puntazo · Reacciones + Comentarios
-   Agrega a lado.html y mejores.html con:
-   <link rel="stylesheet" href="/assets/reactions.css" />
    ============================================================= */
 
-/* ── Contenedor principal ── */
+/* ── Contenedor legacy (mejores.html) ── */
 .pz-reactions-wrap {
   margin-top: 10px;
   padding: 10px 0 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Slot mode: rxn bar directa sin wrap ── */
+[data-rxn-slot] {
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 4px;
 }
 
 /* ── Barra de emojis ── */
@@ -16,7 +21,7 @@
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 /* ── Botón de reacción ── */
@@ -31,12 +36,10 @@
   color: #eaf2ff;
   font-size: 14px;
   cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.1s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+  font-family: inherit;
 }
 
 .pz-rxn-btn:hover {
@@ -48,14 +51,12 @@
   transform: scale(0.92);
 }
 
-/* Estado votado */
 .pz-rxn-btn.pz-voted {
   background: rgba(0, 79, 200, 0.25);
   border-color: rgba(11, 124, 255, 0.55);
   box-shadow: 0 0 0 2px rgba(11, 124, 255, 0.15);
 }
 
-/* Animación pop cuando tiene votos */
 @keyframes pz-pop {
   0%   { transform: scale(1); }
   40%  { transform: scale(1.18); }
@@ -78,7 +79,79 @@
   text-align: center;
 }
 
-/* ── Botón toggle comentarios ── */
+/* ── Participantes ── */
+.pz-participants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 4px;
+}
+
+.pz-participant-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  text-decoration: none;
+  color: #eaf2ff;
+  font-size: 0.81rem;
+  font-weight: 700;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.pz-participant-chip:hover {
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.pz-participant-chip img,
+.pz-participant-chip .pz-p-initial {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.pz-p-initial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 79, 200, 0.45);
+  color: #fff;
+  font-size: 0.70rem;
+  font-weight: 900;
+}
+
+/* ── Claim button ── */
+.pz-claim-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: transparent;
+  color: rgba(234, 242, 255, 0.50);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pz-claim-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #eaf2ff;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* ── Toggle comentarios ── */
 .pz-comment-toggle {
   display: inline-flex;
   align-items: center;
@@ -87,28 +160,19 @@
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.10);
   background: transparent;
-  color: rgba(234, 242, 255, 0.55);
+  color: rgba(234, 242, 255, 0.50);
   font-size: 13px;
+  font-family: inherit;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
   -webkit-tap-highlight-color: transparent;
+  margin-top: 6px;
 }
 
 .pz-comment-toggle:hover {
   color: #eaf2ff;
   border-color: rgba(255, 255, 255, 0.20);
-}
-
-/* Badge de conteo en toggle */
-.pz-ct-badge {
-  background: rgba(0, 79, 200, 0.7);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 800;
-  padding: 1px 6px;
-  border-radius: 999px;
-  min-width: 18px;
-  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* ── Sección de comentarios ── */
@@ -133,10 +197,9 @@
 
 .pz-comment {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 7px 10px;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.05);
   font-size: 13px;
@@ -149,27 +212,56 @@
 }
 
 .pz-comment.pz-mine {
-  background: rgba(0, 79, 200, 0.15);
-  border: 1px solid rgba(11, 124, 255, 0.20);
+  background: rgba(0, 79, 200, 0.14);
+  border: 1px solid rgba(11, 124, 255, 0.18);
 }
 
-.pz-comment-text {
+.pz-comment-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pz-comment-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+  color: rgba(234, 242, 255, 0.80);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.pz-comment-author strong {
   color: #eaf2ff;
-  word-break: break-word;
-  flex: 1;
+}
+
+.pz-comment-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .pz-comment-meta {
-  color: rgba(234, 242, 255, 0.35);
+  color: rgba(234, 242, 255, 0.30);
   font-size: 11px;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
+.pz-comment-text {
+  color: #eaf2ff;
+  word-break: break-word;
+  line-height: 1.5;
+}
+
 /* ── Input de comentario ── */
 .pz-comment-input-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
 }
 
@@ -188,19 +280,19 @@
 
 .pz-comment-input:focus {
   border-color: rgba(11, 124, 255, 0.55);
-  box-shadow: 0 0 0 3px rgba(0, 79, 200, 0.15);
+  box-shadow: 0 0 0 3px rgba(0, 79, 200, 0.14);
 }
 
 .pz-comment-input::placeholder {
-  color: rgba(234, 242, 255, 0.30);
+  color: rgba(234, 242, 255, 0.28);
 }
 
-.pz-send-btn {
+.pz-send-btn,
+.pz-send-incognito-btn {
   width: 38px;
   height: 38px;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(180deg, #0b7cff, #004fc8);
   color: #fff;
   font-size: 14px;
   cursor: pointer;
@@ -209,18 +301,31 @@
   justify-content: center;
   flex-shrink: 0;
   transition: transform 0.1s ease, filter 0.15s;
+}
+
+.pz-send-btn {
+  background: linear-gradient(180deg, #0b7cff, #004fc8);
   box-shadow: 0 4px 16px rgba(0, 79, 200, 0.35);
 }
 
-.pz-send-btn:hover {
+.pz-send-incognito-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 16px;
+}
+
+.pz-send-btn:hover,
+.pz-send-incognito-btn:hover {
   filter: brightness(1.15);
 }
 
-.pz-send-btn:active {
+.pz-send-btn:active,
+.pz-send-incognito-btn:active {
   transform: scale(0.9);
 }
 
-.pz-send-btn:disabled {
+.pz-send-btn:disabled,
+.pz-send-incognito-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
@@ -228,12 +333,32 @@
 /* ── Contador de caracteres ── */
 .pz-char-count {
   font-size: 11px;
-  color: rgba(234, 242, 255, 0.30);
+  color: rgba(234, 242, 255, 0.28);
   text-align: right;
   padding-right: 2px;
 }
 
-/* ── Badge "🏆 Viral" para mejores.html ── */
+/* ── Mostrar más ── */
+.pz-show-more-comments {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: transparent;
+  color: rgba(234,242,255,0.55);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.pz-show-more-comments:hover {
+  color: #eaf2ff;
+  border-color: rgba(255,255,255,0.20);
+}
+
+/* ── Badge viral (mejores.html) ── */
 .pz-viral-badge {
   display: inline-flex;
   align-items: center;
