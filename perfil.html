@@ -1,1301 +1,480 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <base href="/" />
-  <title>Mi perfil · Puntazo</title>
-  <meta name="description" content="Tus videos guardados y tu perfil en Puntazo" />
-
-  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/android-icon-192x192.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
-  <link rel="manifest" href="/assets/icons/manifest.json" />
-  <meta name="msapplication-TileColor" content="#004FC8" />
-  <meta name="theme-color" content="#050914" />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
-
-  <link rel="stylesheet" href="/assets/estilo.css" />
-
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="/assets/firebase-core.js"></script>
-
-  <style>
-    :root {
-      --puntazo: #004FC8;
-      --puntazo2: #0B7CFF;
-      --bg: #050914;
-      --card: rgba(255,255,255,.06);
-      --card-strong: rgba(255,255,255,.08);
-      --border: rgba(255,255,255,.10);
-      --border-strong: rgba(255,255,255,.14);
-      --text: #eaf2ff;
-      --muted: rgba(234,242,255,.55);
-      --shadow: 0 18px 48px rgba(0,0,0,.45);
-    }
-
-    * { box-sizing: border-box; }
-    html, body {
-      min-height: 100%;
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .bg-glow {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      background:
-        radial-gradient(900px 500px at 15% 10%, rgba(0,79,200,.20), transparent 55%),
-        radial-gradient(800px 600px at 88% 8%, rgba(11,124,255,.12), transparent 55%),
-        radial-gradient(700px 500px at 45% 92%, rgba(255,255,255,.05), transparent 55%),
-        linear-gradient(180deg, #050914, #060a18 60%, #050914);
-    }
-
-    main {
-      position: relative;
-      z-index: 1;
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 28px 16px 88px;
-    }
-
-    .page-header {
-      margin: 6px 0 24px;
-      text-align: center;
-    }
-
-    .page-eyebrow {
-      margin: 0 0 10px;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--puntazo2);
-      opacity: .88;
-    }
-
-    .page-title {
-      margin: 0;
-      font-size: clamp(28px, 5vw, 42px);
-      line-height: 1.08;
-      font-weight: 900;
-      letter-spacing: -.8px;
-      color: #fff;
-    }
-
-    .page-sub {
-      max-width: 640px;
-      margin: 12px auto 0;
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.7;
-    }
-
-    .section-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(16px);
-    }
-
-    .profile-shell {
-      display: grid;
-      grid-template-columns: 340px minmax(0, 1fr);
-      gap: 20px;
-      align-items: start;
-      margin-bottom: 26px;
-    }
-
-    .profile-panel {
-      padding: 22px;
-      position: sticky;
-      top: 88px;
-    }
-
-    .profile-avatar-wrap {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 16px;
-    }
-
-    .profile-avatar {
-      width: 102px;
-      height: 102px;
-      border-radius: 50%;
-      object-fit: cover;
-      background: rgba(255,255,255,.08);
-      border: 2px solid rgba(255,255,255,.14);
-      box-shadow: 0 14px 32px rgba(0,0,0,.35);
-      display: block;
-    }
-
-    .profile-avatar-fallback {
-      width: 102px;
-      height: 102px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, rgba(11,124,255,.22), rgba(0,79,200,.24));
-      border: 2px solid rgba(255,255,255,.14);
-      box-shadow: 0 14px 32px rgba(0,0,0,.35);
-      color: #fff;
-      font-size: 34px;
-      font-weight: 900;
-    }
-
-    .profile-name {
-      font-size: 1.18rem;
-      font-weight: 900;
-      color: #fff;
-      line-height: 1.2;
-      text-align: center;
-    }
-
-    .profile-email {
-      margin-top: 8px;
-      color: var(--muted);
-      font-size: .92rem;
-      line-height: 1.5;
-      text-align: center;
-      word-break: break-word;
-    }
-
-    .profile-actions {
-      display: grid;
-      gap: 10px;
-      margin-top: 18px;
-    }
-
-    .profile-btn,
-    .ghost-btn,
-    .primary-btn,
-    .danger-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 46px;
-      border: 1px solid var(--border-strong);
-      border-radius: 999px;
-      padding: .82rem 1rem;
-      font: inherit;
-      font-size: .9rem;
-      font-weight: 800;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all .18s ease;
-      backdrop-filter: blur(16px);
-      white-space: nowrap;
-    }
-
-    .primary-btn {
-      background: linear-gradient(135deg, rgba(11,124,255,.22), rgba(0,79,200,.28));
-      color: #fff;
-      border-color: rgba(11,124,255,.38);
-      box-shadow: 0 10px 26px rgba(0,0,0,.22);
-    }
-
-    .primary-btn:hover {
-      transform: translateY(-1px);
-      border-color: rgba(11,124,255,.56);
-      background: linear-gradient(135deg, rgba(11,124,255,.28), rgba(0,79,200,.34));
-    }
-
-    .ghost-btn,
-    .profile-btn {
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-    }
-
-    .ghost-btn:hover,
-    .profile-btn:hover {
-      transform: translateY(-1px);
-      border-color: rgba(11,124,255,.34);
-      background: rgba(0,79,200,.14);
-    }
-
-    .danger-btn {
-      background: rgba(255,255,255,.06);
-      color: #ffd6d6;
-      border-color: rgba(255,90,90,.18);
-    }
-
-    .danger-btn:hover {
-      transform: translateY(-1px);
-      background: rgba(255,90,90,.10);
-      border-color: rgba(255,90,90,.32);
-    }
-
-    .profile-stats {
-      margin-top: 18px;
-      padding-top: 16px;
-      border-top: 1px solid rgba(255,255,255,.08);
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .stat-box {
-      background: rgba(255,255,255,.03);
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 16px;
-      padding: 12px 10px;
-      text-align: center;
-    }
-
-    .stat-num {
-      font-size: 1.28rem;
-      font-weight: 900;
-      color: #fff;
-      line-height: 1;
-    }
-
-    .stat-label {
-      margin-top: 6px;
-      font-size: .72rem;
-      color: var(--muted);
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .6px;
-    }
-
-    .content-stack {
-      display: grid;
-      gap: 20px;
-    }
-
-    .section-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
-
-    .section-title {
-      margin: 0;
-      font-size: 1.22rem;
-      font-weight: 900;
-      color: #fff;
-      letter-spacing: -.3px;
-    }
-
-    .section-kicker {
-      color: var(--muted);
-      font-size: .9rem;
-      line-height: 1.6;
-      margin-top: 6px;
-    }
-
-    .saved-panel,
-    .claimed-panel,
-    .loading-panel {
-      padding: 20px;
-    }
-
-    .saved-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 18px;
-    }
-
-    .video-card {
-      border-radius: 18px;
-      background: rgba(255,255,255,.05);
-      border: 1px solid rgba(255,255,255,.10);
-      overflow: hidden;
-      transition: transform .18s ease, box-shadow .18s ease;
-      position: relative;
-    }
-
-    .video-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 18px 48px rgba(0,0,0,.40);
-    }
-
-    .card-video-wrap {
-      position: relative;
-      width: 100%;
-      padding-top: 56.25%;
-      background: #000;
-      overflow: hidden;
-      cursor: pointer;
-    }
-
-    .card-video-wrap video {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      background: #000;
-    }
-
-    .card-play-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,.25);
-      opacity: 1;
-      transition: opacity .18s ease;
-      pointer-events: none;
-    }
-
-    .play-icon {
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      background: rgba(0,0,0,.60);
-      backdrop-filter: blur(8px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      color: #fff;
-    }
-
-    .card-actions {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 10px 14px 0;
-    }
-
-    .card-fullscreen-btn {
-      display: none;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 44px;
-      width: min(100%, 220px);
-      padding: 10px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06);
-      color: #eaf2ff;
-      font: inherit;
-      font-size: 13px;
-      font-weight: 800;
-      line-height: 1;
-      cursor: pointer;
-      text-decoration: none;
-      box-shadow: 0 10px 26px rgba(0,0,0,.22);
-      backdrop-filter: blur(16px);
-      transition: all .18s ease;
-      white-space: nowrap;
-    }
-
-    .card-fullscreen-btn:hover {
-      transform: translateY(-1px);
-      border-color: rgba(11,124,255,.34);
-      background: rgba(0,79,200,.14);
-    }
-
-    .card-fullscreen-btn.is-active {
-      background: linear-gradient(135deg, rgba(11,124,255,.18), rgba(0,79,200,.24));
-      border-color: rgba(11,124,255,.40);
-      color: #fff;
-      box-shadow: 0 0 24px rgba(0,79,200,.18), 0 10px 26px rgba(0,0,0,.22);
-    }
-
-    .card-body {
-      padding: 14px 14px 14px;
-    }
-
-    .card-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
-    }
-
-    .card-club {
-      font-size: 13px;
-      font-weight: 800;
-      color: var(--text);
-    }
-
-    .card-sep {
-      color: rgba(255,255,255,.20);
-    }
-
-    .card-location {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .card-date {
-      font-size: 11px;
-      color: var(--muted);
-      margin-left: auto;
-    }
-
-    .card-submeta {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-
-    .card-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      min-height: 28px;
-      padding: .34rem .7rem;
-      border-radius: 999px;
-      background: rgba(255,255,255,.05);
-      border: 1px solid rgba(255,255,255,.08);
-      color: var(--muted);
-      font-size: .72rem;
-      font-weight: 700;
-    }
-
-    .card-buttons {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-    }
-
-    .card-link-btn,
-    .card-remove-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: 100%;
-      min-height: 46px;
-      padding: 10px 14px;
-      border-radius: 12px;
-      text-decoration: none;
-      font: inherit;
-      font-size: 14px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all .18s ease;
-    }
-
-    .card-link-btn {
-      border: 1px solid rgba(11,124,255,.40);
-      background: rgba(0,79,200,.12);
-      color: #eaf2ff;
-    }
-
-    .card-link-btn:hover {
-      background: rgba(0,79,200,.22);
-      border-color: rgba(11,124,255,.65);
-    }
-
-    .card-remove-btn {
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.05);
-      color: var(--text);
-    }
-
-    .card-remove-btn:hover {
-      background: rgba(255,90,90,.10);
-      border-color: rgba(255,90,90,.28);
-      color: #ffd6d6;
-    }
-
-    .empty-state,
-    .loading-state {
-      text-align: center;
-      padding: 54px 20px;
-      border-radius: 18px;
-      border: 1px dashed rgba(255,255,255,.12);
-      background: rgba(255,255,255,.03);
-    }
-
-    .empty-icon,
-    .loading-icon {
-      font-size: 44px;
-      margin-bottom: 12px;
-    }
-
-    .empty-title,
-    .loading-title {
-      font-size: 20px;
-      font-weight: 900;
-      margin: 0 0 8px;
-      color: #fff;
-    }
-
-    .empty-sub,
-    .loading-sub {
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.7;
-      max-width: 420px;
-      margin: 0 auto;
-    }
-
-    .claimed-placeholder {
-      padding: 20px;
-      border-radius: 18px;
-      border: 1px dashed rgba(255,255,255,.12);
-      background: rgba(255,255,255,.03);
-    }
-
-    .claimed-placeholder h3 {
-      margin: 0 0 8px;
-      font-size: 1rem;
-      font-weight: 900;
-      color: #fff;
-    }
-
-    .claimed-placeholder p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.7;
-      font-size: .95rem;
-    }
-
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 24px;
-      transform: translateX(-50%);
-      z-index: 9999;
-      background: rgba(8,14,28,.94);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,.10);
-      border-radius: 999px;
-      padding: .82rem 1rem;
-      font-size: .88rem;
-      font-weight: 800;
-      box-shadow: 0 18px 40px rgba(0,0,0,.38);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .18s ease, transform .18s ease;
-    }
-
-    .toast.visible {
-      opacity: 1;
-      transform: translateX(-50%) translateY(-2px);
-    }
-
-    @media (max-width: 980px) {
-      .profile-shell {
-        grid-template-columns: 1fr;
-      }
-
-      .profile-panel {
-        position: static;
-      }
-    }
-
-    @media (max-width: 640px) {
-      main {
-        padding-inline: 14px;
-      }
-
-      .saved-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .profile-stats {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<base href="/" />
+<title>Mi perfil · Puntazo</title>
+
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
+<script>
+  window.dataLayer=window.dataLayer||[];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js',new Date()); gtag('config','G-7HTMSTJ035');
+</script>
+
+<meta name="theme-color" content="#050914" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="assets/estilo.css" />
+<link rel="stylesheet" href="/assets/card.css" />
+<link rel="stylesheet" href="/assets/reactions.css" />
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/reactions.js"></script>
+<script src="/assets/card.js"></script>
+
+<style>
+  .perfil-wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  /* ── Header del perfil ── */
+  .perfil-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 28px;
+    padding: 20px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.10);
+  }
+
+  .perfil-avatar {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: rgba(0,79,200,.35);
+    border: 2px solid rgba(255,255,255,.14);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: #fff;
+    overflow: hidden;
+  }
+
+  .perfil-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .perfil-info { flex: 1; min-width: 0; }
+
+  .perfil-name {
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .perfil-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .btn-share-profile {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.5rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    color: rgba(234,242,255,.80);
+    font-family: inherit;
+    font-size: 0.80rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .18s;
+  }
+
+  .btn-share-profile:hover {
+    background: rgba(255,255,255,.11);
+    border-color: rgba(255,255,255,.24);
+    color: #eaf2ff;
+  }
+
+  /* ── Login required ── */
+  .login-required {
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .login-required .icon { font-size: 52px; margin-bottom: 16px; }
+  .login-required h2 { font-size: 1.25rem; font-weight: 900; color: #eaf2ff; margin-bottom: 10px; }
+  .login-required p { color: rgba(234,242,255,.60); margin-bottom: 24px; }
+  .login-required button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.85rem 1.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(11,124,255,.40);
+    background: rgba(0,79,200,.18);
+    color: #eaf2ff;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all .18s;
+  }
+  .login-required button:hover {
+    background: rgba(0,79,200,.28);
+    border-color: rgba(11,124,255,.55);
+  }
+
+  @media (max-width: 480px) {
+    .perfil-header { flex-direction: column; text-align: center; align-items: center; }
+    .perfil-actions { justify-content: center; }
+  }
+</style>
 </head>
 <body>
-  <div class="bg-glow"></div>
 
-  <div id="nav-root" data-nav-variant="internal"></div>
-  <script src="/assets/header.js"></script>
+<div class="page-bg"></div>
 
-  <main>
-    <header class="page-header">
-      <p class="page-eyebrow">Mi espacio en Puntazo</p>
-      <h1 class="page-title">Tu perfil</h1>
-      <p class="page-sub">Aquí viven tus videos guardados y, pronto, los puntos que reclames como tuyos.</p>
-    </header>
+<div id="nav-root" data-nav-variant="internal"></div>
+<script src="/assets/header.js"></script>
 
-    <div class="loading-panel section-card" id="loadingPanel">
-      <div class="loading-state">
-        <div class="loading-icon">🎾</div>
-        <h2 class="loading-title">Cargando tu perfil…</h2>
-        <p class="loading-sub">Estamos preparando tu información y tus guardados.</p>
-      </div>
+<main class="site-content fade-in">
+  <div class="perfil-wrap">
+
+    <!-- Loading -->
+    <div id="perfilLoading" class="empty-state">
+      <div class="empty-icon">⏳</div>
+      <h3>Cargando tu perfil…</h3>
     </div>
 
-    <div id="profileContent" style="display:none;">
-      <div class="profile-shell">
-        <aside class="profile-panel section-card">
-          <div class="profile-avatar-wrap" id="profileAvatarWrap"></div>
-          <div class="profile-name" id="profileName">—</div>
-          <div class="profile-email" id="profileEmail">—</div>
-
-          <div class="profile-actions">
-            <a href="/explorar.html" class="primary-btn">▶ Ir a mis clips</a>
-            <button type="button" class="danger-btn" id="signOutBtn">Cerrar sesión</button>
-          </div>
-
-          <div class="profile-stats">
-            <div class="stat-box">
-              <div class="stat-num" id="savedCount">0</div>
-              <div class="stat-label">Guardados</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-num" id="claimedCount">0</div>
-              <div class="stat-label">Reclamados</div>
-            </div>
-          </div>
-        </aside>
-
-        <section class="content-stack">
-          <section class="saved-panel section-card">
-              <div class="section-head">
-              <div>
-                <h2 class="section-title">Mis videos guardados</h2>
-                <p class="section-kicker">Tus clips favoritos, listos para volver a verlos o entrar a su cancha original.</p>
-              </div>
-            </div>
-
-              <div class="profile-tabs" style="display:flex;gap:10px;margin:12px 20px 0;">
-                <button id="tabSaved" class="primary-btn" style="padding:.5rem .8rem;">Mis guardados</button>
-                <button id="tabAppear" class="ghost-btn" style="padding:.5rem .8rem;">Mis apariciones</button>
-              </div>
-
-            <div class="empty-state" id="emptySavedState" style="display:none;">
-              <div class="empty-icon">💾</div>
-              <h3 class="empty-title">Todavía no guardas videos</h3>
-              <p class="empty-sub">Cuando guardes un clip desde una cancha, aparecerá aquí para que lo encuentres al instante.</p>
-            </div>
-
-            <div class="saved-grid" id="savedGrid"></div>
-          </section>
-
-          <section class="claimed-panel section-card">
-            <div class="section-head">
-              <div>
-                <h2 class="section-title">Mis apariciones</h2>
-                <p class="section-kicker">Los videos donde te marcaron como participante. Puedes guardar cualquiera a tus guardados.</p>
-              </div>
-            </div>
-            <div id="appearancesList" class="claimed-list" style="padding:20px"></div>
-            <div id="emptyAppearances" class="empty-state" style="display:none;margin:20px">
-              <div class="empty-icon">🥷</div>
-              <h3 class="empty-title">Aún no tienes apariciones reclamadas</h3>
-              <p class="empty-sub">Cuando te marquen en un video, aparecerá aquí.</p>
-            </div>
-          </section>
-        </section>
-      </div>
+    <!-- Login required -->
+    <div id="loginRequired" class="login-required" style="display:none">
+      <div class="icon">🔐</div>
+      <h2>Inicia sesión para ver tu perfil</h2>
+      <p>Guarda tus puntazos favoritos y lleva un registro de tus apariciones.</p>
+      <button id="loginBtn">Iniciar sesión</button>
     </div>
-  </main>
 
-  <div class="toast" id="toast"></div>
+    <!-- Perfil autenticado -->
+    <div id="perfilContent" style="display:none">
 
-  <script>
-    (function () {
-      const $loadingPanel = document.getElementById("loadingPanel");
-      const $profileContent = document.getElementById("profileContent");
-      const $profileAvatarWrap = document.getElementById("profileAvatarWrap");
-      const $profileName = document.getElementById("profileName");
-      const $profileEmail = document.getElementById("profileEmail");
-      const $savedCount = document.getElementById("savedCount");
-      const $claimedCount = document.getElementById("claimedCount");
-      const $savedGrid = document.getElementById("savedGrid");
-      const $emptySavedState = document.getElementById("emptySavedState");
-      const $signOutBtn = document.getElementById("signOutBtn");
-      const $toast = document.getElementById("toast");
+      <!-- Header -->
+      <div class="perfil-header">
+        <div id="perfilAvatar" class="perfil-avatar"></div>
+        <div class="perfil-info">
+          <div id="perfilName" class="perfil-name">Mi perfil</div>
+          <div class="perfil-actions">
+            <button class="btn-share-profile" id="shareProfileBtn">🔗 Compartir perfil</button>
+          </div>
+        </div>
+      </div>
 
-      const fullscreenSyncers = new Set();
-      let fullscreenEventsBound = false;
-      let savedUnsubscribe = null;
-      let currentUser = null;
-      let currentDb = null;
+      <!-- Tabs -->
+      <div class="pz-tabs">
+        <button class="pz-tab-btn active" data-tab="saved">💾 Mis guardados</button>
+        <button class="pz-tab-btn" data-tab="appearances">🥷 Mis apariciones</button>
+      </div>
 
-      function toast(message) {
-        if (!message || !$toast) return;
-        $toast.textContent = message;
-        $toast.classList.add("visible");
-        clearTimeout($toast._timer);
-        $toast._timer = setTimeout(() => {
-          $toast.classList.remove("visible");
-        }, 1800);
-      }
+      <!-- Tab: Guardados -->
+      <div id="tab-saved" class="pz-tab-pane active">
+        <div id="savedGrid" class="cards-grid"></div>
+        <div id="savedEmpty" class="empty-state" style="display:none">
+          <div class="empty-icon">📂</div>
+          <h3>Sin videos guardados</h3>
+          <p>Toca 💾 en cualquier video para guardarlo aquí.</p>
+        </div>
+        <div id="savedLoading" class="empty-state">
+          <div class="empty-icon">⏳</div>
+          <h3>Cargando tus guardados…</h3>
+        </div>
+      </div>
 
-      function bindFullscreenEventsOnce() {
-        if (fullscreenEventsBound) return;
-        fullscreenEventsBound = true;
+      <!-- Tab: Apariciones -->
+      <div id="tab-appearances" class="pz-tab-pane">
+        <div id="appearGrid" class="cards-grid"></div>
+        <div id="appearEmpty" class="empty-state" style="display:none">
+          <div class="empty-icon">🥷</div>
+          <h3>Sin apariciones todavía</h3>
+          <p>Cuando digas "🥷 Soy yo" en un video, aparecerá aquí.</p>
+        </div>
+        <div id="appearLoading" class="empty-state">
+          <div class="empty-icon">⏳</div>
+          <h3>Cargando tus apariciones…</h3>
+        </div>
+      </div>
 
-        const runSyncers = () => {
-          fullscreenSyncers.forEach(fn => {
-            try { fn(); } catch {}
-          });
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-redes">
+    <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
+    <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
+    <a href="https://wa.me/522206804856?text=Hola%20Puntazo!" target="_blank" rel="noopener">WhatsApp</a>
+  </div>
+  <p class="footer-copy">© 2026 Puntazo</p>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  let _user = null;
+  let _savedLoaded = false;
+  let _appearLoaded = false;
+
+  // ── DOM refs ──
+  const $loading      = document.getElementById('perfilLoading');
+  const $loginReq     = document.getElementById('loginRequired');
+  const $content      = document.getElementById('perfilContent');
+  const $loginBtn     = document.getElementById('loginBtn');
+  const $perfilAvatar = document.getElementById('perfilAvatar');
+  const $perfilName   = document.getElementById('perfilName');
+  const $shareProfile = document.getElementById('shareProfileBtn');
+  const $savedGrid    = document.getElementById('savedGrid');
+  const $savedEmpty   = document.getElementById('savedEmpty');
+  const $savedLoading = document.getElementById('savedLoading');
+  const $appearGrid   = document.getElementById('appearGrid');
+  const $appearEmpty  = document.getElementById('appearEmpty');
+  const $appearLoading = document.getElementById('appearLoading');
+
+  // ── Tabs ──
+  document.querySelectorAll('.pz-tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.pz-tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.pz-tab-pane').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      const tabId = 'tab-' + btn.dataset.tab;
+      document.getElementById(tabId).classList.add('active');
+
+      // Lazy load
+      if (btn.dataset.tab === 'saved' && !_savedLoaded && _user) loadSaved(_user);
+      if (btn.dataset.tab === 'appearances' && !_appearLoaded && _user) loadAppearances(_user);
+    });
+  });
+
+  // ── Login button ──
+  $loginBtn.addEventListener('click', function() {
+    if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === 'function') {
+      window.PuntazoAuth.signIn();
+    }
+  });
+
+  // ── Share profile ──
+  $shareProfile.addEventListener('click', async function() {
+    if (!_user) return;
+    const link = `${location.origin}/jugador.html?uid=${encodeURIComponent(_user.uid)}`;
+    try {
+      if (navigator.share) { await navigator.share({title:'Puntazo',text:'Mira mis apariciones 🥷',url:link}); return; }
+    } catch {}
+    try { await navigator.clipboard.writeText(link); PuntazoCard.toast('Enlace de perfil copiado'); }
+    catch { window.open(link,'_blank'); }
+  });
+
+  // ── Auth flow ──
+  function showLoginRequired() {
+    $loading.style.display = 'none';
+    $loginReq.style.display = 'block';
+  }
+
+  function renderProfile(user) {
+    _user = user;
+    $loading.style.display = 'none';
+    $loginReq.style.display = 'none';
+    $content.style.display = 'block';
+
+    // Avatar
+    if (user.photoURL) {
+      $perfilAvatar.innerHTML = `<img src="${PuntazoCard.escapeHTML(user.photoURL)}" alt="${PuntazoCard.escapeHTML(user.displayName||'')}" />`;
+    } else {
+      $perfilAvatar.textContent = (user.displayName||user.email||'P').charAt(0).toUpperCase();
+    }
+    $perfilName.textContent = user.displayName || user.email || 'Mi perfil';
+
+    // Load active tab
+    loadSaved(user);
+    _savedLoaded = true;
+  }
+
+  // ── Load saved videos ──
+  async function loadSaved(user) {
+    const db = PuntazoCard.getDb();
+    if (!db) { $savedLoading.style.display='none'; $savedEmpty.style.display='block'; return; }
+
+    $savedLoading.style.display = 'block';
+    $savedEmpty.style.display = 'none';
+
+    try {
+      const snap = await db.collection('usuarios').doc(user.uid).collection('guardados')
+        .orderBy('savedAt','desc').limit(50).get();
+
+      $savedLoading.style.display = 'none';
+
+      if (snap.empty) { $savedEmpty.style.display = 'block'; return; }
+
+      snap.forEach(function(doc) {
+        const d = doc.data();
+        if (!d.videoId || !d.videoUrl) return;
+
+        const entry = {
+          nombre:  d.videoId,
+          url:     d.videoUrl,
+          club:    d.club   || '',
+          cancha:  d.cancha || '',
+          lado:    d.lado   || '',
+          fecha:   d.fecha  || '',
         };
 
-        document.addEventListener("fullscreenchange", runSyncers);
-        document.addEventListener("webkitfullscreenchange", runSyncers);
-      }
+        const card = PuntazoCard.build(entry, {
+          showSave: true,
+          showShare: true,
+          showFullscreen: true,
+          showClaim: false,
+          showReactions: true,
+          showComments: true,
+          showClubInfo: true,
+          onRemove: async function() {
+            try {
+              await PuntazoCard.unsaveVideo(entry.nombre);
+              card.style.opacity = '0.4';
+              setTimeout(function() { card.remove(); }, 300);
+              PuntazoCard.toast('Quitado de guardados');
+            } catch(e) {
+              console.warn('[perfil remove]', e);
+              PuntazoCard.toast('Error al quitar el video');
+            }
+          },
+        });
 
-      function isThisVideoFullscreen(video) {
-        return !!(
-          document.fullscreenElement === video ||
-          document.webkitFullscreenElement === video ||
-          video.webkitDisplayingFullscreen
-        );
-      }
+        $savedGrid.appendChild(card);
+        PuntazoCard.attachReactions(card, entry);
+      });
 
-      async function requestVideoFullscreen(video) {
-        if (video.requestFullscreen) return await video.requestFullscreen();
-        if (video.webkitRequestFullscreen) return await video.webkitRequestFullscreen();
-        if (video.webkitEnterFullscreen) {
-          video.webkitEnterFullscreen();
-          return;
-        }
-        throw new Error("Fullscreen no soportado en este navegador.");
+      if (!$savedGrid.children.length) {
+        $savedEmpty.style.display = 'block';
       }
+    } catch(e) {
+      console.error('[perfil saved]', e);
+      $savedLoading.style.display = 'none';
+      $savedEmpty.style.display = 'block';
+    }
+  }
 
-      async function exitVideoFullscreen(video) {
+  // ── Load appearances ──
+  async function loadAppearances(user) {
+    _appearLoaded = true;
+    const db = PuntazoCard.getDb();
+    if (!db) { $appearLoading.style.display='none'; $appearEmpty.style.display='block'; return; }
+
+    $appearLoading.style.display = 'block';
+    $appearEmpty.style.display = 'none';
+
+    try {
+      const snap = await db.collectionGroup('participants')
+        .where('uid', '==', user.uid)
+        .orderBy('claimedAt', 'desc')
+        .limit(30)
+        .get();
+
+      $appearLoading.style.display = 'none';
+
+      if (snap.empty) { $appearEmpty.style.display = 'block'; return; }
+
+      for (var i=0; i<snap.docs.length; i++) {
+        var p = snap.docs[i].data();
+        if (!p.videoId) continue;
+
+        var entry = { nombre:p.videoId, url:'', club:'', cancha:'', lado:'', fecha:'' };
+
         try {
-          if (document.fullscreenElement || document.webkitFullscreenElement) {
-            if (document.exitFullscreen) {
-              await document.exitFullscreen();
-              return;
-            }
-            if (document.webkitExitFullscreen) {
-              document.webkitExitFullscreen();
-              return;
-            }
+          var rxDoc = await db.collection('reactions').doc(p.videoId).get();
+          if (rxDoc.exists) {
+            var d = rxDoc.data();
+            entry.url    = d.videoUrl || '';
+            entry.club   = d.club     || '';
+            entry.cancha = d.cancha   || '';
+            entry.lado   = d.lado     || '';
+            entry.fecha  = d.fecha    || '';
           }
         } catch {}
 
-        try {
-          if (video.webkitExitFullscreen) {
-            video.webkitExitFullscreen();
-          }
-        } catch {}
-      }
+        if (!entry.url) continue;
 
-      async function verEnPantallaCompleta(video) {
-        await requestVideoFullscreen(video);
-        try { await video.play(); } catch {}
-      }
-
-      function initialsFromUser(user) {
-        const base = (user && (user.displayName || user.email || "")) || "P";
-        const parts = String(base).trim().split(/\s+/).filter(Boolean);
-        return parts.slice(0, 2).map(p => p.charAt(0).toUpperCase()).join("") || "P";
-      }
-
-      function escapeHTML(str) {
-        return String(str || "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;");
-      }
-
-      function escapeAttr(str) {
-        return String(str || "").replace(/"/g, "&quot;");
-      }
-
-      function formatDateLabel(fecha) {
-        if (!fecha) return "";
-        try {
-          return new Date(String(fecha) + "T00:00:00").toLocaleDateString("es-MX", {
-            day: "numeric",
-            month: "short"
+        (function(e) {
+          var card = PuntazoCard.build(e, {
+            showSave:true, showShare:true, showFullscreen:true,
+            showClaim:false, showReactions:true, showComments:false,
+            showClubInfo:true,
           });
-        } catch {
-          return fecha;
-        }
+          $appearGrid.appendChild(card);
+          PuntazoCard.attachReactions(card, e);
+        })(entry);
       }
 
-      function buildLadoLink(data) {
-        const loc = encodeURIComponent(data.locId || data.club || "");
-        const can = encodeURIComponent(data.canId || data.cancha || "");
-        const lado = encodeURIComponent(data.ladoId || data.lado || "");
-        const dia = String(data.fecha || "").replaceAll("-", "");
-        return `/lado.html?loc=${loc}&can=${can}&lado=${lado}&dia=${dia}&pg=0`;
+      if (!$appearGrid.children.length) {
+        $appearEmpty.style.display = 'block';
       }
+    } catch(e) {
+      console.error('[perfil appearances]', e);
+      $appearLoading.style.display = 'none';
+      $appearEmpty.style.display = 'block';
+    }
+  }
 
-      function waitForProfileReady(timeoutMs = 12000) {
-        const started = Date.now();
+  // ── Esperar auth ──
+  function initAuth() {
+    // Chequeo inmediato
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (user) { renderProfile(user); return; }
 
-        return new Promise((resolve, reject) => {
-          (function poll() {
-            try {
-              const hasFirebase = !!(window.firebase && firebase.apps && firebase.apps.length);
-              const hasFirestore = !!(window.firebase && typeof firebase.firestore === "function");
-              const hasAuthCompat = !!(window.firebase && typeof firebase.auth === "function");
-              const hasPuntazoAuth = !!window.PuntazoAuth;
+    window.addEventListener('puntazo:auth-changed', function handler(e) {
+      const u = e.detail && e.detail.user;
+      window.removeEventListener('puntazo:auth-changed', handler);
+      if (u) { renderProfile(u); }
+      else   { showLoginRequired(); }
+    });
 
-              if (hasFirebase && hasFirestore && hasAuthCompat && hasPuntazoAuth) {
-                resolve();
-                return;
-              }
-            } catch {}
-
-            if (Date.now() - started > timeoutMs) {
-              reject(new Error("Timeout esperando Firebase/Auth"));
-              return;
-            }
-
-            setTimeout(poll, 120);
-          })();
-        });
+    // Timeout de seguridad si auth nunca dispara
+    setTimeout(function() {
+      if ($loading.style.display !== 'none') {
+        const u2 = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+        if (u2) renderProfile(u2);
+        else showLoginRequired();
       }
+    }, 4000);
+  }
 
-      function getResolvedAuthUser() {
-        return new Promise((resolve) => {
-          const auth = firebase.auth();
-          const unsub = auth.onAuthStateChanged((user) => {
-            try { unsub(); } catch {}
-            resolve(user || null);
-          });
-        });
-      }
+  // Esperar a que header.js esté listo (ya que carga auth)
+  if (window.__PZ_HEADER_LOADED__) {
+    setTimeout(initAuth, 100);
+  } else {
+    window.addEventListener('puntazo:header-rendered', function() {
+      setTimeout(initAuth, 150);
+    });
+    // También directo si el evento ya pasó
+    setTimeout(initAuth, 1200);
+  }
+})();
+</script>
 
-      function renderUserCard(user) {
-        currentUser = user;
-        $profileName.textContent = user.displayName || "Usuario Puntazo";
-        $profileEmail.textContent = user.email || "";
-
-        if (user.photoURL) {
-          $profileAvatarWrap.innerHTML = `<img class="profile-avatar" src="${escapeAttr(user.photoURL)}" alt="${escapeAttr(user.displayName || 'Perfil')}" />`;
-        } else {
-          $profileAvatarWrap.innerHTML = `<div class="profile-avatar-fallback">${escapeHTML(initialsFromUser(user))}</div>`;
-        }
-      }
-
-      function mejorarCardDeVideo(card) {
-        bindFullscreenEventsOnce();
-
-        const video = card.querySelector("video");
-        const overlay = card.querySelector(".card-play-overlay");
-        const wrap = card.querySelector(".card-video-wrap");
-        const fsBtn = card.querySelector(".card-fullscreen-btn");
-
-        const syncOverlay = () => {
-          overlay.style.opacity = video.paused ? "1" : "0";
-        };
-
-        const syncFullscreenUI = () => {
-          const active = isThisVideoFullscreen(video);
-          fsBtn.classList.toggle("is-active", active);
-          fsBtn.textContent = active ? "✕ Salir" : "Pantalla completa";
-          fsBtn.style.display = (!video.paused || active) ? "inline-flex" : "none";
-        };
-
-        const syncAll = () => {
-          syncOverlay();
-          syncFullscreenUI();
-        };
-
-        fullscreenSyncers.add(syncAll);
-
-        card.addEventListener("mouseenter", () => {
-          video.play().catch(() => {});
-          syncAll();
-        });
-
-        card.addEventListener("mouseleave", () => {
-          if (!isThisVideoFullscreen(video)) {
-            video.pause();
-            video.currentTime = 0;
-          }
-          syncAll();
-        });
-
-        wrap.addEventListener("click", () => {
-          if (video.paused) {
-            video.play().catch(() => {});
-          } else {
-            video.pause();
-          }
-          syncAll();
-        });
-
-        fsBtn.addEventListener("click", async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-
-          try {
-            if (isThisVideoFullscreen(video)) {
-              await exitVideoFullscreen(video);
-            } else {
-              await verEnPantallaCompleta(video);
-            }
-          } catch (err) {
-            console.warn("[Perfil] No se pudo abrir fullscreen:", err);
-            toast("No se pudo abrir pantalla completa");
-          }
-
-          syncAll();
-        });
-
-        video.addEventListener("play", syncAll);
-        video.addEventListener("pause", syncAll);
-        video.addEventListener("ended", syncAll);
-        video.addEventListener("webkitbeginfullscreen", syncAll);
-        video.addEventListener("webkitendfullscreen", syncAll);
-
-        syncAll();
-      }
-
-      function buildSavedCard(data) {
-        const card = document.createElement("article");
-        card.className = "video-card";
-
-        const dateLabel = formatDateLabel(data.fecha);
-        const canchaTxt = data.cancha ? `Cancha ${escapeHTML(data.cancha)}${data.lado ? ` ${escapeHTML(data.lado)}` : ""}` : "";
-        const ladoHref = buildLadoLink(data);
-
-        card.innerHTML = `
-          <div class="card-video-wrap">
-            <video
-              src="${escapeAttr(data.videoUrl || "")}" 
-              muted
-              playsinline
-              preload="metadata"
-              loop
-            ></video>
-            <div class="card-play-overlay">
-              <div class="play-icon">▶</div>
-            </div>
-          </div>
-
-          <div class="card-actions">
-            <button type="button" class="card-fullscreen-btn" aria-label="Ver video en pantalla completa">
-              Pantalla completa
-            </button>
-          </div>
-
-          <div class="card-body">
-            <div class="card-meta">
-              <span class="card-club">${escapeHTML(data.club || "Puntazo")}</span>
-              ${data.cancha ? `<span class="card-sep">·</span><span class="card-location">${canchaTxt}</span>` : ""}
-              ${dateLabel ? `<span class="card-date">${escapeHTML(dateLabel)}</span>` : ""}
-            </div>
-
-            <div class="card-submeta">
-              ${data.fecha ? `<span class="card-chip">📅 ${escapeHTML(data.fecha)}</span>` : ""}
-              ${data.nombreArchivo ? `<span class="card-chip">🎬 Clip guardado</span>` : `<span class="card-chip">🎬 Puntazo</span>`}
-            </div>
-
-            <div class="card-buttons">
-              <div style="display:flex;gap:8px;width:100%">
-                <a class="card-link-btn" href="${escapeAttr(ladoHref)}">▶ Ver video en su cancha</a>
-                <button type="button" class="card-share-btn" data-videoid="${escapeAttr(data.videoId||'')}">🔗 Compartir</button>
-              </div>
-              <button type="button" class="card-remove-btn" data-unsave="${escapeAttr(data.videoId || "")}">Quitar de guardados</button>
-            </div>
-          </div>
-        `;
-
-        mejorarCardDeVideo(card);
-
-        const removeBtn = card.querySelector("[data-unsave]");
-        const shareBtn = card.querySelector('.card-share-btn');
-        if (shareBtn) {
-          shareBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const videoId = shareBtn.dataset.videoid || data.videoId || '';
-            const link = location.origin + '/clip.html?videoId=' + encodeURIComponent(videoId);
-            try { if (navigator.share) { await navigator.share({ title: 'Puntazo', text: 'Mira este puntazo', url: link }); return; } } catch (err) {}
-            try { await navigator.clipboard.writeText(link); toast('Enlace copiado'); } catch (err) { window.open(link, '_blank'); }
-          });
-        }
-        removeBtn.addEventListener("click", async () => {
-          if (!currentUser || !currentDb || !data.videoId) return;
-
-          removeBtn.disabled = true;
-          removeBtn.textContent = "Quitando…";
-
-          try {
-            await currentDb
-              .collection("usuarios")
-              .doc(currentUser.uid)
-              .collection("guardados")
-              .doc(data.videoId)
-              .delete();
-
-            toast("Quitado de guardados");
-          } catch (err) {
-            console.warn("[Perfil] No se pudo quitar guardado:", err);
-            removeBtn.disabled = false;
-            removeBtn.textContent = "Quitar de guardados";
-            toast("No se pudo quitar el guardado");
-          }
-        });
-
-        return card;
-      }
-
-      function renderSavedVideos(items) {
-        fullscreenSyncers.clear();
-        $savedGrid.innerHTML = "";
-        $savedCount.textContent = String(items.length);
-        $claimedCount.textContent = "0";
-
-        if (!items.length) {
-          $emptySavedState.style.display = "block";
-          return;
-        }
-
-        $emptySavedState.style.display = "none";
-        items.forEach(item => {
-          $savedGrid.appendChild(buildSavedCard(item));
-        });
-      }
-
-      function subscribeSavedVideos() {
-        if (!currentUser || !currentDb) return;
-
-        if (savedUnsubscribe) {
-          try { savedUnsubscribe(); } catch {}
-        }
-
-        savedUnsubscribe = currentDb
-          .collection("usuarios")
-          .doc(currentUser.uid)
-          .collection("guardados")
-          .orderBy("savedAt", "desc")
-          .onSnapshot((snapshot) => {
-            const items = [];
-            snapshot.forEach((doc) => {
-              items.push({ id: doc.id, ...doc.data() });
-            });
-            renderSavedVideos(items);
-          }, async (err) => {
-            console.warn("[Perfil] Fallback sin orderBy por error:", err);
-            try {
-              const snap = await currentDb
-                .collection("usuarios")
-                .doc(currentUser.uid)
-                .collection("guardados")
-                .get();
-
-              const items = [];
-              snap.forEach((doc) => items.push({ id: doc.id, ...doc.data() }));
-              items.sort((a, b) => {
-                const aTs = a.savedAt && a.savedAt.toMillis ? a.savedAt.toMillis() : 0;
-                const bTs = b.savedAt && b.savedAt.toMillis ? b.savedAt.toMillis() : 0;
-                return bTs - aTs;
-              });
-              renderSavedVideos(items);
-            } catch (fallbackErr) {
-              console.error("[Perfil] Error cargando guardados:", fallbackErr);
-              $emptySavedState.style.display = "block";
-              $emptySavedState.querySelector(".empty-title").textContent = "No pudimos cargar tus guardados";
-              $emptySavedState.querySelector(".empty-sub").textContent = "Intenta refrescar la página en unos segundos.";
-            }
-          });
-      }
-
-      // ----------------------
-      // Apariciones (collectionGroup participants)
-      // ----------------------
-      let appearancesUnsub = null;
-      const $appearancesList = document.getElementById('appearancesList');
-      const $emptyAppearances = document.getElementById('emptyAppearances');
-      const $tabSaved = document.getElementById('tabSaved');
-      const $tabAppear = document.getElementById('tabAppear');
-      const $savedPanel = document.querySelector('.saved-panel');
-      const $claimedPanel = document.querySelector('.claimed-panel');
-
-      function buildAppearanceCard(participantDoc, parentData) {
-        const data = parentData || {};
-        const card = document.createElement('article');
-        card.className = 'video-card';
-
-        const dateLabel = data.fecha ? formatDateLabel(data.fecha) : '';
-        const canchaTxt = data.cancha ? `Cancha ${escapeHTML(data.cancha)}${data.lado ? ` ${escapeHTML(data.lado)}` : ''}` : '';
-
-        card.innerHTML = `
-          <div class="card-video-wrap">
-            <video src="${escapeAttr(data.videoUrl||'')}" muted playsinline preload="metadata" loop></video>
-            <div class="card-play-overlay"><div class="play-icon">▶</div></div>
-          </div>
-          <div class="card-actions">
-            <button type="button" class="card-fullscreen-btn">Pantalla completa</button>
-          </div>
-          <div class="card-body">
-            <div class="card-meta">
-              <span class="card-club">${escapeHTML(data.club || 'Puntazo')}</span>
-              ${data.cancha ? `<span class="card-sep">·</span><span class="card-location">${canchaTxt}</span>` : ''}
-              ${dateLabel ? `<span class="card-date">${dateLabel}</span>` : ''}
-            </div>
-            <div class="card-submeta">
-              ${data.fecha ? `<span class="card-chip">📅 ${escapeHTML(data.fecha)}</span>` : ''}
-              <span class="card-chip">Aparecí como: ${escapeHTML(participantDoc.displayName||'Tú')}</span>
-            </div>
-            <div class="card-buttons">
-              <div style="display:flex;gap:8px;width:100%">
-                <a class="card-link-btn" href="${escapeAttr(buildLadoLink(data))}">▶ Ver en cancha</a>
-                <button type="button" class="card-share-btn" data-videoid="${escapeAttr(participantDoc.videoId||'')}">🔗 Compartir</button>
-              </div>
-              <button type="button" class="card-remove-btn" data-save="${escapeAttr(participantDoc.videoId||'')}">Guardar</button>
-            </div>
-          </div>
-        `;
-
-        const saveBtn = card.querySelector('[data-save]');
-        const shareBtn = card.querySelector('.card-share-btn');
-        if (shareBtn) {
-          shareBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const videoId = shareBtn.dataset.videoid || participantDoc.videoId || '';
-            const link = location.origin + '/clip.html?videoId=' + encodeURIComponent(videoId);
-            try { if (navigator.share) { await navigator.share({ title: 'Puntazo', text: 'Mira este puntazo', url: link }); return; } } catch (err) {}
-            try { await navigator.clipboard.writeText(link); toast('Enlace copiado'); } catch (err) { window.open(link, '_blank'); }
-          });
-        }
-        saveBtn.addEventListener('click', async () => {
-          if (!currentUser || !currentDb || !participantDoc.videoId) return;
-          saveBtn.disabled = true;
-          saveBtn.textContent = 'Guardando…';
-          try {
-            await currentDb.collection('usuarios').doc(currentUser.uid).collection('guardados').doc(participantDoc.videoId).set({
-              videoId: participantDoc.videoId,
-              videoUrl: data.videoUrl || '',
-              club: data.club || '',
-              cancha: data.cancha || '',
-              lado: data.lado || '',
-              fecha: data.fecha || '',
-              savedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            toast('Guardado en tus clips');
-          } catch (err) {
-            console.warn('[Perfil] No se pudo guardar la aparición:', err);
-            toast('No se pudo guardar');
-            saveBtn.disabled = false;
-            saveBtn.textContent = 'Guardar';
-          }
-        });
-
-        return card;
-      }
-
-      function subscribeAppearances() {
-        if (!currentUser || !currentDb) return;
-        if (appearancesUnsub) {
-          try { appearancesUnsub(); } catch {}
-        }
-
-        appearancesUnsub = currentDb.collectionGroup('participants')
-          .where('uid', '==', currentUser.uid)
-          .orderBy('claimedAt', 'desc')
-          .onSnapshot(async (snap) => {
-            const items = [];
-            snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
-
-            $appearancesList.innerHTML = '';
-            if (!items.length) {
-              $emptyAppearances.style.display = 'block';
-              return;
-            }
-
-            $emptyAppearances.style.display = 'none';
-
-            // For each participant entry, try to load parent reaction doc to get video metadata
-            for (const p of items) {
-              let parentData = null;
-              try {
-                if (p.videoId) {
-                  const parent = await currentDb.collection('reactions').doc(p.videoId).get();
-                  if (parent.exists) parentData = parent.data();
-                }
-              } catch {}
-
-              $appearancesList.appendChild(buildAppearanceCard(p, parentData || p));
-            }
-            $claimedCount.textContent = String(items.length);
-          }, (err) => {
-            console.error('[Perfil] Error cargando apariciones:', err);
-          });
-      }
-
-      // Tab toggle behavior
-      function showTab(name) {
-        if (name === 'saved') {
-          $savedPanel.style.display = '';
-          $claimedPanel.style.display = 'none';
-          $tabSaved.classList.add('primary-btn');
-          $tabSaved.classList.remove('ghost-btn');
-          $tabAppear.classList.add('ghost-btn');
-          $tabAppear.classList.remove('primary-btn');
-        } else {
-          $savedPanel.style.display = 'none';
-          $claimedPanel.style.display = '';
-          $tabSaved.classList.add('ghost-btn');
-          $tabSaved.classList.remove('primary-btn');
-          $tabAppear.classList.add('primary-btn');
-          $tabAppear.classList.remove('ghost-btn');
-        }
-      }
-
-      $tabSaved.addEventListener('click', () => showTab('saved'));
-      $tabAppear.addEventListener('click', () => { showTab('appear'); subscribeAppearances(); });
-
-
-      async function initProfile() {
-        try {
-          await waitForProfileReady();
-          currentDb = firebase.firestore();
-
-          const user = await getResolvedAuthUser();
-          if (!user) {
-            window.location.replace("/inicio.html");
-            return;
-          }
-
-          renderUserCard(user);
-          $loadingPanel.style.display = "none";
-          $profileContent.style.display = "block";
-          subscribeSavedVideos();
-
-          $signOutBtn.addEventListener("click", async () => {
-            try {
-              if (window.PuntazoAuth && typeof window.PuntazoAuth.signOut === "function") {
-                await window.PuntazoAuth.signOut();
-              } else {
-                await firebase.auth().signOut();
-              }
-              window.location.replace("/inicio.html");
-            } catch (err) {
-              console.warn("[Perfil] No se pudo cerrar sesión:", err);
-              toast("No se pudo cerrar sesión");
-            }
-          });
-        } catch (err) {
-          console.error("[Perfil] Error inicializando perfil:", err);
-          $loadingPanel.innerHTML = `
-            <div class="loading-state">
-              <div class="loading-icon">⚠️</div>
-              <h2 class="loading-title">No pudimos abrir tu perfil</h2>
-              <p class="loading-sub">Recarga la página. Si el problema sigue, vuelve a iniciar sesión.</p>
-            </div>
-          `;
-        }
-      }
-
-      initProfile();
-    })();
-  </script>
 </body>
 </html>
