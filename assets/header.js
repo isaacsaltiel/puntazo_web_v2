@@ -39,6 +39,7 @@
 
   injectHeaderStyles();
   renderHeader();
+  attachMenuToggle();
   setupCloseMenuHelper();
   setupDropdownOutsideClose();
   bootstrapAuth();
@@ -336,6 +337,29 @@
       const internalMenu = document.querySelector(".navbar");
       if (internalMenu) internalMenu.classList.remove("show");
     };
+  }
+
+  function attachMenuToggle(){
+    try{
+      const btn = document.querySelector('.menu-toggle');
+      const nav = document.querySelector('.navbar') || document.getElementById('nav-menu');
+      if (!btn || !nav) return;
+      if (btn.__pz_toggle_attached) return;
+      btn.__pz_toggle_attached = true;
+
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        nav.classList.toggle('show');
+      });
+
+      document.addEventListener('click', function(e){
+        if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) {
+          nav.classList.remove('show');
+        }
+      });
+
+      window.addEventListener('scroll', function(){ if (nav.classList.contains('show')) nav.classList.remove('show'); });
+    }catch(err){/* noop */}
   }
 
   function setupDropdownOutsideClose() {
