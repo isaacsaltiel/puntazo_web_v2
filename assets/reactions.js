@@ -68,7 +68,7 @@ function buildUI(videoId, admin) {
       <div class="pz-rxn-bar">${btns}</div>
       <div class="pz-participants-row">
         <div class="pz-participants"></div>
-        <button class="pz-claim-btn">🥷 Soy yo</button>
+        <button class="pz-claim-btn" title="¿Saliste en este video? Márcalo como tuyo y aparece en el ranking del mes 🏆">🥷 Soy yo</button>
       </div>
       ${buildCommentsHTML(videoId)}
     </div>`;
@@ -111,6 +111,7 @@ function wireReactionsCore({
   $rxnBtns, $participants, $claimBtn,
   $toggle, $section, $list, $input,
   $sendNormal, $sendIncognito, $charCount, $showMoreBtn, $rxnPreview,
+  $heroName, // [data-hero-name] en card.js — para mostrar nombre del jugador
 }) {
 
   if ($input && $charCount) {
@@ -161,7 +162,7 @@ function wireReactionsCore({
     participantsRef.orderBy("claimedAt","asc").onSnapshot(snap => {
       $participants.innerHTML = "";
       snap.forEach(doc => {
-        const p   = doc.data();
+        const p = doc.data();
         const chip = document.createElement("a");
         chip.href = `/jugador.html?uid=${encodeURIComponent(p.uid)}`;
         chip.className = "pz-participant-chip";
@@ -171,10 +172,29 @@ function wireReactionsCore({
           : `<span class="pz-p-initial">${escapeHTML((p.displayName||"")[0]||"J")}</span><span>${escapeHTML(p.displayName||"Jugador")}</span>`;
         $participants.appendChild(chip);
       });
+
+      // Actualizar hero name: primer participante
+      if ($heroName) {
+        if (snap.size > 0) {
+          const first = snap.docs[0].data();
+          const name = first.displayName || '';
+          if (name) {
+            $heroName.textContent = '🥷 ' + name;
+            $heroName.style.display = 'inline-flex';
+          }
+        } else {
+          $heroName.style.display = 'none';
+        }
+      }
+
       if ($claimBtn) {
         const authUser = window.PuntazoAuth?.currentUser;
         const myClaim  = authUser && snap.docs && snap.docs.find(d => d.id === authUser.uid);
         $claimBtn.textContent = myClaim ? "✓ Quitar reclamo" : "🥷 Soy yo";
+        // Tooltip explicativo
+        $claimBtn.title = myClaim
+          ? "Quitar tu reclamo de este video"
+          : "¿Saliste en este punto? Márcalo como tuyo — apareces en el ranking del mes y puedes ganar el premio 🏆";
         if (typeof snap.size === "number" && snap.size >= 4 && !myClaim)
           $claimBtn.style.display = "none";
         else
@@ -199,8 +219,7 @@ function wireReactionsCore({
         const d   = item.data;
         const ago = d.ts?.toDate ? timeAgo(d.ts.toDate()) : "";
         const authUser = window.PuntazoAuth?.currentUser;
-        const isMe = d.deviceId === DEVICE ||
-          (d.uid && authUser && d.uid === authUser.uid);
+        const isMe = d.deviceId === DEVICE || (d.uid && authUser && d.uid === authUser.uid);
 
         const el = document.createElement("div");
         el.className = "pz-comment" + (isMe ? " pz-mine" : "");
@@ -216,7 +235,6 @@ function wireReactionsCore({
           authorHtml = `<span class="pz-comment-author" style="color:rgba(234,242,255,.35)">Anónimo</span>`;
         }
 
-        // Botón de borrar solo si soy el autor autenticado
         const canDelete = isMe && d.uid && authUser && d.uid === authUser.uid;
 
         el.innerHTML = `
@@ -269,7 +287,6 @@ function wireReactionsCore({
       const already = !!voted[key];
       const delta   = already ? -1 : 1;
 
-      // Optimistic UI
       saveVoted(videoId, key, !already);
       btn.classList.toggle("pz-voted", !already);
 
@@ -282,14 +299,12 @@ function wireReactionsCore({
         cancha:   meta.cancha   || "",
         lado:     meta.lado     || "",
         fecha:    meta.fecha    || "",
-        // ⚠️ "lastReaction" no existe en las reglas → usar "lastInteractionAt"
         lastInteractionAt: firebase.firestore.FieldValue.serverTimestamp(),
       };
 
       try {
         await docRef.set(update, { merge: true });
       } catch(e) {
-        // Rollback
         saveVoted(videoId, key, already);
         btn.classList.toggle("pz-voted", already);
         console.error("[Puntazo Reactions] Error guardando reacción:", e);
@@ -318,13 +333,11 @@ function wireReactionsCore({
       }
 
       await commentsRef.add(payload);
-
       await docRef.set({
         videoId, videoUrl: meta.videoUrl||"", club: meta.club||"",
         cancha: meta.cancha||"", lado: meta.lado||"", fecha: meta.fecha||"",
         total: firebase.firestore.FieldValue.increment(0),
       }, { merge: true });
-
       try { await docRef.set({ comments_count: firebase.firestore.FieldValue.increment(1) }, { merge: true }); } catch {}
 
       $input.value = "";
@@ -413,11 +426,20 @@ async function attachReactions(container, meta) {
     const commentsSlot     = container.querySelector("[data-comments-slot]");
     const claimSlot        = container.querySelector("[data-claim-slot]");
     const rxnPreview       = container.querySelector("[data-rxn-preview]");
+    const heroName         = container.querySelector("[data-hero-name]");
 
     rxnSlot.innerHTML = buildRxnBarHTML(admin);
     if (participantsSlot) participantsSlot.innerHTML = `<div class="pz-participants"></div>`;
     if (commentsSlot)     commentsSlot.innerHTML     = buildCommentsHTML(videoId);
-    if (claimSlot)        claimSlot.innerHTML        = `<button class="pz-claim-btn">🥷 Soy yo</button>`;
+    if (claimSlot) {
+      claimSlot.innerHTML = `
+        <button class="pz-claim-btn" title="¿Saliste en este punto? Márcalo como tuyo y aparece en el ranking del mes 🏆">
+          🥷 Soy yo
+        </button>
+        <div class="pz-claim-hint">
+          ¿Apareces en este video? Reclámalos y <strong>entra al ranking del mes</strong> — hay premios 🎁
+        </div>`;
+    }
 
     wireReactionsCore({
       db, admin, DEVICE, videoId, meta,
@@ -434,8 +456,10 @@ async function attachReactions(container, meta) {
       $charCount:     commentsSlot?.querySelector(".pz-char-count"),
       $showMoreBtn:   commentsSlot?.querySelector(".pz-show-more-comments"),
       $rxnPreview:    rxnPreview || null,
+      $heroName:      heroName   || null,
     });
   } else {
+    // Legacy mode
     container.insertAdjacentHTML("beforeend", buildUI(videoId, admin));
     const wrap = container.querySelector(".pz-reactions-wrap");
     if (!wrap) return;
@@ -455,6 +479,7 @@ async function attachReactions(container, meta) {
       $charCount:     wrap.querySelector(".pz-char-count"),
       $showMoreBtn:   wrap.querySelector(".pz-show-more-comments"),
       $rxnPreview:    null,
+      $heroName:      null,
     });
   }
 }
