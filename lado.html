@@ -362,38 +362,14 @@
   <div id="filtro-horario"></div>
 
   <!-- Banner: mientras juegas -->
-  <div class="live-banner">
-    <div class="live-banner-text">
-      <h3>📲 ¿Estás jugando? Tu teléfono es el botón</h3>
-      <p>Registra tu puntazo al instante desde tu celular — tócalo justo cuando cae el punto.</p>
-    </div>
-    <div class="live-banner-btns">
-      <a href="boton.html" target="_blank" rel="noopener" class="btn-live-sm"
-        onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'lado_banner'});}catch(e){}"
-      >Registrar en vivo</a>
-    </div>
-  </div>
-
   <!-- Banner nuevo: mejores puntos -->
-  <div class="month-top-banner">
-    <div class="month-top-copy">
-      <h3>🏆 Ya puedes ver los mejores puntos del mes</h3>
-      <p>
-        Los clips con más reacción de la comunidad suben automáticamente al ranking.
-        Y si uno de los videos de esta cancha entra al <strong style="color:#fff;">Top 3</strong>,
-        aquí también se marca.
-      </p>
-    </div>
-    <a href="mejores.html" class="btn-top-month"
-      onclick="try{gtag('event','ver_mejores_del_mes_click',{event_category:'CTA',event_label:'banner_club_cancha'});}catch(e){}"
-    >Ver mejores puntos del mes</a>
-  </div>
+  <!-- (Banners removed to reduce UI noise; link to 'Mejores del mes' remains in the top-row) -->
 
   <!-- Loading -->
   <div id="loading" class="aviso">Cargando videos...</div>
 
-  <!-- Aviso 24h -->
-  <div class="aviso">Los videos se borran pasadas 24 horas de subida.</div>
+  <!-- Aviso 24h (subtle) -->
+  <div class="aviso" style="font-size:0.86rem;opacity:0.78;margin-bottom:8px;">Se muestran los clips más recientes (hasta 24h)</div>
 
   <!-- Videos -->
   <section id="videos-container" class="video-grid"></section>
@@ -512,42 +488,9 @@
   document.addEventListener('click', function(e) {
     var btn = e.target.closest('.btn-share-large');
     if (!btn) return;
-
-    if (btn.dataset.state === 'idle' || !btn.dataset.state) {
-      window._puntazoDownloading = true;
-
-      document.querySelectorAll('video.video-preview').forEach(function(prev) {
-        try {
-          prev.pause();
-          if (prev.src && !prev.dataset.pausedSrc) {
-            prev.dataset.pausedSrc = prev.src;
-            prev.removeAttribute('src');
-            prev.load();
-          }
-        } catch(err) {}
-      });
-
-      var observer = new MutationObserver(function() {
-        var state = btn.dataset.state;
-        if (state === 'idle' || state === 'ready' || !btn.dataset.state) {
-          window._puntazoDownloading = false;
-          observer.disconnect();
-
-          document.querySelectorAll('video.video-preview').forEach(function(prev) {
-            if (prev.dataset.pausedSrc) {
-              prev.src = prev.dataset.pausedSrc;
-              delete prev.dataset.pausedSrc;
-            }
-          });
-        }
-      });
-      observer.observe(btn, { attributes: true, attributeFilter: ['data-state'] });
-
-      setTimeout(function() {
-        window._puntazoDownloading = false;
-        observer.disconnect();
-      }, 60000);
-    }
+    // Downloads removed from primary flow in this iteration — keep as no-op
+    // so existing code that queries for .btn-share-large doesn't trigger heavy behavior.
+    return;
   }, true);
 
   var lastActivePreview = null;
