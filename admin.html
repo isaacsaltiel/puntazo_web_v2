@@ -6,6 +6,9 @@
 <base href="/" />
 <title>Admin · Puntazo</title>
 <meta name="robots" content="noindex,nofollow" />
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -148,6 +151,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
       <div class="sub" id="lastUpdated">Cargando…</div>
     </div>
     <div class="header-actions">
+      <a class="btn" href="/index.html">← Volver al sitio</a>
       <button class="btn" onclick="refreshAll()">↺ Actualizar</button>
       <button class="btn primary" onclick="exportCSV()">⬇ Exportar CSV</button>
       <a class="btn" href="https://console.firebase.google.com" target="_blank">Firebase ↗</a>
@@ -199,7 +203,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
 
 <script>
 const ADMIN_KEY  = 'puntazo2025';
-const STATS_URL  = '/data/metrics/stats_summary.json';
+const STATS_URL  = '/data/stats_summary.json';
 
 // ── Estado ──
 let _ghStats   = null;   // stats_summary.json completo
