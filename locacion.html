@@ -44,21 +44,9 @@
 
 <div class="page-bg"></div>
 
-<!-- NAV — solo logo, sin texto -->
-<nav>
-  <a href="inicio.html" class="nav-logo">
-    <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
-  </a>
-  <ul class="nav-links" id="nav-menu">
-    <li><a href="inicio.html">Inicio</a></li>
-    <li><a href="inicio.html#clubs">Para clubs</a></li>
-    <li><a href="index.html">Mis clips</a></li>
-  </ul>
-  <div class="nav-right">
-    <a href="https://wa.me/522206804856?text=Hola%20Puntazo!" target="_blank" class="nav-cta">WhatsApp</a>
-    <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú">☰</button>
-  </div>
-</nav>
+<!-- Shared header -->
+<div id="nav-root" data-nav-variant="internal"></div>
+<script src="/assets/header.js"></script>
 
 <main>
 
@@ -77,8 +65,8 @@
     >¿No aparece tu clip? Recuperar →</a>
   </div>
 
-  <!-- Botón volver — el script.js le asigna el href correcto -->
-  <a href="index.html" id="btn-volver" class="btn-back">← Regresar a locaciones</a>
+  <!-- Botón volver — vuelve a la lista de exploración -->
+  <a href="explorar.html" id="btn-volver" class="btn-back">← Regresar a locaciones</a>
 
   <!-- Header -->
   <div class="page-header">
@@ -146,6 +134,22 @@
     });
     obs.observe(nombreEl, { childList: true, characterData: true, subtree: true });
   }
+</script>
+
+<script>
+  // Auth-guard for static nav links in this page
+  document.addEventListener('click', function (e) {
+    try {
+      const a = e.target.closest && e.target.closest('a[data-auth-only]');
+      if (!a) return;
+      const user = (window.PuntazoAuth && window.PuntazoAuth.currentUser) || (window.firebase && window.firebase.auth && window.firebase.auth().currentUser);
+      if (user) return;
+      e.preventDefault();
+      if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === 'function') {
+        window.PuntazoAuth.signIn();
+      }
+    } catch (err) {}
+  }, false);
 </script>
 </body>
 </html>
