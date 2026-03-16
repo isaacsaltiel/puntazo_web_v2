@@ -1,50 +1,11 @@
 // =============================================================
 // reactions.js — Puntazo · Reacciones + Comentarios
-// Requiere: Firebase SDK (compat v9) cargado ANTES que este script
-// =============================================================
-//
-// SETUP RÁPIDO (5 pasos):
-//   1. Ve a https://console.firebase.google.com → Crear proyecto → "puntazo-clips"
-//   2. En el proyecto: Build → Firestore Database → Crear en modo TEST
-//   3. En el proyecto: Configuración ⚙️ → Aplicaciones → </> Web → Registrar app
-//   4. Copia el objeto firebaseConfig que te da y pégalo en FIREBASE_CONFIG abajo
-//   5. Listo. El resto lo hace este archivo.
-//
-// INTEGRACIÓN en lado.html (añadir antes de </body>):
-//   <link rel="stylesheet" href="/assets/reactions.css" />
-//   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-//   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-//   <script src="/assets/reactions.js"></script>
-//
-// LLAMADA por cada video renderizado (en script.js, donde creas la card):
-//   PuntazoReactions.attach(cardElement, {
-//     videoId: nombreArchivo,   // ej: "20250310_143022_cancha1A.mp4"
-//     videoUrl: urlDropbox,
-//     club: "Club Punta Sur",
-//     cancha: "Cancha 1",
-//     lado: "A",
-//     fecha: "2025-03-10"
-//   });
-//
-// MODO ADMIN: agrega ?admin=puntazo2025 a cualquier URL para ver los conteos
+// Soporte doble: slot mode (nuevo card layout) + legacy mode (mejores.html)
 // =============================================================
 
-// ──────────────────────────────────────────────
-// 1. CONFIGURACIÓN — Usar Firebase compartido (PuntazoFirebase)
-// ──────────────────────────────────────────────
-// La configuración y el init deben provenir de la instancia compartida
-// `window.PuntazoFirebase` provista por la aplicación principal.
-
-
-// Contraseña para modo admin (URL: ?admin=puntazo2025)
 const ADMIN_PASS = "puntazo2025";
-
-// Mínimo de reacciones para aparecer en mejores.html
-// REVISADO: elevar a 3 para evitar que cualquier video con 1 reacción
-// se vuelva candidato automáticamente. Ajusta según negocio.
 const MIN_REACTIONS_FOR_BEST = 3;
 
-// Reacciones disponibles
 const REACTIONS = [
   { key: "fuego",     emoji: "🔥", label: "Fuego"     },
   { key: "risa",      emoji: "😂", label: "Risa"      },
@@ -53,9 +14,7 @@ const REACTIONS = [
   { key: "sorpresa",  emoji: "😮", label: "¡Wow!"     },
 ];
 
-// ──────────────────────────────────────────────
-// 2. INIT FIREBASE (usar instancia compartida)
-// ──────────────────────────────────────────────
+// ── Init Firebase compartido ──
 (function initSharedFirebase() {
   try {
     if (!window.PuntazoFirebase || typeof window.PuntazoFirebase.ensureApp !== "function") {
@@ -67,9 +26,7 @@ const REACTIONS = [
   }
 })();
 
-// ──────────────────────────────────────────────
-// 3. UTILIDADES
-// ──────────────────────────────────────────────
+// ── Utilidades ──
 function isAdmin() {
   return new URLSearchParams(window.location.search).get("admin") === ADMIN_PASS;
 }
@@ -107,15 +64,15 @@ function escapeHTML(str) {
 function timeAgo(date) {
   if (!date) return "";
   const diff = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (diff < 60)  return "ahora";
+  if (diff < 60)   return "ahora";
   if (diff < 3600) return Math.floor(diff / 60) + " min";
   if (diff < 86400) return Math.floor(diff / 3600) + " h";
   return Math.floor(diff / 86400) + " d";
 }
 
-// ──────────────────────────────────────────────
-// 4. HTML DE LA UI DE REACCIONES
-// ──────────────────────────────────────────────
+// ── HTML builders ──
+
+// Legacy: bloque completo para mejores.html
 function buildUI(videoId, admin) {
   const btns = REACTIONS.map(r => `
     <button class="pz-rxn-btn" data-key="${r.key}" title="${r.label}" aria-label="${r.label}">
@@ -127,218 +84,259 @@ function buildUI(videoId, admin) {
   return `
     <div class="pz-reactions-wrap">
       <div class="pz-rxn-bar">${btns}</div>
-
       <div class="pz-participants-row">
         <div class="pz-participants" aria-hidden="false"></div>
         <button class="pz-claim-btn" title="Reclamar participación">🥷 Soy yo</button>
       </div>
-
-      <button class="pz-comment-toggle" aria-expanded="false">
-        <span class="pz-ct-icon">💬</span>
-        <span class="pz-ct-text">Comentar</span>
-      </button>
-
-      <div class="pz-comment-section" hidden>
-        <div class="pz-comments-list"></div>
-
-        <div class="pz-comment-controls">
-          <label class="pz-public-switch" style="display:none">
-            <input type="checkbox" class="pz-comment-public-cb" /> <span>Público</span>
-          </label>
-        </div>
-
-        <div class="pz-comment-input-row">
-          <input
-            class="pz-comment-input"
-            id="pz-comment-input-${videoId}"
-            name="pz-comment-input-${videoId}"
-            type="text"
-            placeholder="Escribe un comentario…"
-            maxlength="200"
-            autocomplete="off"
-          />
-
-          <button class="pz-send-btn" aria-label="Enviar">➤</button>
-        </div>
-        <div class="pz-char-count">200</div>
-        <button class="pz-show-more-comments" style="display:none">Mostrar más</button>
-      </div>
+      ${buildCommentsHTML(videoId)}
     </div>
   `;
 }
 
-// ──────────────────────────────────────────────
-// 5. FUNCIÓN PRINCIPAL: attach()
-// ──────────────────────────────────────────────
-async function attachReactions(container, meta) {
-  const db = window.PuntazoFirebase.db();
-  const admin = isAdmin();
-  const DEVICE = getDeviceId();
+// Slot mode: sección de reacciones
+function buildRxnBarHTML(admin) {
+  const btns = REACTIONS.map(r => `
+    <button class="pz-rxn-btn" data-key="${r.key}" title="${r.label}" aria-label="${r.label}">
+      <span class="pz-emoji">${r.emoji}</span>
+      ${admin ? '<span class="pz-count">0</span>' : ''}
+    </button>
+  `).join("");
+  return `<div class="pz-rxn-bar">${btns}</div>`;
+}
 
-  // Sanitizar videoId: solo alfanumérico, puntos, guiones
-  const videoId = (meta.videoId || "unknown").replace(/[^a-zA-Z0-9._\-]/g, "_");
+// Sección de comentarios (usada en ambos modos)
+function buildCommentsHTML(videoId) {
+  return `
+    <button class="pz-comment-toggle" aria-expanded="false">
+      <span class="pz-ct-icon">💬</span>
+      <span class="pz-ct-text">Comentar</span>
+    </button>
+    <div class="pz-comment-section" hidden>
+      <div class="pz-comments-list"></div>
+      <button class="pz-show-more-comments" style="display:none">Ver más</button>
+      <div class="pz-comment-input-row">
+        <input
+          class="pz-comment-input"
+          id="pz-ci-${videoId}"
+          type="text"
+          placeholder="Escribe un comentario…"
+          maxlength="200"
+          autocomplete="off"
+        />
+        <button class="pz-send-btn" aria-label="Enviar">➤</button>
+        <button class="pz-send-incognito-btn" style="display:none" aria-label="Enviar como incógnito" title="🥷 Enviar como incógnito">🥷</button>
+      </div>
+      <div class="pz-char-count">200</div>
+    </div>
+  `;
+}
 
-  const docRef      = db.collection("reactions").doc(videoId);
-  const commentsRef = docRef.collection("comments");
-  const participantsRef = docRef.collection("participants");
+// ── Core wiring: toda la lógica de Firestore y eventos ──
+// Recibe refs a los elementos DOM y referencias de Firestore.
+function wireReactionsCore({
+  db, admin, DEVICE, videoId, meta,
+  docRef, commentsRef, participantsRef,
+  $rxnBtns,         // NodeList de buttons .pz-rxn-btn
+  $participants,    // div .pz-participants
+  $claimBtn,        // button .pz-claim-btn
+  $toggle,          // button .pz-comment-toggle
+  $section,         // div .pz-comment-section
+  $list,            // div .pz-comments-list
+  $input,           // input
+  $sendNormal,      // button enviar normal
+  $sendIncognito,   // button enviar incógnito (puede ser null)
+  $charCount,       // div char count
+  $showMoreBtn,     // button mostrar más
+  $rxnPreview,      // div en header de card (puede ser null, solo slot mode)
+}) {
 
-  // Inyectar UI
-  container.insertAdjacentHTML("beforeend", buildUI(videoId, admin));
-
-  const wrap         = container.querySelector(".pz-reactions-wrap");
-  const $participants = wrap.querySelector('.pz-participants');
-  const $claimBtn = wrap.querySelector('.pz-claim-btn');
-  const $btns        = wrap.querySelectorAll(".pz-rxn-btn");
-  const $toggle      = wrap.querySelector(".pz-comment-toggle");
-  const $section     = wrap.querySelector(".pz-comment-section");
-  const $list        = wrap.querySelector(".pz-comments-list");
-  const $input       = wrap.querySelector(".pz-comment-input");
-  const $send        = wrap.querySelector(".pz-send-btn");
-  const $charCount   = wrap.querySelector(".pz-char-count");
-  const $showMoreBtn = wrap.querySelector('.pz-show-more-comments');
-  const $publicSwitchWrap = wrap.querySelector('.pz-public-switch');
-  const $publicCb = wrap.querySelector('.pz-comment-public-cb');
-
-  // ── Actualizar conteo de caracteres ──
-  $input.addEventListener("input", () => {
-    const left = 200 - $input.value.length;
-    $charCount.textContent = left;
-    $charCount.style.color = left < 20 ? "#ef4444" : "";
-  });
+  // ── Input: contador de caracteres ──
+  if ($input) {
+    $input.addEventListener("input", () => {
+      const left = 200 - $input.value.length;
+      if ($charCount) {
+        $charCount.textContent = left;
+        $charCount.style.color = left < 20 ? "#ef4444" : "";
+      }
+    });
+  }
 
   // ── Toggle comentarios ──
-  $toggle.addEventListener("click", () => {
-    const open = !$section.hidden;
-    $section.hidden = open;
-    $toggle.setAttribute("aria-expanded", String(!open));
-    if (!open) $input.focus();
-  });
+  if ($toggle && $section) {
+    $toggle.addEventListener("click", () => {
+      const open = !$section.hidden;
+      $section.hidden = open;
+      $toggle.setAttribute("aria-expanded", String(!open));
+      if (!open && $input) $input.focus();
+    });
+  }
 
-  // ── Listener reacciones (tiempo real) ──
+  // ── Snapshot reacciones ──
   docRef.onSnapshot(snap => {
-    const data   = snap.exists ? snap.data() : {};
-    const voted  = getVoted(videoId);
-    const total  = data.total || 0;
+    const data  = snap.exists ? snap.data() : {};
+    const voted = getVoted(videoId);
+    const total = data.total || 0;
 
-    $btns.forEach(btn => {
+    $rxnBtns && $rxnBtns.forEach(btn => {
       const key   = btn.dataset.key;
       const count = data[key] || 0;
-      btn.querySelector(".pz-count").textContent = count;
+      const $count = btn.querySelector(".pz-count");
+      if ($count) $count.textContent = count;
       btn.classList.toggle("pz-voted", !!voted[key]);
-      // Animación suave al cambiar
       btn.classList.toggle("pz-active-pop", count > 0);
     });
 
-    // Badge en el toggle (solo si hay reacciones)
-    // Reactions total shown on reaction buttons; keep comment count in toggle text only
+    // Preview de emojis activos en el header de card (slot mode)
+    if ($rxnPreview) {
+      const activos = REACTIONS
+        .filter(r => (data[r.key] || 0) > 0)
+        .map(r => r.emoji)
+        .join("");
+      $rxnPreview.textContent = activos;
+    }
 
-    // --- Business rule: marcar inmortalidad si cruza umbral de "mejores" ---
+    // Lógica inmortal
     try {
       const MIN = MIN_REACTIONS_FOR_BEST;
-      if (!data.immortal && (total >= MIN)) {
-        // marcar inmortal y guardar razón explícita
+      if (!data.immortal && total >= MIN) {
         docRef.set({
           immortal: true,
           immortal_reasons: { best_threshold: MIN },
           immortal_markedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true }).catch(() => {});
       }
-    } catch (e) {
-      // no bloquear UI si falla
-    }
+    } catch(e) {}
   });
 
-  // ── Participants listener ──
-  participantsRef.orderBy('claimedAt', 'asc').onSnapshot(snap => {
-    $participants.innerHTML = '';
-    snap.forEach(doc => {
-      const p = doc.data();
-      const chip = document.createElement('a');
-      chip.href = `/jugador.html?uid=${encodeURIComponent(p.uid)}`;
-      chip.className = 'pz-participant-chip';
-      chip.title = p.displayName || 'Jugador';
-      chip.innerHTML = p.photoURL ? `<img src="${escapeHTML(p.photoURL)}" alt="${escapeHTML(p.displayName||'')}" />` : `<span class="pz-p-initial">${escapeHTML((p.displayName||'')[0]||'J')}</span>`;
-      $participants.appendChild(chip);
+  // ── Snapshot participantes ──
+  if ($participants) {
+    participantsRef.orderBy("claimedAt", "asc").onSnapshot(snap => {
+      $participants.innerHTML = "";
+      snap.forEach(doc => {
+        const p = doc.data();
+        const chip = document.createElement("a");
+        chip.href = `/jugador.html?uid=${encodeURIComponent(p.uid)}`;
+        chip.className = "pz-participant-chip";
+        chip.title = p.displayName || "Jugador";
+        chip.innerHTML = p.photoURL
+          ? `<img src="${escapeHTML(p.photoURL)}" alt="${escapeHTML(p.displayName || "")}" /><span>${escapeHTML(p.displayName || "Jugador")}</span>`
+          : `<span class="pz-p-initial">${escapeHTML((p.displayName || "")[0] || "J")}</span><span>${escapeHTML(p.displayName || "Jugador")}</span>`;
+        $participants.appendChild(chip);
+      });
+
+      if ($claimBtn) {
+        // Si el usuario ya está como participante, cambiar texto del botón
+        const authUser = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+        if (authUser) {
+          const myClaim = snap.docs && snap.docs.find(d => d.id === authUser.uid);
+          if (myClaim) {
+            $claimBtn.textContent = "✓ Quitar reclamo";
+            $claimBtn.style.color = "rgba(234,242,255,0.80)";
+          } else {
+            $claimBtn.textContent = "🥷 Soy yo";
+            $claimBtn.style.color = "";
+          }
+        }
+        // Ocultar si hay 4 y no eres participante
+        if (typeof snap.size === "number" && snap.size >= 4) {
+          const authUser2 = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+          const isClaimed = authUser2 && snap.docs && snap.docs.find(d => d.id === authUser2.uid);
+          if (!isClaimed) $claimBtn.style.display = "none";
+        } else {
+          $claimBtn.style.display = "";
+        }
+      }
     });
-    // Show/hide claim button depending on snapshot size
-    if (typeof snap.size === 'number') {
-      $claimBtn.style.display = snap.size >= 4 ? 'none' : 'inline-flex';
-    }
-  });
+  }
 
-  // ── Listener comentarios ──
-  // New: collapse long comment lists, show first 3 unless user expands
+  // ── Snapshot comentarios ──
   let showAllComments = false;
   const MAX_COLLAPSED = 3;
-  commentsRef.orderBy("ts", "asc").onSnapshot(snap => {
-    $list.innerHTML = "";
-    const count = snap.size;
 
-    const docs = [];
-    snap.forEach(doc => docs.push({ id: doc.id, data: doc.data() }));
+  if ($list) {
+    commentsRef.orderBy("ts", "asc").onSnapshot(snap => {
+      $list.innerHTML = "";
+      const count = snap.size;
+      const docs = [];
+      snap.forEach(doc => docs.push({ id: doc.id, data: doc.data() }));
+      const toShow = showAllComments ? docs : docs.slice(-MAX_COLLAPSED);
 
-    const toShow = showAllComments ? docs : docs.slice(-MAX_COLLAPSED);
+      toShow.forEach(item => {
+        const d = item.data;
+        const ago = d.ts?.toDate ? timeAgo(d.ts.toDate()) : "";
+        const isMe = d.deviceId === DEVICE ||
+          (d.uid && window.PuntazoAuth?.currentUser && d.uid === window.PuntazoAuth.currentUser.uid);
 
-    toShow.forEach(item => {
-      const d = item.data;
-      const ago = d.ts?.toDate ? timeAgo(d.ts.toDate()) : "";
-      const isMe = d.deviceId === DEVICE || (d.uid && window.PuntazoAuth && window.PuntazoAuth.currentUser && d.uid === window.PuntazoAuth.currentUser.uid);
+        const el = document.createElement("div");
+        el.className = "pz-comment" + (isMe ? " pz-mine" : "");
 
-      const el = document.createElement("div");
-      el.className = "pz-comment" + (isMe ? " pz-mine" : "");
+        let authorHtml = "";
+        if (d.uid && d.public === true) {
+          const name = escapeHTML(d.displayName || "Jugador");
+          const photo = d.photoURL
+            ? `<img class="pz-comment-avatar" src="${escapeHTML(d.photoURL)}" alt="${name}" />`
+            : "";
+          authorHtml = `<a class="pz-comment-author" href="/jugador.html?uid=${encodeURIComponent(d.uid)}">${photo}<strong>${name}</strong></a>`;
+        } else if (d.uid && d.public === false) {
+          authorHtml = `<span class="pz-comment-author">🥷 Incógnito</span>`;
+        } else {
+          authorHtml = `<span class="pz-comment-author" style="color:rgba(234,242,255,.35)">Anónimo</span>`;
+        }
 
-      // Determine author display
-      let authorHtml = '';
-      if (d.uid && d.public === true) {
-        const name = escapeHTML(d.displayName || 'Jugador');
-        const photo = d.photoURL ? `<img class="pz-comment-avatar" src="${escapeHTML(d.photoURL)}" alt="${name}" />` : '';
-        authorHtml = `<a class="pz-comment-author" href="/jugador.html?uid=${encodeURIComponent(d.uid)}">${photo}<strong>${name}</strong></a>`;
-      } else if (d.uid && d.public === false) {
-        authorHtml = `<span class="pz-comment-author">Incógnito</span>`;
-      } else if (d.deviceId && !d.uid) {
-        authorHtml = `<span class="pz-comment-author">Anónimo</span>`;
+        el.innerHTML = `
+          <div class="pz-comment-head">${authorHtml}<span class="pz-comment-meta">${ago}</span></div>
+          <div class="pz-comment-text">${escapeHTML(d.text)}</div>
+        `;
+        $list.appendChild(el);
+      });
+
+      if ($showMoreBtn) {
+        if (count > MAX_COLLAPSED) {
+          $showMoreBtn.style.display = "inline-block";
+          $showMoreBtn.textContent = showAllComments
+            ? "Ver menos"
+            : `Ver ${count - MAX_COLLAPSED} más`;
+        } else {
+          $showMoreBtn.style.display = "none";
+        }
       }
 
-      el.innerHTML = `
-        <div class="pz-comment-head">${authorHtml}<span class="pz-comment-meta">${ago}</span></div>
-        <div class="pz-comment-text">${escapeHTML(d.text)}</div>
-      `;
-      $list.appendChild(el);
+      if ($toggle) {
+        const $txt = $toggle.querySelector(".pz-ct-text");
+        if ($txt) $txt.textContent = count > 0 ? `Comentarios (${count})` : "Comentar";
+      }
+
+      if (!$section?.hidden && showAllComments && $list) {
+        $list.scrollTop = $list.scrollHeight;
+      }
     });
+  }
 
-    // Show more button logic
-    if (count > MAX_COLLAPSED) {
-      $showMoreBtn.style.display = 'inline-block';
-      $showMoreBtn.textContent = showAllComments ? `Mostrar menos` : `Mostrar ${count - MAX_COLLAPSED} comentarios`;
-    } else {
-      $showMoreBtn.style.display = 'none';
-    }
-
-    // Scroll to bottom if open and showing all
-    if (!$section.hidden && showAllComments) {
-      $list.scrollTop = $list.scrollHeight;
-    }
-
-    const txt = $toggle.querySelector(".pz-ct-text");
-    txt.textContent = count > 0 ? `Comentarios (${count})` : "Comentar";
-  });
+  if ($showMoreBtn) {
+    $showMoreBtn.addEventListener("click", () => {
+      showAllComments = !showAllComments;
+      // El snapshot onSnapshot se re-evaluará porque showAllComments está en closure
+      commentsRef.orderBy("ts", "asc").get().then(snap => {
+        // Disparar re-render manual
+        if ($list) $list.dispatchEvent(new Event("pz-rerender"));
+      });
+    });
+  }
 
   // ── Click en reacción ──
-  $btns.forEach(btn => {
+  $rxnBtns && $rxnBtns.forEach(btn => {
     btn.addEventListener("click", async () => {
       const key     = btn.dataset.key;
       const voted   = getVoted(videoId);
       const already = !!voted[key];
       const delta   = already ? -1 : 1;
 
-      // Optimistic UI
       saveVoted(videoId, key, !already);
       btn.classList.toggle("pz-voted", !already);
 
       const update = {
         [key]: firebase.firestore.FieldValue.increment(delta),
         total: firebase.firestore.FieldValue.increment(delta),
-        // Guardar metadata para mejores.html (solo en primera reacción)
         videoId,
         videoUrl: meta.videoUrl  || "",
         club:     meta.club      || "",
@@ -350,8 +348,7 @@ async function attachReactions(container, meta) {
 
       try {
         await docRef.set(update, { merge: true });
-      } catch (e) {
-        // Rollback si falla
+      } catch(e) {
         saveVoted(videoId, key, already);
         btn.classList.toggle("pz-voted", already);
         console.error("[Puntazo Reactions] Error guardando reacción:", e);
@@ -360,34 +357,32 @@ async function attachReactions(container, meta) {
   });
 
   // ── Enviar comentario ──
-  async function sendComment() {
+  async function sendComment(incognito = false) {
+    if (!$input) return;
     const text = $input.value.trim();
     if (!text) return;
 
-    $send.disabled = true;
-    $input.disabled = true;
+    if ($sendNormal)   $sendNormal.disabled = true;
+    if ($sendIncognito) $sendIncognito.disabled = true;
+    if ($input)        $input.disabled = true;
 
     try {
-      // Build comment payload: preserve backward-compatible fields for old anonymous comments
       const payload = {
         text,
         deviceId: DEVICE,
         ts: firebase.firestore.FieldValue.serverTimestamp(),
       };
 
-      // If user is authenticated and chose public, attach uid/displayName/photo and public flag
-      const authUser = window.PuntazoAuth && window.PuntazoAuth.currentUser ? window.PuntazoAuth.currentUser : null;
+      const authUser = window.PuntazoAuth?.currentUser || null;
       if (authUser) {
-        const chosePublic = !!($publicCb && $publicCb.checked);
-        payload.uid = authUser.uid;
-        payload.displayName = authUser.displayName || '';
-        payload.photoURL = authUser.photoURL || '';
-        payload.public = !!chosePublic; // true => show name+photo, false => incognito label
+        payload.uid          = authUser.uid;
+        payload.displayName  = authUser.displayName || "";
+        payload.photoURL     = authUser.photoURL    || "";
+        payload.public       = !incognito;
       }
 
       await commentsRef.add(payload);
 
-      // Asegurar que el doc padre existe
       await docRef.set({
         videoId,
         videoUrl: meta.videoUrl || "",
@@ -395,118 +390,184 @@ async function attachReactions(container, meta) {
         cancha:   meta.cancha   || "",
         lado:     meta.lado     || "",
         fecha:    meta.fecha    || "",
-        total:    firebase.firestore.FieldValue.increment(0), // no suma, solo asegura campo
+        total: firebase.firestore.FieldValue.increment(0),
       }, { merge: true });
 
-      // Incrementar contador de comentarios (métrica comercial)
       try {
         await docRef.set({ comments_count: firebase.firestore.FieldValue.increment(1) }, { merge: true });
-      } catch (e) { /* noop */ }
+      } catch(e) {}
 
       $input.value = "";
-      $charCount.textContent = "200";
-      $list.scrollTop = $list.scrollHeight;
-    } catch (e) {
+      if ($charCount) $charCount.textContent = "200";
+      if ($list) $list.scrollTop = $list.scrollHeight;
+    } catch(e) {
       console.error("[Puntazo Reactions] Error al comentar:", e);
     }
 
-    $send.disabled  = false;
-    $input.disabled = false;
-    $input.focus();
+    if ($sendNormal)    $sendNormal.disabled   = false;
+    if ($sendIncognito) $sendIncognito.disabled = false;
+    if ($input) {
+      $input.disabled = false;
+      $input.focus();
+    }
   }
 
-  $send.addEventListener("click", sendComment);
-  $input.addEventListener("keydown", e => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendComment();
-    }
-  });
+  if ($sendNormal)   $sendNormal.addEventListener("click",   () => sendComment(false));
+  if ($sendIncognito) $sendIncognito.addEventListener("click", () => sendComment(true));
 
-  // Toggle show more comments
-  $showMoreBtn.addEventListener('click', () => {
-    showAllComments = !showAllComments;
-    // Force re-render by re-querying once (we depend on onSnapshot to update view)
-    // No-op: onSnapshot will reflect current showAllComments in closure next tick
-  });
-
-  // Claim button behavior: requires auth, creates participant doc under participants/<uid>
-  async function toggleClaim() {
-    const auth = window.PuntazoAuth;
-    if (!auth || !auth.currentUser) {
-      // Ask to login
-      if (typeof window.PuntazoAuth !== 'undefined') {
-        window.PuntazoAuth.requireAuth(async () => {
-          try { await doClaim(); } catch (e) { console.error(e); }
-        });
+  if ($input) {
+    $input.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendComment(false);
       }
-      return;
-    }
-    await doClaim();
+    });
   }
 
+  // ── Mostrar/ocultar botón incógnito según auth ──
+  function syncAuthUI(user) {
+    if ($sendIncognito) {
+      $sendIncognito.style.display = user ? "flex" : "none";
+    }
+  }
+
+  window.addEventListener("puntazo:auth-changed", e => {
+    try { syncAuthUI(e.detail?.user); } catch {}
+  });
+  syncAuthUI(window.PuntazoAuth?.currentUser || null);
+
+  // ── Claim ──
   async function doClaim() {
-    const user = window.PuntazoAuth.currentUser;
+    const user = window.PuntazoAuth?.currentUser;
     if (!user) return;
     const uid = user.uid;
     const doc = await participantsRef.doc(uid).get();
     if (doc.exists) {
-      // Unclaim
       await participantsRef.doc(uid).delete();
-      try {
-        await docRef.set({ claims_count: firebase.firestore.FieldValue.increment(-1) }, { merge: true });
-      } catch (e) { /* noop */ }
+      try { await docRef.set({ claims_count: firebase.firestore.FieldValue.increment(-1) }, { merge: true }); } catch {}
       return;
     }
-
-    // Ensure we don't exceed 4 participants (best-effort client-side guard)
-    const snap = await participantsRef.get();
-    if (snap.size >= 4) {
-      alert('Este video ya tiene 4 participantes reclamados');
-      return;
-    }
-
+    const snapCount = await participantsRef.get();
+    if (snapCount.size >= 4) { alert("Este video ya tiene 4 participantes reclamados"); return; }
     await participantsRef.doc(uid).set({
-      uid: uid,
-      displayName: user.displayName || '',
-      photoURL: user.photoURL || '',
+      uid,
+      displayName: user.displayName || "",
+      photoURL:    user.photoURL    || "",
       claimedAt: firebase.firestore.FieldValue.serverTimestamp(),
       videoId
     });
-    // Incrementar contador de claims/apariciones
-    try {
-      await docRef.set({ claims_count: firebase.firestore.FieldValue.increment(1) }, { merge: true });
-    } catch (e) { /* noop */ }
+    try { await docRef.set({ claims_count: firebase.firestore.FieldValue.increment(1) }, { merge: true }); } catch {}
   }
 
-  $claimBtn.addEventListener('click', toggleClaim);
-
-  // Show public checkbox only when auth ready
-  function updateAuthUI(user) {
-    if (user) {
-      $publicSwitchWrap.style.display = '';
-    } else {
-      $publicSwitchWrap.style.display = 'none';
-      if ($publicCb) $publicCb.checked = false;
-    }
+  if ($claimBtn) {
+    $claimBtn.addEventListener("click", async () => {
+      const auth = window.PuntazoAuth;
+      if (!auth || !auth.currentUser) {
+        if (auth && typeof auth.requireAuth === "function") {
+          auth.requireAuth(async () => { try { await doClaim(); } catch(e) {} });
+        }
+        return;
+      }
+      await doClaim();
+    });
   }
-
-  // Listen auth changes
-  window.addEventListener('puntazo:auth-changed', (e) => {
-    try { updateAuthUI(e.detail.user); } catch {}
-  });
-
-  // Initial auth state
-  try { updateAuthUI(window.PuntazoAuth && window.PuntazoAuth.currentUser); } catch {}
 }
 
+// ── Función principal: attach() ──
+async function attachReactions(container, meta) {
+  // Esperar hasta que PuntazoFirebase esté disponible
+  let retries = 0;
+  while (!window.PuntazoFirebase?.db && retries < 30) {
+    await new Promise(r => setTimeout(r, 200));
+    retries++;
+  }
 
-// ──────────────────────────────────────────────
-// 6. EXPORT
-// ──────────────────────────────────────────────
+  if (!window.PuntazoFirebase?.db) {
+    console.error("[Puntazo Reactions] PuntazoFirebase no disponible tras espera.");
+    return;
+  }
+
+  const db   = window.PuntazoFirebase.db();
+  const admin  = isAdmin();
+  const DEVICE = getDeviceId();
+
+  const videoId         = (meta.videoId || "unknown").replace(/[^a-zA-Z0-9._\-]/g, "_");
+  const docRef          = db.collection("reactions").doc(videoId);
+  const commentsRef     = docRef.collection("comments");
+  const participantsRef = docRef.collection("participants");
+
+  // ── Detectar modo ──
+  const rxnSlot = container.querySelector("[data-rxn-slot]");
+  const isSlotMode = !!rxnSlot;
+
+  if (isSlotMode) {
+    // === SLOT MODE: card con estructura pre-construida ===
+    const participantsSlot = container.querySelector("[data-participants-slot]");
+    const commentsSlot     = container.querySelector("[data-comments-slot]");
+    const claimSlot        = container.querySelector("[data-claim-slot]");
+    const rxnPreview       = container.querySelector("[data-rxn-preview]");
+
+    // Poblar slots
+    rxnSlot.innerHTML = buildRxnBarHTML(admin);
+
+    if (participantsSlot) {
+      participantsSlot.innerHTML = `<div class="pz-participants"></div>`;
+    }
+    if (commentsSlot) {
+      commentsSlot.innerHTML = buildCommentsHTML(videoId);
+    }
+    if (claimSlot) {
+      claimSlot.innerHTML = `<button class="pz-claim-btn">🥷 Soy yo</button>`;
+    }
+
+    // Recopilar refs
+    wireReactionsCore({
+      db, admin, DEVICE, videoId, meta,
+      docRef, commentsRef, participantsRef,
+      $rxnBtns:       rxnSlot.querySelectorAll(".pz-rxn-btn"),
+      $participants:  participantsSlot?.querySelector(".pz-participants"),
+      $claimBtn:      claimSlot?.querySelector(".pz-claim-btn"),
+      $toggle:        commentsSlot?.querySelector(".pz-comment-toggle"),
+      $section:       commentsSlot?.querySelector(".pz-comment-section"),
+      $list:          commentsSlot?.querySelector(".pz-comments-list"),
+      $input:         commentsSlot?.querySelector(".pz-comment-input"),
+      $sendNormal:    commentsSlot?.querySelector(".pz-send-btn"),
+      $sendIncognito: commentsSlot?.querySelector(".pz-send-incognito-btn"),
+      $charCount:     commentsSlot?.querySelector(".pz-char-count"),
+      $showMoreBtn:   commentsSlot?.querySelector(".pz-show-more-comments"),
+      $rxnPreview:    rxnPreview || null,
+    });
+
+  } else {
+    // === LEGACY MODE: inject bloque completo (mejores.html) ===
+    container.insertAdjacentHTML("beforeend", buildUI(videoId, admin));
+
+    const wrap = container.querySelector(".pz-reactions-wrap");
+    if (!wrap) return;
+
+    wireReactionsCore({
+      db, admin, DEVICE, videoId, meta,
+      docRef, commentsRef, participantsRef,
+      $rxnBtns:       wrap.querySelectorAll(".pz-rxn-btn"),
+      $participants:  wrap.querySelector(".pz-participants"),
+      $claimBtn:      wrap.querySelector(".pz-claim-btn"),
+      $toggle:        wrap.querySelector(".pz-comment-toggle"),
+      $section:       wrap.querySelector(".pz-comment-section"),
+      $list:          wrap.querySelector(".pz-comments-list"),
+      $input:         wrap.querySelector(".pz-comment-input"),
+      $sendNormal:    wrap.querySelector(".pz-send-btn"),
+      $sendIncognito: wrap.querySelector(".pz-send-incognito-btn"),
+      $charCount:     wrap.querySelector(".pz-char-count"),
+      $showMoreBtn:   wrap.querySelector(".pz-show-more-comments"),
+      $rxnPreview:    null,
+    });
+  }
+}
+
+// ── Export ──
 window.PuntazoReactions = {
-  attach:  attachReactions,
+  attach:      attachReactions,
   isAdmin,
   MIN_FOR_BEST: MIN_REACTIONS_FOR_BEST,
-  db: () => window.PuntazoFirebase.db(),
+  db:          () => window.PuntazoFirebase.db(),
 };
