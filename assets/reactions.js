@@ -30,17 +30,10 @@
 // =============================================================
 
 // ──────────────────────────────────────────────
-// 1. CONFIGURACIÓN — REEMPLAZA CON TUS DATOS
+// 1. CONFIGURACIÓN — Usar Firebase compartido (PuntazoFirebase)
 // ──────────────────────────────────────────────
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDN6lutb_WqCZHQT3_NbxjZ2BlA8wjnfPg",
-  authDomain: "puntazo-clips.firebaseapp.com",
-  projectId: "puntazo-clips",
-  storageBucket: "puntazo-clips.firebasestorage.app",
-  messagingSenderId: "400777430029",
-  appId: "1:400777430029:web:4ce79047ddf5544a010144",
-  measurementId: "G-1954JRGNL6"
-};
+// La configuración y el init deben provenir de la instancia compartida
+// `window.PuntazoFirebase` provista por la aplicación principal.
 
 
 // Contraseña para modo admin (URL: ?admin=puntazo2025)
@@ -59,15 +52,16 @@ const REACTIONS = [
 ];
 
 // ──────────────────────────────────────────────
-// 2. INIT FIREBASE (solo una vez)
+// 2. INIT FIREBASE (usar instancia compartida)
 // ──────────────────────────────────────────────
-(function initFirebase() {
+(function initSharedFirebase() {
   try {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(FIREBASE_CONFIG);
+    if (!window.PuntazoFirebase || typeof window.PuntazoFirebase.ensureApp !== "function") {
+      throw new Error("PuntazoFirebase no está disponible.");
     }
+    window.PuntazoFirebase.ensureApp();
   } catch (e) {
-    console.error("[Puntazo Reactions] Error inicializando Firebase:", e);
+    console.error("[Puntazo Reactions] Error inicializando Firebase compartido:", e);
   }
 })();
 
@@ -161,7 +155,7 @@ function buildUI(videoId, admin) {
 // 5. FUNCIÓN PRINCIPAL: attach()
 // ──────────────────────────────────────────────
 async function attachReactions(container, meta) {
-  const db   = firebase.firestore();
+  const db = window.PuntazoFirebase.db();
   const admin = isAdmin();
   const DEVICE = getDeviceId();
 
@@ -348,5 +342,5 @@ window.PuntazoReactions = {
   attach:  attachReactions,
   isAdmin,
   MIN_FOR_BEST: MIN_REACTIONS_FOR_BEST,
-  db: () => firebase.firestore(),
+  db: () => window.PuntazoFirebase.db(),
 };
