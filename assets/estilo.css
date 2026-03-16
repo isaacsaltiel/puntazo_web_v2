@@ -137,6 +137,46 @@ nav,
   .site-header{padding:0.85rem 1.25rem;}
 }
 
+/* Desktop-specific override: ensure navbar is inline and .show is inert */
+@media (min-width: 861px) {
+  /* Hide hamburger on desktop */
+  .menu-toggle{ display: none !important; }
+
+  /* Navbar should be a normal inline horizontal bar (no fixed overlay)
+     Reset properties that mobile media query sets to fixed/column */
+  .navbar,
+  .nav-links,
+  #nav-menu {
+    display: flex !important;
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    background: transparent !important;
+    border-bottom: none !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 1.75rem !important;
+    padding: 0 !important;
+    z-index: 100 !important;
+  }
+
+  /* Keep link padding/visuals intact but remove stacked separators */
+  .navbar a,
+  .nav-links a {
+    padding: 0 !important;
+    border-bottom: none !important;
+  }
+
+  /* Make .show no-op in desktop — keep same inline layout */
+  .navbar.show,
+  .nav-links.show,
+  #nav-menu.show {
+    display: flex !important;
+    position: static !important;
+  }
+}
+
 /* ══════════════════════════════════════════
    MAIN WRAPPER — páginas internas
 ══════════════════════════════════════════ */
