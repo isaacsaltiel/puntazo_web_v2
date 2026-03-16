@@ -5,33 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <base href="/" />
 <title>Puntazos del mes · Puntazo</title>
-<meta name="description" content="Los puntos más épicos del mes en Puntazo. Reacciona, comparte y gana." />
-
+<meta name="description" content="Los puntos más épicos del mes. Reacciona, comparte y gana." />
 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
-<script>
-  window.dataLayer=window.dataLayer||[];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js',new Date()); gtag('config','G-7HTMSTJ035');
-</script>
-
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
-<link rel="icon" type="image/png" sizes="32x32"   href="/assets/icons/favicon-32x32.png" />
-<link rel="icon" type="image/png" sizes="16x16"   href="/assets/icons/favicon-16x16.png" />
-<link rel="manifest" href="/assets/icons/manifest.json" />
-<meta name="theme-color" content="#050914" />
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
-
-<link rel="stylesheet" href="assets/estilo.css" />
-<link rel="stylesheet" href="/assets/card.css" />
-<link rel="stylesheet" href="/assets/reactions.css" />
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
+<link rel="stylesheet" href="assets/estilo.css" />
+<link rel="stylesheet" href="/assets/card.css" />
+<link rel="stylesheet" href="/assets/reactions.css" />
 <script src="/assets/reactions.js"></script>
 <script src="/assets/card.js"></script>
 
@@ -47,7 +34,6 @@
 
   main { position:relative;z-index:1;max-width:860px;margin:0 auto;padding:32px 16px 80px; }
 
-  /* ── Hero ── */
   .page-hero { text-align:center;margin-bottom:28px; }
   .hero-eyebrow { font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold);opacity:.85;margin-bottom:10px; }
   .hero-title {
@@ -57,17 +43,15 @@
     margin-bottom:14px;
   }
 
-  /* ── Contest banner ── */
   .contest-banner {
     margin:0 auto 28px;max-width:640px;padding:20px 22px;border-radius:20px;
     background:linear-gradient(135deg,rgba(255,190,0,.08),rgba(0,79,200,.10));
     border:1px solid rgba(255,190,0,.22);box-shadow:0 12px 36px rgba(0,0,0,.22);text-align:center;
   }
   .contest-banner h2 { font-size:1.05rem;font-weight:900;color:var(--gold);margin-bottom:8px; }
-  .contest-banner p  { font-size:0.88rem;color:rgba(234,242,255,.72);line-height:1.65; }
+  .contest-banner p  { font-size:.88rem;color:rgba(234,242,255,.72);line-height:1.65; }
   .contest-banner strong { color:#eaf2ff; }
 
-  /* ── Month filter ── */
   .month-filter { display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:24px; }
   .month-btn {
     padding:7px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;
@@ -76,25 +60,43 @@
   .month-btn:hover { color:#eaf2ff;border-color:rgba(255,255,255,.22); }
   .month-btn.active { background:rgba(0,79,200,.22);border-color:rgba(11,124,255,.50);color:#eaf2ff; }
 
-  /* ── Admin bar ── */
-  .admin-bar {
-    display:none;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.22);
-    border-radius:12px;padding:10px 16px;margin-bottom:20px;font-size:13px;color:#fca5a5;align-items:center;gap:8px;
-  }
+  .admin-bar { display:none;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.22);border-radius:12px;padding:10px 16px;margin-bottom:20px;font-size:13px;color:#fca5a5;align-items:center;gap:8px; }
   .admin-bar.visible { display:flex; }
 
-  /* Grid */
   .videos-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px; }
   .lead-card { grid-column:1 / -1; }
 
-  /* Skeleton */
+  /* Override: en mejores el card-time es el club (más grande y centrado) */
+  .videos-grid .card-time {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: #eaf2ff;
+    letter-spacing: 0;
+  }
+
+  /* Hero name: jugador en lugar de club */
+  .videos-grid .card-hero-name {
+    font-size: 0.82rem;
+    font-weight: 800;
+  }
+
+  /* Hint "Soy yo" estilo info */
+  .pz-claim-hint {
+    font-size: .72rem;
+    color: rgba(234,242,255,.50);
+    margin-top: 6px;
+    line-height: 1.5;
+    padding: 0 2px;
+  }
+  .pz-claim-hint strong { color: rgba(255,210,60,.80); }
+
   #skeletonGrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px; }
   #emptyState { text-align:center;padding:60px 20px;display:none; }
   .empty-icon  { font-size:48px;margin-bottom:14px; }
   .empty-title { font-size:1.2rem;font-weight:800;margin-bottom:8px; }
   .empty-sub   { color:rgba(234,242,255,.55);font-size:.9rem;max-width:340px;margin:0 auto; }
 
-  @media(max-width:480px) { .videos-grid{grid-template-columns:1fr;} }
+  @media(max-width:480px) { .videos-grid { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -102,7 +104,6 @@
 <div class="page-bg"></div>
 <div class="bg-glow"></div>
 
-<!-- ── NAV ── -->
 <div id="nav-root" data-nav-variant="internal"></div>
 <script src="/assets/header.js"></script>
 
@@ -114,16 +115,14 @@
   </header>
 
   <div class="contest-banner">
-    <h2>¡Hay premio para el punto del mes! 🎁</h2>
+    <h2>¡El punto con más reacciones gana un premio! 🎁</h2>
     <p>
-      El video con <strong>más reacciones</strong> al cierre de cada mes gana un reconocimiento especial.<br>
-      <strong>Reacciona</strong> con 🔥😂🎉😮😡 y <strong>comparte</strong> para subir al top.<br>
-      ¡Tu puntazo puede ser el legendario de este mes!
+      Reacciona con 🔥😂🎉😮😡 · Comparte para subir al top · ¿Sales en el video? <strong>Toca "Soy yo"</strong> para reclamar tu punto y aparecer en el ranking.<br>
+      Al cierre del mes, el punto #1 gana un reconocimiento especial. <strong>¡Ya puedes ganar!</strong>
     </p>
   </div>
 
   <div class="admin-bar" id="adminBar">🔐 Modo admin — viendo conteos reales</div>
-
   <div class="month-filter" id="monthFilter"></div>
 
   <div id="skeletonGrid">
@@ -143,15 +142,12 @@
 </main>
 
 <footer class="site-footer" id="contacto">
-  <div class="footer-info">
-    <p>¿Te interesa que estemos en tu club? <a href="https://wa.me/522206804856" target="_blank" rel="noopener">Escríbenos</a></p>
-  </div>
   <div class="footer-redes">
     <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
     <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
     <a href="https://wa.me/522206804856" target="_blank" rel="noopener">WhatsApp</a>
   </div>
-  <p class="footer-copy">© 2026 Puntazo – Todos los derechos reservados</p>
+  <p class="footer-copy">© 2026 Puntazo</p>
 </footer>
 
 <script>
@@ -173,22 +169,22 @@
       return;
     }
 
-    const db    = PuntazoReactions.db();
-    const admin = PuntazoReactions.isAdmin();
-    const MIN   = PuntazoReactions.MIN_FOR_BEST;
+    var db    = PuntazoReactions.db();
+    var admin = PuntazoReactions.isAdmin();
+    var MIN   = PuntazoReactions.MIN_FOR_BEST;
 
-    const $skeleton = document.getElementById('skeletonGrid');
-    const $grid     = document.getElementById('videosGrid');
-    const $empty    = document.getElementById('emptyState');
-    const $filter   = document.getElementById('monthFilter');
-    const $adminBar = document.getElementById('adminBar');
+    var $skeleton = document.getElementById('skeletonGrid');
+    var $grid     = document.getElementById('videosGrid');
+    var $empty    = document.getElementById('emptyState');
+    var $filter   = document.getElementById('monthFilter');
+    var $adminBar = document.getElementById('adminBar');
 
     if (admin) $adminBar.classList.add('visible');
 
-    const months = [];
-    const now = new Date();
+    var months = [];
+    var now = new Date();
     for (var i=0; i<4; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+      var d = new Date(now.getFullYear(), now.getMonth()-i, 1);
       months.push({
         key:   d.toISOString().slice(0,7),
         label: d.toLocaleDateString('es-MX',{month:'long',year:'numeric'}),
@@ -198,7 +194,7 @@
     var activeMonth = months[0].key;
 
     months.forEach(function(m, idx) {
-      const btn = document.createElement('button');
+      var btn = document.createElement('button');
       btn.className = 'month-btn' + (idx===0?' active':'');
       btn.textContent = m.label;
       btn.addEventListener('click', function() {
@@ -230,12 +226,10 @@
         var docs = Array.from(map.values()).filter(function(d){
           return d && d.fecha && d.fecha.startsWith(monthKey);
         });
-
         if (docs.length===0 && monthKey===months[0].key) docs = Array.from(map.values());
         if (docs.length===0) { $empty.style.display='block'; return; }
 
         docs.sort(function(a,b){ return (b.total||0)-(a.total||0); });
-
         $grid.style.display = 'grid';
 
         docs.forEach(function(data, idx) {
@@ -245,11 +239,23 @@
             club: data.club||'', cancha: data.cancha||'',
             lado: data.lado||'', fecha: data.fecha||'',
           };
+
           var card = PuntazoCard.build(entry, {
-            showSave:true, showShare:true, showFullscreen:true,
-            showClaim:true, showReactions:true, showComments:true,
-            showClubInfo:true, rankBadge: idx<10 ? idx+1 : null,
+            showSave:      true,
+            showShare:     true,
+            showFullscreen:true,
+            showClaim:     true,
+            showReactions: true,
+            showComments:  true,
+            showClubInfo:  false,
+            showHeroName:  true,
+            // El topLabel es el club — reactions.js lo reemplazará con el nombre del jugador si lo hay
+            topLabel: entry.club || 'Puntazo',
+            rankBadge: idx < 10 ? idx+1 : null,
+            // Share: invitar a votar
+            shareMessage: '¡Vota por este puntazo! 🔥 Puede ganar el premio del mes en Puntazo 🏆 — dale like y comparte',
           });
+
           if (idx===0) card.classList.add('lead-card');
           $grid.appendChild(card);
           PuntazoCard.attachReactions(card, entry);
