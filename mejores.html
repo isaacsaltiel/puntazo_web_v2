@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<base href="/" />
 <title>Puntazos del mes · Puntazo</title>
 <meta name="description" content="Los puntos más épicos del mes en Puntazo. Reacciona, comparte y gana." />
 
@@ -14,182 +15,104 @@
   gtag('js',new Date()); gtag('config','G-7HTMSTJ035');
 </script>
 
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="icon" type="image/png" sizes="32x32"   href="/assets/icons/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16"   href="/assets/icons/favicon-16x16.png" />
+<link rel="manifest" href="/assets/icons/manifest.json" />
 <meta name="theme-color" content="#050914" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
 
+<link rel="stylesheet" href="assets/estilo.css" />
+<link rel="stylesheet" href="/assets/card.css" />
+<link rel="stylesheet" href="/assets/reactions.css" />
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
-<link rel="stylesheet" href="/assets/card.css" />
-<link rel="stylesheet" href="/assets/reactions.css" />
 <script src="/assets/reactions.js"></script>
 <script src="/assets/card.js"></script>
 
 <style>
-  :root {
-    --bg: #050914; --text: #eaf2ff;
-    --card: rgba(255,255,255,.055); --border: rgba(255,255,255,.10);
-    --gold: #ffe066; --blue: #004FC8; --blue2: #0B7CFF;
-  }
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { min-height: 100%; font-family: 'Montserrat', system-ui, sans-serif; background: var(--bg); color: var(--text); -webkit-tap-highlight-color: transparent; }
-
+  :root { --bg:#050914; --gold:#ffe066; }
   .bg-glow {
-    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    position:fixed;inset:0;pointer-events:none;z-index:0;
     background:
-      radial-gradient(900px 500px at 15% 10%, rgba(0,79,200,.18), transparent 55%),
-      radial-gradient(700px 500px at 85% 8%,  rgba(11,124,255,.10), transparent 55%),
-      radial-gradient(600px 400px at 50% 90%, rgba(255,190,0,.05),  transparent 55%);
+      radial-gradient(900px 500px at 15% 10%,rgba(0,79,200,.18),transparent 55%),
+      radial-gradient(700px 500px at 85% 8%,rgba(11,124,255,.10),transparent 55%),
+      radial-gradient(600px 400px at 50% 90%,rgba(255,190,0,.05),transparent 55%);
   }
 
-  /* ── Nav ── */
-  nav.mejores-nav {
-    position: sticky; top: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: space-between; gap: 14px;
-    padding: 14px 20px;
-    background: rgba(5,9,20,.88); backdrop-filter: blur(18px);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .nav-brand { display:inline-flex; align-items:center; text-decoration:none; color:var(--text); }
-  .nav-logo  { height:34px; width:auto; display:block; }
-
-  .nav-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-
-  .nav-btn {
-    font-size:13px; font-weight:700; color:rgba(234,242,255,.80); text-decoration:none;
-    padding:7px 14px; border:1px solid var(--border); border-radius:999px;
-    transition: all .15s; white-space:nowrap; background:transparent;
-  }
-  .nav-btn:hover { color:var(--text); border-color:rgba(255,255,255,.22); background:rgba(255,255,255,.04); }
-  .nav-btn.primary { background:rgba(0,79,200,.18); border-color:rgba(11,124,255,.32); color:#fff; }
-  .nav-btn.primary:hover { background:rgba(0,79,200,.28); border-color:rgba(11,124,255,.50); }
-
-  /* ── Main ── */
-  main {
-    position:relative; z-index:1;
-    max-width: 860px; margin: 0 auto;
-    padding: 36px 16px 80px;
-  }
+  main { position:relative;z-index:1;max-width:860px;margin:0 auto;padding:32px 16px 80px; }
 
   /* ── Hero ── */
-  .page-hero { text-align:center; margin-bottom: 32px; }
-
-  .hero-eyebrow {
-    font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase;
-    color:var(--gold); opacity:.85; margin-bottom:10px;
-  }
-
+  .page-hero { text-align:center;margin-bottom:28px; }
+  .hero-eyebrow { font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold);opacity:.85;margin-bottom:10px; }
   .hero-title {
-    font-size: clamp(28px, 5.5vw, 44px);
-    font-weight: 900; letter-spacing: -.8px; line-height: 1.08;
-    background: linear-gradient(135deg, #fff 25%, rgba(234,242,255,.55));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 14px;
+    font-size:clamp(28px,5.5vw,44px);font-weight:900;letter-spacing:-.8px;line-height:1.08;
+    background:linear-gradient(135deg,#fff 25%,rgba(234,242,255,.55));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    margin-bottom:14px;
   }
 
   /* ── Contest banner ── */
   .contest-banner {
-    margin: 0 auto 32px;
-    max-width: 640px;
-    padding: 20px 22px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, rgba(255,190,0,.08), rgba(0,79,200,.10));
-    border: 1px solid rgba(255,190,0,.22);
-    box-shadow: 0 12px 36px rgba(0,0,0,.22);
-    text-align: center;
+    margin:0 auto 28px;max-width:640px;padding:20px 22px;border-radius:20px;
+    background:linear-gradient(135deg,rgba(255,190,0,.08),rgba(0,79,200,.10));
+    border:1px solid rgba(255,190,0,.22);box-shadow:0 12px 36px rgba(0,0,0,.22);text-align:center;
   }
-
-  .contest-banner h2 {
-    font-size: 1.05rem;
-    font-weight: 900;
-    color: var(--gold);
-    margin-bottom: 8px;
-  }
-
-  .contest-banner p {
-    font-size: 0.88rem;
-    color: rgba(234,242,255,.72);
-    line-height: 1.65;
-  }
-
-  .contest-banner strong { color: #eaf2ff; }
+  .contest-banner h2 { font-size:1.05rem;font-weight:900;color:var(--gold);margin-bottom:8px; }
+  .contest-banner p  { font-size:0.88rem;color:rgba(234,242,255,.72);line-height:1.65; }
+  .contest-banner strong { color:#eaf2ff; }
 
   /* ── Month filter ── */
-  .month-filter {
-    display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
-    margin-bottom:28px;
-  }
-
+  .month-filter { display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:24px; }
   .month-btn {
-    padding:7px 16px; border-radius:999px;
-    border:1px solid var(--border); background:transparent;
-    color:rgba(234,242,255,.65); font-family:inherit;
-    font-size:13px; font-weight:700; cursor:pointer; transition:all .15s;
+    padding:7px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;
+    color:rgba(234,242,255,.65);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;
   }
-  .month-btn:hover { color:var(--text); border-color:rgba(255,255,255,.22); }
-  .month-btn.active { background:rgba(0,79,200,.22); border-color:rgba(11,124,255,.50); color:#eaf2ff; }
+  .month-btn:hover { color:#eaf2ff;border-color:rgba(255,255,255,.22); }
+  .month-btn.active { background:rgba(0,79,200,.22);border-color:rgba(11,124,255,.50);color:#eaf2ff; }
 
   /* ── Admin bar ── */
   .admin-bar {
-    display:none; background:rgba(239,68,68,.10); border:1px solid rgba(239,68,68,.22);
-    border-radius:12px; padding:10px 16px; margin-bottom:20px;
-    font-size:13px; color:#fca5a5; align-items:center; gap:8px;
+    display:none;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.22);
+    border-radius:12px;padding:10px 16px;margin-bottom:20px;font-size:13px;color:#fca5a5;align-items:center;gap:8px;
   }
   .admin-bar.visible { display:flex; }
 
-  /* ── Grids ── */
-  .videos-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; }
+  /* Grid */
+  .videos-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px; }
+  .lead-card { grid-column:1 / -1; }
 
-  /* ── Lead card: primer lugar full width ── */
-  .lead-card { grid-column: 1 / -1; }
+  /* Skeleton */
+  #skeletonGrid { display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px; }
+  #emptyState { text-align:center;padding:60px 20px;display:none; }
+  .empty-icon  { font-size:48px;margin-bottom:14px; }
+  .empty-title { font-size:1.2rem;font-weight:800;margin-bottom:8px; }
+  .empty-sub   { color:rgba(234,242,255,.55);font-size:.9rem;max-width:340px;margin:0 auto; }
 
-  .lead-card .video-wrap video { max-height: 480px; object-fit: contain; }
-
-  /* ── Empty + skeleton ── */
-  #skeletonGrid  { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; }
-  #emptyState    { text-align:center; padding:60px 20px; display:none; }
-  .empty-icon    { font-size:48px; margin-bottom:14px; }
-  .empty-title   { font-size:1.2rem; font-weight:800; margin-bottom:8px; }
-  .empty-sub     { color:rgba(234,242,255,.55); font-size:.90rem; max-width:340px; margin:0 auto; }
-
-  @media (max-width:640px) {
-    nav.mejores-nav { padding:12px 14px; }
-    .nav-logo { height:30px; }
-    .lead-card .video-wrap video { max-height:300px; }
-  }
-  @media (max-width:480px) {
-    .videos-grid { grid-template-columns:1fr; }
-  }
+  @media(max-width:480px) { .videos-grid{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
 
+<div class="page-bg"></div>
 <div class="bg-glow"></div>
 
-<!-- ── Nav ── -->
-<nav class="mejores-nav">
-  <a href="/index.html" class="nav-brand">
-    <img src="/assets/logo.png" alt="Puntazo" class="nav-logo" onerror="this.style.display='none'" />
-  </a>
-  <div class="nav-actions">
-    <a href="/index.html" class="nav-btn primary">← Ver canchas</a>
-  </div>
-</nav>
+<!-- ── NAV ── -->
+<div id="nav-root" data-nav-variant="internal"></div>
+<script src="/assets/header.js"></script>
 
-<main>
+<main class="site-content fade-in">
 
-  <!-- Hero -->
   <header class="page-hero">
     <p class="hero-eyebrow">🏆 Concurso mensual</p>
     <h1 class="hero-title">Puntazos del mes</h1>
   </header>
 
-  <!-- Contest banner -->
   <div class="contest-banner">
     <h2>¡Hay premio para el punto del mes! 🎁</h2>
     <p>
@@ -201,44 +124,54 @@
 
   <div class="admin-bar" id="adminBar">🔐 Modo admin — viendo conteos reales</div>
 
-  <!-- Filtro de mes -->
   <div class="month-filter" id="monthFilter"></div>
 
-  <!-- Skeleton -->
   <div id="skeletonGrid">
     <div class="skeleton-card"><div class="skeleton-thumb"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div>
     <div class="skeleton-card"><div class="skeleton-thumb"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div>
     <div class="skeleton-card"><div class="skeleton-thumb"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div>
   </div>
 
-  <!-- Estado vacío -->
   <div class="empty-state" id="emptyState">
     <div class="empty-icon">🎾</div>
     <h2 class="empty-title">Todavía sin puntazos virales</h2>
-    <p class="empty-sub">Cuando un punto acumule reacciones, aparecerá aquí. ¡Sé el primero en reaccionar!</p>
+    <p class="empty-sub">Cuando un punto acumule reacciones, aparecerá aquí. ¡Sé el primero!</p>
   </div>
 
-  <!-- Grid de videos -->
   <div class="videos-grid" id="videosGrid" style="display:none"></div>
 
 </main>
 
+<footer class="site-footer" id="contacto">
+  <div class="footer-info">
+    <p>¿Te interesa que estemos en tu club? <a href="https://wa.me/522206804856" target="_blank" rel="noopener">Escríbenos</a></p>
+  </div>
+  <div class="footer-redes">
+    <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
+    <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
+    <a href="https://wa.me/522206804856" target="_blank" rel="noopener">WhatsApp</a>
+  </div>
+  <p class="footer-copy">© 2026 Puntazo – Todos los derechos reservados</p>
+</footer>
+
 <script>
 (function () {
-  'use strict';
-
   function waitFor(check, retries) {
     return new Promise(function(resolve) {
-      (function try_(n) {
+      (function t(n) {
         if (check()) return resolve(true);
         if (n <= 0) return resolve(false);
-        setTimeout(function() { try_(n-1); }, 200);
-      })(retries || 30);
+        setTimeout(function(){ t(n-1); }, 200);
+      })(retries||40);
     });
   }
 
-  waitFor(function() { return window.PuntazoCard && window.PuntazoReactions; }, 40).then(function(ready) {
-    if (!ready) { document.getElementById('skeletonGrid').style.display='none'; document.getElementById('emptyState').style.display='block'; return; }
+  waitFor(function(){ return window.PuntazoCard && window.PuntazoReactions; }, 40).then(function(ready) {
+    if (!ready) {
+      document.getElementById('skeletonGrid').style.display='none';
+      document.getElementById('emptyState').style.display='block';
+      return;
+    }
 
     const db    = PuntazoReactions.db();
     const admin = PuntazoReactions.isAdmin();
@@ -252,19 +185,18 @@
 
     if (admin) $adminBar.classList.add('visible');
 
-    // Meses disponibles
     const months = [];
     const now = new Date();
     for (var i=0; i<4; i++) {
       const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-      const key   = d.toISOString().slice(0,7);
-      const label = d.toLocaleDateString('es-MX', {month:'long', year:'numeric'});
-      months.push({ key, label });
+      months.push({
+        key:   d.toISOString().slice(0,7),
+        label: d.toLocaleDateString('es-MX',{month:'long',year:'numeric'}),
+      });
     }
 
-    let activeMonth = months[0].key;
+    var activeMonth = months[0].key;
 
-    // Render month filter
     months.forEach(function(m, idx) {
       const btn = document.createElement('button');
       btn.className = 'month-btn' + (idx===0?' active':'');
@@ -287,55 +219,38 @@
       Promise.all([
         db.collection('reactions').where('total','>=',MIN).orderBy('total','desc').limit(50).get(),
         db.collection('reactions').where('immortal','==',true).get(),
-      ]).then(function([snapTop, snapImm]) {
+      ]).then(function(results) {
         $skeleton.style.display = 'none';
+        var snapTop = results[0], snapImm = results[1];
 
-        const map = new Map();
-        snapTop.forEach(function(d) { const x=d.data(); if(x?.videoId) map.set(x.videoId,x); });
-        snapImm.forEach(function(d) { const x=d.data(); if(x?.videoId) map.set(x.videoId,x); });
+        var map = new Map();
+        snapTop.forEach(function(d){ var x=d.data(); if(x&&x.videoId) map.set(x.videoId,x); });
+        snapImm.forEach(function(d){ var x=d.data(); if(x&&x.videoId) map.set(x.videoId,x); });
 
-        let docs = Array.from(map.values()).filter(function(d) {
+        var docs = Array.from(map.values()).filter(function(d){
           return d && d.fecha && d.fecha.startsWith(monthKey);
         });
 
-        // Fallback: si mes actual vacío, mostrar todo
-        if (docs.length===0 && monthKey===months[0].key) {
-          docs = Array.from(map.values());
-        }
-
+        if (docs.length===0 && monthKey===months[0].key) docs = Array.from(map.values());
         if (docs.length===0) { $empty.style.display='block'; return; }
 
-        docs.sort(function(a,b) { return (b.total||0)-(a.total||0); });
+        docs.sort(function(a,b){ return (b.total||0)-(a.total||0); });
 
         $grid.style.display = 'grid';
 
         docs.forEach(function(data, idx) {
-          const rank = idx + 1;
-          const entry = {
-            nombre:  data.videoId || '',
-            url:     data.videoUrl || '',
-            club:    data.club     || '',
-            cancha:  data.cancha   || '',
-            lado:    data.lado     || '',
-            fecha:   data.fecha    || '',
+          if (!data.videoUrl) return;
+          var entry = {
+            nombre: data.videoId||'', url: data.videoUrl||'',
+            club: data.club||'', cancha: data.cancha||'',
+            lado: data.lado||'', fecha: data.fecha||'',
           };
-
-          if (!entry.url) return;
-
-          const card = PuntazoCard.build(entry, {
-            showSave:      true,
-            showShare:     true,
-            showFullscreen:true,
-            showClaim:     true,
-            showReactions: true,
-            showComments:  true,
-            showClubInfo:  true,
-            rankBadge:     rank <= 10 ? rank : null,
+          var card = PuntazoCard.build(entry, {
+            showSave:true, showShare:true, showFullscreen:true,
+            showClaim:true, showReactions:true, showComments:true,
+            showClubInfo:true, rankBadge: idx<10 ? idx+1 : null,
           });
-
-          // Lead card (top 1) full width
-          if (rank === 1) card.classList.add('lead-card');
-
+          if (idx===0) card.classList.add('lead-card');
           $grid.appendChild(card);
           PuntazoCard.attachReactions(card, entry);
         });
@@ -344,7 +259,7 @@
         console.error('[Puntazos del mes]', err);
         $skeleton.style.display='none';
         $empty.style.display='block';
-        $empty.querySelector('.empty-sub').textContent='Error cargando los puntazos. Intenta de nuevo.';
+        $empty.querySelector('.empty-sub').textContent='Error cargando. Intenta de nuevo.';
       });
     }
 
