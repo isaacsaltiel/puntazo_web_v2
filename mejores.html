@@ -272,6 +272,12 @@
       margin-bottom: 8px; flex-wrap: wrap;
     }
 
+    .card-immortal {
+      display:inline-block; margin-left:8px; padding:4px 8px; border-radius:999px;
+      background: linear-gradient(135deg, rgba(255,190,0,.12), rgba(0,79,200,.08));
+      border:1px solid rgba(255,190,0,.18); color: var(--gold); font-weight:800; font-size:12px;
+    }
+
     .card-club {
       font-size: 13px; font-weight: 700; color: var(--text);
     }
@@ -347,6 +353,12 @@
       color: #fff;
       box-shadow: 0 0 24px rgba(0,79,200,.18), 0 10px 26px rgba(0,0,0,.22);
     }
+
+    /* Participant chips injected by reactions.js */
+    .pz-participants { display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; }
+    .pz-participant-chip { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:999px; overflow:hidden; text-decoration:none; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); }
+    .pz-participant-chip img { width:100%; height:100%; object-fit:cover; display:block; }
+    .pz-participant-chip .pz-p-initial { display:block; width:100%; height:100%; align-items:center; justify-content:center; display:flex; font-weight:800; color:#fff; background:linear-gradient(135deg, rgba(11,124,255,.22), rgba(0,79,200,.24)); }
 
     .admin-bar {
       display: none;
@@ -669,29 +681,45 @@
       $grid.innerHTML         = "";
       fullscreenSyncers.clear();
 
-      db.collection("reactions")
-        .where("total", ">=", MIN)
-        .orderBy("total", "desc")
-        .limit(50)
-        .get()
-        .then(snapshot => {
+      // Traer: (A) docs con total >= MIN y (B) docs con immortal==true. Mergear sin duplicados.
+      Promise.all([
+        db.collection("reactions").where("total", ">=", MIN).orderBy("total", "desc").limit(50).get(),
+        db.collection("reactions").where("immortal", "==", true).get()
+      ])
+        .then(([snapTop, snapImm]) => {
           $skeleton.style.display = "none";
 
-          let docs = [];
-          snapshot.forEach(doc => {
+          const map = new Map();
+
+          snapTop.forEach(doc => {
             const d = doc.data();
-            if (d.fecha && !d.fecha.startsWith(monthKey)) return;
-            docs.push(d);
+            if (d && d.videoId) map.set(d.videoId, d);
           });
 
+          snapImm.forEach(doc => {
+            const d = doc.data();
+            if (d && d.videoId) map.set(d.videoId, d);
+          });
+
+          // Convertir a array y filtrar por mes seleccionado
+          let docs = Array.from(map.values()).filter(d => {
+            if (!d) return false;
+            if (!d.fecha) return false;
+            return d.fecha.startsWith(monthKey);
+          });
+
+          // Si no hay nada para el mes actual, mostrar los top (como fallback)
           if (docs.length === 0 && monthKey === months[0].key) {
-            snapshot.forEach(doc => docs.push(doc.data()));
+            docs = Array.from(map.values());
           }
 
           if (docs.length === 0) {
             $empty.style.display = "block";
             return;
           }
+
+          // Order: por total desc, y marcar inmortales con prioridad secundaria
+          docs.sort((a, b) => ( (b.total || 0) - (a.total || 0) ) || ((b.immortal === true) - (a.immortal === true)) );
 
           $grid.style.display = "grid";
 
@@ -760,17 +788,33 @@
           </div>
 
           ${emojiSummary ? `<div class="card-viral"><span class="pz-viral-badge">${emojiSummary}</span></div>` : ""}
+          ${data.immortal ? `<div class="card-immortal">Inmortal ⭐</div>` : ""}
 
           <div class="card-reactions-target"></div>
 
           ${data.videoUrl
-            ? `<a class="card-watch-btn" href="${escapeAttr(buildLadoLink(data))}">▶ Ver video en su cancha</a>`
+            ? `
+              <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+                <a class="card-watch-btn" href="${escapeAttr(buildLadoLink(data))}">▶ Ver video en su cancha</a>
+                <button type="button" class="card-share-btn" data-videoid="${escapeAttr(data.videoId||'')}">🔗 Compartir</button>
+              </div>`
             : ""
           }
         </div>
       `;
 
       mejorarCardDeVideo(card, data);
+      // attach share handler
+      const shareBtn = card.querySelector('.card-share-btn');
+      if (shareBtn) {
+        shareBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          const videoId = shareBtn.dataset.videoid || data.videoId || data.videoId || '';
+          const link = location.origin + '/clip.html?videoId=' + encodeURIComponent(videoId);
+          try { if (navigator.share) { await navigator.share({ title: 'Puntazo', text: 'Mira este puntazo', url: link }); return; } } catch (err) {}
+          try { await navigator.clipboard.writeText(link); alert('Enlace copiado'); } catch (err) { window.open(link, '_blank'); }
+        });
+      }
       return card;
     }
 
