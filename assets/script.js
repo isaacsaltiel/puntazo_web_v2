@@ -2755,52 +2755,73 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // === NAVBAR: toggle + cerrar al scroll o click fuera ===
 function initNavbar(){
-  if (window.__navInited) return;
-  window.__navInited = true;
+  // Intentionally no __navInited guard: allow re-initialization when header
+  // is re-rendered. To avoid stacking handlers we remove previous ones if present.
 
-  // Single delegated click handler on document
-  const docClickHandler = (e) => {
+  // Remove previous click handler if any
+  if (window.__pz_nav_click_handler) {
+    try { document.removeEventListener('click', window.__pz_nav_click_handler); } catch {}
+    window.__pz_nav_click_handler = null;
+  }
+
+  const handler = function(e) {
     const toggle = e.target && e.target.closest && e.target.closest('.menu-toggle');
-    const insideNav = e.target && e.target.closest && e.target.closest('.navbar');
 
-    // If user clicked the hamburger toggle
+    // If clicked the hamburger
     if (toggle) {
-      // On desktop we never open the dropdown-style menu
+      console.log('menu-toggle clicked');
+
+      // On desktop never open the mobile dropdown
       if (window.innerWidth > 860) {
-        // ensure closed and do nothing else
         document.querySelector('.navbar')?.classList.remove('show');
         document.querySelector('#nav-menu')?.classList.remove('show');
         return;
       }
 
       e.stopPropagation();
-      document.querySelector('.navbar')?.classList.toggle('show');
-      document.querySelector('#nav-menu')?.classList.toggle('show');
+      const nav = document.querySelector('.navbar');
+      const menu = document.querySelector('#nav-menu');
+      if (nav) nav.classList.toggle('show');
+      if (menu) menu.classList.toggle('show');
       return;
     }
 
-    // Click outside navbar and toggle should close the menu
+    // Click outside: close any open menu
+    const insideNav = e.target && e.target.closest && e.target.closest('.navbar');
     if (!insideNav) {
       document.querySelector('.navbar')?.classList.remove('show');
       document.querySelector('#nav-menu')?.classList.remove('show');
     }
   };
 
-  document.addEventListener('click', docClickHandler);
+  window.__pz_nav_click_handler = handler;
+  document.addEventListener('click', handler);
 
-  // Close on scroll
-  window.addEventListener('scroll', () => {
+  // Scroll handler: remove previous and attach new
+  if (window.__pz_nav_scroll_handler) {
+    try { window.removeEventListener('scroll', window.__pz_nav_scroll_handler); } catch {}
+    window.__pz_nav_scroll_handler = null;
+  }
+  const scrollHandler = () => {
     document.querySelector('.navbar')?.classList.remove('show');
     document.querySelector('#nav-menu')?.classList.remove('show');
-  }, { passive: true });
+  };
+  window.__pz_nav_scroll_handler = scrollHandler;
+  window.addEventListener('scroll', scrollHandler, { passive: true });
 
-  // Close on resize and ensure dropdown doesn't remain open on desktop
-  window.addEventListener('resize', () => {
+  // Resize handler: ensure menu closed on desktop widths
+  if (window.__pz_nav_resize_handler) {
+    try { window.removeEventListener('resize', window.__pz_nav_resize_handler); } catch {}
+    window.__pz_nav_resize_handler = null;
+  }
+  const resizeHandler = () => {
     if (window.innerWidth > 860) {
       document.querySelector('.navbar')?.classList.remove('show');
       document.querySelector('#nav-menu')?.classList.remove('show');
     }
-  });
+  };
+  window.__pz_nav_resize_handler = resizeHandler;
+  window.addEventListener('resize', resizeHandler);
 }
 
 window.addEventListener('puntazo:header-rendered', initNavbar);
