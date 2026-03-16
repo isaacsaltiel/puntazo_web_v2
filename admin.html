@@ -15,10 +15,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
 
 <style>
-:root {
-  --bg:#050914; --card:rgba(255,255,255,.06); --border:rgba(255,255,255,.10);
-  --text:#eaf2ff; --muted:rgba(234,242,255,.50); --blue:#004FC8; --blue2:#0B7CFF;
-  --gold:#ffe066; --green:#22c55e;
+:root{
+  --bg:#050914;--card:rgba(255,255,255,.06);--border:rgba(255,255,255,.10);
+  --text:#eaf2ff;--muted:rgba(234,242,255,.50);--blue:#004FC8;--blue2:#0B7CFF;
+  --gold:#ffe066;--green:#22c55e;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{min-height:100%;font-family:'Montserrat',system-ui,sans-serif;background:var(--bg);color:var(--text);}
@@ -26,91 +26,57 @@ a{color:inherit;}
 
 .page{max-width:1160px;margin:0 auto;padding:24px 16px 80px;}
 
-/* Header */
-.dash-header{
-  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
-  margin-bottom:28px;padding:16px 20px;border-radius:18px;
-  background:var(--card);border:1px solid var(--border);
-}
+.dash-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;padding:16px 20px;border-radius:18px;background:var(--card);border:1px solid var(--border);}
 .dash-header h1{font-size:1.3rem;font-weight:900;}
-.dash-header .sub{color:var(--muted);font-size:0.76rem;margin-top:4px;}
+.dash-header .sub{color:var(--muted);font-size:.75rem;margin-top:4px;}
 .header-actions{display:flex;gap:8px;flex-wrap:wrap;}
 
-/* Source badges */
-.source-badges{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
-.src-badge{
-  display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;
-  font-size:0.72rem;font-weight:700;border:1px solid;
-}
-.src-badge.ok    {background:rgba(34,197,94,.10);border-color:rgba(34,197,94,.28);color:#86efac;}
-.src-badge.warn  {background:rgba(255,190,0,.10);border-color:rgba(255,190,0,.28);color:var(--gold);}
-.src-badge.err   {background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.28);color:#fca5a5;}
-.src-badge.load  {background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:var(--muted);}
+.src-badges{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+.src-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:.71rem;font-weight:700;border:1px solid;}
+.src-badge.ok   {background:rgba(34,197,94,.10);border-color:rgba(34,197,94,.28);color:#86efac;}
+.src-badge.warn {background:rgba(255,190,0,.10);border-color:rgba(255,190,0,.28);color:var(--gold);}
+.src-badge.err  {background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.28);color:#fca5a5;}
+.src-badge.load {background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:var(--muted);}
 
-/* Buttons */
-.btn{
-  display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:999px;
-  border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:var(--text);
-  font-family:inherit;font-size:0.80rem;font-weight:700;cursor:pointer;transition:all .15s;
-  text-decoration:none;white-space:nowrap;
-}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:var(--text);font-family:inherit;font-size:.80rem;font-weight:700;cursor:pointer;transition:all .15s;text-decoration:none;white-space:nowrap;}
 .btn:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.24);}
 .btn.primary{background:rgba(0,79,200,.22);border-color:rgba(11,124,255,.40);}
-.btn.sm{padding:5px 12px;font-size:0.74rem;}
+.btn.sm{padding:5px 12px;font-size:.74rem;}
 .btn.active{background:rgba(0,79,200,.30);border-color:rgba(11,124,255,.55);color:#fff;}
 
-/* Time bar */
-.time-bar{
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-  margin-bottom:20px;padding:12px 16px;border-radius:14px;
-  background:var(--card);border:1px solid var(--border);
-}
-.time-bar label{font-size:0.74rem;font-weight:700;color:var(--muted);}
-.time-nav{display:flex;align-items:center;gap:6px;margin-left:auto;}
-.nav-val{
-  min-width:120px;text-align:center;font-size:0.84rem;font-weight:800;
-  padding:5px 12px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-}
-.nav-btn{
-  display:inline-flex;align-items:center;justify-content:center;
-  width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.14);
-  background:rgba(255,255,255,.06);font-size:1rem;cursor:pointer;transition:all .15s;font-family:inherit;
-}
-.nav-btn:hover{background:rgba(255,255,255,.14);}
-
-/* KPI */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;margin-bottom:28px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px;margin-bottom:24px;}
 .kpi{padding:16px 14px;border-radius:16px;background:var(--card);border:1px solid var(--border);text-align:center;}
 .kpi-value{font-size:1.7rem;font-weight:900;line-height:1;}
-.kpi-label{font-size:0.68rem;color:var(--muted);margin-top:6px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;}
-.kpi.src-gh  {border-color:rgba(11,124,255,.28);background:rgba(0,79,200,.10);}
-.kpi.src-fs  {border-color:rgba(255,190,0,.28);background:rgba(255,190,0,.08);}
+.kpi-label{font-size:.68rem;color:var(--muted);margin-top:6px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;}
+.kpi.src-gh   {border-color:rgba(11,124,255,.28);background:rgba(0,79,200,.10);}
+.kpi.src-fs   {border-color:rgba(255,190,0,.28);background:rgba(255,190,0,.08);}
 .kpi.src-fs .kpi-value{color:var(--gold);}
 .kpi.src-green{border-color:rgba(34,197,94,.22);background:rgba(34,197,94,.06);}
 .kpi.src-green .kpi-value{color:#86efac;}
 
-/* Tabs */
 .tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
-.tab-btn{
-  padding:8px 16px;border-radius:999px 999px 0 0;border:1px solid transparent;
-  background:transparent;color:var(--muted);font-family:inherit;font-size:0.82rem;font-weight:700;cursor:pointer;
-}
+.tab-btn{padding:8px 16px;border-radius:999px 999px 0 0;border:1px solid transparent;background:transparent;color:var(--muted);font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .tab-btn:hover{color:var(--text);}
 .tab-btn.active{color:#fff;background:rgba(0,79,200,.18);border-color:rgba(11,124,255,.30);border-bottom-color:transparent;}
 .tab-pane{display:none;}
 .tab-pane.active{display:block;}
 
-/* Section */
 .section{margin-bottom:32px;}
 .section-title{font-size:.94rem;font-weight:900;color:rgba(234,242,255,.80);margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .badge{padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.08);font-size:.67rem;font-weight:700;color:var(--muted);}
-.src-tag{font-size:.65rem;padding:2px 6px;border-radius:999px;font-weight:700;}
+.src-tag{font-size:.64rem;padding:2px 6px;border-radius:999px;font-weight:700;}
 .src-tag.gh{background:rgba(11,124,255,.18);color:#7eb8ff;}
 .src-tag.fs{background:rgba(255,190,0,.18);color:var(--gold);}
 
-/* Tables */
+.time-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px;padding:12px 16px;border-radius:14px;background:var(--card);border:1px solid var(--border);}
+.time-bar label{font-size:.73rem;font-weight:700;color:var(--muted);}
+.time-nav{display:flex;align-items:center;gap:6px;margin-left:auto;}
+.nav-val{min-width:120px;text-align:center;font-size:.84rem;font-weight:800;padding:5px 12px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);}
+.nav-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);font-size:1rem;cursor:pointer;transition:all .15s;font-family:inherit;}
+.nav-btn:hover{background:rgba(255,255,255,.14);}
+
 .table-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--border);}
-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+table{width:100%;border-collapse:collapse;font-size:.82rem;}
 th{padding:9px 12px;text-align:left;font-weight:800;font-size:.69rem;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);background:rgba(255,255,255,.04);border-bottom:1px solid var(--border);white-space:nowrap;}
 td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
 tr:last-child td{border-bottom:none;}
@@ -125,45 +91,35 @@ tr:hover td{background:rgba(255,255,255,.025);}
 .bar-fill.gold {background:linear-gradient(90deg,#fbbf24,#f59e0b);}
 .bar-fill.green{background:linear-gradient(90deg,#34d399,#10b981);}
 
-/* Pills */
 .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.68rem;font-weight:700;white-space:nowrap;}
 .pill-blue {background:rgba(0,79,200,.22);color:#7eb8ff;}
 .pill-gold {background:rgba(255,190,0,.18);color:var(--gold);}
 .pill-green{background:rgba(34,197,94,.18);color:#86efac;}
 .pill-muted{background:rgba(255,255,255,.08);color:var(--muted);}
 
-/* Club acordeón */
 .club-block{margin-bottom:14px;border-radius:14px;border:1px solid var(--border);overflow:hidden;}
-.club-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 16px;background:rgba(255,255,255,.04);cursor:pointer;gap:12px;transition:background .15s;
-}
+.club-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(255,255,255,.04);cursor:pointer;gap:12px;transition:background .15s;}
 .club-header:hover{background:rgba(255,255,255,.07);}
 .club-name{font-weight:900;font-size:.95rem;}
 .club-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 .club-toggle{transition:transform .2s;font-size:.8rem;color:var(--muted);}
-.club-body{display:none;padding:0 0 10px;}
+.club-body{display:none;}
 .club-block.open .club-body{display:block;}
 .club-block.open .club-toggle{transform:rotate(180deg);}
 
-.cancha-block{margin:8px 12px 0;border-radius:10px;border:1px solid rgba(255,255,255,.06);overflow:hidden;}
+.cancha-block{margin:0 12px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.06);overflow:hidden;}
 .cancha-header{padding:8px 12px;background:rgba(255,255,255,.03);font-size:.78rem;font-weight:800;color:rgba(234,242,255,.70);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 
-/* Info box */
 .info-box{padding:12px 16px;border-radius:12px;margin-bottom:14px;background:rgba(255,190,0,.06);border:1px solid rgba(255,190,0,.18);font-size:.79rem;color:rgba(234,242,255,.72);line-height:1.65;}
 .info-box strong{color:var(--gold);}
 .info-box a{color:#7eb8ff;}
-
 .empty-note{padding:24px;color:var(--muted);font-size:.85rem;text-align:center;}
 
 /* Auth wall */
 #accessDenied{display:none;text-align:center;padding:80px 20px;}
 #accessDenied h2{font-size:1.4rem;font-weight:900;margin-bottom:12px;}
 #accessDenied p{color:var(--muted);margin-bottom:24px;}
-#accessDenied input{
-  padding:10px 14px;border-radius:10px;border:1px solid var(--border);
-  background:var(--card);color:var(--text);font-family:inherit;font-size:14px;width:240px;outline:none;
-}
+#accessDenied input{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:14px;width:240px;outline:none;}
 #accessDenied input:focus{border-color:rgba(11,124,255,.50);}
 
 @media(max-width:640px){
@@ -174,7 +130,6 @@ tr:hover td{background:rgba(255,255,255,.025);}
 </head>
 <body>
 
-<!-- Auth wall -->
 <div id="accessDenied">
   <div style="font-size:52px;margin-bottom:16px">🔐</div>
   <h2>Acceso restringido</h2>
@@ -184,7 +139,6 @@ tr:hover td{background:rgba(255,255,255,.025);}
   <button class="btn primary" onclick="checkPw()">Entrar</button>
 </div>
 
-<!-- Dashboard -->
 <div id="mainContent" style="display:none">
 <div class="page">
 
@@ -200,34 +154,28 @@ tr:hover td{background:rgba(255,255,255,.025);}
     </div>
   </div>
 
-  <!-- Estado de fuentes de datos -->
   <div class="source-badges">
-    <div class="src-badge load" id="srcGH">📁 GitHub stats: cargando…</div>
+    <div class="src-badge load" id="srcGH">📁 GitHub: cargando…</div>
     <div class="src-badge load" id="srcFS">🔥 Firestore: cargando…</div>
   </div>
 
-  <!-- KPIs -->
+  <!-- KPIs globales (histórico completo, sin filtro de tiempo) -->
   <div class="kpi-grid">
-    <!-- GitHub (videos reales activos) -->
-    <div class="kpi src-gh"><div class="kpi-value" id="kpiVideosGH">—</div><div class="kpi-label">Videos activos*</div></div>
-    <div class="kpi src-gh"><div class="kpi-value" id="kpiClubs">—</div><div class="kpi-label">Clubs</div></div>
-    <div class="kpi src-gh"><div class="kpi-value" id="kpiCanchas">—</div><div class="kpi-label">Canchas</div></div>
-    <!-- Firestore (engagement) -->
+    <div class="kpi src-gh"><div class="kpi-value" id="kpiTotalHistorico">—</div><div class="kpi-label">Videos (histórico)</div></div>
+    <div class="kpi src-gh"><div class="kpi-value" id="kpiDias">—</div><div class="kpi-label">Días con videos</div></div>
+    <div class="kpi src-gh"><div class="kpi-value" id="kpiClubs">—</div><div class="kpi-label">Clubs activos</div></div>
+    <div class="kpi src-gh"><div class="kpi-value" id="kpiActivos">—</div><div class="kpi-label">Videos ahora (24h)</div></div>
     <div class="kpi src-fs"><div class="kpi-value" id="kpiViews">—</div><div class="kpi-label">Reproducciones</div></div>
     <div class="kpi src-fs"><div class="kpi-value" id="kpiReactions">—</div><div class="kpi-label">Reacciones</div></div>
     <div class="kpi src-green"><div class="kpi-value" id="kpiSaves">—</div><div class="kpi-label">Guardados</div></div>
+    <div class="kpi src-green"><div class="kpi-value" id="kpiUsers">—</div><div class="kpi-label">Usuarios Firestore</div></div>
     <div class="kpi src-fs"><div class="kpi-value" id="kpiComments">—</div><div class="kpi-label">Comentarios</div></div>
     <div class="kpi src-fs"><div class="kpi-value" id="kpiClaims">—</div><div class="kpi-label">Claims "Soy yo"</div></div>
-    <div class="kpi src-green"><div class="kpi-value" id="kpiUsers">—</div><div class="kpi-label">Usuarios activos</div></div>
-    <div class="kpi src-fs"><div class="kpi-value" id="kpiImmortals">—</div><div class="kpi-label">Inmortales</div></div>
   </div>
-
-  <p style="color:var(--muted);font-size:.72rem;margin-top:-18px;margin-bottom:28px">
-    🔵 Azul = de GitHub (archivos reales en Dropbox) · 🟡 Amarillo/verde = de Firestore (engagement).
-    *Videos activos = los que existen ahora en Dropbox (últimas 24h).
+  <p style="color:var(--muted);font-size:.71rem;margin-top:-14px;margin-bottom:24px">
+    🔵 Azul = videos_log.csv en GitHub (datos de grabación). 🟡 Amarillo/verde = Firestore (engagement). Los KPIs son totales históricos; el filtro de tiempo aplica en cada tab.
   </p>
 
-  <!-- Tabs -->
   <div class="tabs">
     <button class="tab-btn active" data-tab="clubs">🏢 Clubs</button>
     <button class="tab-btn" data-tab="views">▶ Reproducciones</button>
@@ -250,53 +198,41 @@ tr:hover td{background:rgba(255,255,255,.025);}
 </div>
 
 <script>
-// ============================================================
-// CONFIG
-// ============================================================
-const ADMIN_KEY    = 'puntazo2025';
-const STATS_URL    = '/data/stats_summary.json';  // generado por generar_stats.py
+const ADMIN_KEY  = 'puntazo2025';
+const STATS_URL  = '/data/stats_summary.json';
 
-// ============================================================
-// STATE
-// ============================================================
-let _fsDocs    = [];   // [{videoId, views, total, saves, ...}]  ← Firestore reactions
-let _ghStats   = null; // contenido de stats_summary.json
-let _ghByName  = {};   // {nombre_mp4: {club, cancha, lado, ...}} — índice rápido
+// ── Estado ──
+let _ghStats   = null;   // stats_summary.json completo
+let _historial = [];     // [{fecha,loc,can,lado,count}] — de videos_log.csv
+let _fsDocs    = [];     // Firestore reactions
 let _players   = [];
 let _users     = [];
 let _timeMode  = 'today';
 let _timeOffset = 0;
 
-// ============================================================
-// AUTH WALL
-// ============================================================
-function checkPw() {
-  const v = document.getElementById('pwInput').value.trim();
-  if (v === ADMIN_KEY) {
-    document.getElementById('accessDenied').style.display = 'none';
-    document.getElementById('mainContent').style.display  = 'block';
+// ── Auth wall ──
+function checkPw(){
+  const v=document.getElementById('pwInput').value.trim();
+  if(v===ADMIN_KEY){
+    document.getElementById('accessDenied').style.display='none';
+    document.getElementById('mainContent').style.display='block';
     init();
   } else {
-    const i = document.getElementById('pwInput');
-    i.style.borderColor='#ef4444';
-    setTimeout(()=>{i.style.borderColor='';},1200);
+    const i=document.getElementById('pwInput');
+    i.style.borderColor='#ef4444';setTimeout(()=>{i.style.borderColor='';},1200);
   }
 }
 document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPw();});
 (function(){
-  const k = new URLSearchParams(location.search).get('key') || new URLSearchParams(location.search).get('admin');
-  if (k===ADMIN_KEY){
+  const k=new URLSearchParams(location.search).get('key')||new URLSearchParams(location.search).get('admin');
+  if(k===ADMIN_KEY){
     document.getElementById('accessDenied').style.display='none';
     document.getElementById('mainContent').style.display='block';
     if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded',init);
-  } else {
-    document.getElementById('accessDenied').style.display='block';
-  }
+  } else { document.getElementById('accessDenied').style.display='block'; }
 })();
 
-// ============================================================
-// TABS
-// ============================================================
+// ── Tabs ──
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -306,12 +242,9 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
   });
 });
 
-// ============================================================
-// TIEMPO
-// ============================================================
+// ── Tiempo ──
 function getDateRange(){
-  const now=new Date();
-  let start,end,label;
+  const now=new Date();let start,end,label;
   if(_timeMode==='today'){
     const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-_timeOffset);
     start=end=fd(d);
@@ -335,19 +268,24 @@ function getDateRange(){
   return{start,end,label};
 }
 function fd(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-function inRange(fecha,s,e){return fecha&&fecha>=s&&fecha<=e;}
-function filteredFS(){const{start,end}=getDateRange();return _fsDocs.filter(d=>inRange(d.fecha||'',start,end));}
+function inRange(f,s,e){return f&&f>=s&&f<=e;}
 
-// ============================================================
-// TIME BAR
-// ============================================================
+// historial filtrado por rango
+function filteredHistorial(){
+  const{start,end}=getDateRange();
+  return _historial.filter(h=>inRange(h.fecha,start,end));
+}
+// Firestore filtrado
+function filteredFS(){
+  const{start,end}=getDateRange();
+  return _fsDocs.filter(d=>inRange(d.fecha||'',start,end));
+}
+
 function buildTimeBar(tabId){
   const{label}=getDateRange();
-  return `<div class="time-bar">
+  return`<div class="time-bar">
     <label>Período:</label>
-    ${['today','week','month','year'].map(m=>`
-      <button class="btn sm ${_timeMode===m?'active':''}" onclick="setTM('${m}','${tabId}')">${{today:'Hoy',week:'Semana',month:'Mes',year:'Año'}[m]}</button>
-    `).join('')}
+    ${['today','week','month','year'].map(m=>`<button class="btn sm ${_timeMode===m?'active':''}" onclick="setTM('${m}','${tabId}')">${{today:'Hoy',week:'Semana',month:'Mes',year:'Año'}[m]}</button>`).join('')}
     <div class="time-nav">
       <button class="nav-btn" onclick="shiftT(-1,'${tabId}')">‹</button>
       <div class="nav-val">${label}</div>
@@ -364,48 +302,27 @@ function renderTab(t){
   if(t==='saves')     renderTopFS('tab-saves','saves','💾 Top por guardados','green');
 }
 
-// ============================================================
-// INIT / REFRESH
-// ============================================================
+// ── Init ──
 async function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-
-async function waitForFirebase(n){
-  for(let i=0;i<(n||40);i++){
-    if(window.PuntazoFirebase&&typeof window.PuntazoFirebase.db==='function') return true;
-    await sleep(200);
-  }
-  return false;
-}
+async function waitFB(n){for(let i=0;i<(n||40);i++){if(window.PuntazoFirebase&&typeof window.PuntazoFirebase.db==='function')return true;await sleep(200);}return false;}
 
 async function init(){
-  const ok=await waitForFirebase(40);
+  const ok=await waitFB(40);
   if(!ok){document.getElementById('lastUpdated').textContent='Error: Firebase no disponible';return;}
   await refreshAll();
 }
 
 async function refreshAll(){
   document.getElementById('lastUpdated').textContent='Cargando…';
-
-  // Las dos fuentes en paralelo
-  const [ghResult, fsResult] = await Promise.allSettled([
-    fetchGitHubStats(),
-    fetchFirestoreData(),
-  ]);
-
-  // GitHub
-  if(ghResult.status==='fulfilled'){
-    setBadge('srcGH','ok','📁 GitHub: OK · '+(_ghStats?_ghStats.totales.videos+' videos':''));
-  } else {
-    setBadge('srcGH','warn','📁 GitHub: no disponible (stats desactualizadas)');
-  }
-
-  // Firestore
-  if(fsResult.status==='fulfilled'){
-    setBadge('srcFS','ok','🔥 Firestore: OK · '+_fsDocs.length+' docs');
-  } else {
-    setBadge('srcFS','err','🔥 Firestore: error');
-  }
-
+  const[ghR,fsR]=await Promise.allSettled([fetchGH(),fetchFS()]);
+  setBadge('srcGH',ghR.status==='fulfilled'?'ok':'warn',
+    ghR.status==='fulfilled'
+      ?`📁 GitHub: OK · ${_historial.length.toLocaleString()} registros históricos`
+      :'📁 GitHub: no disponible');
+  setBadge('srcFS',fsR.status==='fulfilled'?'ok':'err',
+    fsR.status==='fulfilled'
+      ?`🔥 Firestore: OK · ${_fsDocs.length} docs`
+      :'🔥 Firestore: error');
   renderKPIs();
   renderClubs();
   renderTopFS('tab-views','views','▶ Top por reproducciones','');
@@ -414,55 +331,30 @@ async function refreshAll(){
   renderPlayers();
   renderUsers();
   renderRecent();
-
   document.getElementById('lastUpdated').textContent='Actualizado: '+new Date().toLocaleTimeString('es-MX');
 }
 
-function setBadge(id,cls,txt){
-  const el=document.getElementById(id);
-  if(!el)return;
-  el.className='src-badge '+cls;
-  el.textContent=txt;
-}
+function setBadge(id,cls,txt){const el=document.getElementById(id);if(el){el.className='src-badge '+cls;el.textContent=txt;}}
 
-// ── Fuente 1: GitHub stats_summary.json ──────────────────────
-async function fetchGitHubStats(){
+// ── GitHub stats_summary.json ──
+async function fetchGH(){
   const res=await fetch(STATS_URL+'?cb='+Date.now(),{cache:'no-store'});
   if(!res.ok) throw new Error('HTTP '+res.status);
   _ghStats=await res.json();
-
-  // Construir índice por nombre de archivo
-  _ghByName={};
-  for(const club of (_ghStats.clubs||[])){
-    for(const cancha of (club.canchas||[])){
-      for(const lado of (cancha.lados||[])){
-        for(const nombre of (lado.videos||[])){
-          _ghByName[nombre]={
-            club:club.nombre, clubId:club.id,
-            cancha:cancha.nombre, canchaId:cancha.id,
-            lado:lado.nombre, ladoId:lado.id,
-          };
-        }
-      }
-    }
-  }
+  // historial: [{fecha,loc,can,lado,count}]
+  _historial=_ghStats.historial||[];
+  if(!_historial.length) throw new Error('historial vacío — corre el workflow primero');
 }
 
-// ── Fuente 2: Firestore reactions ─────────────────────────────
-async function fetchFirestoreData(){
+// ── Firestore ──
+async function fetchFS(){
   const db=window.PuntazoFirebase.db();
   const snap=await db.collection('reactions').limit(600).get();
-  _fsDocs=[];
-  snap.forEach(doc=>_fsDocs.push(doc.data()));
-
-  // Usuarios
+  _fsDocs=[];snap.forEach(doc=>_fsDocs.push(doc.data()));
   try{
     const uSnap=await db.collection('usuarios').limit(500).get();
-    _users=[];
-    uSnap.forEach(doc=>_users.push({uid:doc.id}));
-  }catch(e){_users=[];}
-
-  // Jugadores
+    _users=[];uSnap.forEach(doc=>_users.push({uid:doc.id}));
+  }catch{_users=[];}
   try{
     const pSnap=await db.collectionGroup('participants').limit(500).get();
     const pMap=new Map();
@@ -473,173 +365,154 @@ async function fetchFirestoreData(){
       pMap.set(d.uid,p);
     });
     _players=Array.from(pMap.values()).sort((a,b)=>b.claims-a.claims);
-  }catch(e){_players=[];}
+  }catch{_players=[];}
 }
 
-// ============================================================
-// KPIs
-// ============================================================
+// ── KPIs ──
 function renderKPIs(){
-  // GitHub
-  if(_ghStats){
-    s('kpiVideosGH',fmt(_ghStats.totales.videos));
-    s('kpiClubs',fmt(_ghStats.totales.clubs));
-    s('kpiCanchas',fmt(_ghStats.totales.canchas));
-  }
-  // Firestore
-  const t=_fsDocs.reduce((a,d)=>({
-    views:a.views+(d.views||0),reactions:a.reactions+(d.total||0),
-    saves:a.saves+(d.saves||0),comments:a.comments+(d.comments_count||0),
-    claims:a.claims+(d.claims_count||0),immortals:a.immortals+(d.immortal?1:0),
-  }),{views:0,reactions:0,saves:0,comments:0,claims:0,immortals:0});
-  s('kpiViews',fmt(t.views));
-  s('kpiReactions',fmt(t.reactions));
-  s('kpiSaves',fmt(t.saves));
-  s('kpiComments',fmt(t.comments));
-  s('kpiClaims',fmt(t.claims));
-  s('kpiImmortals',fmt(t.immortals));
-  s('kpiUsers',fmt(_users.length));
+  // GitHub / histórico (totales sin filtro de tiempo)
+  const t=_ghStats?.totales||{};
+  s('kpiTotalHistorico',fmt(t.videos_historico));
+  s('kpiDias',          fmt(t.dias_con_videos));
+  s('kpiClubs',         fmt(t.clubs_activos));
+  s('kpiActivos',       fmt(t.videos_activos));
+  // Firestore (totales sin filtro)
+  const fs=_fsDocs.reduce((a,d)=>({
+    views:    a.views    +(d.views||0),
+    rxn:      a.rxn      +(d.total||0),
+    saves:    a.saves    +(d.saves||0),
+    comments: a.comments +(d.comments_count||0),
+    claims:   a.claims   +(d.claims_count||0),
+  }),{views:0,rxn:0,saves:0,comments:0,claims:0});
+  s('kpiViews',    fmt(fs.views));
+  s('kpiReactions',fmt(fs.rxn));
+  s('kpiSaves',    fmt(fs.saves));
+  s('kpiComments', fmt(fs.comments));
+  s('kpiClaims',   fmt(fs.claims));
+  s('kpiUsers',    fmt(_users.length));
 }
 
-// ============================================================
-// TAB CLUBS — combina GitHub (conteos) + Firestore (engagement)
-// ============================================================
+// ── Tab Clubs — fuente: historial (videos_log.csv) + Firestore engagement ──
 function renderClubs(){
   const $pane=document.getElementById('tab-clubs');
-  if(!_ghStats){
-    $pane.innerHTML=buildTimeBar('clubs')+`<div class="info-box"><strong>GitHub stats no cargaron.</strong> Verifica que <code>generar_stats.py</code> ya corrió al menos una vez y que <code>data/stats_summary.json</code> existe en el repo.</div>`;
-    return;
-  }
+  const filtered=filteredHistorial();
+  const{label}=getDateRange();
 
-  const{label,start,end}=getDateRange();
-
-  // Índice Firestore por videoId para cruzar engagement
+  // Índice Firestore por videoId
   const fsIdx={};
   for(const d of _fsDocs){if(d.videoId)fsIdx[d.videoId]=d;}
 
-  const blocks=(_ghStats.clubs||[]).map((club,ci)=>{
-    // Filtrar videos del período en cada lado
-    let clubViews=0,clubRxn=0,clubTotal=0;
+  if(!filtered.length){
+    $pane.innerHTML=buildTimeBar('clubs')+`<div class="empty-note">Sin videos en este período en <code>videos_log.csv</code>.</div>`;
+    return;
+  }
 
-    const canchaRows=(club.canchas||[]).map(cancha=>{
-      const rows=[];
-      let canchaTotal=0;
-
+  // Agrupar historial filtrado: club → cancha → [{lado,count,fecha}]
+  // videos_log.csv usa loc/can/lado como IDs; mapear a nombres con config
+  const cfgIdx={};
+  for(const club of (_ghStats?.clubs||[])){
+    for(const cancha of (club.canchas||[])){
       for(const lado of (cancha.lados||[])){
-        // Filtrar videos del período por fecha embebida en el nombre
-        const vidsFiltrados=(lado.videos||[]).filter(nombre=>{
-          const m=nombre.match(/_(\d{4})(\d{2})(\d{2})_/);
-          if(!m)return true; // si no podemos parsear, incluir
-          const fecha=`${m[1]}-${m[2]}-${m[3]}`;
-          return inRange(fecha,start,end);
-        });
-
-        for(const nombre of vidsFiltrados){
-          const fs=fsIdx[nombre]||{};
-          rows.push({nombre,club:club.nombre,cancha:cancha.nombre,lado:lado.nombre,
-            views:fs.views||0,total:fs.total||0,saves:fs.saves||0,immortal:fs.immortal||false,
-            fecha:(() => { const m=nombre.match(/_(\d{4})(\d{2})(\d{2})_/); return m?`${m[1]}-${m[2]}-${m[3]}`:''; })(),
-          });
-          canchaTotal++;
-        }
+        cfgIdx[`${club.id}|${cancha.id}|${lado.id}`]={
+          clubNombre:club.nombre||club.id,
+          canchaNombre:cancha.nombre||cancha.id,
+          ladoNombre:lado.nombre||lado.id,
+        };
       }
+    }
+  }
 
-      if(!rows.length)return '';
-      rows.sort((a,b)=>b.views-a.views);
-      const maxV=rows[0]?.views||1;
-      clubTotal+=canchaTotal;
-      clubViews+=rows.reduce((s,r)=>s+r.views,0);
-      clubRxn  +=rows.reduce((s,r)=>s+r.total,0);
+  // Agregar: club → cancha → total videos en período
+  const clubMap=new Map();
+  for(const h of filtered){
+    const meta=cfgIdx[`${h.loc}|${h.can}|${h.lado}`]||{clubNombre:h.loc,canchaNombre:h.can,ladoNombre:h.lado};
+    if(!clubMap.has(h.loc)) clubMap.set(h.loc,{nombre:meta.clubNombre,total:0,canchas:new Map()});
+    const c=clubMap.get(h.loc);
+    c.total+=h.count;
+    if(!c.canchas.has(h.can)) c.canchas.set(h.can,{nombre:meta.canchaNombre,total:0,lados:new Map()});
+    const ca=c.canchas.get(h.can);
+    ca.total+=h.count;
+    if(!ca.lados.has(h.lado)) ca.lados.set(h.lado,{nombre:meta.ladoNombre,total:0});
+    ca.lados.get(h.lado).total+=h.count;
+  }
 
-      const trs=rows.slice(0,15).map((r,i)=>{
-        const pct=Math.round((r.views/maxV)*100);
-        const link=`/clip.html?videoId=${encodeURIComponent(r.nombre)}`;
-        const tm=r.nombre.match(/_(\d{2})(\d{2})\d{2}\.mp4$/i);
-        const hora=tm?`${parseInt(tm[1])%12||12}:${tm[2]} ${parseInt(tm[1])>=12?'PM':'AM'}`:'';
+  const sortedClubs=Array.from(clubMap.values()).sort((a,b)=>b.total-a.total);
+  const maxClub=sortedClubs[0]?.total||1;
+  let totalPeriodo=sortedClubs.reduce((s,c)=>s+c.total,0);
+
+  const blocks=sortedClubs.map((club,ci)=>{
+    const sortedCanchas=Array.from(club.canchas.values()).sort((a,b)=>b.total-a.total);
+    const maxC=sortedCanchas[0]?.total||1;
+    const canchaRows=sortedCanchas.map(cancha=>{
+      const sortedLados=Array.from(cancha.lados.values()).sort((a,b)=>b.total-a.total);
+      const ladoRows=sortedLados.map(lado=>{
+        const pct=Math.round((lado.total/cancha.lados.size>0?cancha.total:1)*100);
         return`<tr>
-          <td class="td-rank" style="font-size:.82rem">${i+1}</td>
-          <td class="td-name">
-            <a href="${link}" target="_blank" style="text-decoration:none;color:#eaf2ff">
-              ${hora?`<strong>${esc(hora)}</strong>`:''}
-              ${r.fecha?`<small>${r.fecha} · ${esc(r.lado)}</small>`:''}
-            </a>
-            ${r.immortal?'<span class="pill pill-gold" style="margin-left:4px">⭐</span>':''}
-          </td>
-          <td class="td-bar"><div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div></td>
-          <td class="td-num">${fmt(r.views)} 👁</td>
-          <td class="td-num">${fmt(r.total)} rxn</td>
+          <td style="padding:6px 12px;font-size:.78rem;color:var(--muted)">${esc(lado.nombre)}</td>
+          <td class="td-bar" style="padding:6px 12px"><div class="bar"><div class="bar-fill" style="width:${Math.round(lado.total/(cancha.total||1)*100)}%"></div></div></td>
+          <td class="td-num" style="padding:6px 12px">${fmt(lado.total)}</td>
         </tr>`;
       }).join('');
-
+      const pct=Math.round((cancha.total/maxC)*100);
       return`<div class="cancha-block">
         <div class="cancha-header">
-          🎾 <strong style="color:#fff">${esc(cancha.nombre||cancha.id)}</strong>
-          <span class="badge">${canchaTotal} video${canchaTotal!==1?'s':''} en este período</span>
+          🎾 <strong style="color:#fff">${esc(cancha.nombre)}</strong>
+          <span class="pill pill-blue">${fmt(cancha.total)} videos</span>
         </div>
-        ${trs?`<table><thead><tr><th>#</th><th>Video</th><th></th><th>Vistas</th><th>Rxn</th></tr></thead><tbody>${trs}</tbody></table>`:'<div class="empty-note" style="padding:10px">Sin datos de engagement todavía.</div>'}
+        <table><tbody>${ladoRows}</tbody></table>
       </div>`;
     }).join('');
 
-    if(!canchaRows.replace(/\s/g,''))return '';
-
+    const pct=Math.round((club.total/maxClub)*100);
     return`<div class="club-block" id="cbl-${ci}">
       <div class="club-header" onclick="tgClub('cbl-${ci}')">
-        <div class="club-name">${esc(club.nombre||club.id)}</div>
+        <div>
+          <div class="club-name">${esc(club.nombre)}</div>
+        </div>
         <div class="club-meta">
-          <span class="pill pill-blue">${fmt(clubViews)} vistas</span>
-          <span class="pill pill-gold">${fmt(clubRxn)} rxn</span>
-          <span class="pill pill-muted">${canchaRows.split('cancha-block').length-1} canchas</span>
+          <span class="pill pill-blue">${fmt(club.total)} videos</span>
+          <span class="pill pill-muted">${fmt(Math.round(club.total/totalPeriodo*100))}% del total</span>
+          <div class="bar" style="width:80px;margin-top:0"><div class="bar-fill" style="width:${pct}%"></div></div>
           <span class="club-toggle">▼</span>
         </div>
       </div>
-      <div class="club-body">${canchaRows}</div>
+      <div class="club-body" style="padding:8px 0 4px">${canchaRows}</div>
     </div>`;
-  }).filter(Boolean).join('');
+  }).join('');
 
   $pane.innerHTML=buildTimeBar('clubs')+`
-    <div class="info-box" style="font-size:.74rem">
-      <strong>🔵 Estructura de clubs:</strong> de <code>stats_summary.json</code> (GitHub) — se actualiza cada vez que corre el workflow.<br>
-      <strong>🟡 Vistas/reacciones:</strong> de Firestore — tiempo real.<br>
-      Última generación de stats: <strong>${_ghStats.generado_el?.slice(0,16).replace('T',' ') || '—'}</strong>
+    <div class="info-box" style="font-size:.73rem">
+      <strong>Fuente:</strong> <code>videos_log.csv</code> (todos los videos grabados en el período) · <strong>${totalPeriodo.toLocaleString()}</strong> videos en "${label}".<br>
+      Stats generadas: <strong>${_ghStats?.generado_el?.slice(0,16).replace('T',' ')||'—'}</strong>
     </div>
     <div class="section">
-      <div class="section-title">🏢 Clubs — ${esc(label)}
-        <span class="badge">${_ghStats.clubs?.length||0} clubs · ${_ghStats.totales?.canchas||0} canchas totales</span>
-        <span class="src-tag gh">GitHub + Firestore</span>
-      </div>
-      ${blocks||'<div class="empty-note">Sin videos en este período o stats_summary.json no generado aún.</div>'}
+      <div class="section-title">🏢 Clubs — ${esc(label)} <span class="badge">${sortedClubs.length} clubs · ${totalPeriodo.toLocaleString()} videos</span><span class="src-tag gh">videos_log.csv</span></div>
+      ${blocks}
     </div>`;
 
   // Abrir primer club
-  const first=document.querySelector('.club-block');
-  if(first)first.classList.add('open');
+  document.querySelector('.club-block')?.classList.add('open');
 }
 
 function tgClub(id){document.getElementById(id)?.classList.toggle('open');}
 
-// ============================================================
-// TOP TABLE — solo Firestore, filtrado por tiempo
-// ============================================================
+// ── Top Firestore (filtrado por tiempo) ──
 function renderTopFS(tabId,field,title,color){
   const $pane=document.getElementById(tabId);
   const docs=filteredFS().filter(d=>(d[field]||0)>0).sort((a,b)=>(b[field]||0)-(a[field]||0)).slice(0,25);
   const{label}=getDateRange();
   const maxVal=docs[0]?.[field]||1;
   let html=buildTimeBar(tabId);
-  if(!docs.length){$pane.innerHTML=html+`<div class="empty-note">Sin datos para este período.</div>`;return;}
-
+  if(!docs.length){$pane.innerHTML=html+`<div class="empty-note">Sin datos Firestore para este período.</div>`;return;}
   const rows=docs.map((d,i)=>{
     const pct=Math.round(((d[field]||0)/maxVal)*100);
     const link=d.videoId?`/clip.html?videoId=${encodeURIComponent(d.videoId)}`:'#';
-    // Enriquecer con datos de GitHub si disponibles
-    const gh=_ghByName[d.videoId]||null;
-    const clubLabel=gh?esc(gh.club):esc(d.club||'');
     return`<tr>
       <td class="td-rank">${rankEmoji(i)}</td>
       <td class="td-name">
         <a href="${link}" target="_blank" style="color:#eaf2ff;text-decoration:none">
           ${videoLabel(d)}
-          <small>${clubLabel} ${d.cancha?'· '+esc(d.cancha):''} ${d.fecha?'· '+d.fecha:''}</small>
+          <small>${esc(d.club||'')} ${d.cancha?'· '+esc(d.cancha):''} ${d.fecha?'· '+d.fecha:''}</small>
         </a>
         ${d.immortal?'<span class="pill pill-gold" style="margin-left:4px">⭐</span>':''}
       </td>
@@ -647,135 +520,94 @@ function renderTopFS(tabId,field,title,color){
       <td class="td-num">${fmt(d[field]||0)}</td>
     </tr>`;
   }).join('');
-
   $pane.innerHTML=html+`
     <div class="section">
-      <div class="section-title">${title} — ${esc(label)} <span class="badge">${docs.length} videos</span><span class="src-tag fs">Firestore</span></div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>#</th><th>Video</th><th style="min-width:80px"></th><th>Total</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div>
+      <div class="section-title">${title} — ${esc(label)} <span class="badge">${docs.length}</span><span class="src-tag fs">Firestore</span></div>
+      <div class="table-wrap"><table><thead><tr><th>#</th><th>Video</th><th style="min-width:80px"></th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div>
     </div>`;
 }
 
-// ============================================================
-// JUGADORES
-// ============================================================
+// ── Jugadores ──
 function renderPlayers(){
   const $pane=document.getElementById('tab-players');
-  if(!_players.length){
-    $pane.innerHTML=`<div class="info-box"><strong>Sin datos todavía.</strong> El índice de collectionGroup puede tardar unos minutos. Si ya lo creaste, actualiza.</div>`;
-    return;
-  }
+  if(!_players.length){$pane.innerHTML=`<div class="info-box"><strong>Sin datos todavía.</strong> El índice collectionGroup puede tardar unos minutos.</div>`;return;}
   const maxC=_players[0]?.claims||1;
   const rows=_players.slice(0,25).map((p,i)=>{
     const pct=Math.round((p.claims/maxC)*100);
-    const link=`/jugador.html?uid=${encodeURIComponent(p.uid)}`;
-    const av=p.photoURL
-      ?`<img src="${esc(p.photoURL)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">`
-      :`<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(0,79,200,.4);font-weight:900;font-size:11px;margin-right:8px">${(p.displayName||'?')[0].toUpperCase()}</span>`;
+    const av=p.photoURL?`<img src="${esc(p.photoURL)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">`:`<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(0,79,200,.4);font-weight:900;font-size:11px;margin-right:8px">${(p.displayName||'?')[0].toUpperCase()}</span>`;
     return`<tr>
       <td class="td-rank">${rankEmoji(i)}</td>
-      <td class="td-name"><a href="${link}" target="_blank" style="color:#eaf2ff;text-decoration:none;display:flex;align-items:center">${av}${esc(p.displayName||'Anónimo')}</a></td>
+      <td class="td-name"><a href="/jugador.html?uid=${encodeURIComponent(p.uid)}" target="_blank" style="color:#eaf2ff;text-decoration:none;display:flex;align-items:center">${av}${esc(p.displayName||'Anónimo')}</a></td>
       <td class="td-bar"><div class="bar"><div class="bar-fill green" style="width:${pct}%"></div></div></td>
       <td class="td-num">${p.claims} clip${p.claims!==1?'s':''}</td>
     </tr>`;
   }).join('');
-
-  $pane.innerHTML=`
-    <div class="info-box">Rankeados por número de videos reclamados (🥷 Soy yo). Las reacciones 🔥 son anónimas (localStorage) — para trackearlas por uid habría que cambiar la arquitectura de reactions.js.</div>
-    <div class="section">
-      <div class="section-title">🥷 Jugadores con más apariciones <span class="badge">${_players.length}</span><span class="src-tag fs">Firestore</span></div>
-      <div class="table-wrap"><table><thead><tr><th>#</th><th>Jugador</th><th></th><th>Clips reclamados</th></tr></thead><tbody>${rows}</tbody></table></div>
-    </div>`;
+  $pane.innerHTML=`<div class="info-box">Rankeados por claims "🥷 Soy yo". Las reacciones 🔥 son anónimas (localStorage) — para trackearlas por uid habría que modificar reactions.js.</div>
+    <div class="section"><div class="section-title">🥷 Jugadores <span class="badge">${_players.length}</span><span class="src-tag fs">Firestore</span></div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>Jugador</th><th></th><th>Clips reclamados</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
-// ============================================================
-// USUARIOS
-// ============================================================
+// ── Usuarios ──
 function renderUsers(){
   const $pane=document.getElementById('tab-users');
-  const authLink='https://console.firebase.google.com/project/_/authentication/users';
   const pByUid=new Map(_players.map(p=>[p.uid,p]));
   const allUids=new Set([..._players.map(p=>p.uid),..._users.map(u=>u.uid)]);
-  const userRows=Array.from(allUids).map(uid=>{
+  if(!allUids.size){$pane.innerHTML=`<div class="empty-note">Sin usuarios todavía.</div>`;return;}
+  const rows=Array.from(allUids).map(uid=>{
     const p=pByUid.get(uid)||{};
     return{uid,displayName:p.displayName||'',photoURL:p.photoURL||'',claims:p.claims||0};
-  }).sort((a,b)=>b.claims-a.claims).slice(0,30);
-
-  if(!userRows.length){$pane.innerHTML=`<div class="empty-note">Sin datos todavía.</div>`;return;}
-
-  const rows=userRows.map((u,i)=>{
-    const link=`/jugador.html?uid=${encodeURIComponent(u.uid)}`;
-    const av=u.photoURL
-      ?`<img src="${esc(u.photoURL)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">`
-      :`<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(0,79,200,.35);font-weight:900;font-size:11px;margin-right:8px">${(u.displayName||'?')[0].toUpperCase()}</span>`;
+  }).sort((a,b)=>b.claims-a.claims).slice(0,30).map((u,i)=>{
+    const av=u.photoURL?`<img src="${esc(u.photoURL)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">`:`<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(0,79,200,.35);font-weight:900;font-size:11px;margin-right:8px">${(u.displayName||'?')[0].toUpperCase()}</span>`;
     return`<tr>
       <td class="td-rank" style="font-size:.82rem">${i+1}</td>
-      <td class="td-name">
-        <a href="${link}" target="_blank" style="color:#eaf2ff;text-decoration:none;display:flex;align-items:center">${av}${esc(u.displayName||'Usuario')}</a>
-        <small style="color:var(--muted);font-size:.67rem">${esc(u.uid.slice(0,14))}…</small>
-      </td>
+      <td class="td-name"><a href="/jugador.html?uid=${encodeURIComponent(u.uid)}" target="_blank" style="color:#eaf2ff;text-decoration:none;display:flex;align-items:center">${av}${esc(u.displayName||'Usuario')}</a><small style="color:var(--muted);font-size:.67rem">${esc(u.uid.slice(0,14))}…</small></td>
       <td class="td-num"><span class="pill pill-green">${u.claims} reclamados</span></td>
     </tr>`;
   }).join('');
-
-  $pane.innerHTML=`
-    <div class="info-box">
-      <strong>* Usuarios en Firestore:</strong> ${_users.length} (los que tienen guardados o acciones).<br>
-      <strong>Total con Google Sign-In:</strong> ver <a href="${authLink}" target="_blank">Firebase Console → Authentication ↗</a>
-    </div>
-    <div class="section">
-      <div class="section-title">👤 Usuarios conocidos <span class="badge">${allUids.size}</span><span class="src-tag fs">Firestore</span></div>
-      <div class="table-wrap"><table><thead><tr><th>#</th><th>Usuario</th><th>Actividad</th></tr></thead><tbody>${rows}</tbody></table></div>
-    </div>`;
+  $pane.innerHTML=`<div class="info-box">
+    <strong>${_users.length} usuarios</strong> con docs en Firestore (guardados/acciones).<br>
+    Total con Google Sign-In: <a href="https://console.firebase.google.com/project/_/authentication/users" target="_blank">Firebase Console → Authentication ↗</a>
+  </div>
+  <div class="section"><div class="section-title">👤 Usuarios conocidos <span class="badge">${allUids.size}</span><span class="src-tag fs">Firestore</span></div>
+  <div class="table-wrap"><table><thead><tr><th>#</th><th>Usuario</th><th>Actividad</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
-// ============================================================
-// RECIENTE
-// ============================================================
+// ── Reciente ──
 function renderRecent(){
   const $pane=document.getElementById('tab-recent');
-  const recent=[..._fsDocs].filter(d=>d.lastInteractionAt?.seconds)
-    .sort((a,b)=>(b.lastInteractionAt?.seconds||0)-(a.lastInteractionAt?.seconds||0)).slice(0,20);
+  const recent=[..._fsDocs].filter(d=>d.lastInteractionAt?.seconds).sort((a,b)=>(b.lastInteractionAt?.seconds||0)-(a.lastInteractionAt?.seconds||0)).slice(0,20);
   if(!recent.length){$pane.innerHTML=`<div class="empty-note">Sin actividad reciente.</div>`;return;}
   const emojis=['🔥','😂','😡','🎉','😮'];
   const rows=recent.map((d,i)=>{
     const ts=new Date(d.lastInteractionAt.seconds*1000).toLocaleString('es-MX');
     const link=d.videoId?`/clip.html?videoId=${encodeURIComponent(d.videoId)}`:'#';
-    const rxnStr=['fuego','risa','enojo','diversion','sorpresa'].map((k,i2)=>(d[k]||0)>0?`${emojis[i2]}${d[k]}`:'').filter(Boolean).join(' ');
+    const rxn=['fuego','risa','enojo','diversion','sorpresa'].map((k,j)=>(d[k]||0)>0?`${emojis[j]}${d[k]}`:'').filter(Boolean).join(' ');
     return`<tr>
       <td class="td-rank" style="font-size:.82rem">${i+1}</td>
       <td class="td-name"><a href="${link}" target="_blank" style="color:#eaf2ff;text-decoration:none">${videoLabel(d)}<small>${esc(d.club||'')} ${d.cancha?'· '+esc(d.cancha):''}</small></a></td>
       <td><span style="color:var(--muted);font-size:.76rem">${ts}</span></td>
-      <td class="td-num" style="font-size:.86rem">${rxnStr||'—'}</td>
+      <td class="td-num" style="font-size:.86rem">${rxn||'—'}</td>
     </tr>`;
   }).join('');
-  $pane.innerHTML=`<div class="section">
-    <div class="section-title">🕐 Actividad reciente <span class="badge">${recent.length} docs</span><span class="src-tag fs">Firestore</span></div>
-    <div class="table-wrap"><table><thead><tr><th>#</th><th>Video</th><th>Última actividad</th><th>Reacciones</th></tr></thead><tbody>${rows}</tbody></table></div>
-  </div>`;
+  $pane.innerHTML=`<div class="section"><div class="section-title">🕐 Reciente <span class="badge">${recent.length}</span><span class="src-tag fs">Firestore</span></div>
+  <div class="table-wrap"><table><thead><tr><th>#</th><th>Video</th><th>Última actividad</th><th>Reacciones</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
-// ============================================================
-// EXPORT CSV
-// ============================================================
+// ── Export CSV ──
 function exportCSV(){
-  if(!_fsDocs.length){alert('Sin datos Firestore');return;}
-  const cols=['videoId','club','cancha','lado','fecha','views','total','saves','shares','comments_count','claims_count','immortal'];
-  const csv=[cols.join(','),..._fsDocs.map(d=>cols.map(c=>JSON.stringify(d[c]??'')).join(','))].join('\n');
+  if(!_historial.length){alert('Sin datos históricos todavía');return;}
+  const cols=['fecha','loc','can','lado','count'];
+  const csv=[cols.join(','),..._historial.map(r=>cols.map(c=>JSON.stringify(r[c]??'')).join(','))].join('\n');
   const a=Object.assign(document.createElement('a'),{
     href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})),
-    download:`puntazo_${new Date().toISOString().slice(0,10)}.csv`,
+    download:`puntazo_historico_${new Date().toISOString().slice(0,10)}.csv`,
   });
   document.body.appendChild(a);a.click();a.remove();
 }
 
-// ============================================================
-// HELPERS
-// ============================================================
-function fmt(n){if(n==null||isNaN(n))return'—';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'K';return String(n);}
-function esc(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// ── Helpers ──
+function fmt(n){if(n==null||isNaN(n))return'—';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'K';return n.toLocaleString();}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function rankEmoji(i){return i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1);}
 function s(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
 function videoLabel(d){
