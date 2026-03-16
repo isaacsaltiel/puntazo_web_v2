@@ -44,12 +44,12 @@ nav,
 .site-header{
   position:fixed;top:0;left:0;right:0;z-index:100;
   display:flex;align-items:center;justify-content:space-between;
-  padding:0.85rem 2rem;
+  padding:0 20px;
   background:rgba(5,9,20,0.90);
   backdrop-filter:blur(18px);
   -webkit-backdrop-filter:blur(18px);
   border-bottom:1px solid var(--border2);
-  gap:1rem;
+  gap:16px;
 }
 
 /* Logo — solo imagen, sin texto duplicado */
@@ -159,6 +159,8 @@ nav,
     gap: 1.75rem !important;
     padding: 0 !important;
     z-index: 100 !important;
+    justify-content: center !important;
+    flex: 1 1 auto !important;
   }
 
   /* Keep link padding/visuals intact but remove stacked separators */
@@ -174,6 +176,27 @@ nav,
   #nav-menu.show {
     display: flex !important;
     position: static !important;
+  }
+
+  /* Ensure auth slot is a normal flex item inside header (not absolute) */
+  .site-header .pz-nav-right--internal{
+    position: static !important;
+    right: auto !important;
+    top: auto !important;
+    transform: none !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: .7rem !important;
+    margin-left: 0 !important;
+  }
+
+  .pz-auth-slot--internal-floating,
+  .site-header .pz-auth-slot{
+    position: static !important;
+    display: flex !important;
+    align-items: center !important;
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
   }
 }
 
