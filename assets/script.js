@@ -2633,7 +2633,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const p = getQueryParams();
 
   (async () => {
-    if (path.endsWith("index.html") || path.endsWith("/")) {
+    // Landing is `index.html` (static content). The exploración/lista de locaciones
+    // se carga en `explorar.html`. Aceptar index, explorar o la raíz como punto
+    // para poblar locaciones.
+    if (path.endsWith("index.html") || path.endsWith("explorar.html") || path === "/") {
       populateLocaciones();
       return;
     }
@@ -2692,7 +2695,8 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (path2.endsWith("cancha.html")) {
         btnVolver.href = `locacion.html?loc=${p2.loc}`;
       } else if (path2.endsWith("locacion.html")) {
-        btnVolver.href = "index.html";
+        // Volver a la lista de exploración (ahora en explorar.html)
+        btnVolver.href = "explorar.html";
       }
     })();
   }
