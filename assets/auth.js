@@ -258,10 +258,15 @@
 
     while (Date.now() - started < timeout) {
       const hasFirebase = !!window.firebase;
-      const hasApp = !!(hasFirebase && firebase.apps && firebase.apps.length);
+      const hasCore = !!(window.PuntazoFirebase && typeof window.PuntazoFirebase.ensureApp === "function");
       const hasAuthCompat = !!(hasFirebase && typeof firebase.auth === "function");
 
-      if (hasFirebase && hasApp && hasAuthCompat) return true;
+      if (hasFirebase && hasCore && hasAuthCompat) {
+        try {
+          window.PuntazoFirebase.ensureApp();
+          return true;
+        } catch {}
+      }
       await new Promise(resolve => setTimeout(resolve, 120));
     }
 
@@ -277,7 +282,7 @@
       return null;
     }
 
-    state.auth = firebase.auth();
+    state.auth = window.PuntazoFirebase.auth();
 
     try {
       await state.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
