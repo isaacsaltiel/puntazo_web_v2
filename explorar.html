@@ -40,6 +40,10 @@
 <link rel="stylesheet" href="/assets/estilo.css" />
 
 <style>
+  main{
+    padding-top:clamp(84px, 9vw, 116px);
+  }
+
   .page-header{
     max-width:1080px;
     margin:0 auto 1.4rem;
@@ -132,6 +136,10 @@
   }
 
   @media (max-width: 640px){
+    main{
+      padding-top:92px;
+    }
+
     #locaciones-lista{
       grid-template-columns:1fr;
       gap:12px;
@@ -163,6 +171,12 @@
 
 <main>
   <section class="page-header">
+    <div class="page-header-copy">
+      <div class="page-tag">Explorar</div>
+      <h1>Encuentra tus clips</h1>
+      <p>Selecciona tu club para ver los videos disponibles de hoy.</p>
+    </div>
+
     <div class="page-header-actions">
       <a
         href="https://forms.gle/TsGHKaSjBnpu65SQA"
