@@ -37,7 +37,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
 
-<link rel="stylesheet" href="assets/estilo.css" />
+<link rel="stylesheet" href="/assets/estilo.css" />
 
 <style>
   .page-header{
@@ -59,6 +59,7 @@
   .page-header-link{
     display:inline-flex;
     align-items:center;
+    justify-content:center;
     gap:.45rem;
     min-height:42px;
     padding:.72rem 1rem;
@@ -76,71 +77,6 @@
     transform:translateY(-1px);
     border-color:rgba(11,124,255,.38);
     background:rgba(0,79,200,.12);
-  }
-
-  .nav-right{
-    display:flex;
-    align-items:center;
-    gap:.7rem;
-    flex-wrap:wrap;
-    justify-content:flex-end;
-  }
-
-  .nav-phone-cta{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    min-height:42px;
-    padding:.72rem 1rem;
-    border-radius:999px;
-    text-decoration:none;
-    font-weight:800;
-    font-size:.85rem;
-    color:#fff;
-    white-space:nowrap;
-    background:rgba(255,255,255,.05);
-    border:1px solid rgba(255,255,255,.12);
-    box-shadow:0 8px 24px rgba(0,0,0,.18);
-    transition:all .18s ease;
-  }
-
-  .nav-phone-cta:hover{
-    transform:translateY(-1px);
-    border-color:rgba(11,124,255,.42);
-    background:rgba(0,79,200,.14);
-  }
-
-  .auth-slot{
-    display:flex;
-    align-items:center;
-  }
-
-  .auth-chip{
-    display:inline-flex;
-    align-items:center;
-    gap:.55rem;
-    min-height:42px;
-    padding:.62rem .9rem;
-    border-radius:999px;
-    border:1px solid rgba(255,255,255,.12);
-    background:rgba(255,255,255,.05);
-    color:#fff;
-    font-weight:800;
-    font-size:.84rem;
-    font-family:inherit;
-    cursor:default;
-  }
-
-  .auth-avatar{
-    width:22px;
-    height:22px;
-    border-radius:999px;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    background:rgba(255,255,255,.12);
-    font-size:.78rem;
-    line-height:1;
   }
 
   #locaciones-lista{
@@ -167,16 +103,12 @@
     font-weight:800;
     font-size:1rem;
     line-height:1.25;
-    background:var(--card, rgba(255,255,255,.04));
-    border:1px solid var(--border, rgba(255,255,255,.08));
     box-shadow:0 10px 24px rgba(0,0,0,.14);
     transition:transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
   }
 
   #locaciones-lista li a.link-blanco:hover{
     transform:translateY(-2px);
-    border-color:rgba(11,124,255,.42);
-    background:rgba(255,255,255,.06);
     box-shadow:0 14px 30px rgba(0,0,0,.20);
   }
 
@@ -191,29 +123,12 @@
     justify-content:center;
     gap:.8rem;
     border-radius:18px;
-    background:rgba(255,255,255,.04);
-    border:1px solid rgba(255,255,255,.08);
   }
 
   .note-24h{
     max-width:1080px;
     margin:1rem auto 0;
     text-align:center;
-  }
-
-  @media (max-width: 860px){
-    .nav-right{
-      gap:.55rem;
-    }
-
-    .nav-phone-cta{
-      font-size:.8rem;
-      padding:.7rem .9rem;
-    }
-
-    .auth-chip span:last-child{
-      display:none;
-    }
   }
 
   @media (max-width: 640px){
@@ -224,7 +139,7 @@
 
     #locaciones-lista li a.link-blanco{
       min-height:68px;
-      padding:1rem 1rem;
+      padding:1rem;
     }
 
     .page-header-actions{
@@ -233,12 +148,7 @@
     }
 
     .page-header-link{
-      justify-content:center;
-      text-align:center;
-    }
-
-    .nav-phone-cta{
-      order:-1;
+      width:100%;
     }
   }
 </style>
@@ -247,36 +157,9 @@
 
 <div class="page-bg"></div>
 
-<nav>
-  <a href="inicio.html" class="nav-logo">
-    <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
-  </a>
-
-  <ul class="nav-links" id="nav-menu">
-    <li><a href="inicio.html">Inicio</a></li>
-    <li><a href="inicio.html#clubs">Para clubs</a></li>
-    <li><a href="explorar.html" class="active">Mis clips</a></li>
-  </ul>
-
-  <div class="nav-right">
-    <a
-      href="https://puntazoclips.com/boton.html"
-      target="_blank"
-      rel="noopener"
-      class="nav-phone-cta"
-      onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'explorar_header'});}catch(e){}"
-    >📲 Usar teléfono como botón</a>
-
-    <div id="auth-slot" class="auth-slot" aria-live="polite">
-      <button type="button" class="auth-chip">
-        <span class="auth-avatar">👤</span>
-        <span>Iniciar sesión</span>
-      </button>
-    </div>
-
-    <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú">☰</button>
-  </div>
-</nav>
+<!-- Header compartido real: aquí vive el auth slot de Google/Firebase -->
+<div id="nav-root" data-nav-variant="internal"></div>
+<script src="/assets/header.js"></script>
 
 <main>
   <section class="page-header">
@@ -288,11 +171,19 @@
 
     <div class="page-header-actions">
       <a
+        href="https://puntazoclips.com/boton.html"
+        target="_blank"
+        rel="noopener"
+        class="page-header-link"
+        onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'explorar_header'});}catch(e){}"
+      >📲 Usar teléfono como botón</a>
+
+      <a
         href="https://forms.gle/TsGHKaSjBnpu65SQA"
         target="_blank"
         rel="noopener"
         class="page-header-link"
-        onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'explorar_header_small'});}catch(e){}"
+        onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'explorar_header'});}catch(e){}"
       >¿Faltó un clip? Recupéralo</a>
     </div>
   </section>
@@ -310,7 +201,7 @@
 </main>
 
 <footer>
-  <a href="inicio.html" class="foot-logo">
+  <a href="/inicio.html" class="foot-logo">
     <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
   </a>
   <div class="foot-links">
@@ -321,28 +212,6 @@
   <span class="foot-copy">© 2026 Puntazo – Todos los derechos reservados</span>
 </footer>
 
-<script src="assets/script.js"></script>
-
-<script>
-  const menuToggle = document.getElementById('menu-toggle');
-  const navMenu = document.getElementById('nav-menu');
-
-  if (menuToggle && navMenu) {
-    menuToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      navMenu.classList.toggle('show');
-    });
-
-    document.addEventListener('click', (e) => {
-      if (navMenu.classList.contains('show') && !navMenu.contains(e.target) && e.target !== menuToggle) {
-        navMenu.classList.remove('show');
-      }
-    });
-
-    window.addEventListener('scroll', () => {
-      if (navMenu.classList.contains('show')) navMenu.classList.remove('show');
-    });
-  }
-</script>
+<script src="/assets/script.js"></script>
 </body>
 </html>
