@@ -15,305 +15,367 @@
   gtag('config', 'G-7HTMSTJ035');
 </script>
 
-<link rel="apple-touch-icon" sizes="57x57"   href="/assets/icons/apple-icon-57x57.png" />
-<link rel="apple-touch-icon" sizes="60x60"   href="/assets/icons/apple-icon-60x60.png" />
-<link rel="apple-touch-icon" sizes="72x72"   href="/assets/icons/apple-icon-72x72.png" />
-<link rel="apple-touch-icon" sizes="76x76"   href="/assets/icons/apple-icon-76x76.png" />
-<link rel="apple-touch-icon" sizes="114x114" href="/assets/icons/apple-icon-114x114.png" />
-<link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/apple-icon-120x120.png" />
-<link rel="apple-touch-icon" sizes="144x144" href="/assets/icons/apple-icon-144x144.png" />
-<link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-icon-152x152.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
-<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/android-icon-192x192.png" />
-<link rel="icon" type="image/png" sizes="32x32"   href="/assets/icons/favicon-32x32.png" />
-<link rel="icon" type="image/png" sizes="96x96"   href="/assets/icons/favicon-96x96.png" />
-<link rel="icon" type="image/png" sizes="16x16"   href="/assets/icons/favicon-16x16.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
 <link rel="manifest" href="/assets/icons/manifest.json" />
-<meta name="msapplication-TileColor" content="#004FC8" />
-<meta name="msapplication-TileImage" content="/assets/icons/ms-icon-144x144.png" />
 <meta name="theme-color" content="#050914" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
 
-<!-- CSS CENTRALIZADO -->
 <link rel="stylesheet" href="assets/estilo.css" />
-
-<!-- Reacciones -->
 <link rel="stylesheet" href="/assets/reactions.css" />
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/reactions.js"></script>
 
 <style>
-  /* ─────────────────────────────────────────────
-     Jerarquía visual nueva: club/cancha > filtros
-  ───────────────────────────────────────────── */
-  .top-row{
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap:14px;
-    flex-wrap:wrap;
-  }
+/* ═══════════════════════════════════════════════════
+   LADO.HTML — Estilos específicos de esta página
+═══════════════════════════════════════════════════ */
 
-  .top-row-actions{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
-    justify-content:flex-end;
-  }
+/* ── Breadcrumb / título de página ── */
+.page-title {
+  margin: 0 0 18px;
+  line-height: 1.1;
+}
 
-  .titulo-club{
-    display:flex;
-    align-items:center;
-    flex-wrap:wrap;
-    gap:8px;
-    font-size:1.15rem;
-    line-height:1.2;
-  }
+#link-club {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: rgba(0, 79, 200, 0.14);
+  border: 1px solid rgba(11, 124, 255, 0.24);
+  color: rgba(234, 242, 255, 0.80) !important;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 0.92rem;
+  transition: all .18s ease;
+  vertical-align: middle;
+}
 
-  #link-club{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    padding:0.62rem 1rem;
-    border-radius:999px;
-    background:rgba(0,79,200,0.15);
-    border:1px solid rgba(11,124,255,0.28);
-    color:#eaf2ff !important;
-    text-decoration:none;
-    font-weight:900;
-    font-size:1rem;
-    letter-spacing:0.2px;
-    box-shadow:0 8px 24px rgba(0,0,0,0.18);
-    transition:all .18s ease;
-  }
+#link-club:hover {
+  color: #eaf2ff !important;
+  border-color: rgba(11, 124, 255, 0.42);
+  background: rgba(0, 79, 200, 0.22);
+  transform: translateY(-1px);
+}
 
-  #link-club:hover{
-    transform:translateY(-1px);
-    border-color:rgba(11,124,255,0.48);
-    background:rgba(0,79,200,0.22);
-  }
+.breadcrumb-sep {
+  color: rgba(255, 255, 255, 0.30);
+  font-size: 1.1rem;
+  font-weight: 400;
+  vertical-align: middle;
+  margin: 0 4px;
+}
 
-  #link-cancha{
-    color:#fff !important;
-    pointer-events:none;
-    cursor:default;
-    font-weight:900 !important;
-    font-size:1.35rem !important;
-    letter-spacing:-0.2px;
-    line-height:1.1;
-  }
+#link-cancha {
+  color: #fff;
+  font-size: 1.55rem;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  vertical-align: middle;
+  pointer-events: none;
+  cursor: default;
+  text-decoration: none;
+}
 
-  #breadcrumb-sep1{
-    color:rgba(255,255,255,0.45);
-    font-size:1rem;
-    font-weight:700;
-  }
+#breadcrumb-sep2,
+#nombre-lado { display: none; }
 
-  .recover-mini{
-    white-space:nowrap;
-  }
+/* ── Filtros de día (generados por script.js) ── */
+#filtro-dia {
+  margin: 0 0 12px;
+}
 
-  .btn-top-mini{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    padding:0.62rem 0.95rem;
-    border-radius:999px;
-    text-decoration:none;
-    font-weight:800;
-    font-size:0.86rem;
-    color:#fff;
-    background:linear-gradient(135deg, rgba(255,190,0,.18), rgba(0,79,200,.22));
-    border:1px solid rgba(255,190,0,.26);
-    box-shadow:0 8px 24px rgba(0,0,0,0.20);
-    transition:all .18s ease;
-  }
+/* ── Filtros de hora ── */
+#filtro-horario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 14px;
+}
 
-  .btn-top-mini:hover{
-    transform:translateY(-1px);
-    border-color:rgba(255,190,0,.42);
-    box-shadow:0 12px 28px rgba(0,0,0,0.24);
-  }
+/* ── Mensaje sutil de concurso ── */
+.contest-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 190, 0, 0.07);
+  border: 1px solid rgba(255, 190, 0, 0.18);
+  color: rgba(255, 210, 60, 0.80);
+  font-size: 0.80rem;
+  font-weight: 700;
+  margin-bottom: 18px;
+  text-decoration: none;
+  transition: all .18s ease;
+}
 
-  /* Header CTA nuevo */
-  .top-month-nav-btn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    padding:.58rem 1rem;
-    border-radius:999px;
-    text-decoration:none;
-    font-weight:800;
-    font-size:.88rem;
-    color:#fff;
-    background:linear-gradient(135deg, rgba(255,190,0,.16), rgba(0,79,200,.22));
-    border:1px solid rgba(255,190,0,.26);
-    transition:all .18s ease;
-    white-space:nowrap;
-  }
+.contest-hint:hover {
+  background: rgba(255, 190, 0, 0.12);
+  border-color: rgba(255, 190, 0, 0.30);
+  color: rgba(255, 215, 70, 1);
+}
 
-  .top-month-nav-btn:hover{
-    transform:translateY(-1px);
-    border-color:rgba(255,190,0,.42);
-    background:linear-gradient(135deg, rgba(255,190,0,.24), rgba(0,79,200,.28));
-  }
+/* ── Botón volver ── */
+.btn-volver-container {
+  margin-bottom: 14px;
+}
 
-  /* Banner nuevo para mejores puntos */
-  .month-top-banner{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:16px;
-    flex-wrap:wrap;
-    margin:14px 0 18px;
-    padding:1rem 1.1rem;
-    border-radius:18px;
-    background:linear-gradient(135deg, rgba(255,190,0,.08), rgba(0,79,200,.12));
-    border:1px solid rgba(255,255,255,0.10);
-    box-shadow:0 12px 34px rgba(0,0,0,.18);
-  }
+/* ═══════════════════════════════════════════════════
+   CARD DE VIDEO — Layout nuevo
+═══════════════════════════════════════════════════ */
+.video-card {
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 18px;
+  padding: 16px 16px 14px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+  transition: border-color .2s ease;
+}
 
-  .month-top-copy h3{
-    margin:0 0 6px;
-    color:#fff;
-    font-size:1rem;
-    font-weight:900;
-    letter-spacing:-0.2px;
-  }
+.video-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
 
-  .month-top-copy p{
-    margin:0;
-    color:rgba(255,255,255,.72);
-    font-size:0.86rem;
-    line-height:1.55;
-    max-width:650px;
-  }
+/* 1. Header: hora + emoji preview */
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
 
-  .btn-top-month{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    padding:0.92rem 1.2rem;
-    border-radius:999px;
-    text-decoration:none;
-    font-weight:900;
-    font-size:0.92rem;
-    color:#fff;
-    background:linear-gradient(135deg, #0B7CFF, #004FC8);
-    border:1px solid rgba(11,124,255,.45);
-    box-shadow:0 0 28px rgba(0,79,200,.28), 0 8px 26px rgba(0,0,0,.22);
-    transition:all .2s ease;
-    white-space:nowrap;
-  }
+.card-time {
+  font-size: 1.65rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.8px;
+  line-height: 1;
+}
 
-  .btn-top-month:hover{
-    transform:translateY(-2px);
-    box-shadow:0 0 38px rgba(11,124,255,.35), 0 12px 30px rgba(0,0,0,.26);
-  }
+.card-rxn-preview {
+  display: flex;
+  gap: 3px;
+  font-size: 1.15rem;
+  min-height: 24px;
+  align-items: center;
+}
 
-  /* Hacer los filtros de día más discretos */
-  #filtro-horario{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin:0 0 16px;
-  }
+/* 2. Video */
+.video-wrap {
+  position: relative;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+  margin-bottom: 0;
+}
 
-  #filtro-horario button,
-  #filtro-horario a,
-  #filtro-horario .filtro-btn,
-  #filtro-horario .day-btn,
-  #filtro-horario .filtro-dia,
-  #filtro-horario .filter-btn{
-    font-size:0.76rem !important;
-    font-weight:700 !important;
-    padding:0.42rem 0.72rem !important;
-    min-height:auto !important;
-    border-radius:999px !important;
-    line-height:1.1 !important;
-  }
+.video-wrap video {
+  width: 100%;
+  display: block;
+  border-radius: 10px;
+}
 
-  /* Badge top 3 del mes dentro de cards */
-  .pz-top-month-badge{
-    position:absolute;
-    top:10px;
-    right:10px;
-    z-index:8;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    padding:0.45rem 0.72rem;
-    border-radius:999px;
-    font-size:0.72rem;
-    font-weight:900;
-    letter-spacing:0.2px;
-    color:#fff;
-    backdrop-filter:blur(10px);
-    box-shadow:0 8px 24px rgba(0,0,0,.28);
-    border:1px solid rgba(255,255,255,.16);
-  }
+video.video-preview {
+  cursor: pointer;
+}
 
-  .pz-top-month-badge.rank-1{
-    background:rgba(255,190,0,.22);
-    border-color:rgba(255,190,0,.42);
-    color:#ffe89a;
-  }
+/* 3. Participantes (poblado por reactions.js) */
+[data-participants-slot]:empty { display: none; }
 
-  .pz-top-month-badge.rank-2{
-    background:rgba(180,180,180,.18);
-    border-color:rgba(220,220,220,.28);
-    color:#efefef;
-  }
+/* 4. Botones de acción pill */
+.action-pills {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 6px;
+  flex-wrap: wrap;
+}
 
-  .pz-top-month-badge.rank-3{
-    background:rgba(180,100,30,.24);
-    border-color:rgba(220,140,60,.30);
-    color:#ffd0a3;
-  }
+.action-pill {
+  flex: 1;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.5rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #eaf2ff;
+  font-size: 1.05rem;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+  font-weight: 700;
+  transition: all .18s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  white-space: nowrap;
+}
 
-  .pz-top-month-badge small{
-    font-size:0.68rem;
-    opacity:.95;
-  }
+.action-pill:hover {
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
 
-  /* Por si las cards no son relative */
-  #videos-container > *,
-  #videos-container .video-card,
-  #videos-container .clip-card,
-  #videos-container article,
-  #videos-container .video-item{
-    position:relative;
-  }
+.action-pill:active {
+  transform: scale(0.93);
+}
 
-  @media (max-width: 860px){
-    .titulo-club{
-      width:100%;
-    }
+.action-pill.is-saved {
+  background: rgba(0, 79, 200, 0.22);
+  border-color: rgba(11, 124, 255, 0.40);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(0, 79, 200, 0.15);
+}
 
-    .top-row-actions{
-      width:100%;
-      justify-content:flex-start;
-    }
+.action-pill.is-active {
+  background: rgba(0, 79, 200, 0.18);
+  border-color: rgba(11, 124, 255, 0.35);
+  color: #fff;
+}
 
-    #link-cancha{
-      font-size:1.15rem !important;
-    }
+/* 5–7. Slots de reacciones / comentarios / claim → estilos en reactions.css */
 
-    .month-top-banner{
-      align-items:flex-start;
-    }
+/* ── Botón "Otro ángulo" (aparece asíncronamente) ── */
+.btn-alt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #eaf2ff;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all .18s ease;
+  flex: 1;
+  text-align: center;
+  white-space: nowrap;
+}
 
-    .btn-top-month{
-      width:100%;
-    }
-  }
+.btn-alt:hover {
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+/* ── Botones de promo ── */
+.botones-container { margin-top: 8px; }
+
+/* ── Paginador ── */
+#paginator-bottom { margin: 8px 0 4px; }
+
+/* ── Badge top-3 del mes dentro de cards ── */
+.video-card { position: relative; }
+
+.pz-top-month-badge {
+  position: absolute;
+  top: 12px; right: 12px;
+  z-index: 8;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.70rem;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  color: #fff;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.28);
+  border: 1px solid rgba(255,255,255,.14);
+  pointer-events: none;
+}
+
+.pz-top-month-badge.rank-1 { background: rgba(255,190,0,.20); border-color: rgba(255,190,0,.40); color: #ffe89a; }
+.pz-top-month-badge.rank-2 { background: rgba(180,180,180,.16); border-color: rgba(220,220,220,.26); color: #efefef; }
+.pz-top-month-badge.rank-3 { background: rgba(180,100,30,.22); border-color: rgba(220,140,60,.28); color: #ffd0a3; }
+
+/* ── Filtro hora (pills pequeñas) ── */
+.btn-filtro {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  color: rgba(234,242,255,.75);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.btn-filtro:hover,
+.btn-filtro.activo {
+  background: rgba(0,79,200,.20);
+  border-color: rgba(11,124,255,.35);
+  color: #fff;
+}
+
+.btn-filtro.quitar {
+  color: rgba(255, 100, 80, 0.75);
+  border-color: rgba(255, 100, 80, 0.20);
+}
+
+.btn-filtro.quitar:hover {
+  background: rgba(255,80,60,.12);
+  border-color: rgba(255,80,60,.35);
+  color: #ff8070;
+}
+
+/* ── Loading ── */
+#loading {
+  text-align: center;
+  padding: 24px 0;
+  color: rgba(234,242,255,.55);
+  font-size: 0.90rem;
+}
+
+/* ── Top-month nav btn en header (interno) ── */
+.top-month-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: .56rem .95rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: .84rem;
+  color: #fff;
+  background: linear-gradient(135deg, rgba(255,190,0,.14), rgba(0,79,200,.20));
+  border: 1px solid rgba(255,190,0,.22);
+  transition: all .18s ease;
+  white-space: nowrap;
+}
+
+.top-month-nav-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255,190,0,.38);
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  #link-cancha { font-size: 1.3rem; }
+  .card-time { font-size: 1.4rem; }
+  .action-pill { font-size: 0.95rem; padding: 0.5rem 0.65rem; }
+}
 </style>
 </head>
 <body>
@@ -324,52 +386,34 @@
 <div id="nav-root" data-nav-variant="internal"></div>
 <script src="/assets/header.js"></script>
 
-
 <!-- ── CONTENIDO ── -->
 <main class="site-content fade-in">
 
-  <!-- BREADCRUMB -->
-  <div class="top-row">
-    <div class="titulo-club">
-      <a id="link-club" class="breadcrumb-link" href="#"></a>
-      <span id="breadcrumb-sep1" class="breadcrumb-sep-char">›</span>
-      <a id="link-cancha" class="breadcrumb-link" href="#"
-         style="pointer-events:none;cursor:default;"></a>
-      <span id="breadcrumb-sep2" style="display:none;"></span>
-      <span id="nombre-lado" style="display:none;"></span>
-    </div>
-
-    <div class="top-row-actions">
-      <a class="btn-top-mini"
-        href="mejores.html"
-        onclick="try{gtag('event','ver_mejores_del_mes_click',{event_category:'CTA',event_label:'top_row_club_cancha'});}catch(e){}"
-      >🏆 Mejores del mes</a>
-
-      <a class="recover-mini"
-        href="https://forms.gle/TsGHKaSjBnpu65SQA"
-        target="_blank" rel="noopener"
-        onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'top_discreto'});}catch(e){}"
-      >¿No aparece? Recuperar →</a>
-    </div>
+  <!-- Título dominante: Club › Cancha -->
+  <div class="page-title">
+    <a id="link-club" href="#">Club</a>
+    <span class="breadcrumb-sep">›</span>
+    <a id="link-cancha" href="#" class="breadcrumb-link">Cancha</a>
+    <span id="breadcrumb-sep2"></span>
+    <span id="nombre-lado"></span>
   </div>
 
-  <!-- Volver -->
+  <!-- Botón volver -->
   <div class="btn-volver-container">
     <a href="#" id="btn-volver" class="btn-volver">← Regresar</a>
   </div>
 
-  <!-- Filtro días -->
+  <!-- Filtros de día (generados por script.js en #filtro-dia) -->
+  <!-- Filtros de hora (generados por script.js en #filtro-horario) -->
   <div id="filtro-horario"></div>
 
-  <!-- Banner: mientras juegas -->
-  <!-- Banner nuevo: mejores puntos -->
-  <!-- (Banners removed to reduce UI noise; link to 'Mejores del mes' remains in the top-row) -->
+  <!-- Mensaje discreto del concurso -->
+  <a class="contest-hint" href="mejores.html">
+    🏆 ¿Listo para el concurso del mes? Reacciona y comparte
+  </a>
 
   <!-- Loading -->
-  <div id="loading" class="aviso">Cargando videos...</div>
-
-  <!-- Aviso 24h (subtle) -->
-  <div class="aviso" style="font-size:0.86rem;opacity:0.78;margin-bottom:8px;">Se muestran los clips más recientes (hasta 24h)</div>
+  <div id="loading" style="display:none">Cargando videos…</div>
 
   <!-- Videos -->
   <section id="videos-container" class="video-grid"></section>
@@ -399,302 +443,141 @@
   <p class="footer-copy">© 2026 Puntazo – Todos los derechos reservados</p>
 </footer>
 
-<script src="assets/script.js?v=20260209_4"></script>
+<script src="assets/script.js?v=20260316"></script>
 
-<!-- ══════════════════════════════════════════════════════════
-     PARCHES AGRESIVOS DE PERFORMANCE + PRIORIDAD
-══════════════════════════════════════════════════════════ -->
+<!-- ── Performance patches ── -->
 <script>
 (function() {
   'use strict';
-
   window._puntazoDownloading = false;
+  var container = document.getElementById('videos-container');
+  if (!container) return;
 
-  const container = document.getElementById('videos-container');
-  if (container) {
-    container.addEventListener('play', function(e) {
-      const target = e.target;
-      if (!target || !target.classList.contains('real')) return;
-
-      document.querySelectorAll('video.video-preview').forEach(function(prev) {
-        try {
-          prev.pause();
-          if (prev.src && !prev.dataset.pausedSrc) {
-            prev.dataset.pausedSrc = prev.src;
-            prev.removeAttribute('src');
-            prev.load();
-          }
-        } catch(err) {}
-      });
-
-      document.querySelectorAll('video.real').forEach(function(other) {
-        if (other !== target) {
-          try { other.pause(); } catch(err) {}
-        }
-      });
-    }, true);
-
-    container.addEventListener('pause', function(e) {
-      const target = e.target;
-      if (!target || !target.classList.contains('real')) return;
-      var anyPlaying = Array.from(document.querySelectorAll('video.real')).some(function(v) { return !v.paused; });
-      if (anyPlaying) return;
-      document.querySelectorAll('video.video-preview').forEach(function(prev) {
-        if (prev.dataset.pausedSrc) {
-          prev.src = prev.dataset.pausedSrc;
-          delete prev.dataset.pausedSrc;
-        }
-      });
-    }, true);
-
-    container.addEventListener('ended', function(e) {
-      var target = e.target;
-      if (!target || !target.classList.contains('real')) return;
-      target.dispatchEvent(new Event('pause', { bubbles: false }));
-    }, true);
-  }
-
-  window.loadPreviewsSequentially = async function(previews) {
-    for (var i = 0; i < previews.length; i++) {
-      while (window._puntazoDownloading || isAnyRealPlaying()) {
-        await sleep(500);
-      }
-
-      var v = previews[i];
-      v.preload = 'metadata';
-      await new Promise(function(resolve) {
-        var timeout = setTimeout(resolve, 5000);
-        v.addEventListener('loadedmetadata', function() {
-          clearTimeout(timeout);
-          resolve();
-        }, { once: true });
-        v.addEventListener('error', function() {
-          clearTimeout(timeout);
-          resolve();
-        }, { once: true });
-        v.load();
-      });
-    }
-  };
-
-  function isAnyRealPlaying() {
-    return Array.from(document.querySelectorAll('video.real')).some(function(v) { return !v.paused; });
-  }
-
-  function sleep(ms) {
-    return new Promise(function(r) { setTimeout(r, ms); });
-  }
-
-  document.addEventListener('click', function(e) {
-    var btn = e.target.closest('.btn-share-large');
-    if (!btn) return;
-    // Downloads removed from primary flow in this iteration — keep as no-op
-    // so existing code that queries for .btn-share-large doesn't trigger heavy behavior.
-    return;
+  // Pausar previews cuando hay real playing
+  container.addEventListener('play', function(e) {
+    var target = e.target;
+    if (!target || !target.classList.contains('real')) return;
+    document.querySelectorAll('video.video-preview').forEach(function(prev) {
+      try { prev.pause(); if (prev.src && !prev.dataset.pausedSrc) { prev.dataset.pausedSrc = prev.src; prev.removeAttribute('src'); prev.load(); } } catch(err) {}
+    });
+    document.querySelectorAll('video.real').forEach(function(other) {
+      if (other !== target) { try { other.pause(); } catch(err) {} }
+    });
   }, true);
 
+  container.addEventListener('pause', function(e) {
+    var target = e.target;
+    if (!target || !target.classList.contains('real')) return;
+    var anyPlaying = Array.from(document.querySelectorAll('video.real')).some(function(v) { return !v.paused; });
+    if (anyPlaying) return;
+    document.querySelectorAll('video.video-preview').forEach(function(prev) {
+      if (prev.dataset.pausedSrc) { prev.src = prev.dataset.pausedSrc; delete prev.dataset.pausedSrc; }
+    });
+  }, true);
+
+  container.addEventListener('ended', function(e) {
+    var target = e.target;
+    if (!target || !target.classList.contains('real')) return;
+    target.dispatchEvent(new Event('pause', { bubbles: false }));
+  }, true);
+
+  // Override preview play para respetar real activo
   var lastActivePreview = null;
   var origPlay = HTMLVideoElement.prototype.play;
   HTMLVideoElement.prototype.play = function() {
     if (this.classList.contains('video-preview')) {
-      if (window._puntazoDownloading || isAnyRealPlaying()) {
+      if (window._puntazoDownloading || Array.from(document.querySelectorAll('video.real')).some(function(v) { return !v.paused; })) {
         return Promise.resolve();
       }
-      if (lastActivePreview && lastActivePreview !== this) {
-        try { lastActivePreview.pause(); } catch(e) {}
-      }
+      if (lastActivePreview && lastActivePreview !== this) { try { lastActivePreview.pause(); } catch(e) {} }
       lastActivePreview = this;
     }
     return origPlay.call(this);
   };
-
 })();
 </script>
 
-<!-- ── Badge Top 3 del mes dentro de cards de club/cancha ── -->
+<!-- ── Badge Top 3 del mes ── -->
 <script>
 (function(){
-  function waitForDeps(fn, retries){
-    retries = retries || 40;
+  function waitForDeps(fn, retries) {
     if (window.PuntazoReactions && window.PuntazoReactions.db) return fn();
-    if (retries <= 0) return;
-    setTimeout(function(){ waitForDeps(fn, retries - 1); }, 180);
+    if ((retries || 0) <= 0) return;
+    setTimeout(function() { waitForDeps(fn, (retries || 40) - 1); }, 200);
   }
 
-  function getCurrentMonthKey(){
-    var d = new Date();
-    var y = d.getFullYear();
-    var m = String(d.getMonth() + 1).padStart(2, '0');
+  function getCurrentMonthKey() {
+    var d = new Date(), y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0');
     return y + '-' + m;
   }
 
-  function normalizeUrl(raw){
+  function normalizeUrl(raw) {
     if (!raw) return '';
-    try{
-      var u = new URL(raw, window.location.origin);
-      return (u.origin + u.pathname).replace(/\/+$/, '').toLowerCase();
-    }catch(e){
-      return String(raw).split('?')[0].replace(/\/+$/, '').toLowerCase();
-    }
+    try { var u = new URL(raw, window.location.origin); return (u.origin + u.pathname).replace(/\/+$/, '').toLowerCase(); } catch(e) { return String(raw).split('?')[0].replace(/\/+$/, '').toLowerCase(); }
   }
 
-  function firstNonEmpty(arr){
-    for (var i = 0; i < arr.length; i++) {
-      if (arr[i]) return arr[i];
-    }
-    return '';
-  }
-
-  waitForDeps(function(){
+  waitForDeps(function() {
     var db = PuntazoReactions.db();
-    var MIN = (window.PuntazoReactions && PuntazoReactions.MIN_FOR_BEST) || 2;
+    var MIN = PuntazoReactions.MIN_FOR_BEST || 3;
     var monthKey = getCurrentMonthKey();
     var topEntries = [];
     var container = document.getElementById('videos-container');
     if (!container) return;
 
-    function buildTop3(){
-      db.collection('reactions')
-        .where('total', '>=', MIN)
-        .orderBy('total', 'desc')
-        .limit(50)
-        .get()
-        .then(function(snapshot){
-          var docs = [];
-          snapshot.forEach(function(doc){
-            var d = doc.data() || {};
-            if (d.fecha && String(d.fecha).startsWith(monthKey)) docs.push(d);
-          });
-
-          if (!docs.length) {
-            snapshot.forEach(function(doc){
-              docs.push(doc.data() || {});
-            });
-          }
-
-          topEntries = docs.slice(0, 3).map(function(d, idx){
-            return {
-              rank: idx + 1,
-              videoId: String(d.videoId || '').trim(),
-              videoUrl: normalizeUrl(d.videoUrl || ''),
-              label: idx === 0 ? '🥇 Top 1 del mes' : idx === 1 ? '🥈 Top 2 del mes' : '🥉 Top 3 del mes'
-            };
-          });
-
-          annotateAll();
-          observeChanges();
-        })
-        .catch(function(err){
-          console.error('[Top3 badge] Error consultando mejores:', err);
-          observeChanges();
+    function buildTop3() {
+      db.collection('reactions').where('total', '>=', MIN).orderBy('total', 'desc').limit(50).get().then(function(snapshot) {
+        var docs = [];
+        snapshot.forEach(function(doc) {
+          var d = doc.data() || {};
+          if (d.fecha && String(d.fecha).startsWith(monthKey)) docs.push(d);
         });
+        if (!docs.length) snapshot.forEach(function(doc) { docs.push(doc.data() || {}); });
+        topEntries = docs.slice(0, 3).map(function(d, idx) {
+          return { rank: idx + 1, videoId: String(d.videoId || '').trim(), videoUrl: normalizeUrl(d.videoUrl || '') };
+        });
+        annotateAll();
+        new MutationObserver(function() { annotateAll(); }).observe(container, { childList: true, subtree: true });
+        setTimeout(annotateAll, 800); setTimeout(annotateAll, 2000);
+      }).catch(function() {});
     }
 
-    function getCardCandidates(card){
+    function getRankForCard(card) {
+      if (!topEntries.length) return null;
       var candidates = [];
-
-      var directUrl = firstNonEmpty([
-        card.getAttribute('data-video-url'),
-        card.dataset ? card.dataset.videoUrl : '',
-        card.dataset ? card.dataset.src : ''
-      ]);
-      if (directUrl) candidates.push(normalizeUrl(directUrl));
-
-      var directId = firstNonEmpty([
-        card.getAttribute('data-video-id'),
-        card.dataset ? card.dataset.videoId : ''
-      ]);
-      if (directId) candidates.push('id:' + String(directId).trim());
-
-      card.querySelectorAll('[data-video-id],[data-video-url],[data-src],video,source,a[href],button[data-url]').forEach(function(el){
-        var vid = firstNonEmpty([
-          el.getAttribute('data-video-id'),
-          el.dataset ? el.dataset.videoId : ''
-        ]);
-        if (vid) candidates.push('id:' + String(vid).trim());
-
-        var rawUrl = firstNonEmpty([
-          el.getAttribute('data-video-url'),
-          el.getAttribute('data-src'),
-          el.dataset ? el.dataset.videoUrl : '',
-          el.dataset ? el.dataset.src : '',
-          el.getAttribute('src'),
-          el.getAttribute('href'),
-          el.getAttribute('data-url')
-        ]);
-        if (rawUrl) candidates.push(normalizeUrl(rawUrl));
-      });
-
-      return Array.from(new Set(candidates.filter(Boolean)));
-    }
-
-    function getRankForCard(card){
-      var candidates = getCardCandidates(card);
-      if (!candidates.length || !topEntries.length) return null;
+      var vids = card.querySelectorAll('video[src],source[src]');
+      vids.forEach(function(v) { var s = v.getAttribute('src'); if (s) candidates.push(normalizeUrl(s)); });
+      var vid = card.getAttribute('id') || card.dataset.videoId;
+      if (vid) candidates.push('id:' + String(vid).trim());
 
       for (var i = 0; i < topEntries.length; i++) {
         var t = topEntries[i];
-        var idToken = t.videoId ? ('id:' + t.videoId) : '';
+        var idToken = t.videoId ? 'id:' + t.videoId : '';
         for (var j = 0; j < candidates.length; j++) {
           var c = candidates[j];
           if (idToken && c === idToken) return t;
-          if (t.videoUrl && c === t.videoUrl) return t;
-          if (t.videoUrl && c && c.indexOf(t.videoUrl) !== -1) return t;
-          if (t.videoUrl && c && t.videoUrl.indexOf(c) !== -1) return t;
+          if (t.videoUrl && c && (c === t.videoUrl || c.indexOf(t.videoUrl) !== -1)) return t;
         }
       }
       return null;
     }
 
-    function injectBadge(card, topInfo){
-      if (!card || !topInfo) return;
-      if (card.querySelector('.pz-top-month-badge')) return;
-
-      var badge = document.createElement('div');
-      badge.className = 'pz-top-month-badge rank-' + topInfo.rank;
-      badge.innerHTML = '<span>' + (topInfo.rank === 1 ? '🥇' : topInfo.rank === 2 ? '🥈' : '🥉') + '</span><small>Top ' + topInfo.rank + ' del mes</small>';
-
-      card.insertBefore(badge, card.firstChild);
-    }
-
-    function annotateAll(){
-      var possibleCards = Array.from(container.children);
-      possibleCards.forEach(function(card){
-        var topInfo = getRankForCard(card);
-        if (topInfo) injectBadge(card, topInfo);
+    function annotateAll() {
+      Array.from(container.children).forEach(function(card) {
+        if (card.querySelector('.pz-top-month-badge')) return;
+        var info = getRankForCard(card);
+        if (!info) return;
+        var badge = document.createElement('div');
+        var icons = ['🥇','🥈','🥉'];
+        badge.className = 'pz-top-month-badge rank-' + info.rank;
+        badge.innerHTML = '<span>' + icons[info.rank - 1] + '</span><small>Top ' + info.rank + '</small>';
+        card.insertBefore(badge, card.firstChild);
       });
-    }
-
-    function observeChanges(){
-      var mo = new MutationObserver(function(){
-        annotateAll();
-      });
-      mo.observe(container, { childList: true, subtree: true });
-
-      setTimeout(annotateAll, 800);
-      setTimeout(annotateAll, 1800);
-      setTimeout(annotateAll, 3200);
     }
 
     buildTop3();
-  });
+  }, 40);
 })();
 </script>
 
-<!-- ── Navbar mobile ── -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var btn = document.querySelector('.menu-toggle');
-    var nav = document.querySelector('.navbar');
-    if (!btn || !nav) return;
-    var close = function() { nav.classList.remove('show'); };
-    btn.addEventListener('click', function(e) { e.stopPropagation(); nav.classList.toggle('show'); });
-    document.addEventListener('click', function(e) {
-      if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) close();
-    });
-    window.addEventListener('scroll', close);
-    window.addEventListener('resize', function() { if (window.innerWidth > 860) close(); });
-  });
-</script>
 </body>
 </html>
