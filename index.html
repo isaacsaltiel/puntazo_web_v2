@@ -31,9 +31,9 @@
 <style>
 /* ── HERO ── */
 .hero{
-  min-height:100vh;
+  min-height:calc(100vh - 64px);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;padding:9rem 2rem 5rem;
+  text-align:center;padding:4.5rem 1.25rem 2rem;
   position:relative;overflow:hidden;
 }
 .hero-bg{
@@ -52,34 +52,13 @@
   mask-image:radial-gradient(ellipse 80% 60% at 50% 50%, black 0%, transparent 70%);
   -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 50%, black 0%, transparent 70%);
 }
-.hero-tag{
-  display:inline-flex;align-items:center;gap:0.5rem;
-  background:rgba(0,79,200,0.15);
-  border:1px solid rgba(0,79,200,0.4);
-  border-radius:50px;padding:0.4rem 1.1rem;
-  font-size:0.72rem;font-weight:700;letter-spacing:1px;
-  color:var(--blue3);margin-bottom:1.2rem;position:relative;z-index:1;
-  text-transform:uppercase;
-}
+.hero-tag{display:none}
 .hero-tag-dot{
   width:6px;height:6px;border-radius:50%;
   background:var(--blue3);
   animation:blink 1.5s ease-in-out infinite;
 }
-.hero-tag-new{
-  display:inline-flex;align-items:center;gap:0.4rem;
-  margin-bottom:1.4rem;
-  padding:0.45rem 1rem;
-  border-radius:50px;
-  background:rgba(255,255,255,0.06);
-  border:1px solid rgba(255,255,255,0.12);
-  color:#fff;
-  font-size:0.72rem;
-  font-weight:800;
-  letter-spacing:0.8px;
-  text-transform:uppercase;
-  position:relative;z-index:1;
-}
+.hero-tag-new{display:none}
 .hero-tag-new .spark{
   color:var(--blue2);
 }
@@ -97,15 +76,17 @@
   -webkit-background-clip:text;background-clip:text;
 }
 .hero-sub{
-  font-size:clamp(0.95rem,2vw,1.15rem);
+  font-size:clamp(0.95rem,2vw,1.05rem);
   color:var(--muted);max-width:720px;
-  position:relative;z-index:1;margin-bottom:2.5rem;
-  font-weight:400;line-height:1.7;
+  position:relative;z-index:1;margin-bottom:1.25rem;
+  font-weight:500;line-height:1.4;
 }
-.hero-btns{
-  display:flex;gap:1rem;flex-wrap:wrap;
-  justify-content:center;position:relative;z-index:1;
-}
+.hero-btns{display:none}
+
+.hero-primary{position:relative;z-index:1;margin-bottom:0.9rem}
+.hero-primary .btn-primary{padding:1.25rem 2.6rem;font-size:1.05rem}
+.hero-secondaries{display:flex;gap:0.9rem;justify-content:center;flex-wrap:wrap;position:relative;z-index:1}
+.hero-secondaries .btn-ranking,.hero-secondaries .btn-live{padding:0.9rem 1.85rem;font-size:0.9rem}
 .btn-primary{
   background:var(--blue);color:#fff;
   padding:1rem 2.2rem;border-radius:50px;
@@ -574,6 +555,15 @@
 @media(max-width:600px){
   .hero-stats{gap:2rem;}
 }
+
+@media (max-width:600px){
+  .hero{padding:3.25rem 1rem 1.25rem;min-height:calc(100vh - 56px);} 
+  .hero h1{font-size:2.6rem;line-height:1.02}
+  .hero-sub{font-size:0.95rem;margin-bottom:0.9rem}
+  .hero-primary .btn-primary{width:100%;padding:1rem 1.25rem;font-size:1rem}
+  .hero-secondaries{flex-direction:row;gap:0.6rem}
+  .hero-secondaries .btn-ranking,.hero-secondaries .btn-live{padding:0.75rem 1rem}
+}
 </style>
 
 </head>
@@ -587,30 +577,46 @@
   <div class="hero-bg"></div>
   <div class="grid-bg"></div>
 
-  <div class="hero-tag">
-    <div class="hero-tag-dot"></div>
-    Tecnología deportiva · Pádel y más
+  <h1>El deporte merece <span class="blue">tecnología de punta.</span></h1>
+  <h2 class="hero-sub">Captura, comparte y destaca tus mejores jugadas.</h2>
+
+  <div class="hero-primary">
+    <a href="explorar.html" class="btn-primary" onclick="try{gtag('event','hero_cta_clips',{event_category:'CTA',event_label:'hero'});}catch(e){}" aria-label="Encuentra tus clips">Encuentra tus clips →</a>
   </div>
 
-  <div class="hero-tag-new">
-    <span class="spark">✦</span>
-    Nuevo: Mejores videos ya está disponible
-  </div>
-
-  <h1>El deporte merece<br><span class="blue">tecnología de punta.</span></h1>
-  <h2 class="hero-sub">Soluciones para capturar, compartir y destacar las mejores jugadas.</h2>
-
-  <div class="hero-btns">
-    <a href="explorar.html" class="btn-clips" onclick="try{gtag('event','hero_cta_clips',{event_category:'CTA',event_label:'hero'});}catch(e){}" aria-label="Encuentra tus clips">▶ Encuentra tus clips</a>
+  <div class="hero-secondaries">
     <a href="mejores.html" class="btn-ranking" onclick="try{gtag('event','hero_cta_mejores',{event_category:'CTA',event_label:'hero'});}catch(e){}" aria-label="Puntazos del mes">🏆 Puntazos del mes</a>
     <a href="https://puntazoclips.com/boton.html" target="_blank" rel="noopener" class="btn-live" onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'hero'});}catch(e){}" aria-label="Usar teléfono como botón">📲 Usar teléfono como botón</a>
   </div>
 
-  <p style="position:relative;z-index:1;font-size:0.75rem;color:var(--muted);margin-top:0.8rem;letter-spacing:0.3px;">
-    ¿Ya jugaste hoy? Escanea el QR de tu cancha, entra a tus clips o descubre qué jugadas están prendiendo en la comunidad.
-  </p>
+  <div class="hero-scroll">
+    <div class="scroll-line"></div>
+    scroll
+  </div>
+</div>
 
-  <div class="hero-stats">
+<!-- Novedades / Anuncios -->
+<div class="section-wrap fade-section" id="novedades">
+  <div class="section-tag">Novedades</div>
+  <div class="section-title">Actualizaciones recientes</div>
+  <p class="section-sub">Pequeñas mejoras y anuncios: nuevas reacciones, filtros por mes y la primera edición del concurso mensual de Puntazos.</p>
+  <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-top:0.75rem;">
+    <a href="mejores.html" class="btn-secondary" onclick="try{gtag('event','novedades_cta_mejores',{event_category:'CTA'});}catch(e){}">Ver Puntazos del mes</a>
+    <a href="explorar.html" class="btn-secondary" onclick="try{gtag('event','novedades_cta_clips',{event_category:'CTA'});}catch(e){}">Explorar clips</a>
+  </div>
+</div>
+
+<!-- Stats (moved up) -->
+
+
+
+
+<div class="section-wrap" id="stats">
+  <div class="section-tag">Stats</div>
+  <div class="section-title">Impacto en números</div>
+  <p class="section-sub">Actividad reciente y alcance de la plataforma.</p>
+
+  <div class="hero-stats" style="margin-top:1rem;border-top:0;padding-top:0;max-width:720px;">
     <div class="hero-stat">
       <div class="num">3<span>+</span></div>
       <div class="lbl">Clubs activos</div>
@@ -624,100 +630,41 @@
       <div class="lbl">Soluciones activas y creciendo</div>
     </div>
   </div>
-
-  <div class="hero-scroll">
-    <div class="scroll-line"></div>
-    scroll
-  </div>
-</div>
-
-<div class="section-wrap fade-section" id="producto">
-  <div class="section-tag">Lo que ya existe hoy</div>
-  <div class="section-title">Un ecosistema completo<br>para el deportista.</div>
-  <p class="section-sub">No somos un solo producto. Somos una plataforma de soluciones que sigue creciendo semana a semana, ahora también con una capa social que impulsa comunidad, viralidad y visibilidad para clubes y marcas.</p>
-
-  <div class="feat-grid">
-    <div class="feat-card">
-      <div class="feat-icon">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-      </div>
-      <h3>Replay instantáneo</h3>
-      <p>Presiona el botón en la cancha y el sistema guarda automáticamente el minuto previo. Tu mejor jugada, siempre capturada.</p>
-      <span class="badge badge-live">● Live</span>
-    </div>
-
-    <div class="feat-card">
-      <div class="feat-icon">
-        <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-      </div>
-      <h3>Botón en tu teléfono</h3>
-      <p>¿No tienes el botón físico a la mano? Tu celular ya es el botón. Abre la app, selecciona tu cancha, toca y listo.</p>
-      <span class="badge badge-live">● Live</span>
-    </div>
-
-    <div class="feat-card">
-      <div class="feat-icon">
-        <svg viewBox="0 0 24 24"><path d="M15 10l4.553-2.069A1 1 0 0121 8.87V15.13a1 1 0 01-1.447.9L15 14"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg>
-      </div>
-      <h3>Transmisión en vivo</h3>
-      <p>Para torneos y eventos. Transmisión automática desde la cámara del club, sin configurar nada.</p>
-      <span class="badge badge-live">● Live</span>
-    </div>
-
-    <div class="feat-card">
-      <div class="feat-icon">
-        <svg viewBox="0 0 24 24"><path d="M3 18h18"/><path d="M7 14l3-3 3 2 4-5"/><circle cx="7" cy="14" r="1"/><circle cx="10" cy="11" r="1"/><circle cx="13" cy="13" r="1"/><circle cx="17" cy="8" r="1"/></svg>
-      </div>
-      <h3>Mejores videos</h3>
-      <p>Los clips con más reacciones entran automáticamente a una página especial con ranking visual, filtro por mes y engagement en tiempo real.</p>
-      <span class="badge badge-new">Nuevo</span>
-    </div>
-
-    <div class="feat-card">
-      <div class="feat-icon">
-        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      </div>
-      <h3>Detección de gestos</h3>
-      <p>Visión artificial que detecta tu gesto o pose para guardar la jugada, sin tocar ningún botón. Próximamente.</p>
-      <span class="badge badge-dev">En desarrollo</span>
-    </div>
-  </div>
 </div>
 
 <div class="section-wrap fade-section" id="mejores">
   <div class="section-tag">Nuevo</div>
   <div class="section-title">Ahora también existe<br>la vitrina del club.</div>
-  <p class="section-sub">Mejores videos convierte los clips del día en una experiencia social: la gente descubre jugadas top, reacciona, comenta y vuelve. Eso genera comunidad, contenido y una ventana natural para patrocinadores.</p>
+  <p class="section-sub">Puntazos del mes convierte los clips del día en una experiencia social: la gente descubre jugadas top, reacciona, comenta y vuelve. Eso genera comunidad, contenido y una ventana natural para patrocinadores.</p>
 
   <div class="community-box">
     <div class="community-top">
       <div class="community-copy">
-        <h3>Los videos más reaccionados suben solos al ranking.</h3>
+        <h3>Puntazos del mes — concurso activo</h3>
         <p>
-          Cuando un clip acumula <strong style="color:#fff;">suficientes</strong>, aparece automáticamente en
-          <strong style="color:#fff;">Mejores Puntazos</strong> ordenado de mayor a menor engagement.
-          La propia comunidad empuja arriba las mejores jugadas.
+          Reacciona y comparte las jugadas que más te gustan. Los clips con más reacciones entran al ranking mensual;
+          cada mes elegimos un ganador y entregamos un premio al clip más votado. Participar es fácil: reacciona, comparte y anima a tu comunidad.
         </p>
 
         <div class="community-points">
-          <div class="community-pill">🏆 Ranking visual 🥇🥈🥉</div>
+          <div class="community-pill">🔥 Reacciona para votar</div>
+          <div class="community-pill">🔁 Comparte y suma votos</div>
+          <div class="community-pill">🏆 Premio al ganador del mes</div>
           <div class="community-pill">📅 Filtro por mes</div>
-          <div class="community-pill">🔥 Reacciones y comentarios</div>
-          <div class="community-pill">📣 Ideal para viralidad y marcas</div>
         </div>
 
         <div class="community-cta">
-          <a href="mejores.html" class="btn-primary" onclick="try{gtag('event','community_cta_mejores',{event_category:'CTA',event_label:'community'});}catch(e){}">Ver mejores videos →</a>
-          <a href="index.html" class="btn-secondary" onclick="try{gtag('event','community_cta_clips',{event_category:'CTA',event_label:'community'});}catch(e){}">Ir a mis clips</a>
+          <a href="mejores.html" class="btn-primary" onclick="try{gtag('event','community_cta_mejores',{event_category:'CTA',event_label:'community'});}catch(e){}">Puntazos del mes →</a>
+          <a href="explorar.html" class="btn-secondary" onclick="try{gtag('event','community_cta_clips',{event_category:'CTA',event_label:'community'});}catch(e){}">Ir a mis clips</a>
         </div>
       </div>
 
       <div class="community-side">
         <div class="side-title">¿Qué aporta esta función?</div>
         <ul>
-          <li><strong>Para jugadores:</strong> una forma divertida de ver qué jugadas están prendiendo.</li>
-          <li><strong>Para el club:</strong> más comunidad, más regreso al sitio y más conversación alrededor de la cancha.</li>
-          <li><strong>Para patrocinadores:</strong> una página premium donde sus marcas pueden vivir arriba del contenido más visto.</li>
+          <li><strong>Para jugadores:</strong> emoción y reconocimiento: tu mejor jugada puede ganar el mes.</li>
+          <li><strong>Para el club:</strong> más tráfico y conversación alrededor de las mejores jugadas.</li>
+          <li><strong>Para marcas:</strong> un espacio premium para aparecer junto al contenido más visto.</li>
         </ul>
       </div>
     </div>
@@ -775,7 +722,7 @@
         <div class="step-left"><div class="step-num">4</div><div class="step-connector"></div></div>
         <div class="step-body">
           <h3>La comunidad empuja los mejores</h3>
-          <p>Si tu clip acumula suficientes reacciones, entra automáticamente a la página de mejores videos, donde compite por el ranking del mes.</p>
+          <p>Si tu clip acumula suficientes reacciones, entra automáticamente a la página de Puntazos del mes, donde compite por el ranking del mes.</p>
           <span class="badge badge-new">Nuevo: ranking automático por engagement</span>
         </div>
       </div>
@@ -785,10 +732,64 @@
       <div class="phone-label-top">📲 Tu jugada también puede rankear</div>
       <div class="phone-screen">
         <a href="https://puntazoclips.com/boton.html" target="_blank" rel="noopener" class="phone-btn-big" style="display:block;text-decoration:none;text-align:center;" onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'mockup'});}catch(e){}">📲 REGISTRAR PUNTAZO</a>
-        <a href="index.html" class="phone-clips-btn" style="display:block;text-decoration:none;text-align:center;">Ver mis puntazos ▶</a>
-        <a href="mejores.html" class="phone-clips-btn" style="display:block;text-decoration:none;text-align:center;" onclick="try{gtag('event','mockup_cta_mejores',{event_category:'CTA',event_label:'mockup'});}catch(e){}">🏆 Ver mejores videos</a>
+        <a href="explorar.html" class="phone-clips-btn" style="display:block;text-decoration:none;text-align:center;">Ver mis puntazos ▶</a>
+        <a href="mejores.html" class="phone-clips-btn" style="display:block;text-decoration:none;text-align:center;" onclick="try{gtag('event','mockup_cta_mejores',{event_category:'CTA',event_label:'mockup'});}catch(e){}">🏆 Puntazos del mes</a>
       </div>
       <p class="phone-note">Selecciona tu club y cancha, guarda tu jugada y compártela. Si la comunidad reacciona, sube al ranking.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Insert 'Lo que ya existe hoy' here (moved down) -->
+<div class="section-wrap fade-section" id="producto">
+  <div class="section-tag">Lo que ya existe hoy</div>
+  <div class="section-title">Un ecosistema completo<br>para el deportista.</div>
+  <p class="section-sub">No somos un solo producto. Somos una plataforma de soluciones que sigue creciendo semana a semana, ahora también con una capa social que impulsa comunidad, viralidad y visibilidad para clubes y marcas.</p>
+
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+      </div>
+      <h3>Replay instantáneo</h3>
+      <p>Presiona el botón en la cancha y el sistema guarda automáticamente el minuto previo. Tu mejor jugada, siempre capturada.</p>
+      <span class="badge badge-live">● Live</span>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      </div>
+      <h3>Botón en tu teléfono</h3>
+      <p>¿No tienes el botón físico a la mano? Tu celular ya es el botón. Abre la app, selecciona tu cancha, toca y listo.</p>
+      <span class="badge badge-live">● Live</span>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><path d="M15 10l4.553-2.069A1 1 0 0121 8.87V15.13a1 1 0 01-1.447.9L15 14"/><rect x="1" y="6" width="14" height="12" rx="2"/></svg>
+      </div>
+      <h3>Transmisión en vivo</h3>
+      <p>Para torneos y eventos. Transmisión automática desde la cámara del club, sin configurar nada.</p>
+      <span class="badge badge-live">● Live</span>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><path d="M3 18h18"/><path d="M7 14l3-3 3 2 4-5"/><circle cx="7" cy="14" r="1"/><circle cx="10" cy="11" r="1"/><circle cx="13" cy="13" r="1"/><circle cx="17" cy="8" r="1"/></svg>
+      </div>
+      <h3>Puntazos del mes</h3>
+      <p>Los clips con más reacciones entran automáticamente a una página especial con ranking visual, filtro por mes y engagement en tiempo real.</p>
+      <span class="badge badge-new">Nuevo</span>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <h3>Detección de gestos</h3>
+      <p>Visión artificial que detecta tu gesto o pose para guardar la jugada, sin tocar ningún botón. Próximamente.</p>
+      <span class="badge badge-dev">En desarrollo</span>
     </div>
   </div>
 </div>
@@ -816,7 +817,7 @@
       </div>
 
       <div class="vision-item">
-        <h4>Mejores videos <span class="tag-sm tag-new">Nuevo</span></h4>
+        <h4>Puntazos del mes <span class="tag-sm tag-new">Nuevo</span></h4>
         <p>Un ranking vivo del contenido más reaccionado. Comunidad, descubrimiento y contenido compartible en un solo lugar.</p>
       </div>
 
@@ -876,7 +877,7 @@
         </div>
         <div>
           <h4>Más comunidad y más patrocinio</h4>
-          <p>Con Mejores videos, tu club tiene una página viva que concentra atención. Es un espacio natural para destacar jugadas, crear hábito y abrir inventario para marcas.</p>
+          <p>Con Puntazos del mes, tu club tiene una página viva que concentra atención. Es un espacio natural para destacar jugadas, crear hábito y abrir inventario para marcas.</p>
         </div>
       </div>
     </div>
@@ -902,7 +903,7 @@
 <div class="section-wrap fade-section" id="locaciones">
   <div class="section-tag">Locaciones</div>
   <div class="section-title">Ya activos en<br>estos clubs.</div>
-  <p class="section-sub">Interpadel, Scorpion y Breakpoint ya son parte de Puntazo. Escanea el QR en tu cancha, revive tus jugadas y descubre cuáles se están ganando un lugar en Mejores videos.</p>
+  <p class="section-sub">Interpadel, Scorpion y Breakpoint ya son parte de Puntazo. Escanea el QR en tu cancha, revive tus jugadas y descubre cuáles se están ganando un lugar en Puntazos del mes.</p>
 
   <div class="locs-grid">
     <div class="loc-card">
@@ -947,8 +948,8 @@
       <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
       WhatsApp
     </a>
-    <a href="mejores.html" class="btn-primary" onclick="try{gtag('event','footer_cta_mejores',{event_category:'CTA'});}catch(e){}">Ver mejores videos</a>
-    <a href="index.html" class="btn-ranking" onclick="try{gtag('event','footer_cta_clips',{event_category:'CTA'});}catch(e){}">Encuentra tus clips</a>
+    <a href="mejores.html" class="btn-primary" onclick="try{gtag('event','footer_cta_mejores',{event_category:'CTA'});}catch(e){}">Puntazos del mes</a>
+    <a href="explorar.html" class="btn-ranking" onclick="try{gtag('event','footer_cta_clips',{event_category:'CTA'});}catch(e){}">Encuentra tus clips</a>
   </div>
 </div>
 
