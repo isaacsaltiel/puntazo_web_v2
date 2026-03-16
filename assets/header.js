@@ -10,6 +10,25 @@
     return;
   }
 
+  // En páginas específicas (p.ej. explorar.html) puede quedar un <nav>
+  // estático heredado del layout antiguo. Para evitar mostrar dos headers,
+  // eliminamos ese nav/header estático SOLO en la página de exploración.
+  try {
+    const pagePath = (window.location.pathname || "").toLowerCase();
+    if (pagePath.endsWith("/explorar.html") || pagePath.endsWith("explorar.html")) {
+      document.querySelectorAll('nav, header.site-header').forEach(function (n) {
+        // no tocar el contenedor compartido `#nav-root`
+        if (n.id === 'nav-root') return;
+        // si el nodo es anterior al root o no forma parte de él, lo removemos
+        if (!n.contains(root) && !root.contains(n)) {
+          try { n.remove(); } catch (e) { /* noop */ }
+        }
+      });
+    }
+  } catch (e) {
+    // no bloquear si falla este cleanup
+  }
+
   root.style.display = "contents";
 
   const path = (window.location.pathname || "").toLowerCase();
