@@ -1,673 +1,277 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mejores Momentos · Puntazo</title>
-  <meta name="description" content="Los puntos más épicos del mes en Puntazo" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Puntazos del mes · Puntazo</title>
+<meta name="description" content="Los puntos más épicos del mes en Puntazo. Reacciona, comparte y gana." />
 
-  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
+<script>
+  window.dataLayer=window.dataLayer||[];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js',new Date()); gtag('config','G-7HTMSTJ035');
+</script>
 
-  <!-- Firebase SDK compat v9 -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="/assets/firebase-core.js"></script>
+<meta name="theme-color" content="#050914" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
 
-  <!-- Reactions module + estilos -->
-  <link rel="stylesheet" href="/assets/reactions.css" />
-  <script src="/assets/reactions.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<link rel="stylesheet" href="/assets/card.css" />
+<link rel="stylesheet" href="/assets/reactions.css" />
+<script src="/assets/reactions.js"></script>
+<script src="/assets/card.js"></script>
 
-  <style>
-    :root {
-      --puntazo:   #004FC8;
-      --puntazo2:  #0B7CFF;
-      --bg:        #050914;
-      --card:      rgba(255,255,255,.06);
-      --border:    rgba(255,255,255,.10);
-      --text:      #eaf2ff;
-      --muted:     rgba(234,242,255,.55);
-      --gold:      #ffe066;
-    }
+<style>
+  :root {
+    --bg: #050914; --text: #eaf2ff;
+    --card: rgba(255,255,255,.055); --border: rgba(255,255,255,.10);
+    --gold: #ffe066; --blue: #004FC8; --blue2: #0B7CFF;
+  }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; font-family: 'Montserrat', system-ui, sans-serif; background: var(--bg); color: var(--text); -webkit-tap-highlight-color: transparent; }
 
-    html, body {
-      min-height: 100%;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      -webkit-tap-highlight-color: transparent;
-    }
+  .bg-glow {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(900px 500px at 15% 10%, rgba(0,79,200,.18), transparent 55%),
+      radial-gradient(700px 500px at 85% 8%,  rgba(11,124,255,.10), transparent 55%),
+      radial-gradient(600px 400px at 50% 90%, rgba(255,190,0,.05),  transparent 55%);
+  }
 
-    .bg-glow {
-      position: fixed; inset: 0; pointer-events: none; z-index: 0;
-      background:
-        radial-gradient(900px 500px at 15% 10%, rgba(0,79,200,.20), transparent 55%),
-        radial-gradient(800px 600px at 88% 8%,  rgba(11,124,255,.12), transparent 55%),
-        radial-gradient(700px 500px at 45% 92%, rgba(255,190,0,.06),  transparent 55%),
-        linear-gradient(180deg, #050914, #060a18 60%, #050914);
-    }
+  /* ── Nav ── */
+  nav.mejores-nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 14px 20px;
+    background: rgba(5,9,20,.88); backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+  }
 
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 14px;
-      padding: 14px 20px;
-      background: rgba(5,9,20,.88);
-      backdrop-filter: blur(18px);
-      border-bottom: 1px solid var(--border);
-    }
+  .nav-brand { display:inline-flex; align-items:center; text-decoration:none; color:var(--text); }
+  .nav-logo  { height:34px; width:auto; display:block; }
 
-    .nav-brand {
-      display: inline-flex;
-      align-items: center;
-      text-decoration: none;
-      color: var(--text);
-      min-width: 0;
-    }
+  .nav-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 
-    .nav-logo {
-      height: 34px;
-      width: auto;
-      display: block;
-      filter: drop-shadow(0 0 18px rgba(0,79,200,.18));
-    }
+  .nav-btn {
+    font-size:13px; font-weight:700; color:rgba(234,242,255,.80); text-decoration:none;
+    padding:7px 14px; border:1px solid var(--border); border-radius:999px;
+    transition: all .15s; white-space:nowrap; background:transparent;
+  }
+  .nav-btn:hover { color:var(--text); border-color:rgba(255,255,255,.22); background:rgba(255,255,255,.04); }
+  .nav-btn.primary { background:rgba(0,79,200,.18); border-color:rgba(11,124,255,.32); color:#fff; }
+  .nav-btn.primary:hover { background:rgba(0,79,200,.28); border-color:rgba(11,124,255,.50); }
 
-    .nav-actions {
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-    }
+  /* ── Main ── */
+  main {
+    position:relative; z-index:1;
+    max-width: 860px; margin: 0 auto;
+    padding: 36px 16px 80px;
+  }
 
-    .nav-back {
-      font-size: 13px;
-      color: var(--muted);
-      text-decoration: none;
-      padding: 7px 12px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      transition: color .15s, border-color .15s, background .15s;
-      white-space:nowrap;
-    }
+  /* ── Hero ── */
+  .page-hero { text-align:center; margin-bottom: 32px; }
 
-    .nav-back:hover {
-      color: var(--text);
-      border-color: rgba(255,255,255,.22);
-      background: rgba(255,255,255,.03);
-    }
+  .hero-eyebrow {
+    font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase;
+    color:var(--gold); opacity:.85; margin-bottom:10px;
+  }
 
-    .nav-primary {
-      font-size: 13px;
-      font-weight: 800;
-      color: #fff;
-      text-decoration: none;
-      padding: 8px 14px;
-      border-radius: 999px;
-      background: linear-gradient(135deg, rgba(255,190,0,.16), rgba(0,79,200,.22));
-      border: 1px solid rgba(255,190,0,.26);
-      transition: all .15s;
-      white-space:nowrap;
-    }
+  .hero-title {
+    font-size: clamp(28px, 5.5vw, 44px);
+    font-weight: 900; letter-spacing: -.8px; line-height: 1.08;
+    background: linear-gradient(135deg, #fff 25%, rgba(234,242,255,.55));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 14px;
+  }
 
-    .nav-primary:hover {
-      border-color: rgba(255,190,0,.42);
-      background: linear-gradient(135deg, rgba(255,190,0,.24), rgba(0,79,200,.28));
-    }
+  /* ── Contest banner ── */
+  .contest-banner {
+    margin: 0 auto 32px;
+    max-width: 640px;
+    padding: 20px 22px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(255,190,0,.08), rgba(0,79,200,.10));
+    border: 1px solid rgba(255,190,0,.22);
+    box-shadow: 0 12px 36px rgba(0,0,0,.22);
+    text-align: center;
+  }
 
-    main {
-      position: relative; z-index: 1;
-      max-width: 900px; margin: 0 auto;
-      padding: 32px 16px 80px;
-    }
+  .contest-banner h2 {
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
 
-    .page-header {
-      margin-bottom: 32px; text-align: center;
-    }
+  .contest-banner p {
+    font-size: 0.88rem;
+    color: rgba(234,242,255,.72);
+    line-height: 1.65;
+  }
 
-    .page-eyebrow {
-      font-size: 12px; font-weight: 700; letter-spacing: 2px;
-      text-transform: uppercase; color: var(--gold); opacity: .8;
-      margin-bottom: 10px;
-    }
+  .contest-banner strong { color: #eaf2ff; }
 
-    .page-title {
-      font-size: clamp(26px, 5vw, 40px);
-      font-weight: 900; letter-spacing: -.5px;
-      line-height: 1.1;
-      background: linear-gradient(135deg, #fff 30%, rgba(234,242,255,.6));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
+  /* ── Month filter ── */
+  .month-filter {
+    display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+    margin-bottom:28px;
+  }
 
-    .page-sub {
-      margin-top: 10px; font-size: 15px; color: var(--muted); max-width: 460px; margin-inline: auto;
-    }
+  .month-btn {
+    padding:7px 16px; border-radius:999px;
+    border:1px solid var(--border); background:transparent;
+    color:rgba(234,242,255,.65); font-family:inherit;
+    font-size:13px; font-weight:700; cursor:pointer; transition:all .15s;
+  }
+  .month-btn:hover { color:var(--text); border-color:rgba(255,255,255,.22); }
+  .month-btn.active { background:rgba(0,79,200,.22); border-color:rgba(11,124,255,.50); color:#eaf2ff; }
 
-    .month-filter {
-      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
-      margin-bottom: 28px;
-    }
+  /* ── Admin bar ── */
+  .admin-bar {
+    display:none; background:rgba(239,68,68,.10); border:1px solid rgba(239,68,68,.22);
+    border-radius:12px; padding:10px 16px; margin-bottom:20px;
+    font-size:13px; color:#fca5a5; align-items:center; gap:8px;
+  }
+  .admin-bar.visible { display:flex; }
 
-    .month-btn {
-      padding: 7px 16px; border-radius: 999px;
-      border: 1px solid var(--border);
-      background: transparent; color: var(--muted);
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      transition: all .15s;
-    }
-    .month-btn:hover { color: var(--text); border-color: rgba(255,255,255,.22); }
-    .month-btn.active {
-      background: rgba(0,79,200,.25);
-      border-color: rgba(11,124,255,.55);
-      color: #eaf2ff;
-    }
+  /* ── Grids ── */
+  .videos-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; }
 
-    .skeleton-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
-    }
+  /* ── Lead card: primer lugar full width ── */
+  .lead-card { grid-column: 1 / -1; }
 
-    .skeleton-card {
-      border-radius: 18px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      overflow: hidden;
-      animation: shimmer 1.5s infinite;
-    }
+  .lead-card .video-wrap video { max-height: 480px; object-fit: contain; }
 
-    .skeleton-thumb {
-      width: 100%; padding-top: 56.25%;
-      background: rgba(255,255,255,.04);
-    }
+  /* ── Empty + skeleton ── */
+  #skeletonGrid  { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; }
+  #emptyState    { text-align:center; padding:60px 20px; display:none; }
+  .empty-icon    { font-size:48px; margin-bottom:14px; }
+  .empty-title   { font-size:1.2rem; font-weight:800; margin-bottom:8px; }
+  .empty-sub     { color:rgba(234,242,255,.55); font-size:.90rem; max-width:340px; margin:0 auto; }
 
-    .skeleton-body { padding: 14px; }
-    .skeleton-line {
-      height: 12px; border-radius: 6px;
-      background: rgba(255,255,255,.06);
-      margin-bottom: 8px;
-    }
-    .skeleton-line.short { width: 55%; }
-
-    @keyframes shimmer {
-      0%,100% { opacity: 1; }
-      50%      { opacity: .6; }
-    }
-
-    .empty-state {
-      text-align: center; padding: 60px 20px; display: none;
-    }
-
-    .empty-icon { font-size: 48px; margin-bottom: 14px; }
-    .empty-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
-    .empty-sub { color: var(--muted); font-size: 15px; max-width: 320px; margin-inline: auto; }
-
-    .videos-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
-    }
-
-    .video-card {
-      border-radius: 18px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      overflow: hidden;
-      transition: transform .2s ease, box-shadow .2s ease;
-      position: relative;
-    }
-
-    .video-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 18px 48px rgba(0,0,0,.45);
-    }
-
-    .rank-badge {
-      position: absolute; top: 10px; left: 10px; z-index: 2;
-      width: 30px; height: 30px; border-radius: 50%;
-      background: rgba(0,0,0,.65);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,.15);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 900;
-    }
-
-    .rank-badge.top1 { background: rgba(255,190,0,.25); border-color: rgba(255,190,0,.5); color: var(--gold); }
-    .rank-badge.top2 { background: rgba(180,180,180,.20); border-color: rgba(200,200,200,.4); color: #d0d0d0; }
-    .rank-badge.top3 { background: rgba(180,100,30,.22); border-color: rgba(200,120,40,.4); color: #e09060; }
-
-    .card-video-wrap {
-      position: relative; width: 100%; padding-top: 56.25%;
-      background: #000; overflow: hidden;
-    }
-
-    .card-video-wrap video {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-    }
-
-    .card-play-overlay {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,.25);
-      opacity: 1; transition: opacity .2s;
-    }
-
-    .card-video-wrap:hover .card-play-overlay { opacity: 0; }
-
-    .play-icon {
-      width: 46px; height: 46px; border-radius: 50%;
-      background: rgba(0,0,0,.6); backdrop-filter: blur(8px);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-    }
-
-    .card-body { padding: 14px 14px 12px; }
-
-    .card-meta {
-      display: flex; align-items: center; gap: 8px;
-      margin-bottom: 8px; flex-wrap: wrap;
-    }
-
-    .card-immortal {
-      display:inline-block; margin-left:8px; padding:4px 8px; border-radius:999px;
-      background: linear-gradient(135deg, rgba(255,190,0,.12), rgba(0,79,200,.08));
-      border:1px solid rgba(255,190,0,.18); color: var(--gold); font-weight:800; font-size:12px;
-    }
-
-    .card-club {
-      font-size: 13px; font-weight: 700; color: var(--text);
-    }
-
-    .card-sep { color: var(--border); }
-
-    .card-location {
-      font-size: 12px; color: var(--muted);
-    }
-
-    .card-date {
-      font-size: 11px; color: var(--muted); margin-left: auto;
-    }
-
-    .card-viral {
-      margin-bottom: 8px;
-    }
-
-    .card-watch-btn {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      width: 100%; margin-top: 10px;
-      padding: 10px 14px; border-radius: 12px;
-      border: 1px solid rgba(11,124,255,.40);
-      background: rgba(0,79,200,.12);
-      color: #eaf2ff; font-size: 14px; font-weight: 700;
-      cursor: pointer; text-decoration: none;
-      transition: background .15s, border-color .15s;
-    }
-    .card-watch-btn:hover {
-      background: rgba(0,79,200,.22);
-      border-color: rgba(11,124,255,.65);
-    }
-
-    .card-actions {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-top: 10px;
-    }
-
-    .card-fullscreen-btn {
-      display: none;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 44px;
-      width: min(100%, 220px);
-      padding: 10px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06);
-      color: #eaf2ff;
-      font-size: 13px;
-      font-weight: 800;
-      line-height: 1;
-      cursor: pointer;
-      text-decoration: none;
-      box-shadow: 0 10px 26px rgba(0,0,0,.22);
-      backdrop-filter: blur(16px);
-      transition: all .18s ease;
-      white-space: nowrap;
-    }
-
-    .card-fullscreen-btn:hover {
-      transform: translateY(-1px);
-      border-color: rgba(11,124,255,.34);
-      background: rgba(0,79,200,.14);
-    }
-
-    .card-fullscreen-btn.is-active {
-      background: linear-gradient(135deg, rgba(11,124,255,.18), rgba(0,79,200,.24));
-      border-color: rgba(11,124,255,.40);
-      color: #fff;
-      box-shadow: 0 0 24px rgba(0,79,200,.18), 0 10px 26px rgba(0,0,0,.22);
-    }
-
-    /* Participant chips injected by reactions.js */
-    .pz-participants { display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; }
-    .pz-participant-chip { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:999px; overflow:hidden; text-decoration:none; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); }
-    .pz-participant-chip img { width:100%; height:100%; object-fit:cover; display:block; }
-    .pz-participant-chip .pz-p-initial { display:block; width:100%; height:100%; align-items:center; justify-content:center; display:flex; font-weight:800; color:#fff; background:linear-gradient(135deg, rgba(11,124,255,.22), rgba(0,79,200,.24)); }
-
-    .admin-bar {
-      display: none;
-      background: rgba(239,68,68,.12);
-      border: 1px solid rgba(239,68,68,.25);
-      border-radius: 12px; padding: 10px 14px;
-      margin-bottom: 20px;
-      font-size: 13px; color: #fca5a5;
-      align-items: center; gap: 8px;
-    }
-    .admin-bar.visible { display: flex; }
-
-    @media (max-width: 640px) {
-      nav{
-        padding: 12px 14px;
-      }
-
-      .nav-logo{
-        height: 30px;
-      }
-
-      .nav-actions{
-        gap:8px;
-      }
-
-      .nav-back,
-      .nav-primary{
-        font-size:12px;
-        padding:7px 10px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .videos-grid { grid-template-columns: 1fr; }
-      .nav-primary{ display:none; }
-    }
-  </style>
+  @media (max-width:640px) {
+    nav.mejores-nav { padding:12px 14px; }
+    .nav-logo { height:30px; }
+    .lead-card .video-wrap video { max-height:300px; }
+  }
+  @media (max-width:480px) {
+    .videos-grid { grid-template-columns:1fr; }
+  }
+</style>
 </head>
 <body>
 
 <div class="bg-glow"></div>
 
-<nav>
-  <a href="/inicio.html" class="nav-brand" aria-label="Puntazo">
-    <img src="/assets/logo.png" alt="Puntazo" class="nav-logo" onerror="this.style.display='none'">
+<!-- ── Nav ── -->
+<nav class="mejores-nav">
+  <a href="/index.html" class="nav-brand">
+    <img src="/assets/logo.png" alt="Puntazo" class="nav-logo" onerror="this.style.display='none'" />
   </a>
-
   <div class="nav-actions">
-    <a href="/inicio.html" class="nav-primary">Inicio</a>
-    <a href="/index.html" class="nav-back">← Ver canchas</a>
+    <a href="/index.html" class="nav-btn primary">← Ver canchas</a>
   </div>
 </nav>
 
 <main>
 
-  <header class="page-header">
-    <p class="page-eyebrow">🏆 Mejores puntos del mes</p>
-    <h1 class="page-title">Mejores Momentos</h1>
-    <p class="page-sub">Los puntos más épicos que la comunidad eligió este mes</p>
+  <!-- Hero -->
+  <header class="page-hero">
+    <p class="hero-eyebrow">🏆 Concurso mensual</p>
+    <h1 class="hero-title">Puntazos del mes</h1>
   </header>
 
-  <div class="admin-bar" id="adminBar">
-    🔐 Modo administrador activo — ves los conteos de reacciones
-  </div>
-
-  <div class="month-filter" id="monthFilter"></div>
-
-  <div class="skeleton-grid" id="skeletonGrid">
-    <div class="skeleton-card">
-      <div class="skeleton-thumb"></div>
-      <div class="skeleton-body">
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line short"></div>
-      </div>
-    </div>
-    <div class="skeleton-card">
-      <div class="skeleton-thumb"></div>
-      <div class="skeleton-body">
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line short"></div>
-      </div>
-    </div>
-    <div class="skeleton-card">
-      <div class="skeleton-thumb"></div>
-      <div class="skeleton-body">
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line short"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="empty-state" id="emptyState">
-    <div class="empty-icon">🎾</div>
-    <h2 class="empty-title">Todavía sin puntos virales</h2>
-    <p class="empty-sub">
-      Cuando un punto acumule reacciones de la comunidad, aparecerá aquí. ¡Sé el primero en reaccionar!
+  <!-- Contest banner -->
+  <div class="contest-banner">
+    <h2>¡Hay premio para el punto del mes! 🎁</h2>
+    <p>
+      El video con <strong>más reacciones</strong> al cierre de cada mes gana un reconocimiento especial.<br>
+      <strong>Reacciona</strong> con 🔥😂🎉😮😡 y <strong>comparte</strong> para subir al top.<br>
+      ¡Tu puntazo puede ser el legendario de este mes!
     </p>
   </div>
 
+  <div class="admin-bar" id="adminBar">🔐 Modo admin — viendo conteos reales</div>
+
+  <!-- Filtro de mes -->
+  <div class="month-filter" id="monthFilter"></div>
+
+  <!-- Skeleton -->
+  <div id="skeletonGrid">
+    <div class="skeleton-card"><div class="skeleton-thumb"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div>
+    <div class="skeleton-card"><div class="skeleton-thumb"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div>
+    <div class="skeleton-card"><div class="skeleton-thumb"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div></div>
+  </div>
+
+  <!-- Estado vacío -->
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">🎾</div>
+    <h2 class="empty-title">Todavía sin puntazos virales</h2>
+    <p class="empty-sub">Cuando un punto acumule reacciones, aparecerá aquí. ¡Sé el primero en reaccionar!</p>
+  </div>
+
+  <!-- Grid de videos -->
   <div class="videos-grid" id="videosGrid" style="display:none"></div>
 
 </main>
 
 <script>
 (function () {
-  const REACTIONS_INFO = [
-    { key: "fuego",     emoji: "🔥" },
-    { key: "risa",      emoji: "😂" },
-    { key: "enojo",     emoji: "😡" },
-    { key: "diversion", emoji: "🎉" },
-    { key: "sorpresa",  emoji: "😮" },
-  ];
+  'use strict';
 
-  function waitForReactions(cb, retries = 20) {
-    if (window.PuntazoReactions) return cb();
-    if (retries <= 0) return console.error("[Mejores] PuntazoReactions no cargó.");
-    setTimeout(() => waitForReactions(cb, retries - 1), 150);
+  function waitFor(check, retries) {
+    return new Promise(function(resolve) {
+      (function try_(n) {
+        if (check()) return resolve(true);
+        if (n <= 0) return resolve(false);
+        setTimeout(function() { try_(n-1); }, 200);
+      })(retries || 30);
+    });
   }
 
-  waitForReactions(function () {
-    const db     = PuntazoReactions.db();
-    const admin  = PuntazoReactions.isAdmin();
-    const MIN    = PuntazoReactions.MIN_FOR_BEST;
+  waitFor(function() { return window.PuntazoCard && window.PuntazoReactions; }, 40).then(function(ready) {
+    if (!ready) { document.getElementById('skeletonGrid').style.display='none'; document.getElementById('emptyState').style.display='block'; return; }
 
-    const $skeleton = document.getElementById("skeletonGrid");
-    const $grid     = document.getElementById("videosGrid");
-    const $empty    = document.getElementById("emptyState");
-    const $filter   = document.getElementById("monthFilter");
-    const $adminBar = document.getElementById("adminBar");
+    const db    = PuntazoReactions.db();
+    const admin = PuntazoReactions.isAdmin();
+    const MIN   = PuntazoReactions.MIN_FOR_BEST;
 
-    if (admin) $adminBar.classList.add("visible");
+    const $skeleton = document.getElementById('skeletonGrid');
+    const $grid     = document.getElementById('videosGrid');
+    const $empty    = document.getElementById('emptyState');
+    const $filter   = document.getElementById('monthFilter');
+    const $adminBar = document.getElementById('adminBar');
 
+    if (admin) $adminBar.classList.add('visible');
+
+    // Meses disponibles
     const months = [];
     const now = new Date();
-    for (let i = 0; i < 4; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key   = d.toISOString().slice(0, 7);
-      const label = d.toLocaleDateString("es-MX", { month: "long", year: "numeric" });
+    for (var i=0; i<4; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+      const key   = d.toISOString().slice(0,7);
+      const label = d.toLocaleDateString('es-MX', {month:'long', year:'numeric'});
       months.push({ key, label });
     }
 
     let activeMonth = months[0].key;
 
-    const fullscreenSyncers = new Set();
-    let fullscreenEventsBound = false;
-
-    function bindFullscreenEventsOnce() {
-      if (fullscreenEventsBound) return;
-      fullscreenEventsBound = true;
-
-      const runSyncers = () => {
-        fullscreenSyncers.forEach(fn => {
-          try { fn(); } catch {}
-        });
-      };
-
-      document.addEventListener("fullscreenchange", runSyncers);
-      document.addEventListener("webkitfullscreenchange", runSyncers);
-    }
-
-    function safeOrientationUnlock() {
-      try {
-        if (screen.orientation && typeof screen.orientation.unlock === "function") {
-          screen.orientation.unlock();
-        }
-      } catch {}
-    }
-
-    function isThisVideoFullscreen(video) {
-      return !!(
-        document.fullscreenElement === video ||
-        document.webkitFullscreenElement === video ||
-        video.webkitDisplayingFullscreen
-      );
-    }
-
-    async function requestVideoFullscreen(video) {
-      if (video.requestFullscreen) {
-        return await video.requestFullscreen();
-      }
-
-      if (video.webkitRequestFullscreen) {
-        return await video.webkitRequestFullscreen();
-      }
-
-      if (video.webkitEnterFullscreen) {
-        video.webkitEnterFullscreen();
-        return;
-      }
-
-      throw new Error("Fullscreen no soportado en este navegador.");
-    }
-
-    async function exitVideoFullscreen(video) {
-      try {
-        if (document.fullscreenElement || document.webkitFullscreenElement) {
-          if (document.exitFullscreen) {
-            await document.exitFullscreen();
-            return;
-          }
-          if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-            return;
-          }
-        }
-      } catch {}
-
-      try {
-        if (video.webkitExitFullscreen) {
-          video.webkitExitFullscreen();
-        }
-      } catch {}
-    }
-
-    async function verEnHorizontal(video) {
-      await requestVideoFullscreen(video);
-
-      try {
-        await video.play();
-      } catch {}
-    }
-
-    function mejorarCardDeVideo(card, data) {
-      bindFullscreenEventsOnce();
-
-      const video   = card.querySelector("video");
-      const overlay = card.querySelector(".card-play-overlay");
-      const wrap    = card.querySelector(".card-video-wrap");
-      const fsBtn   = card.querySelector(".card-fullscreen-btn");
-
-      const syncOverlay = () => {
-        overlay.style.opacity = video.paused ? "1" : "0";
-      };
-
-      const syncFullscreenUI = () => {
-        const active = isThisVideoFullscreen(video);
-        fsBtn.classList.toggle("is-active", active);
-        fsBtn.textContent = active ? "✕ Salir" : "Pantalla completa";
-        fsBtn.style.display = (!video.paused || active) ? "inline-flex" : "none";
-      };
-
-      const syncAll = () => {
-        syncOverlay();
-        syncFullscreenUI();
-      };
-
-      fullscreenSyncers.add(syncAll);
-
-      card.addEventListener("mouseenter", () => {
-        video.play().catch(() => {});
-        syncAll();
-      });
-
-      card.addEventListener("mouseleave", () => {
-        if (!isThisVideoFullscreen(video)) {
-          video.pause();
-          video.currentTime = 0;
-        }
-        syncAll();
-      });
-
-      wrap.addEventListener("click", () => {
-        if (video.paused) {
-          video.play().catch(() => {});
-        } else {
-          video.pause();
-        }
-        syncAll();
-      });
-
-      fsBtn.addEventListener("click", async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        try {
-          if (isThisVideoFullscreen(video)) {
-            await exitVideoFullscreen(video);
-            safeOrientationUnlock();
-          } else {
-            await verEnHorizontal(video);
-          }
-        } catch (err) {
-          console.warn("[Mejores] No se pudo abrir fullscreen:", err);
-        }
-
-        syncAll();
-      });
-
-      video.addEventListener("play", syncAll);
-      video.addEventListener("pause", syncAll);
-      video.addEventListener("ended", syncAll);
-
-      video.addEventListener("webkitbeginfullscreen", syncAll);
-      video.addEventListener("webkitendfullscreen", () => {
-        safeOrientationUnlock();
-        syncAll();
-      });
-
-      syncAll();
-    }
-
-    months.forEach((m, idx) => {
-      const btn = document.createElement("button");
-      btn.className = "month-btn" + (idx === 0 ? " active" : "");
+    // Render month filter
+    months.forEach(function(m, idx) {
+      const btn = document.createElement('button');
+      btn.className = 'month-btn' + (idx===0?' active':'');
       btn.textContent = m.label;
-      btn.dataset.month = m.key;
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".month-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.month-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
         activeMonth = m.key;
         loadVideos(m.key);
       });
@@ -675,169 +279,76 @@
     });
 
     function loadVideos(monthKey) {
-      $skeleton.style.display = "grid";
-      $grid.style.display     = "none";
-      $empty.style.display    = "none";
-      $grid.innerHTML         = "";
-      fullscreenSyncers.clear();
+      $skeleton.style.display = 'grid';
+      $grid.style.display     = 'none';
+      $empty.style.display    = 'none';
+      $grid.innerHTML         = '';
 
-      // Traer: (A) docs con total >= MIN y (B) docs con immortal==true. Mergear sin duplicados.
       Promise.all([
-        db.collection("reactions").where("total", ">=", MIN).orderBy("total", "desc").limit(50).get(),
-        db.collection("reactions").where("immortal", "==", true).get()
-      ])
-        .then(([snapTop, snapImm]) => {
-          $skeleton.style.display = "none";
+        db.collection('reactions').where('total','>=',MIN).orderBy('total','desc').limit(50).get(),
+        db.collection('reactions').where('immortal','==',true).get(),
+      ]).then(function([snapTop, snapImm]) {
+        $skeleton.style.display = 'none';
 
-          const map = new Map();
+        const map = new Map();
+        snapTop.forEach(function(d) { const x=d.data(); if(x?.videoId) map.set(x.videoId,x); });
+        snapImm.forEach(function(d) { const x=d.data(); if(x?.videoId) map.set(x.videoId,x); });
 
-          snapTop.forEach(doc => {
-            const d = doc.data();
-            if (d && d.videoId) map.set(d.videoId, d);
-          });
-
-          snapImm.forEach(doc => {
-            const d = doc.data();
-            if (d && d.videoId) map.set(d.videoId, d);
-          });
-
-          // Convertir a array y filtrar por mes seleccionado
-          let docs = Array.from(map.values()).filter(d => {
-            if (!d) return false;
-            if (!d.fecha) return false;
-            return d.fecha.startsWith(monthKey);
-          });
-
-          // Si no hay nada para el mes actual, mostrar los top (como fallback)
-          if (docs.length === 0 && monthKey === months[0].key) {
-            docs = Array.from(map.values());
-          }
-
-          if (docs.length === 0) {
-            $empty.style.display = "block";
-            return;
-          }
-
-          // Order: por total desc, y marcar inmortales con prioridad secundaria
-          docs.sort((a, b) => ( (b.total || 0) - (a.total || 0) ) || ((b.immortal === true) - (a.immortal === true)) );
-
-          $grid.style.display = "grid";
-
-          docs.forEach((data, idx) => {
-            const card = buildCard(data, idx + 1, admin);
-            $grid.appendChild(card);
-
-            PuntazoReactions.attach(card.querySelector(".card-reactions-target"), {
-              videoId: data.videoId,
-              videoUrl: data.videoUrl,
-              club:    data.club,
-              cancha:  data.cancha,
-              lado:    data.lado,
-              fecha:   data.fecha,
-            });
-          });
-        })
-        .catch(err => {
-          console.error("[Mejores] Error cargando videos:", err);
-          $skeleton.style.display = "none";
-          $empty.style.display    = "block";
-          $empty.querySelector(".empty-sub").textContent =
-            "Hubo un error cargando los mejores momentos. Intenta de nuevo.";
+        let docs = Array.from(map.values()).filter(function(d) {
+          return d && d.fecha && d.fecha.startsWith(monthKey);
         });
-    }
 
-    function buildCard(data, rank, admin) {
-      const rankClass  = rank === 1 ? "top1" : rank === 2 ? "top2" : rank === 3 ? "top3" : "";
-      const rankLabel  = rank <= 3 ? ["🥇","🥈","🥉"][rank-1] : "#" + rank;
-      const dateLabel  = data.fecha
-        ? new Date(data.fecha + "T00:00:00").toLocaleDateString("es-MX", { day:"numeric", month:"short" })
-        : "";
+        // Fallback: si mes actual vacío, mostrar todo
+        if (docs.length===0 && monthKey===months[0].key) {
+          docs = Array.from(map.values());
+        }
 
-      const emojiSummary = REACTIONS_INFO
-        .filter(r => (data[r.key] || 0) > 0)
-        .map(r => admin ? `${r.emoji} ${data[r.key]}` : r.emoji)
-        .join("  ");
+        if (docs.length===0) { $empty.style.display='block'; return; }
 
-      const card = document.createElement("div");
-      card.className = "video-card";
-      card.innerHTML = `
-        <div class="rank-badge ${rankClass}">${rankLabel}</div>
+        docs.sort(function(a,b) { return (b.total||0)-(a.total||0); });
 
-        <div class="card-video-wrap">
-          <video
-            src="${escapeAttr(data.videoUrl || "")}"
-            muted playsinline preload="none"
-            loop
-          ></video>
-          <div class="card-play-overlay">
-            <div class="play-icon">▶</div>
-          </div>
-        </div>
+        $grid.style.display = 'grid';
 
-        <div class="card-actions">
-          <button type="button" class="card-fullscreen-btn" aria-label="Pantalla completa">
-            Pantalla completa
-          </button>
-        </div>
+        docs.forEach(function(data, idx) {
+          const rank = idx + 1;
+          const entry = {
+            nombre:  data.videoId || '',
+            url:     data.videoUrl || '',
+            club:    data.club     || '',
+            cancha:  data.cancha   || '',
+            lado:    data.lado     || '',
+            fecha:   data.fecha    || '',
+          };
 
-        <div class="card-body">
-          <div class="card-meta">
-            <span class="card-club">${escapeHTML(data.club || "Puntazo")}</span>
-            ${data.cancha ? `<span class="card-sep">·</span><span class="card-location">Cancha ${escapeHTML(data.cancha)} ${data.lado ? data.lado : ""}</span>` : ""}
-            ${dateLabel ? `<span class="card-date">${dateLabel}</span>` : ""}
-          </div>
+          if (!entry.url) return;
 
-          ${emojiSummary ? `<div class="card-viral"><span class="pz-viral-badge">${emojiSummary}</span></div>` : ""}
-          ${data.immortal ? `<div class="card-immortal">Inmortal ⭐</div>` : ""}
+          const card = PuntazoCard.build(entry, {
+            showSave:      true,
+            showShare:     true,
+            showFullscreen:true,
+            showClaim:     true,
+            showReactions: true,
+            showComments:  true,
+            showClubInfo:  true,
+            rankBadge:     rank <= 10 ? rank : null,
+          });
 
-          <div class="card-reactions-target"></div>
+          // Lead card (top 1) full width
+          if (rank === 1) card.classList.add('lead-card');
 
-          ${data.videoUrl
-            ? `
-              <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
-                <a class="card-watch-btn" href="${escapeAttr(buildLadoLink(data))}">▶ Ver video en su cancha</a>
-                <button type="button" class="card-share-btn" data-videoid="${escapeAttr(data.videoId||'')}">🔗 Compartir</button>
-              </div>`
-            : ""
-          }
-        </div>
-      `;
-
-      mejorarCardDeVideo(card, data);
-      // attach share handler
-      const shareBtn = card.querySelector('.card-share-btn');
-      if (shareBtn) {
-        shareBtn.addEventListener('click', async (e) => {
-          e.preventDefault();
-          const videoId = shareBtn.dataset.videoid || data.videoId || data.videoId || '';
-          const link = location.origin + '/clip.html?videoId=' + encodeURIComponent(videoId);
-          try { if (navigator.share) { await navigator.share({ title: 'Puntazo', text: 'Mira este puntazo', url: link }); return; } } catch (err) {}
-          try { await navigator.clipboard.writeText(link); alert('Enlace copiado'); } catch (err) { window.open(link, '_blank'); }
+          $grid.appendChild(card);
+          PuntazoCard.attachReactions(card, entry);
         });
-      }
-      return card;
-    }
 
-    function escapeHTML(str) {
-      return String(str || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
+      }).catch(function(err) {
+        console.error('[Puntazos del mes]', err);
+        $skeleton.style.display='none';
+        $empty.style.display='block';
+        $empty.querySelector('.empty-sub').textContent='Error cargando los puntazos. Intenta de nuevo.';
+      });
     }
-
-    function escapeAttr(str) {
-      return String(str || "").replace(/"/g, "&quot;");
-    }
-    function buildLadoLink(data) {
-    const loc  = encodeURIComponent(data.club || "");
-    const can  = encodeURIComponent(data.cancha || "");
-    const lado = encodeURIComponent(data.lado || "");
-    const dia  = String(data.fecha || "").replaceAll("-", "");
-    return `/lado.html?loc=${loc}&can=${can}&lado=${lado}&dia=${dia}&pg=0`;
-  }
 
     loadVideos(activeMonth);
-
   });
 })();
 </script>
