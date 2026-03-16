@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<base href="/" />
+<title>Admin · Puntazo</title>
+<meta name="robots" content="noindex,nofollow" />
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+
+<style>
+  :root {
+    --bg:#050914; --card:rgba(255,255,255,.06); --border:rgba(255,255,255,.10);
+    --text:#eaf2ff; --muted:rgba(234,242,255,.55); --blue:#004FC8; --blue2:#0B7CFF;
+    --gold:#ffe066; --green:#22c55e; --red:#ef4444;
+  }
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  html,body { min-height:100%; font-family:'Montserrat',system-ui,sans-serif; background:var(--bg); color:var(--text); -webkit-tap-highlight-color:transparent; }
+
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap');
+
+  /* ── Layout ── */
+  .page { max-width:1100px; margin:0 auto; padding:28px 16px 80px; }
+
+  header.dash-header {
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:14px; margin-bottom:32px;
+    padding:16px 20px; border-radius:18px;
+    background:var(--card); border:1px solid var(--border);
+  }
+  .dash-header h1 { font-size:1.4rem; font-weight:900; color:#fff; }
+  .dash-header .sub { color:var(--muted); font-size:0.82rem; margin-top:4px; }
+  .header-actions { display:flex; gap:8px; flex-wrap:wrap; }
+
+  .btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:8px 16px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.06); color:var(--text);
+    font-family:inherit; font-size:0.82rem; font-weight:700;
+    cursor:pointer; transition:all .15s; text-decoration:none; white-space:nowrap;
+  }
+  .btn:hover { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.24); }
+  .btn.primary { background:rgba(0,79,200,.22); border-color:rgba(11,124,255,.40); }
+  .btn.primary:hover { background:rgba(0,79,200,.34); }
+
+  /* ── KPI cards ── */
+  .kpi-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+    gap:14px; margin-bottom:36px;
+  }
+
+  .kpi {
+    padding:18px 16px; border-radius:16px;
+    background:var(--card); border:1px solid var(--border);
+    text-align:center;
+  }
+  .kpi-value { font-size:1.8rem; font-weight:900; color:#fff; line-height:1; }
+  .kpi-label { font-size:0.75rem; color:var(--muted); margin-top:6px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; }
+  .kpi.highlight { border-color:rgba(11,124,255,.32); background:rgba(0,79,200,.14); }
+  .kpi.gold      { border-color:rgba(255,190,0,.28);  background:rgba(255,190,0,.08); }
+  .kpi.gold .kpi-value { color:var(--gold); }
+
+  /* ── Secciones ── */
+  .section { margin-bottom:40px; }
+  .section-title {
+    font-size:1rem; font-weight:900; color:rgba(234,242,255,.80);
+    margin-bottom:16px; display:flex; align-items:center; gap:8px;
+  }
+  .section-title .badge {
+    padding:2px 8px; border-radius:999px;
+    background:rgba(255,255,255,.08); font-size:0.70rem; font-weight:700; color:var(--muted);
+  }
+
+  /* ── Tabla ── */
+  .table-wrap { overflow-x:auto; border-radius:14px; border:1px solid var(--border); }
+  table { width:100%; border-collapse:collapse; font-size:0.84rem; }
+  th {
+    padding:10px 14px; text-align:left; font-weight:800; font-size:0.74rem;
+    text-transform:uppercase; letter-spacing:.6px; color:var(--muted);
+    background:rgba(255,255,255,.04); border-bottom:1px solid var(--border);
+    white-space:nowrap;
+  }
+  td { padding:10px 14px; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,.03); }
+
+  .td-rank { font-size:1.1rem; width:40px; text-align:center; }
+  .td-name { font-weight:700; color:#fff; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .td-name small { display:block; font-weight:400; color:var(--muted); font-size:0.74rem; margin-top:2px; }
+  .td-num { font-weight:800; color:#fff; text-align:right; white-space:nowrap; }
+  .td-bar { min-width:80px; }
+
+  .bar { height:6px; border-radius:999px; background:rgba(0,79,200,.35); position:relative; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,var(--blue2),var(--blue)); transition:width .4s ease; }
+  .bar-fill.gold { background:linear-gradient(90deg,#fbbf24,#f59e0b); }
+  .bar-fill.green { background:linear-gradient(90deg,#34d399,#10b981); }
+
+  .pill {
+    display:inline-block; padding:2px 8px; border-radius:999px;
+    font-size:0.72rem; font-weight:700; white-space:nowrap;
+  }
+  .pill-blue  { background:rgba(0,79,200,.22); color:#7eb8ff; }
+  .pill-gold  { background:rgba(255,190,0,.18); color:var(--gold); }
+  .pill-green { background:rgba(34,197,94,.18); color:#86efac; }
+  .pill-red   { background:rgba(239,68,68,.18); color:#fca5a5; }
+
+  /* ── Loading ── */
+  .loading { display:flex; align-items:center; gap:10px; padding:20px; color:var(--muted); font-size:0.90rem; }
+  .spinner { width:20px; height:20px; border:2px solid rgba(255,255,255,.14); border-top-color:var(--blue2); border-radius:50%; animation:spin .8s linear infinite; flex-shrink:0; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* ── Tabs ── */
+  .tabs { display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:1px; }
+  .tab-btn {
+    padding:9px 18px; border-radius:999px 999px 0 0; border:1px solid transparent;
+    background:transparent; color:var(--muted); font-family:inherit; font-size:0.84rem; font-weight:700;
+    cursor:pointer; transition:all .15s;
+  }
+  .tab-btn:hover { color:var(--text); }
+  .tab-btn.active { color:#fff; background:rgba(0,79,200,.18); border-color:rgba(11,124,255,.30); border-bottom-color:transparent; }
+  .tab-pane { display:none; }
+  .tab-pane.active { display:block; }
+
+  /* ── Access denied ── */
+  #accessDenied { display:none; text-align:center; padding:80px 20px; }
+  #accessDenied h2 { font-size:1.5rem; font-weight:900; margin-bottom:12px; }
+  #accessDenied p { color:var(--muted); margin-bottom:24px; }
+  #accessDenied input { padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:var(--card); color:var(--text); font-family:inherit; font-size:14px; width:240px; outline:none; }
+  #accessDenied input:focus { border-color:rgba(11,124,255,.50); }
+
+  @media(max-width:640px) {
+    .kpi-grid { grid-template-columns:repeat(2,1fr); }
+    th,td { padding:8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="accessDenied">
+  <div style="font-size:52px;margin-bottom:16px">🔐</div>
+  <h2>Acceso restringido</h2>
+  <p>Este panel es solo para administradores de Puntazo.</p>
+  <input type="password" id="pwInput" placeholder="Contraseña de admin" />
+  <br/><br/>
+  <button class="btn primary" onclick="checkPw()">Entrar</button>
+</div>
+
+<div id="mainContent" style="display:none">
+  <div class="page">
+
+    <header class="dash-header">
+      <div>
+        <h1>📊 Dashboard Puntazo</h1>
+        <div class="sub" id="lastUpdated">Cargando datos…</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn" onclick="refreshAll()">↺ Actualizar</button>
+        <button class="btn primary" onclick="exportCSV()">⬇ Exportar CSV</button>
+      </div>
+    </header>
+
+    <!-- KPIs globales -->
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi"><div class="kpi-value" id="kpiVideos">—</div><div class="kpi-label">Videos rastreados</div></div>
+      <div class="kpi highlight"><div class="kpi-value" id="kpiViews">—</div><div class="kpi-label">Reproducciones</div></div>
+      <div class="kpi gold"><div class="kpi-value" id="kpiReactions">—</div><div class="kpi-label">Reacciones totales</div></div>
+      <div class="kpi"><div class="kpi-value" id="kpiSaves">—</div><div class="kpi-label">Guardados</div></div>
+      <div class="kpi"><div class="kpi-value" id="kpiShares">—</div><div class="kpi-label">Compartidos</div></div>
+      <div class="kpi"><div class="kpi-value" id="kpiComments">—</div><div class="kpi-label">Comentarios</div></div>
+      <div class="kpi"><div class="kpi-value" id="kpiClaims">—</div><div class="kpi-label">Claims "Soy yo"</div></div>
+      <div class="kpi gold"><div class="kpi-value" id="kpiImmortals">—</div><div class="kpi-label">Videos inmortales</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="views">▶ Reproducciones</button>
+      <button class="tab-btn" data-tab="reactions">🔥 Reacciones</button>
+      <button class="tab-btn" data-tab="saves">💾 Guardados</button>
+      <button class="tab-btn" data-tab="shares">🔗 Compartidos</button>
+      <button class="tab-btn" data-tab="comments">💬 Comentarios</button>
+      <button class="tab-btn" data-tab="players">🥷 Jugadores</button>
+      <button class="tab-btn" data-tab="recent">🕐 Reciente</button>
+    </div>
+
+    <div id="tab-views"     class="tab-pane active"></div>
+    <div id="tab-reactions" class="tab-pane"></div>
+    <div id="tab-saves"     class="tab-pane"></div>
+    <div id="tab-shares"    class="tab-pane"></div>
+    <div id="tab-comments"  class="tab-pane"></div>
+    <div id="tab-players"   class="tab-pane"></div>
+    <div id="tab-recent"    class="tab-pane"></div>
+
+  </div>
+</div>
+
+<script>
+const ADMIN_KEY = 'puntazo2025';
+let _allDocs = [];
+let _playerDocs = [];
+
+// ── Acceso ────────────────────────────────────────────────────
+function checkPw() {
+  const val = document.getElementById('pwInput').value.trim();
+  if (val === ADMIN_KEY) {
+    document.getElementById('accessDenied').style.display  = 'none';
+    document.getElementById('mainContent').style.display   = 'block';
+    init();
+  } else {
+    document.getElementById('pwInput').style.borderColor = '#ef4444';
+    setTimeout(()=>{ document.getElementById('pwInput').style.borderColor=''; }, 1200);
+  }
+}
+
+document.getElementById('pwInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') checkPw();
+});
+
+// Verificar por URL param
+(function() {
+  const key = new URLSearchParams(location.search).get('key') || new URLSearchParams(location.search).get('admin');
+  if (key === ADMIN_KEY) {
+    document.getElementById('accessDenied').style.display = 'none';
+    document.getElementById('mainContent').style.display  = 'block';
+    document.addEventListener('DOMContentLoaded', init);
+    if (document.readyState !== 'loading') init();
+  } else {
+    document.getElementById('accessDenied').style.display = 'block';
+  }
+})();
+
+// ── Tabs ──────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Formatters ───────────────────────────────────────────────
+function fmt(n) {
+  if (n == null || isNaN(n)) return '—';
+  if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+  if (n >= 1000)    return (n/1000).toFixed(1)+'K';
+  return String(n);
+}
+
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function rankEmoji(i) {
+  return i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1);
+}
+
+function videoLabel(d) {
+  const nombre = d.videoId||'';
+  const time   = nombre.match(/_(\d{2})(\d{2})\d{2}\.mp4$/i);
+  const t      = time ? `${parseInt(time[1])%12||12}:${time[2]} ${parseInt(time[1])>=12?'PM':'AM'}` : '';
+  const club   = d.club   ? esc(d.club)   : '';
+  const cancha = d.cancha ? esc(d.cancha) : '';
+  return `${t ? `<strong>${esc(t)}</strong>` : ''} ${club?`· ${club}`:''} ${cancha?`· ${cancha}`:''}`;
+}
+
+// ── Init & Data ───────────────────────────────────────────────
+async function waitForFirebase(retries) {
+  for (let i=0; i<(retries||40); i++) {
+    if (window.PuntazoFirebase && typeof window.PuntazoFirebase.db === 'function') return true;
+    await new Promise(r=>setTimeout(r,200));
+  }
+  return false;
+}
+
+async function init() {
+  const ok = await waitForFirebase(40);
+  if (!ok) { document.getElementById('lastUpdated').textContent = 'Error: Firebase no disponible'; return; }
+  await refreshAll();
+}
+
+async function refreshAll() {
+  document.getElementById('lastUpdated').textContent = 'Actualizando…';
+  const db = window.PuntazoFirebase.db();
+
+  try {
+    // Traer todos los docs de reactions (limit razonable para dashboard)
+    const snap = await db.collection('reactions').limit(500).get();
+    _allDocs = [];
+    snap.forEach(doc => _allDocs.push(doc.data()));
+
+    // Players: collectionGroup participants
+    try {
+      const pSnap = await db.collectionGroup('participants').limit(300).get();
+      const pMap  = new Map();
+      pSnap.forEach(doc => {
+        const d = doc.data();
+        if (!d.uid) return;
+        const prev = pMap.get(d.uid) || { uid:d.uid, displayName:d.displayName||'', photoURL:d.photoURL||'', count:0 };
+        prev.count++;
+        pMap.set(d.uid, prev);
+      });
+      _playerDocs = Array.from(pMap.values()).sort((a,b)=>b.count-a.count);
+    } catch(e) {
+      console.warn('[admin] No se pudo cargar participants collectionGroup (falta índice?):', e);
+      _playerDocs = [];
+    }
+
+    renderAll();
+    document.getElementById('lastUpdated').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-MX');
+  } catch(e) {
+    console.error('[admin] Error cargando datos:', e);
+    document.getElementById('lastUpdated').textContent = 'Error: ' + e.message;
+  }
+}
+
+function renderAll() {
+  // KPIs
+  const totals = _allDocs.reduce((acc, d) => {
+    acc.views     += (d.views     || 0);
+    acc.reactions += (d.total     || 0);
+    acc.saves     += (d.saves     || 0);
+    acc.shares    += (d.shares    || 0);
+    acc.comments  += (d.comments_count || 0);
+    acc.claims    += (d.claims_count   || 0);
+    if (d.immortal) acc.immortals++;
+    return acc;
+  }, { views:0, reactions:0, saves:0, shares:0, comments:0, claims:0, immortals:0 });
+
+  document.getElementById('kpiVideos').textContent    = fmt(_allDocs.length);
+  document.getElementById('kpiViews').textContent     = fmt(totals.views);
+  document.getElementById('kpiReactions').textContent = fmt(totals.reactions);
+  document.getElementById('kpiSaves').textContent     = fmt(totals.saves);
+  document.getElementById('kpiShares').textContent    = fmt(totals.shares);
+  document.getElementById('kpiComments').textContent  = fmt(totals.comments);
+  document.getElementById('kpiClaims').textContent    = fmt(totals.claims);
+  document.getElementById('kpiImmortals').textContent = fmt(totals.immortals);
+
+  // Tabs
+  renderTopTable('tab-views',     'views',          '▶ Top videos por reproducciones', 'blue');
+  renderTopTable('tab-reactions', 'total',           '🔥 Top videos por reacciones',    'gold');
+  renderTopTable('tab-saves',     'saves',           '💾 Top videos por guardados',     'green');
+  renderTopTable('tab-shares',    'shares',          '🔗 Top videos compartidos',       'blue');
+  renderTopTable('tab-comments',  'comments_count',  '💬 Top videos por comentarios',   'blue');
+  renderPlayers('tab-players');
+  renderRecent('tab-recent');
+}
+
+function renderTopTable(tabId, field, title, colorClass) {
+  const sorted = [..._allDocs]
+    .filter(d => (d[field]||0) > 0)
+    .sort((a,b) => (b[field]||0) - (a[field]||0))
+    .slice(0, 20);
+
+  const maxVal = sorted.length > 0 ? (sorted[0][field]||1) : 1;
+
+  const $pane = document.getElementById(tabId);
+  if (!$pane) return;
+
+  if (sorted.length === 0) {
+    $pane.innerHTML = `<div class="section"><p style="color:var(--muted);padding:20px">Sin datos todavía.</p></div>`;
+    return;
+  }
+
+  const rows = sorted.map((d, i) => {
+    const pct = Math.round(((d[field]||0) / maxVal) * 100);
+    const clipLink = d.videoId ? `/clip.html?videoId=${encodeURIComponent(d.videoId)}` : '#';
+    const fecha = d.fecha ? `<span class="pill pill-blue" style="margin-left:6px">${esc(d.fecha)}</span>` : '';
+
+    return `<tr>
+      <td class="td-rank">${rankEmoji(i)}</td>
+      <td class="td-name">
+        <a href="${clipLink}" target="_blank" style="color:#eaf2ff;text-decoration:none">
+          ${videoLabel(d)}
+          ${fecha}
+          ${d.immortal?'<span class="pill pill-gold" style="margin-left:4px">⭐ Inmortal</span>':''}
+        </a>
+      </td>
+      <td class="td-bar"><div class="bar"><div class="bar-fill ${colorClass}" style="width:${pct}%"></div></div></td>
+      <td class="td-num">${fmt(d[field]||0)}</td>
+    </tr>`;
+  }).join('');
+
+  $pane.innerHTML = `
+    <div class="section">
+      <div class="section-title">${title} <span class="badge">${sorted.length} videos</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Video</th><th style="min-width:100px">Barras</th><th>Total</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderPlayers(tabId) {
+  const $pane = document.getElementById(tabId);
+  if (!$pane) return;
+
+  if (_playerDocs.length === 0) {
+    $pane.innerHTML = `<div class="section">
+      <div class="section-title">🥷 Jugadores con más apariciones</div>
+      <p style="color:var(--muted);padding:20px 0">Sin datos o índice de collectionGroup no configurado en Firestore.<br>
+      <small>Crea el índice: <code style="color:var(--gold)">Collection group: participants · campo claimedAt (asc)</code></small></p>
+    </div>`;
+    return;
+  }
+
+  const maxCount = _playerDocs[0]?.count || 1;
+  const rows = _playerDocs.slice(0,20).map((p, i) => {
+    const pct  = Math.round((p.count / maxCount) * 100);
+    const link = `/jugador.html?uid=${encodeURIComponent(p.uid)}`;
+    const avatar = p.photoURL
+      ? `<img src="${esc(p.photoURL)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">`
+      : `<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:rgba(0,79,200,.4);font-weight:900;font-size:12px;margin-right:8px">${(p.displayName||'?')[0].toUpperCase()}</span>`;
+    return `<tr>
+      <td class="td-rank">${rankEmoji(i)}</td>
+      <td class="td-name">
+        <a href="${link}" target="_blank" style="color:#eaf2ff;text-decoration:none;display:flex;align-items:center">
+          ${avatar} ${esc(p.displayName||'Jugador anónimo')}
+        </a>
+      </td>
+      <td class="td-bar"><div class="bar"><div class="bar-fill green" style="width:${pct}%"></div></div></td>
+      <td class="td-num">${p.count} apariencia${p.count!==1?'s':''}</td>
+    </tr>`;
+  }).join('');
+
+  $pane.innerHTML = `
+    <div class="section">
+      <div class="section-title">🥷 Jugadores con más apariciones <span class="badge">${_playerDocs.length} jugadores</span></div>
+      <p style="color:var(--muted);font-size:0.82rem;margin-bottom:14px">
+        Basado en videos donde el jugador dijo "Soy yo". Para ver usuarios con más guardados o vistas únicas,
+        se requiere tracking adicional por sesión autenticada (Cloud Functions).
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Jugador</th><th>—</th><th>Apariciones</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderRecent(tabId) {
+  const $pane = document.getElementById(tabId);
+  if (!$pane) return;
+
+  const recent = [..._allDocs]
+    .filter(d => d.lastInteractionAt?.seconds)
+    .sort((a,b) => (b.lastInteractionAt?.seconds||0) - (a.lastInteractionAt?.seconds||0))
+    .slice(0, 15);
+
+  if (recent.length === 0) {
+    $pane.innerHTML = `<div class="section"><p style="color:var(--muted);padding:20px">Sin actividad reciente rastreada.</p></div>`;
+    return;
+  }
+
+  const rows = recent.map((d, i) => {
+    const ts   = d.lastInteractionAt?.seconds ? new Date(d.lastInteractionAt.seconds*1000).toLocaleString('es-MX') : '—';
+    const link = d.videoId ? `/clip.html?videoId=${encodeURIComponent(d.videoId)}` : '#';
+    const rxns = ['fuego','risa','enojo','diversion','sorpresa'].filter(k=>(d[k]||0)>0);
+    const emojis = ['🔥','😂','😡','🎉','😮'];
+    const rxnStr = ['fuego','risa','enojo','diversion','sorpresa'].map((k,i2)=>(d[k]||0)>0?`${emojis[i2]}${d[k]}`:'').filter(Boolean).join(' ');
+    return `<tr>
+      <td class="td-rank">${i+1}</td>
+      <td class="td-name">
+        <a href="${link}" target="_blank" style="color:#eaf2ff;text-decoration:none">
+          ${videoLabel(d)}
+        </a>
+      </td>
+      <td><span style="color:var(--muted);font-size:0.80rem">${ts}</span></td>
+      <td class="td-num" style="font-size:0.90rem">${rxnStr||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  $pane.innerHTML = `
+    <div class="section">
+      <div class="section-title">🕐 Actividad reciente <span class="badge">últimas ${recent.length} interacciones</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Video</th><th>Última actividad</th><th>Reacciones</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ── Export CSV ────────────────────────────────────────────────
+function exportCSV() {
+  if (!_allDocs.length) { alert('Sin datos para exportar'); return; }
+  const cols = ['videoId','club','cancha','lado','fecha','views','total','saves','shares','comments_count','claims_count','immortal'];
+  const header = cols.join(',');
+  const rows   = _allDocs.map(d => cols.map(c => JSON.stringify(d[c]??'')).join(','));
+  const csv    = [header, ...rows].join('\n');
+  const blob   = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  const url    = URL.createObjectURL(blob);
+  const a      = document.createElement('a');
+  a.href = url; a.download = `puntazo_analytics_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>
