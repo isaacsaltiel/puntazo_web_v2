@@ -52,6 +52,31 @@ function trackEvent(name, params = {}) {
   }
 }
 
+// Persistir métricas comerciales en Firestore (reacciona con `reactions/{videoId}`)
+async function updateBusinessMetrics(videoId, increments = {}, setFields = {}) {
+  try {
+    const db = getFirestoreDb();
+    if (!db || !videoId) return;
+    const doc = db.collection("reactions").doc(String(videoId));
+
+    const payload = {};
+    // agregar incrementos
+    Object.keys(increments || {}).forEach(k => {
+      const v = Number(increments[k]) || 0;
+      payload[k] = firebase.firestore.FieldValue.increment(v);
+    });
+
+    // mezclar setFields (valores literales; pueden contener timestamps)
+    Object.keys(setFields || {}).forEach(k => { payload[k] = setFields[k]; });
+
+    if (Object.keys(payload).length === 0) return;
+    await doc.set(payload, { merge: true });
+  } catch (e) {
+    // no bloquear UX si falla persistencia
+    console.warn('[metrics] updateBusinessMetrics failed', e);
+  }
+}
+
 // Helper: contexto estándar para analytics (loc/can/lado)
 function gaCtx(extra = {}) {
   const p = getQueryParams();
@@ -379,12 +404,13 @@ function renderDayFilterBar(allEntries, selectedKey) {
     const count = vids.length;
     const hasNew = vids.some(isNewVideo);
     const hasRecovered = vids.some(isRecovered);
+    // Sólo mostrar "Hace 2 días" / "Hace 3 días" si hay videos — evita ruido
+    if ((off >= 2) && count === 0) return;
 
     const btn = document.createElement("button");
     btn.type = "button";
     btn.textContent = `${labelForOffset(off)}${count ? ` (${count})` : ""}${hasRecovered ? " ↻" : ""}`;
 
-    // Hoy y Ayer siempre están. Hace 2/3 solo si hay videos.
     const disabled = (count === 0) && (off !== 0 && off !== 1);
     dayBtnStyles(btn, { active: k === selectedKey, disabled });
 
@@ -408,22 +434,24 @@ function renderDayFilterBar(allEntries, selectedKey) {
   const hasNewRec = recList.some(v => isNewVideo(v));
 
   const recOn = getQueryParams().rec === "1";
-  const pill = document.createElement("button");
-  pill.type = "button";
-  pill.textContent = recCount ? `Recuperados (${recCount})` : "Recuperados";
-  dayBtnStyles(pill, { active: recOn, disabled: recCount === 0 });
-  pill.style.marginLeft = "auto";
+  // Mostrar "Recuperados" sólo si hay items recuperados para evitar pill vacía
+  if (recCount > 0) {
+    const pill = document.createElement("button");
+    pill.type = "button";
+    pill.textContent = `Recuperados (${recCount})`;
+    dayBtnStyles(pill, { active: recOn, disabled: false });
+    pill.style.marginLeft = "auto";
 
-  if (hasNewRec && recCount) addRedDot(pill);
+    if (hasNewRec && recCount) addRedDot(pill);
 
-  pill.addEventListener("click", () => {
-    if (recCount === 0) return;
-    setQueryParams({ rec: recOn ? "" : "1", pg: 0, video: "" });
-    populateVideos();
-    scrollToTop();
-  });
+    pill.addEventListener("click", () => {
+      setQueryParams({ rec: recOn ? "" : "1", pg: 0, video: "" });
+      populateVideos();
+      scrollToTop();
+    });
 
-  container.appendChild(pill);
+    container.appendChild(pill);
+  }
 
   return { selectedKey, dayKeys, byKey };
 }
@@ -1813,9 +1841,20 @@ btn.addEventListener("click", async (e) => {
     if (alreadySaved) {
       await unsaveVideoForCurrentUser(meta.videoId);
       trackEvent("unsave_video", gaCtx({ video_name: entry?.nombre || "" }));
+        // NOTE: do not remove immortal once set; saved_by_user is a one-way signal
+        try { updateBusinessMetrics(meta.videoId, { /* no-op */ }); } catch {}
     } else {
       await saveVideoForCurrentUser(meta);
       trackEvent("save_video", gaCtx({ video_name: entry?.nombre || "" }));
+        try {
+          const user = getAuthUser();
+          await updateBusinessMetrics(meta.videoId, { saves: 1 }, {
+            saved_by_user: true,
+            immortal: true,
+            immortal_reasons: { saved_by_user: { uid: user ? user.uid : null, at: getFirestoreTimestamp() } },
+            immortal_markedAt: getFirestoreTimestamp()
+          });
+        } catch (e) { /* noop */ }
     }
 
     // UI optimista inmediata
@@ -2089,242 +2128,52 @@ function crearBotonPantallaCompleta(video, card, entry) {
 async function crearBotonAccionCompartir(entry) {
   const btn = document.createElement("button");
   btn.className = "btn-share-large";
-  btn.textContent = "📤 ⬇️";
-  btn.title = "Compartir o descargar video";
-  btn.setAttribute("aria-label", "Compartir o descargar video");
+  btn.textContent = "📤";
+  btn.title = "Compartir";
+  btn.setAttribute("aria-label", "Compartir");
   btn.style.width = "100%";
   btn.style.justifyContent = "center";
   btn.style.textAlign = "center";
-  btn.style.paddingLeft = "0.9rem";
-  btn.style.paddingRight = "0.9rem";
-  
-  btn.dataset.state = "idle";
-  btn._shareFile = null;
 
-  const tryShareFile = async (file) => {
-    try {
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "Video Puntazo",
-          text: "Mira este _*PUNTAZO*_"
-        });
-        return true;
-      }
-    } catch (e) {
-      throw e;
-    }
-    return false;
-  };
+  function buildInternalLink() {
+    const p = getQueryParams();
+    const loc = encodeURIComponent(p.loc || "");
+    const can = encodeURIComponent(p.can || "");
+    const lado = encodeURIComponent(p.lado || "");
+    const video = encodeURIComponent(entry?.nombre || "");
+    // Use canonical clip view by videoId to retain views/reactions inside Puntazo
+    return `${location.origin}/clip.html?videoId=${video}`;
+  }
 
   const runShareFlow = async () => {
-    // [GA4] click share/download
-    trackEvent("click_share_download", gaCtx({ video_name: entry?.nombre || "" }));
-
-    // Si ya está listo para compartir (porque el navegador no auto-compartió)
-    if (btn.dataset.state === "ready" && btn._shareFile) {
-      let okShare = false;
-      try {
-        okShare = await tryShareFile(btn._shareFile);
-      } catch {}
-
-      // [GA4] share success manual
-      if (okShare) {
-        trackEvent("share_success", gaCtx({ video_name: entry?.nombre || "", mode: "manual_ready" }));
-      }
-
-      // Si no se puede compartir, descarga el blob local
-      if (!navigator.canShare?.({ files: [btn._shareFile] })) {
-        // [GA4] download fallback (file)
-        trackEvent("download_fallback", gaCtx({ video_name: entry?.nombre || "", mode: "local_blob" }));
-
-        const url = URL.createObjectURL(btn._shareFile);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = entry.nombre;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-          a.remove();
-        }, 800);
-      }
-
-      btn._shareFile = null;
-      btn.textContent = "Compartido";
-      setTimeout(() => {
-        btn.textContent = "Compartir | Descargar";
-        btn.dataset.state = "idle";
-      }, 1200);
-      return;
-    }
-
-    if (btn.dataset.state === "downloading") return;
-
-    pauseAllVideos();
-
-    btn.dataset.state = "downloading";
-    btn.disabled = true;
-    const originalContent = "📤 ⬇️";
-
-    // UI progreso
-    btn.textContent = "";
-    const wrap = document.createElement("span");
-    wrap.className = "btn-progress";
-
-    const label = document.createElement("span");
-    label.className = "btn-progress__label";
-    label.textContent = "Descargando…";
-
-    const percentSpan = document.createElement("span");
-    percentSpan.className = "btn-progress__percent";
-    percentSpan.textContent = "0%";
-
-    const bar = document.createElement("span");
-    bar.className = "btn-progress__bar";
-    const fill = document.createElement("span");
-    fill.className = "btn-progress__fill";
-    bar.appendChild(fill);
-
-    const spinner = document.createElement("span");
-    spinner.className = "btn-progress__spinner";
-
-    const cancelBtn = document.createElement("button");
-    cancelBtn.type = "button";
-    cancelBtn.className = "btn-progress__cancel";
-    cancelBtn.textContent = "Cancelar";
-
-    wrap.appendChild(label);
-    wrap.appendChild(percentSpan);
-    wrap.appendChild(bar);
-    wrap.appendChild(spinner);
-    wrap.appendChild(cancelBtn);
-    btn.appendChild(wrap);
-
-    const controller = new AbortController();
-    const { signal } = controller;
-
-    const restoreIdle = (text = originalContent) => {
-      btn.innerHTML = "";
-      btn.textContent = text;
-      btn.disabled = false;
-      btn.dataset.state = "idle";
-      btn._shareFile = null;
-    };
-
-    cancelBtn.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      try { controller.abort(); } catch {}
-      btn.innerHTML = "";
-      btn.textContent = "Cancelado";
-      setTimeout(() => restoreIdle(originalContent), 1200);
-    });
+    trackEvent("click_share", gaCtx({ video_name: entry?.nombre || "" }));
+    const link = buildInternalLink();
 
     try {
-      const directUrl = toDropboxDirectFetchUrl(entry.url);
-
-      const blob = await downloadWithProgress(directUrl, {
-        signal,
-        onStart({ totalKnown }) {
-          if (!totalKnown) {
-            spinner.style.display = "inline-block";
-            percentSpan.textContent = "";
-            fill.style.width = "0%";
-            fill.style.opacity = "0.4";
-          }
-        },
-        onProgress({ percent, indeterminate }) {
-          if (indeterminate) {
-            spinner.style.display = "inline-block";
-            percentSpan.textContent = "";
-            fill.style.width = "100%";
-            fill.style.opacity = "0.4";
-          } else {
-            spinner.style.display = "none";
-            percentSpan.textContent = `${percent}%`;
-            fill.style.width = `${percent}%`;
-            fill.style.opacity = "1";
-          }
-        },
-        onFinish() {
-          percentSpan.textContent = "100%";
-          fill.style.width = "100%";
-        }
-      });
-
-      const file = new File([blob], entry.nombre, { type: blob.type || "video/mp4" });
-
-      let autoShared = false;
-      try {
-        autoShared = await tryShareFile(file);
-      } catch {
-        autoShared = false;
+      if (navigator.share) {
+        await navigator.share({ title: "Puntazo", text: "Mira este puntazo", url: link });
+        trackEvent("share_success", gaCtx({ video_name: entry?.nombre || "", mode: "native" }));
+        try { updateBusinessMetrics(entry.nombre, { shares: 1 }); } catch {}
+        toast("Compartido");
+        return;
       }
+    } catch (e) {
+      // ignore and fallback to copy
+    }
 
-      if (autoShared) {
-        // [GA4] share success auto
-        trackEvent("share_success", gaCtx({ video_name: entry?.nombre || "", mode: "auto_share" }));
-
-        btn.innerHTML = "";
-        btn.textContent = "✅";
-        setTimeout(() => restoreIdle(originalContent), 1200);
-      } else {
-        // [GA4] share ready (user needs to tap again)
-        trackEvent("share_ready", gaCtx({ video_name: entry?.nombre || "" }));
-
-        btn._shareFile = file;
-        btn.innerHTML = "";
-        btn.textContent = "📤 Listo";
-        btn.disabled = false;
-        btn.dataset.state = "ready";
-      }
-    } catch (err) {
-      if (err?.name === "AbortError") return;
-
-      console.warn("Descarga/compartir falló:", err);
-
-      // fallback: descarga normal
-      try {
-        const fallbackUrl = toDropboxForceDownloadUrl(entry.url);
-
-        trackEvent("download_fallback", gaCtx({ video_name: entry?.nombre || "", mode: "dropbox_dl1" }));
-
-        const a = document.createElement("a");
-        a.href = fallbackUrl;
-        a.download = entry.nombre;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => a.remove(), 500);
-
-        btn.innerHTML = "";
-        btn.textContent = "Descargando…";
-        setTimeout(() => restoreIdle(originalContent), 1200);
-      } catch (fallbackErr) {
-        console.warn("Fallback de descarga también falló:", fallbackErr);
-        btn.innerHTML = "";
-        btn.textContent = "Error";
-        setTimeout(() => restoreIdle(originalContent), 1400);
-      }
+    try {
+      await navigator.clipboard.writeText(link);
+        trackEvent("share_copy", gaCtx({ video_name: entry?.nombre || "" }));
+        try { updateBusinessMetrics(entry.nombre, { shares: 1 }); } catch {}
+      toast("Enlace copiado");
+    } catch (e) {
+      // last resort: open the link
+      window.open(link, "_blank");
     }
   };
 
   btn.addEventListener("click", async (e) => {
     e.preventDefault();
-
-    if (!window.PuntazoAuth || typeof window.PuntazoAuth.requireAuth !== "function") {
-      await runShareFlow();
-      return;
-    }
-
-    if (!window.PuntazoAuth.currentUser) {
-      window.PuntazoAuth.requireAuth(() => {
-        runShareFlow().catch(err => {
-          console.warn("Error ejecutando acción pendiente de compartir:", err);
-        });
-      });
-      return;
-    }
-
     await runShareFlow();
   });
 
@@ -2430,6 +2279,8 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     // [GA4] play video (once per card)
     real.addEventListener("play", () => {
       trackEvent("play_video", gaCtx({ video_name: entry?.nombre || "" }));
+      // Métrica comercial: contar vistas (desde feed/mejores/perfil/clip)
+      try { updateBusinessMetrics(entry.nombre, { views: 1 }); } catch {}
     }, { once: true });
 
     const preview = createPreviewOverlay(entry.url, entry.duracion||60, card);
