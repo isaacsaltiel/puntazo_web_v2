@@ -2755,31 +2755,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // === NAVBAR: toggle + cerrar al scroll o click fuera ===
 function initNavbar(){
-  if (document.__pz_navbar_delegate_attached) return;
-  document.__pz_navbar_delegate_attached = true;
+  if (window.__navInited) return;
+  window.__navInited = true;
 
-  document.addEventListener('click', (e) => {
+  // Single delegated click handler on document
+  const docClickHandler = (e) => {
     const toggle = e.target && e.target.closest && e.target.closest('.menu-toggle');
+    const insideNav = e.target && e.target.closest && e.target.closest('.navbar');
+
+    // If user clicked the hamburger toggle
     if (toggle) {
+      // On desktop we never open the dropdown-style menu
+      if (window.innerWidth > 860) {
+        // ensure closed and do nothing else
+        document.querySelector('.navbar')?.classList.remove('show');
+        document.querySelector('#nav-menu')?.classList.remove('show');
+        return;
+      }
+
       e.stopPropagation();
       document.querySelector('.navbar')?.classList.toggle('show');
       document.querySelector('#nav-menu')?.classList.toggle('show');
+      return;
     }
-  });
 
-  document.addEventListener('click', (e) => {
-    if (!e.target || !e.target.closest || e.target.closest('.navbar, .menu-toggle')) return;
-    document.querySelector('.navbar')?.classList.remove('show');
-    document.querySelector('#nav-menu')?.classList.remove('show');
-  });
+    // Click outside navbar and toggle should close the menu
+    if (!insideNav) {
+      document.querySelector('.navbar')?.classList.remove('show');
+      document.querySelector('#nav-menu')?.classList.remove('show');
+    }
+  };
 
+  document.addEventListener('click', docClickHandler);
+
+  // Close on scroll
   window.addEventListener('scroll', () => {
     document.querySelector('.navbar')?.classList.remove('show');
     document.querySelector('#nav-menu')?.classList.remove('show');
-  });
+  }, { passive: true });
 
+  // Close on resize and ensure dropdown doesn't remain open on desktop
   window.addEventListener('resize', () => {
-    if (window.innerWidth > 768) {
+    if (window.innerWidth > 860) {
       document.querySelector('.navbar')?.classList.remove('show');
       document.querySelector('#nav-menu')?.classList.remove('show');
     }
