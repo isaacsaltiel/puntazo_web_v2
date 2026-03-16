@@ -748,3 +748,77 @@ footer{
   outline:3px solid rgba(11,124,255,0.18);
   outline-offset:4px;
 }
+
+/* ==================================================
+   PHASE 1 (copied from inicio.html) — CTA + hero-btns
+   These rules mirror the inline styles in inicio.html
+   Kept here to centralize styles (do not remove inline yet)
+================================================== */
+.hero-btns{
+  display:flex;gap:1rem;flex-wrap:wrap;
+  justify-content:center;position:relative;z-index:1;
+}
+.btn-clips{
+  background:linear-gradient(135deg, var(--blue2), var(--blue));
+  color:#fff;
+  padding:1rem 2.2rem;
+  border-radius:50px;
+  text-decoration:none;
+  font-weight:900;
+  font-size:0.92rem;
+  letter-spacing:0.5px;
+  border:1px solid var(--blue2);
+  box-shadow:0 0 35px rgba(0,79,200,0.6), 0 8px 30px rgba(0,0,0,0.4);
+  transition:all .2s;
+  animation:clipsPulse 2.5s ease-in-out infinite;
+}
+.btn-clips:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 50px rgba(11,124,255,0.7);
+}
+.btn-ranking{
+  background:rgba(255,255,255,0.06);
+  color:#fff;
+  padding:1rem 2.2rem;
+  border-radius:50px;
+  text-decoration:none;
+  font-weight:800;
+  font-size:0.92rem;
+  letter-spacing:0.5px;
+  border:1px solid rgba(255,255,255,0.18);
+  box-shadow:0 8px 30px rgba(0,0,0,0.28);
+  transition:all .2s;
+}
+.btn-ranking:hover{
+  transform:translateY(-2px);
+  border-color:rgba(11,124,255,0.55);
+  background:rgba(0,79,200,0.12);
+  box-shadow:0 0 35px rgba(11,124,255,0.35);
+}
+@keyframes clipsPulse{
+  0%,100%{
+    box-shadow:0 0 35px rgba(0,79,200,0.6), 0 8px 30px rgba(0,0,0,0.4);
+  }
+  50%{
+    box-shadow:0 0 55px rgba(11,124,255,0.8), 0 8px 30px rgba(0,0,0,0.4);
+  }
+}
+.btn-live{
+  background:#ffffff;color:#000;
+  padding:1rem 2.2rem;border-radius:50px;
+  text-decoration:none;font-weight:800;font-size:0.92rem;
+  letter-spacing:0.5px;
+  border:2px solid rgba(255,255,255,0.85);
+  box-shadow:0 8px 30px rgba(0,0,0,0.3);
+  transition:all .2s;
+}
+.btn-live:hover{opacity:0.92;transform:translateY(-2px);} 
+.btn-secondary{
+  background:transparent;color:#fff;
+  padding:1rem 2.2rem;border-radius:50px;
+  border:1px solid var(--border2);
+  text-decoration:none;font-weight:600;font-size:0.92rem;
+  transition:all .2s;
+}
+.btn-secondary:hover{border-color:rgba(0,79,200,0.5);background:rgba(0,79,200,0.1);} 
+
