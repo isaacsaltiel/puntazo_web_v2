@@ -161,6 +161,27 @@
         z-index:20;
       }
 
+      .pz-phone-cta{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        width:40px;
+        height:40px;
+        border-radius:999px;
+        background:rgba(255,255,255,0.04);
+        border:1px solid rgba(255,255,255,0.06);
+        color:#fff;
+        text-decoration:none;
+        font-size:18px;
+        margin-right:10px;
+      }
+
+      .pz-phone-cta:hover{
+        transform:translateY(-2px);
+        border-color:rgba(11,124,255,.38);
+        background:rgba(0,79,200,.12);
+      }
+
       .site-header{
         position:relative;
       }
@@ -204,7 +225,7 @@
     if (variant === "landing") {
       root.innerHTML = `
         <nav>
-          <a href="inicio.html" class="nav-logo">
+          <a href="index.html" class="nav-logo">
             <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
           </a>
           <ul class="nav-links" id="nav-menu">
@@ -212,11 +233,10 @@
             <li><a href="inicio.html#vision" onclick="closeMenu()">Visión</a></li>
             <li><a href="inicio.html#clubs" onclick="closeMenu()">Para clubs</a></li>
             <li><a href="inicio.html#locaciones" onclick="closeMenu()">Locaciones</a></li>
-            <li><a href="mejores.html" onclick="closeMenu()">Mejores videos</a></li>
-            <li><a href="index.html" onclick="closeMenu()">Mis clips</a></li>
+            <li><a href="mejores.html" onclick="closeMenu()">Puntazos del mes</a></li>
+            <li><a href="perfil.html" data-auth-only onclick="closeMenu()">Mis clips</a></li>
           </ul>
           <div class="nav-right">
-            <a href="inicio.html#clubs" class="nav-cta">Únete</a>
             <div class="pz-auth-slot pz-auth-slot--landing" data-auth-slot></div>
             <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú">☰</button>
           </div>
@@ -227,16 +247,17 @@
 
     root.innerHTML = `
       <header class="site-header">
-        <a href="inicio.html" class="logo-link">
+        <a href="index.html" class="logo-link">
           <img src="assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
         </a>
-        <button class="menu-toggle" aria-label="Abrir menú">☰</button>
-        <nav class="navbar">
-          <a href="inicio.html">Inicio</a>
-          <a href="inicio.html#clubs">Para clubs</a>
-          <a href="mejores.html" class="top-month-nav-btn">🏆 Mejores del mes</a>
-          <a href="index.html" class="highlight-btn">Mis clips</a>
+        <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú">☰</button>
+        <nav class="navbar" id="nav-menu">
+          <a href="index.html">Inicio</a>
+          <a href="index.html#clubs">Para clubs</a>
+          <a href="mejores.html" class="top-month-nav-btn">🏆 Puntazos del mes</a>
+          <a href="perfil.html" class="highlight-btn" data-auth-only>Mis clips</a>
         </nav>
+        <a href="boton.html" class="pz-phone-cta" title="Usar teléfono como botón" onclick="try{gtag('event','phone_cta_click',{event_category:'CTA',event_label:location.pathname});}catch(e){}">📱</a>
         <div class="pz-auth-slot pz-auth-slot--internal-floating" data-auth-slot></div>
       </header>
     `;
@@ -376,9 +397,29 @@
       if (window.PuntazoAuth && typeof window.PuntazoAuth.init === "function") {
         await window.PuntazoAuth.init();
       }
+      attachAuthGuard();
     } catch (err) {
       console.error("[Puntazo Header] Error cargando auth:", err);
     }
+  }
+
+  function attachAuthGuard() {
+    document.addEventListener('click', function (e) {
+      try {
+        const a = e.target.closest && e.target.closest('a[data-auth-only]');
+        if (!a) return;
+        // if user is authenticated, allow navigation
+        const user = (window.PuntazoAuth && window.PuntazoAuth.currentUser) || (window.firebase && window.firebase.auth && window.firebase.auth().currentUser);
+        if (user) return;
+        // not authenticated -> prevent navigation and open sign-in flow
+        e.preventDefault();
+        if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === 'function') {
+          window.PuntazoAuth.signIn();
+        }
+      } catch (err) {
+        // noop
+      }
+    }, false);
   }
 
   function ensureScript(src, readyCheck) {
