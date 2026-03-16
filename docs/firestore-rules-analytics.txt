@@ -1,0 +1,45 @@
+// Snippet sugerido para `firestore.rules` — adapta según tu modelo de seguridad
+// Este fragmento muestra reglas razonables para proteger métricas y comentarios.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Reacciones por video: lectura pública
+    match /reactions/{videoId} {
+      allow read: if true;
+
+      // Evitar escritura masiva: solo usuarios autenticados pueden crear/actualizar campos de negocio
+      allow write: if request.auth != null
+        // regla adicional: no permitir eliminar un documento reactions completo desde cliente
+        && !(request.method == 'delete');
+
+      // Subcolecciones: comments y participants
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.auth != null || request.resource.data.deviceId is string;
+        allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
+        allow update: if false; // no updates permitidos desde cliente (usar create/delete)
+      }
+
+      match /participants/{uid} {
+        allow read: if true;
+        allow create: if request.auth != null && request.auth.uid == uid;
+        allow delete: if request.auth != null && request.auth.uid == uid;
+        allow update: if false;
+      }
+    }
+
+    // Usuarios guardados: cada usuario solo puede escribir en su propio subárbol
+    match /usuarios/{userId}/guardados/{videoId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Reglas por defecto: negar
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
