@@ -173,12 +173,15 @@
         margin-left:10px;
       }
 
-      .pz-auth-slot--internal-floating{
+      .pz-nav-right--internal{
         position:absolute;
         right:56px;
         top:50%;
         transform:translateY(-50%);
         z-index:20;
+        display:flex;
+        align-items:center;
+        gap:.7rem;
       }
 
       .pz-phone-cta{
@@ -230,7 +233,7 @@
       }
 
       @media (max-width: 860px){
-        .pz-auth-slot--internal-floating{
+        .pz-nav-right--internal{
           right:52px;
         }
 
@@ -266,7 +269,7 @@
 
   function isExplorerPage() {
     const path = (window.location.pathname || "").toLowerCase();
-    return path.endsWith("/") || path.endsWith("/index.html") || path.endsWith("/explorar.html");
+    return path.endsWith("/index.html") || path.endsWith("/explorar.html");
   }
 
   function getPhoneButtonCTA() {
@@ -317,8 +320,10 @@
           <a href="index.html#clubs">Para clubs</a>
           <a href="mejores.html" class="top-month-nav-btn">🏆 Puntazos del mes</a>
         </nav>
-        ${getPhoneButtonCTA()}
-        <div class="pz-auth-slot pz-auth-slot--internal-floating" data-auth-slot></div>
+        <div class="pz-nav-right pz-nav-right--internal">
+          ${getPhoneButtonCTA()}
+          <div class="pz-auth-slot" data-auth-slot></div>
+        </div>
       </header>
     `;
   }
