@@ -307,6 +307,7 @@
           </div>
         </nav>
       `;
+      try { window.dispatchEvent(new CustomEvent('puntazo:header-rendered')); } catch (e) { /* noop */ }
       return;
     }
 
@@ -327,6 +328,7 @@
         </div>
       </header>
     `;
+    try { window.dispatchEvent(new CustomEvent('puntazo:header-rendered')); } catch (e) { /* noop */ }
   }
 
   function setupCloseMenuHelper() {
