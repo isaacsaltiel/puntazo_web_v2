@@ -647,7 +647,7 @@
           <div class="profile-email" id="profileEmail">—</div>
 
           <div class="profile-actions">
-            <a href="/index.html" class="primary-btn">▶ Ir a mis clips</a>
+            <a href="/explorar.html" class="primary-btn">▶ Ir a mis clips</a>
             <button type="button" class="danger-btn" id="signOutBtn">Cerrar sesión</button>
           </div>
 
@@ -665,12 +665,17 @@
 
         <section class="content-stack">
           <section class="saved-panel section-card">
-            <div class="section-head">
+              <div class="section-head">
               <div>
                 <h2 class="section-title">Mis videos guardados</h2>
                 <p class="section-kicker">Tus clips favoritos, listos para volver a verlos o entrar a su cancha original.</p>
               </div>
             </div>
+
+              <div class="profile-tabs" style="display:flex;gap:10px;margin:12px 20px 0;">
+                <button id="tabSaved" class="primary-btn" style="padding:.5rem .8rem;">Mis guardados</button>
+                <button id="tabAppear" class="ghost-btn" style="padding:.5rem .8rem;">Mis apariciones</button>
+              </div>
 
             <div class="empty-state" id="emptySavedState" style="display:none;">
               <div class="empty-icon">💾</div>
@@ -684,14 +689,15 @@
           <section class="claimed-panel section-card">
             <div class="section-head">
               <div>
-                <h2 class="section-title">Mis puntos reclamados</h2>
-                <p class="section-kicker">Este espacio va a conectar contigo, no solo con tus guardados.</p>
+                <h2 class="section-title">Mis apariciones</h2>
+                <p class="section-kicker">Los videos donde te marcaron como participante. Puedes guardar cualquiera a tus guardados.</p>
               </div>
             </div>
-
-            <div class="claimed-placeholder">
-              <h3>Próximamente: reclama los videos donde apareces</h3>
-              <p>Muy pronto podrás marcar “Ese soy yo” y construir una colección de tus mejores puntos dentro de Puntazo.</p>
+            <div id="appearancesList" class="claimed-list" style="padding:20px"></div>
+            <div id="emptyAppearances" class="empty-state" style="display:none;margin:20px">
+              <div class="empty-icon">🥷</div>
+              <h3 class="empty-title">Aún no tienes apariciones reclamadas</h3>
+              <p class="empty-sub">Cuando te marquen en un video, aparecerá aquí.</p>
             </div>
           </section>
         </section>
@@ -992,7 +998,10 @@
             </div>
 
             <div class="card-buttons">
-              <a class="card-link-btn" href="${escapeAttr(ladoHref)}">▶ Ver video en su cancha</a>
+              <div style="display:flex;gap:8px;width:100%">
+                <a class="card-link-btn" href="${escapeAttr(ladoHref)}">▶ Ver video en su cancha</a>
+                <button type="button" class="card-share-btn" data-videoid="${escapeAttr(data.videoId||'')}">🔗 Compartir</button>
+              </div>
               <button type="button" class="card-remove-btn" data-unsave="${escapeAttr(data.videoId || "")}">Quitar de guardados</button>
             </div>
           </div>
@@ -1001,6 +1010,16 @@
         mejorarCardDeVideo(card);
 
         const removeBtn = card.querySelector("[data-unsave]");
+        const shareBtn = card.querySelector('.card-share-btn');
+        if (shareBtn) {
+          shareBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const videoId = shareBtn.dataset.videoid || data.videoId || '';
+            const link = location.origin + '/clip.html?videoId=' + encodeURIComponent(videoId);
+            try { if (navigator.share) { await navigator.share({ title: 'Puntazo', text: 'Mira este puntazo', url: link }); return; } } catch (err) {}
+            try { await navigator.clipboard.writeText(link); toast('Enlace copiado'); } catch (err) { window.open(link, '_blank'); }
+          });
+        }
         removeBtn.addEventListener("click", async () => {
           if (!currentUser || !currentDb || !data.videoId) return;
 
@@ -1087,6 +1106,152 @@
             }
           });
       }
+
+      // ----------------------
+      // Apariciones (collectionGroup participants)
+      // ----------------------
+      let appearancesUnsub = null;
+      const $appearancesList = document.getElementById('appearancesList');
+      const $emptyAppearances = document.getElementById('emptyAppearances');
+      const $tabSaved = document.getElementById('tabSaved');
+      const $tabAppear = document.getElementById('tabAppear');
+      const $savedPanel = document.querySelector('.saved-panel');
+      const $claimedPanel = document.querySelector('.claimed-panel');
+
+      function buildAppearanceCard(participantDoc, parentData) {
+        const data = parentData || {};
+        const card = document.createElement('article');
+        card.className = 'video-card';
+
+        const dateLabel = data.fecha ? formatDateLabel(data.fecha) : '';
+        const canchaTxt = data.cancha ? `Cancha ${escapeHTML(data.cancha)}${data.lado ? ` ${escapeHTML(data.lado)}` : ''}` : '';
+
+        card.innerHTML = `
+          <div class="card-video-wrap">
+            <video src="${escapeAttr(data.videoUrl||'')}" muted playsinline preload="metadata" loop></video>
+            <div class="card-play-overlay"><div class="play-icon">▶</div></div>
+          </div>
+          <div class="card-actions">
+            <button type="button" class="card-fullscreen-btn">Pantalla completa</button>
+          </div>
+          <div class="card-body">
+            <div class="card-meta">
+              <span class="card-club">${escapeHTML(data.club || 'Puntazo')}</span>
+              ${data.cancha ? `<span class="card-sep">·</span><span class="card-location">${canchaTxt}</span>` : ''}
+              ${dateLabel ? `<span class="card-date">${dateLabel}</span>` : ''}
+            </div>
+            <div class="card-submeta">
+              ${data.fecha ? `<span class="card-chip">📅 ${escapeHTML(data.fecha)}</span>` : ''}
+              <span class="card-chip">Aparecí como: ${escapeHTML(participantDoc.displayName||'Tú')}</span>
+            </div>
+            <div class="card-buttons">
+              <div style="display:flex;gap:8px;width:100%">
+                <a class="card-link-btn" href="${escapeAttr(buildLadoLink(data))}">▶ Ver en cancha</a>
+                <button type="button" class="card-share-btn" data-videoid="${escapeAttr(participantDoc.videoId||'')}">🔗 Compartir</button>
+              </div>
+              <button type="button" class="card-remove-btn" data-save="${escapeAttr(participantDoc.videoId||'')}">Guardar</button>
+            </div>
+          </div>
+        `;
+
+        const saveBtn = card.querySelector('[data-save]');
+        const shareBtn = card.querySelector('.card-share-btn');
+        if (shareBtn) {
+          shareBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const videoId = shareBtn.dataset.videoid || participantDoc.videoId || '';
+            const link = location.origin + '/clip.html?videoId=' + encodeURIComponent(videoId);
+            try { if (navigator.share) { await navigator.share({ title: 'Puntazo', text: 'Mira este puntazo', url: link }); return; } } catch (err) {}
+            try { await navigator.clipboard.writeText(link); toast('Enlace copiado'); } catch (err) { window.open(link, '_blank'); }
+          });
+        }
+        saveBtn.addEventListener('click', async () => {
+          if (!currentUser || !currentDb || !participantDoc.videoId) return;
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Guardando…';
+          try {
+            await currentDb.collection('usuarios').doc(currentUser.uid).collection('guardados').doc(participantDoc.videoId).set({
+              videoId: participantDoc.videoId,
+              videoUrl: data.videoUrl || '',
+              club: data.club || '',
+              cancha: data.cancha || '',
+              lado: data.lado || '',
+              fecha: data.fecha || '',
+              savedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            toast('Guardado en tus clips');
+          } catch (err) {
+            console.warn('[Perfil] No se pudo guardar la aparición:', err);
+            toast('No se pudo guardar');
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Guardar';
+          }
+        });
+
+        return card;
+      }
+
+      function subscribeAppearances() {
+        if (!currentUser || !currentDb) return;
+        if (appearancesUnsub) {
+          try { appearancesUnsub(); } catch {}
+        }
+
+        appearancesUnsub = currentDb.collectionGroup('participants')
+          .where('uid', '==', currentUser.uid)
+          .orderBy('claimedAt', 'desc')
+          .onSnapshot(async (snap) => {
+            const items = [];
+            snap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+
+            $appearancesList.innerHTML = '';
+            if (!items.length) {
+              $emptyAppearances.style.display = 'block';
+              return;
+            }
+
+            $emptyAppearances.style.display = 'none';
+
+            // For each participant entry, try to load parent reaction doc to get video metadata
+            for (const p of items) {
+              let parentData = null;
+              try {
+                if (p.videoId) {
+                  const parent = await currentDb.collection('reactions').doc(p.videoId).get();
+                  if (parent.exists) parentData = parent.data();
+                }
+              } catch {}
+
+              $appearancesList.appendChild(buildAppearanceCard(p, parentData || p));
+            }
+            $claimedCount.textContent = String(items.length);
+          }, (err) => {
+            console.error('[Perfil] Error cargando apariciones:', err);
+          });
+      }
+
+      // Tab toggle behavior
+      function showTab(name) {
+        if (name === 'saved') {
+          $savedPanel.style.display = '';
+          $claimedPanel.style.display = 'none';
+          $tabSaved.classList.add('primary-btn');
+          $tabSaved.classList.remove('ghost-btn');
+          $tabAppear.classList.add('ghost-btn');
+          $tabAppear.classList.remove('primary-btn');
+        } else {
+          $savedPanel.style.display = 'none';
+          $claimedPanel.style.display = '';
+          $tabSaved.classList.add('ghost-btn');
+          $tabSaved.classList.remove('primary-btn');
+          $tabAppear.classList.add('primary-btn');
+          $tabAppear.classList.remove('ghost-btn');
+        }
+      }
+
+      $tabSaved.addEventListener('click', () => showTab('saved'));
+      $tabAppear.addEventListener('click', () => { showTab('appear'); subscribeAppearances(); });
+
 
       async function initProfile() {
         try {
