@@ -14,7 +14,8 @@
 
   const path = (window.location.pathname || "").toLowerCase();
   const variant = root.dataset.navVariant || (
-    path.endsWith("/inicio.html") || path === "/" ? "landing" : "internal"
+    // index.html is the main landing now
+    path.endsWith("/index.html") || path === "/" ? "landing" : "internal"
   );
 
   injectHeaderStyles();
@@ -165,21 +166,44 @@
         display:inline-flex;
         align-items:center;
         justify-content:center;
-        width:40px;
-        height:40px;
+        min-height:42px;
+        padding:.72rem 1rem;
         border-radius:999px;
-        background:rgba(255,255,255,0.04);
-        border:1px solid rgba(255,255,255,0.06);
-        color:#fff;
         text-decoration:none;
-        font-size:18px;
-        margin-right:10px;
+        font-weight:800;
+        font-size:.84rem;
+        line-height:1;
+        color:#fff;
+        white-space:nowrap;
+        background:rgba(255,255,255,.05);
+        border:1px solid rgba(255,255,255,.12);
+        box-shadow:0 8px 24px rgba(0,0,0,.16);
+        transition:transform .18s ease, background .18s ease, border-color .18s ease;
       }
 
       .pz-phone-cta:hover{
-        transform:translateY(-2px);
-        border-color:rgba(11,124,255,.38);
-        background:rgba(0,79,200,.12);
+        transform:translateY(-1px);
+        background:rgba(0,79,200,.14);
+        border-color:rgba(11,124,255,.40);
+      }
+
+      .pz-nav-right{
+        display:flex;
+        align-items:center;
+        gap:.7rem;
+      }
+
+      @media (max-width: 860px){
+        .pz-phone-cta{
+          font-size:.8rem;
+          padding:.68rem .9rem;
+        }
+      }
+
+      @media (max-width: 640px){
+        .pz-phone-cta{
+          display:none;
+        }
       }
 
       .site-header{
@@ -221,23 +245,40 @@
     document.head.appendChild(style);
   }
 
+  function isExplorerPage() {
+    const path = (window.location.pathname || "").toLowerCase();
+    return path.endsWith("/") || path.endsWith("/index.html") || path.endsWith("/explorar.html");
+  }
+
+  function getPhoneButtonCTA() {
+    if (!isExplorerPage()) return "";
+    return `
+      <a
+        href="https://puntazoclips.com/boton.html"
+        target="_blank"
+        rel="noopener"
+        class="pz-phone-cta"
+        onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'header_phone_button'});}catch(e){}"
+      >📲 Usar teléfono como botón</a>
+    `;
+  }
+
   function renderHeader() {
     if (variant === "landing") {
       root.innerHTML = `
         <nav>
-          <a href="inicio.html" class="nav-logo">
+          <a href="index.html" class="nav-logo">
             <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
           </a>
           <ul class="nav-links" id="nav-menu">
-            <li><a href="inicio.html#producto" onclick="closeMenu()">Producto</a></li>
-            <li><a href="inicio.html#vision" onclick="closeMenu()">Visión</a></li>
-            <li><a href="inicio.html#clubs" onclick="closeMenu()">Para clubs</a></li>
-            <li><a href="inicio.html#locaciones" onclick="closeMenu()">Locaciones</a></li>
+            <li><a href="index.html#producto" onclick="closeMenu()">Producto</a></li>
+            <li><a href="index.html#vision" onclick="closeMenu()">Visión</a></li>
+            <li><a href="index.html#clubs" onclick="closeMenu()">Para clubs</a></li>
+            <li><a href="index.html#locaciones" onclick="closeMenu()">Locaciones</a></li>
             <li><a href="mejores.html" onclick="closeMenu()">Puntazos del mes</a></li>
-            <li><a href="perfil.html" data-auth-only onclick="closeMenu()">Mis clips</a></li>
           </ul>
-          <div class="nav-right">
-            <a href="explorar.html" class="nav-cta" onclick="try{gtag('event','header_cta_explorar',{event_category:'CTA'});}catch(e){}">Encuentra tus clips</a>
+          <div class="pz-nav-right">
+            ${getPhoneButtonCTA()}
             <div class="pz-auth-slot pz-auth-slot--landing" data-auth-slot></div>
             <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú">☰</button>
           </div>
@@ -248,17 +289,16 @@
 
     root.innerHTML = `
       <header class="site-header">
-        <a href="inicio.html" class="logo-link">
+        <a href="index.html" class="logo-link">
           <img src="assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
         </a>
         <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú">☰</button>
         <nav class="navbar" id="nav-menu">
-          <a href="inicio.html">Inicio</a>
-          <a href="inicio.html#clubs">Para clubs</a>
+          <a href="index.html">Inicio</a>
+          <a href="index.html#clubs">Para clubs</a>
           <a href="mejores.html" class="top-month-nav-btn">🏆 Puntazos del mes</a>
-          <a href="perfil.html" class="highlight-btn" data-auth-only>Mis clips</a>
         </nav>
-        <a href="boton.html" class="pz-phone-cta" title="Usar teléfono como botón" onclick="try{gtag('event','phone_cta_click',{event_category:'CTA',event_label:location.pathname});}catch(e){}">📱</a>
+        ${getPhoneButtonCTA()}
         <div class="pz-auth-slot pz-auth-slot--internal-floating" data-auth-slot></div>
       </header>
     `;
