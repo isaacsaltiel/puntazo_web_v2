@@ -43,24 +43,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <header class="site-header">
-    <a href="inicio.html" class="logo-link">
-      <img src="assets/logo.png" alt="Logo Puntazo" class="logo" />
-    </a>
-    <a href="inicio.html" class="empresa-nombre"></a>
-
-    <button class="menu-toggle" aria-label="Abrir menú">
-      ☰
-    </button>
-
-    <nav class="navbar">
-      <a href="inicio.html#quienes-somos">Quiénes somos</a>
-      <a href="inicio.html#servicios">Servicios</a>
-      <a href="inicio.html#testimonios">Testimonios</a>
-      <a href="inicio.html#contacto">Contacto</a>
-      <a href="index.html" class="highlight-btn">Encuentra tus clips</a>
-    </nav>
-  </header>
+  <!-- Shared header -->
+  <div id="nav-root" data-nav-variant="internal"></div>
+  <script src="/assets/header.js"></script>
 
   <main class="site-content fade-in">
     <div class="titulo-lado">
@@ -140,6 +125,22 @@
         });
       }
     });
+  </script>
+
+  <script>
+    // Auth-guard for static nav links: if link has data-auth-only and user is not signed-in, open sign-in
+    document.addEventListener('click', function (e) {
+      try {
+        const a = e.target.closest && e.target.closest('a[data-auth-only]');
+        if (!a) return;
+        const user = (window.PuntazoAuth && window.PuntazoAuth.currentUser) || (window.firebase && window.firebase.auth && window.firebase.auth().currentUser);
+        if (user) return; // allow navigation when authenticated
+        e.preventDefault();
+        if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === 'function') {
+          window.PuntazoAuth.signIn();
+        }
+      } catch (err) {}
+    }, false);
   </script>
 
 </body>
