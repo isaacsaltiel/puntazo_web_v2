@@ -6,18 +6,9 @@
 <base href="/" />
 <title>Clip · Puntazo</title>
 <meta name="description" content="Ver clip en Puntazo" />
-
 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
-<script>
-  window.dataLayer=window.dataLayer||[];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js',new Date()); gtag('config','G-7HTMSTJ035');
-</script>
 
-<meta name="theme-color" content="#050914" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
 
 <link rel="stylesheet" href="assets/estilo.css" />
@@ -31,148 +22,86 @@
 <script src="/assets/card.js"></script>
 
 <style>
-  .clip-wrap {
-    max-width: 680px;
-    margin: 0 auto;
-    padding: 24px 16px 60px;
-  }
+  .clip-wrap { max-width:680px; margin:0 auto; padding:24px 16px 60px; }
 
-  .clip-meta {
-    margin-bottom: 6px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
+  .clip-breadcrumb {
+    margin-bottom:16px;
   }
-
   .clip-club-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0.45rem 0.9rem;
-    border-radius: 999px;
-    background: rgba(0,79,200,.14);
-    border: 1px solid rgba(11,124,255,.24);
-    color: rgba(234,242,255,.85) !important;
-    text-decoration: none;
-    font-weight: 800;
-    font-size: 0.86rem;
-    transition: all .18s;
+    display:inline-flex; align-items:center; gap:6px;
+    padding:.45rem .9rem; border-radius:999px;
+    background:rgba(0,79,200,.14); border:1px solid rgba(11,124,255,.24);
+    color:rgba(234,242,255,.85)!important; text-decoration:none;
+    font-weight:800; font-size:.86rem; transition:all .18s;
   }
-  .clip-club-link:hover {
-    background: rgba(0,79,200,.22);
-    border-color: rgba(11,124,255,.40);
-    color: #eaf2ff !important;
-  }
+  .clip-club-link:hover { background:rgba(0,79,200,.22); border-color:rgba(11,124,255,.40); color:#eaf2ff!important; }
 
-  /* Estado de error / expirado */
-  .clip-error {
-    text-align: center;
-    padding: 60px 20px;
-  }
-  .clip-error-icon { font-size: 52px; margin-bottom: 16px; }
-  .clip-error h2 { font-size: 1.3rem; font-weight: 900; color: #eaf2ff; margin-bottom: 10px; }
-  .clip-error p { color: rgba(234,242,255,.60); margin-bottom: 24px; }
+  /* Error / expirado */
+  .clip-error { text-align:center; padding:60px 20px; }
+  .clip-error-icon { font-size:52px; margin-bottom:16px; }
+  .clip-error h2 { font-size:1.3rem; font-weight:900; color:#eaf2ff; margin-bottom:10px; }
+  .clip-error p { color:rgba(234,242,255,.60); margin-bottom:24px; }
   .clip-error a {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0.85rem 1.4rem;
-    border-radius: 999px;
-    background: linear-gradient(135deg, rgba(255,190,0,.16), rgba(0,79,200,.22));
-    border: 1px solid rgba(255,190,0,.26);
-    color: #fff;
-    text-decoration: none;
-    font-weight: 800;
-    font-size: 0.92rem;
-    transition: all .18s;
+    display:inline-flex; align-items:center; gap:8px;
+    padding:.85rem 1.4rem; border-radius:999px;
+    background:linear-gradient(135deg,rgba(255,190,0,.16),rgba(0,79,200,.22));
+    border:1px solid rgba(255,190,0,.26); color:#fff; text-decoration:none;
+    font-weight:800; font-size:.92rem; transition:all .18s;
   }
-  .clip-error a:hover { border-color: rgba(255,190,0,.42); }
+  .clip-error a:hover { border-color:rgba(255,190,0,.42); }
 
-  /* Cargando */
-  .clip-loading {
-    text-align: center;
-    padding: 60px 20px;
-    color: rgba(234,242,255,.55);
-    font-size: 0.9rem;
-  }
+  /* Loading */
+  .clip-loading { text-align:center; padding:60px 20px; color:rgba(234,242,255,.55); font-size:.9rem; }
 
-  /* Footer del clip */
+  /* Footer */
   .clip-footer {
-    margin-top: 32px;
-    padding: 20px;
-    border-radius: 18px;
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.08);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
+    margin-top:32px; padding:20px; border-radius:18px;
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
   }
-
-  .clip-footer-text {
-    font-size: 0.88rem;
-    color: rgba(234,242,255,.65);
-    line-height: 1.5;
-  }
-
-  .clip-footer-text strong {
-    color: #eaf2ff;
-    display: block;
-    font-weight: 800;
-    margin-bottom: 4px;
-  }
-
+  .clip-footer-text { font-size:.88rem; color:rgba(234,242,255,.65); line-height:1.5; }
+  .clip-footer-text strong { color:#eaf2ff; display:block; font-weight:800; margin-bottom:4px; }
   .btn-more-clips {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0.75rem 1.2rem;
-    border-radius: 999px;
-    background: rgba(0,79,200,.18);
-    border: 1px solid rgba(11,124,255,.32);
-    color: #eaf2ff;
-    text-decoration: none;
-    font-weight: 800;
-    font-size: 0.88rem;
-    transition: all .18s;
-    white-space: nowrap;
+    display:inline-flex; align-items:center; gap:8px; padding:.75rem 1.2rem;
+    border-radius:999px; background:rgba(0,79,200,.18); border:1px solid rgba(11,124,255,.32);
+    color:#eaf2ff; text-decoration:none; font-weight:800; font-size:.88rem; transition:all .18s;
+    white-space:nowrap;
   }
-  .btn-more-clips:hover {
-    background: rgba(0,79,200,.28);
-    border-color: rgba(11,124,255,.50);
-    transform: translateY(-1px);
+  .btn-more-clips:hover { background:rgba(0,79,200,.28); border-color:rgba(11,124,255,.50); transform:translateY(-1px); }
+
+  /* Nota de video inmortal */
+  .immortal-note {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 12px; border-radius:999px; margin-bottom:12px;
+    background:rgba(255,190,0,.08); border:1px solid rgba(255,190,0,.20);
+    color:rgba(255,210,60,.85); font-size:.76rem; font-weight:700;
   }
 
-  @media (max-width: 480px) {
-    .clip-footer { flex-direction: column; }
-    .btn-more-clips { width: 100%; justify-content: center; }
+  @media(max-width:480px) {
+    .clip-footer { flex-direction:column; }
+    .btn-more-clips { width:100%; justify-content:center; }
   }
 </style>
 </head>
 <body>
 
 <div class="page-bg"></div>
-
 <div id="nav-root" data-nav-variant="internal"></div>
 <script src="/assets/header.js"></script>
 
 <main class="site-content fade-in">
   <div class="clip-wrap">
 
-    <div id="clipMeta" class="clip-meta" style="display:none"></div>
+    <div id="clipBreadcrumb" class="clip-breadcrumb" style="display:none"></div>
+    <div id="immortalNote" class="immortal-note" style="display:none">⭐ Video inmortal — este puntazo no expira</div>
 
-    <!-- Estado de carga -->
     <div id="clipLoading" class="clip-loading">
       <div style="font-size:32px;margin-bottom:12px">🎾</div>
       Cargando clip…
     </div>
 
-    <!-- Card del video (inyectada por JS) -->
     <div id="clipCard"></div>
 
-    <!-- Estado expirado / no encontrado -->
     <div id="clipError" class="clip-error" style="display:none">
       <div class="clip-error-icon">📭</div>
       <h2>Este clip ya expiró</h2>
@@ -180,7 +109,6 @@
       <a href="mejores.html">🏆 Ver Puntazos del mes</a>
     </div>
 
-    <!-- Footer: ver más del club -->
     <div id="clipFooter" class="clip-footer" style="display:none">
       <div class="clip-footer-text">
         <strong id="clipFooterClub"></strong>
@@ -196,7 +124,7 @@
   <div class="footer-redes">
     <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
     <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
-    <a href="https://wa.me/522206804856?text=Hola%20Puntazo!" target="_blank" rel="noopener">WhatsApp</a>
+    <a href="https://wa.me/522206804856" target="_blank" rel="noopener">WhatsApp</a>
   </div>
   <p class="footer-copy">© 2026 Puntazo</p>
 </footer>
@@ -208,22 +136,19 @@
   const params  = new URLSearchParams(location.search);
   const videoId = params.get('videoId') || params.get('v') || '';
 
-  const $loading = document.getElementById('clipLoading');
-  const $card    = document.getElementById('clipCard');
-  const $error   = document.getElementById('clipError');
-  const $footer  = document.getElementById('clipFooter');
-  const $meta    = document.getElementById('clipMeta');
+  const $breadcrumb = document.getElementById('clipBreadcrumb');
+  const $immortalNote = document.getElementById('immortalNote');
+  const $loading  = document.getElementById('clipLoading');
+  const $card     = document.getElementById('clipCard');
+  const $error    = document.getElementById('clipError');
+  const $footer   = document.getElementById('clipFooter');
 
-  function showError() {
-    $loading.style.display = 'none';
-    $error.style.display = 'block';
-  }
+  function showError() { $loading.style.display='none'; $error.style.display='block'; }
 
   if (!videoId) { showError(); return; }
 
-  // Esperar a que card.js y Firebase estén listos
   async function waitFor(check, retries) {
-    for (let i=0; i<(retries||30); i++) {
+    for (let i=0; i<(retries||40); i++) {
       if (check()) return true;
       await new Promise(r=>setTimeout(r,200));
     }
@@ -233,42 +158,19 @@
   const ready = await waitFor(()=> window.PuntazoCard && window.PuntazoFirebase?.db, 40);
   if (!ready) { showError(); return; }
 
-  // Cargar entry desde config
-  const entry = await PuntazoCard.loadEntryFromConfig(videoId);
+  // 1. Intentar cargar desde videos_recientes.json (config_locations)
+  let entry = await PuntazoCard.loadEntryFromConfig(videoId);
+  let fromFirestoreFallback = false;
 
-  if (!entry) { showError(); return; }
-
-  // Actualizar título
-  document.title = `${PuntazoCard.formatDisplayTime(entry.nombre)||entry.club||'Clip'} · Puntazo`;
-
-  // Meta pill
-  if (entry.club) {
-    const clubLink = document.createElement('a');
-    clubLink.className = 'clip-club-link';
-    clubLink.href = entry._ladoHref || '#';
-    clubLink.textContent = entry.club;
-    $meta.appendChild(clubLink);
-    $meta.style.display = 'flex';
+  // 2. Si no está en los recientes, buscar en Firestore (videos inmortales)
+  if (!entry) {
+    entry = await PuntazoCard.loadEntryFromFirestore(videoId);
+    if (entry) fromFirestoreFallback = true;
   }
 
-  // Build & insert card
-  const card = PuntazoCard.build(entry, {
-    showSave: true, showShare: true, showFullscreen: true,
-    showClaim: true, showReactions: true, showComments: true,
-    showClubInfo: false,
-  });
-  $loading.style.display = 'none';
-  $card.appendChild(card);
-  PuntazoCard.attachReactions(card, entry);
+  if (!entry || !entry.url) { showError(); return; }
 
-  // Footer: ver más clips
-  const footerClubEl = document.getElementById('clipFooterClub');
-  const footerLink   = document.getElementById('clipFooterLink');
-  if (footerClubEl && entry.club) footerClubEl.textContent = entry.club;
-  if (footerLink && entry._ladoHref) footerLink.href = entry._ladoHref;
-  $footer.style.display = 'flex';
-
-  // Registrar vista en Firestore
+  // Registrar vista
   try {
     const db = PuntazoCard.getDb();
     if (db && videoId) {
@@ -284,8 +186,46 @@
     }
   } catch {}
 
-  // GA4
-  try { gtag('event','view_clip',{video_name:videoId,club:entry.club||''}); } catch {}
+  // Actualizar título
+  document.title = `${entry.club||'Puntazo'} · Clip`;
+
+  // Breadcrumb
+  if (entry.club) {
+    const lnk = document.createElement('a');
+    lnk.className = 'clip-club-link';
+    lnk.href = entry._ladoHref || entry._canchaHref || '#';
+    lnk.textContent = entry.club;
+    $breadcrumb.appendChild(lnk);
+    $breadcrumb.style.display = 'block';
+  }
+
+  // Nota inmortal
+  if (entry.immortal || fromFirestoreFallback) {
+    $immortalNote.style.display = 'inline-flex';
+  }
+
+  // Mensaje de share para clip — invitar a votar
+  const shareMsg = '¡Mira este puntazo! 🎾 Reacciona para que gane el premio del mes 🏆';
+
+  // Build card
+  const card = PuntazoCard.build(entry, {
+    showSave:true, showShare:true, showFullscreen:true,
+    showClaim:true, showReactions:true, showComments:true,
+    showHeroName:true,
+    topLabel: entry.club || PuntazoCard.formatDisplayTime(entry.nombre),
+    shareMessage: shareMsg,
+  });
+  $loading.style.display = 'none';
+  $card.appendChild(card);
+  PuntazoCard.attachReactions(card, entry);
+
+  // Footer
+  const footerClub = document.getElementById('clipFooterClub');
+  const footerLink = document.getElementById('clipFooterLink');
+  if (footerClub && entry.club) footerClub.textContent = entry.club;
+  if (footerLink && (entry._canchaHref || entry._ladoHref)) footerLink.href = entry._canchaHref || entry._ladoHref;
+  $footer.style.display = 'flex';
+
 })();
 </script>
 
