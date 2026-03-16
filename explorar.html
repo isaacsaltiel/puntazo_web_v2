@@ -213,5 +213,29 @@
 </footer>
 
 <script src="/assets/script.js"></script>
+<script>
+  (function waitForToggle(attempts) {
+    var btn = document.querySelector('.menu-toggle');
+    var nav = document.querySelector('.navbar') || document.getElementById('nav-menu');
+    if (btn && nav) {
+      if (btn.__pz_toggle_attached) return;
+      btn.__pz_toggle_attached = true;
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        nav.classList.toggle('show');
+      });
+      document.addEventListener('click', function(e) {
+        if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) {
+          nav.classList.remove('show');
+        }
+      });
+      window.addEventListener('scroll', function() {
+        nav.classList.remove('show');
+      });
+    } else if (attempts > 0) {
+      setTimeout(function() { waitForToggle(attempts - 1); }, 100);
+    }
+  })(20);
+</script>
 </body>
 </html>
