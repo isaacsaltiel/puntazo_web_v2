@@ -3,13 +3,10 @@
 // ----------------------- utilidades -----------------------
 function getQueryParams() {
   const params = {};
-  window.location.search
-    .substring(1)
-    .split("&")
-    .forEach(pair => {
-      const [key, value] = pair.split("=");
-      if (key) params[decodeURIComponent(key)] = decodeURIComponent(value || "");
-    });
+  window.location.search.substring(1).split("&").forEach(pair => {
+    const [key, value] = pair.split("=");
+    if (key) params[decodeURIComponent(key)] = decodeURIComponent(value || "");
+  });
   return params;
 }
 
@@ -41,73 +38,44 @@ function scrollToVideoById(id) {
   if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-// ----------------------- analytics helpers (SAFE) -----------------------
+// ----------------------- analytics -----------------------
 function trackEvent(name, params = {}) {
-  try {
-    if (typeof window.gtag === "function") {
-      window.gtag("event", name, params);
-    }
-  } catch (e) {
-    // si falla, NO rompe nada
-  }
+  try { if (typeof window.gtag === "function") window.gtag("event", name, params); } catch(e) {}
 }
 
-// Persistir métricas comerciales en Firestore (reacciona con `reactions/{videoId}`)
 async function updateBusinessMetrics(videoId, increments = {}, setFields = {}) {
   try {
     const db = getFirestoreDb();
     if (!db || !videoId) return;
     const doc = db.collection("reactions").doc(String(videoId));
-
     const payload = {};
-    // agregar incrementos
     Object.keys(increments || {}).forEach(k => {
-      const v = Number(increments[k]) || 0;
-      payload[k] = firebase.firestore.FieldValue.increment(v);
+      payload[k] = firebase.firestore.FieldValue.increment(Number(increments[k]) || 0);
     });
-
-    // mezclar setFields (valores literales; pueden contener timestamps)
     Object.keys(setFields || {}).forEach(k => { payload[k] = setFields[k]; });
-
     if (Object.keys(payload).length === 0) return;
     await doc.set(payload, { merge: true });
-  } catch (e) {
-    // no bloquear UX si falla persistencia
-    console.warn('[metrics] updateBusinessMetrics failed', e);
-  }
+  } catch(e) { console.warn("[metrics]", e); }
 }
 
-// Helper: contexto estándar para analytics (loc/can/lado)
 function gaCtx(extra = {}) {
   const p = getQueryParams();
-  return {
-    loc: p.loc || "",
-    can: p.can || "",
-    lado: p.lado || "",
-    filtro: p.filtro || "",
-    pg: p.pg || "",
-    ...extra
-  };
+  return { loc: p.loc || "", can: p.can || "", lado: p.lado || "", filtro: p.filtro || "", pg: p.pg || "", ...extra };
 }
-
 
 // ----------------------- GATE POR CANCHA -----------------------
 async function sha256Hex(text) {
   const enc = new TextEncoder().encode(text);
-  const buf = await crypto.subtle.digest('SHA-256', enc);
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 async function loadPasswords() {
   try {
-    const url = `data/passwords.json?cb=${Date.now()}`;
-    const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) throw new Error('HTTP '+res.status);
+    const res = await fetch(`data/passwords.json?cb=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
     return await res.json();
-  } catch (e) {
-    console.warn('[gate] No se pudo cargar passwords.json:', e);
-    return null;
-  }
+  } catch(e) { console.warn("[gate]", e); return null; }
 }
 
 function findCanchaRule(pwCfg, locId, canId) {
@@ -115,28 +83,19 @@ function findCanchaRule(pwCfg, locId, canId) {
   return pwCfg.canchas.find(x => x.loc === locId && x.can === canId) || null;
 }
 
-function getAuthKey(locId, canId) {
-  return `gate:${locId}:${canId}`;
-}
+function getAuthKey(locId, canId) { return `gate:${locId}:${canId}`; }
 
 function isAuthorized(rule) {
-  if (!rule) return true;
-  if (!rule.enabled) return true;
-  const k = getAuthKey(rule.loc || '', rule.can || '');
+  if (!rule || !rule.enabled) return true;
   try {
-    const raw = localStorage.getItem(k);
-    if (!raw) return false;
-    const obj = JSON.parse(raw);
-    if (!obj?.ok || typeof obj.exp !== 'number') return false;
-    return Date.now() < obj.exp;
+    const obj = JSON.parse(localStorage.getItem(getAuthKey(rule.loc, rule.can)) || "null");
+    return !!(obj?.ok && typeof obj.exp === "number" && Date.now() < obj.exp);
   } catch { return false; }
 }
 
 function setAuthorized(rule) {
-  const remember = (Number(rule.remember_hours) > 0 ? Number(rule.remember_hours) : 24) * 3600 * 1000;
-  const exp = Date.now() + remember;
-  const k = getAuthKey(rule.loc, rule.can);
-  localStorage.setItem(k, JSON.stringify({ ok: true, exp }));
+  const remember = (Number(rule.remember_hours) > 0 ? Number(rule.remember_hours) : 24) * 3600000;
+  localStorage.setItem(getAuthKey(rule.loc, rule.can), JSON.stringify({ ok: true, exp: Date.now() + remember }));
 }
 
 async function requireCanchaPassword(locId, canId) {
@@ -144,89 +103,51 @@ async function requireCanchaPassword(locId, canId) {
   const rule = findCanchaRule(pwCfg, locId, canId);
   if (!rule || !rule.enabled) return true;
   if (isAuthorized(rule)) return true;
-
   for (let i = 0; i < 3; i++) {
-    const input = window.prompt('Esta cancha requiere contraseña.');
+    const input = window.prompt("Esta cancha requiere contraseña.");
     if (input === null) return false;
-    const h = await sha256Hex(input);
-    if (h === rule.sha256) {
+    if (await sha256Hex(input) === rule.sha256) {
       setAuthorized(rule);
-
-      // [GA4] autorización exitosa
       trackEvent("gate_unlock", gaCtx({ result: "ok" }));
-
       return true;
     }
-    alert('Contraseña incorrecta. Inténtalo de nuevo.');
+    alert("Contraseña incorrecta. Inténtalo de nuevo.");
   }
-
-  // [GA4] falló gate
   trackEvent("gate_unlock", gaCtx({ result: "fail" }));
-
   return false;
 }
 
-/* ===================== Helpers de asociación (opuesto automático) ===================== */
+// ----------------------- parseFromName -----------------------
 function parseFromName(name) {
   const re = /^(.+?)_(.+?)_(.+?)_(\d{8})_(\d{6})\.mp4$/i;
   const m = String(name || "").match(re);
   if (!m) return null;
-
   const [, loc, can, lado, date8, time6] = m;
-
-  // date8 puede ser YYYYMMDD o DDMMYYYY
   const tryYYYYMMDD = () => {
-    const Y = Number(date8.slice(0, 4));
-    const Mo = Number(date8.slice(4, 6));
-    const D = Number(date8.slice(6, 8));
-    if (Y >= 1900 && Y <= 2100 && Mo >= 1 && Mo <= 12 && D >= 1 && D <= 31) {
+    const Y = Number(date8.slice(0, 4)), Mo = Number(date8.slice(4, 6)), D = Number(date8.slice(6, 8));
+    if (Y >= 1900 && Y <= 2100 && Mo >= 1 && Mo <= 12 && D >= 1 && D <= 31)
       return { Y: String(Y), M: date8.slice(4, 6), D: date8.slice(6, 8) };
-    }
     return null;
   };
-
   const tryDDMMYYYY = () => {
-    const D = Number(date8.slice(0, 2));
-    const Mo = Number(date8.slice(2, 4));
-    const Y = Number(date8.slice(4, 8));
-    if (Y >= 1900 && Y <= 2100 && Mo >= 1 && Mo <= 12 && D >= 1 && D <= 31) {
+    const D = Number(date8.slice(0, 2)), Mo = Number(date8.slice(2, 4)), Y = Number(date8.slice(4, 8));
+    if (Y >= 1900 && Y <= 2100 && Mo >= 1 && Mo <= 12 && D >= 1 && D <= 31)
       return { Y: String(Y), M: date8.slice(2, 4), D: date8.slice(0, 2) };
-    }
     return null;
   };
-
   const d = tryYYYYMMDD() || tryDDMMYYYY();
   if (!d) return null;
-
-  const h = time6.slice(0, 2);
-  const mi = time6.slice(2, 4);
-  const s = time6.slice(4, 6);
-
+  const h = time6.slice(0, 2), mi = time6.slice(2, 4), s = time6.slice(4, 6);
   const tsKey = Number(`${d.Y}${d.M}${d.D}${h}${mi}${s}`);
   const date = new Date(Number(d.Y), Number(d.M) - 1, Number(d.D), Number(h), Number(mi), Number(s));
-
-  return {
-    loc,
-    can,
-    lado,
-    date,
-    tsKey,
-    ymd: `${d.Y}${d.M}${d.D}`,
-    Y: d.Y,
-    M: d.M,
-    D: d.D,
-    h,
-    mi,
-    s
-  };
+  return { loc, can, lado, date, tsKey, ymd: `${d.Y}${d.M}${d.D}`, Y: d.Y, M: d.M, D: d.D, h, mi, s };
 }
-/* ===================== FILTRO POR DÍA + NUEVO + RECUPERADOS ===================== */
-const DAY_OFFSETS = [0, 1, 2, 3];
-const NEW_WINDOW_MS = 2 * 60 * 60 * 1000;        // 2 horas
-const RECOVER_DELTA_MS = 2 * 60 * 60 * 1000;     // diferencia nombre vs subida >= 2h => recuperado
-const RECOVER_DURATION_S = 130;                  // >130s suele ser recuperado (ajústalo si quieres)
 
-const uploadTimeCache = new Map(); // url -> epoch ms
+// ----------------------- Filtro por día ── SOLO HOY Y AYER -----------------------
+const DAY_OFFSETS = [0, 1];   // Solo Hoy y Ayer
+const NEW_WINDOW_MS = 2 * 60 * 60 * 1000;
+
+const uploadTimeCache = new Map();
 
 function ymdFromDate(d) {
   const Y = d.getFullYear();
@@ -236,78 +157,44 @@ function ymdFromDate(d) {
 }
 
 function addDays(d, delta) {
-  const x = new Date(d);
-  x.setDate(x.getDate() + delta);
-  return x;
+  const x = new Date(d); x.setDate(x.getDate() + delta); return x;
 }
 
 function labelForOffset(off) {
-  if (off === 0) return "Hoy";
-  if (off === 1) return "Ayer";
-  return `Hace ${off} días`;
+  return off === 0 ? "Hoy" : "Ayer";
 }
 
-// Si tu JSON algún día trae "subido_ts", lo usamos directo sin HEAD.
 function parseUploadTimeFromEntry(entry) {
-  const cand =
-    entry?.subido_ts ?? entry?.ts_subida ??
-    entry?.upload_ts ?? entry?.uploaded_ts ??
-    entry?.uploaded_at ?? entry?.upload_time ??
-    entry?.mtime ?? entry?.last_modified;
-
+  const cand = entry?.subido_ts ?? entry?.ts_subida ?? entry?.upload_ts ?? entry?.uploaded_ts ?? entry?.mtime ?? entry?.last_modified;
   if (cand == null) return null;
-
-  // número (segundos o ms)
-  if (typeof cand === "number") {
-    if (cand > 1e12) return cand;          // ms
-    if (cand > 1e9) return cand * 1000;    // s
-    return null;
-  }
-
-  // string ISO o fecha
-  if (typeof cand === "string") {
-    const t = Date.parse(cand);
-    return Number.isFinite(t) ? t : null;
-  }
-
+  if (typeof cand === "number") return cand > 1e12 ? cand : cand > 1e9 ? cand * 1000 : null;
+  if (typeof cand === "string") { const t = Date.parse(cand); return Number.isFinite(t) ? t : null; }
   return null;
 }
 
 async function tryHeadLastModified(url) {
   try {
-    const direct = toDropboxDirectFetchUrl(url);
-    const res = await fetch(direct, { method: "HEAD", cache: "no-store" });
+    const res = await fetch(toDropboxDirectFetchUrl(url), { method: "HEAD", cache: "no-store" });
     if (!res.ok) return null;
-
     const lm = res.headers.get("Last-Modified") || res.headers.get("last-modified");
     if (!lm) return null;
-
-    const t = Date.parse(lm);
-    return Number.isFinite(t) ? t : null;
-  } catch {
-    return null;
-  }
+    const t = Date.parse(lm); return Number.isFinite(t) ? t : null;
+  } catch { return null; }
 }
 
 async function prefetchUploadTimes(entries, limit = 12) {
-  // Solo a los más recientes (para no spamear HEAD a Dropbox)
   const candidates = [...entries]
     .map(e => ({ e, m: parseFromName(e.nombre) }))
     .filter(x => x.m)
     .sort((a, b) => b.m.tsKey - a.m.tsKey)
     .slice(0, limit)
     .map(x => x.e);
-
-  const CONC = 4;
-  for (let i = 0; i < candidates.length; i += CONC) {
-    const batch = candidates.slice(i, i + CONC);
-    await Promise.all(batch.map(async (entry) => {
+  for (let i = 0; i < candidates.length; i += 4) {
+    await Promise.all(candidates.slice(i, i + 4).map(async entry => {
       const url = entry?.url;
       if (!url || uploadTimeCache.has(url)) return;
-
       const direct = parseUploadTimeFromEntry(entry);
       if (direct) { uploadTimeCache.set(url, direct); return; }
-
       const head = await tryHeadLastModified(url);
       if (head) uploadTimeCache.set(url, head);
     }));
@@ -323,140 +210,77 @@ function getKnownUploadDate(entry) {
 
 function isNewVideo(entry) {
   const up = getKnownUploadDate(entry);
-  const base = up || entry?._meta?.date || null; // fallback: fecha del nombre
+  const base = up || entry?._meta?.date || null;
   if (!base) return false;
   return (Date.now() - base.getTime()) <= NEW_WINDOW_MS;
-}
-
-function isRecovered(entry) {
-  const dur = Number(entry?.duracion ?? entry?.duration ?? entry?.dur ?? entry?.seconds ?? NaN);
-  if (Number.isFinite(dur) && dur >= RECOVER_DURATION_S) return true;
-
-  const up = getKnownUploadDate(entry);
-  const nameDate = entry?._meta?.date || null;
-  if (up && nameDate) {
-    return Math.abs(up.getTime() - nameDate.getTime()) >= RECOVER_DELTA_MS;
-  }
-  return false;
 }
 
 function ensureDayFilterContainer() {
   const hour = document.getElementById("filtro-horario");
   if (!hour) return null;
-
   let el = document.getElementById("filtro-dia");
   if (!el) {
     el = document.createElement("div");
     el.id = "filtro-dia";
-    el.style.display = "flex";
-    el.style.flexWrap = "wrap";
-    el.style.gap = "8px";
-    el.style.margin = "12px 0 8px";
+    el.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;";
     hour.parentElement.insertBefore(el, hour);
   }
   return el;
 }
 
-function dayBtnStyles(btn, { active = false, disabled = false } = {}) {
-  btn.style.padding = "8px 10px";
-  btn.style.borderRadius = "999px";
-  btn.style.border = "1px solid rgba(255,255,255,0.20)";
-  btn.style.background = active ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.08)";
-  btn.style.color = "rgba(255,255,255,0.95)";
-  btn.style.fontWeight = "800";
-  btn.style.cursor = disabled ? "not-allowed" : "pointer";
-  btn.style.opacity = disabled ? "0.45" : "1";
-  btn.style.position = "relative";
-  btn.style.whiteSpace = "nowrap";
+function dayPillStyles(btn, active) {
+  btn.style.cssText = `
+    display:inline-flex; align-items:center; gap:5px;
+    padding:5px 14px; border-radius:999px;
+    border:1px solid ${active ? "rgba(11,124,255,.38)" : "rgba(255,255,255,.14)"};
+    background:${active ? "rgba(0,79,200,.18)" : "rgba(255,255,255,.05)"};
+    color:${active ? "#fff" : "rgba(234,242,255,.72)"};
+    font-family:inherit; font-size:0.78rem; font-weight:700;
+    cursor:pointer; position:relative; white-space:nowrap;
+    transition:all .15s ease;
+  `;
 }
 
 function addRedDot(btn) {
   const dot = document.createElement("span");
-  dot.style.position = "absolute";
-  dot.style.top = "2px";
-  dot.style.right = "2px";
-  dot.style.width = "10px";
-  dot.style.height = "10px";
-  dot.style.borderRadius = "999px";
-  dot.style.background = "#ff2d2d";
-  dot.style.boxShadow = "0 0 0 2px rgba(0,0,0,0.35)";
+  dot.style.cssText = "position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:#ff2d2d;box-shadow:0 0 0 2px rgba(0,0,0,.35);";
   btn.appendChild(dot);
 }
 
 function renderDayFilterBar(allEntries, selectedKey) {
   const container = ensureDayFilterContainer();
   if (!container) return { selectedKey, dayKeys: [], byKey: new Map() };
-
   container.innerHTML = "";
 
   const now = new Date();
   const dayKeys = DAY_OFFSETS.map(off => ymdFromDate(addDays(now, -off)));
-
   const byKey = new Map(dayKeys.map(k => [k, []]));
-  allEntries.forEach(e => {
-    const k = e._meta?.ymd;
-    if (byKey.has(k)) byKey.get(k).push(e);
-  });
+  allEntries.forEach(e => { const k = e._meta?.ymd; if (byKey.has(k)) byKey.get(k).push(e); });
 
-  // botones de días
   dayKeys.forEach((k, off) => {
-    const vids = byKey.get(k) || [];
+    const vids  = byKey.get(k) || [];
     const count = vids.length;
     const hasNew = vids.some(isNewVideo);
-    const hasRecovered = vids.some(isRecovered);
-    // Sólo mostrar "Hace 2 días" / "Hace 3 días" si hay videos — evita ruido
-    if ((off >= 2) && count === 0) return;
+    const active = k === selectedKey;
 
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.textContent = `${labelForOffset(off)}${count ? ` (${count})` : ""}${hasRecovered ? " ↻" : ""}`;
-
-    const disabled = (count === 0) && (off !== 0 && off !== 1);
-    dayBtnStyles(btn, { active: k === selectedKey, disabled });
-
+    btn.textContent = `${labelForOffset(off)}${count ? ` (${count})` : ""}`;
+    dayPillStyles(btn, active);
     if (hasNew && count) addRedDot(btn);
 
     btn.addEventListener("click", () => {
-      if (disabled) return;
-      // al cambiar día: resetea hora y pag (para que no te quede filtro fantasma)
-      setQueryParams({ dia: k, rec: "", filtro: "", pg: 0, video: "" });
+      setQueryParams({ dia: k, filtro: "", pg: 0, video: "" });
       populateVideos();
       scrollToTop();
     });
-
     container.appendChild(btn);
   });
 
-  // toggle Recuperados
-  const selList = byKey.get(selectedKey) || [];
-  const recList = selList.filter(isRecovered);
-  const recCount = recList.length;
-  const hasNewRec = recList.some(v => isNewVideo(v));
-
-  const recOn = getQueryParams().rec === "1";
-  // Mostrar "Recuperados" sólo si hay items recuperados para evitar pill vacía
-  if (recCount > 0) {
-    const pill = document.createElement("button");
-    pill.type = "button";
-    pill.textContent = `Recuperados (${recCount})`;
-    dayBtnStyles(pill, { active: recOn, disabled: false });
-    pill.style.marginLeft = "auto";
-
-    if (hasNewRec && recCount) addRedDot(pill);
-
-    pill.addEventListener("click", () => {
-      setQueryParams({ rec: recOn ? "" : "1", pg: 0, video: "" });
-      populateVideos();
-      scrollToTop();
-    });
-
-    container.appendChild(pill);
-  }
-
   return { selectedKey, dayKeys, byKey };
 }
-/* ===================== FIN FILTRO DÍA ===================== */
 
+// ----------------------- helpers opp side -----------------------
 function absSeconds(a, b) { return Math.abs((a - b) / 1000); }
 
 async function findOppositeConfig(cfg, locId, canId, ladoId) {
@@ -464,217 +288,124 @@ async function findOppositeConfig(cfg, locId, canId, ladoId) {
   const can = loc?.cancha.find(c => c.id === canId);
   if (!can) return null;
   const otros = (can.lados || []).filter(l => l.id !== ladoId);
-  if (otros.length === 1) {
-    const opp = otros[0];
-    return { oppId: opp.id, oppUrl: opp.json_url, oppName: opp.nombre || opp.id };
-  }
+  if (otros.length === 1) return { oppId: otros[0].id, oppUrl: otros[0].json_url, oppName: otros[0].nombre || otros[0].id };
   return null;
 }
 
 async function findOppositeVideo(entry, cfg, locId, canId, ladoId) {
   const meta = parseFromName(entry.nombre);
   if (!meta) return null;
-
   const oppCfg = await findOppositeConfig(cfg, locId, canId, ladoId);
-  if (!oppCfg || !oppCfg.oppUrl) return null;
-
+  if (!oppCfg?.oppUrl) return null;
   try {
     const res = await fetch(`${oppCfg.oppUrl}?cb=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) return null;
     const dataOpp = await res.json();
-    const sameDay = dataOpp.videos?.filter(v => {
-      const m = parseFromName(v.nombre);
-      return m && m.ymd === meta.ymd;
-    }) || [];
-
-    let best = null;
-    let bestDelta = Infinity;
-
+    const sameDay = (dataOpp.videos || []).filter(v => { const m = parseFromName(v.nombre); return m && m.ymd === meta.ymd; });
+    let best = null, bestDelta = Infinity;
     sameDay.forEach(v => {
       const mv = parseFromName(v.nombre);
       if (!mv) return;
       const delta = absSeconds(mv.date, meta.date);
-      if (delta <= 15 && delta < bestDelta) {
-        best = v;
-        bestDelta = delta;
-      }
+      if (delta <= 15 && delta < bestDelta) { best = v; bestDelta = delta; }
     });
-
     return best ? { lado: oppCfg.oppId, nombre: best.nombre, url: best.url } : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
-/* =================== FIN Helpers de asociación =================== */
-
 
 // ----------------------- navegación -----------------------
 async function populateLocaciones() {
   try {
-    const url = `data/config_locations.json?cb=${Date.now()}`;
-    const res = await fetch(url, { cache: "no-store" });
-    const config = await res.json();
+    const config = await (await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" })).json();
     const ul = document.getElementById("locaciones-lista");
     if (!ul) return;
     ul.innerHTML = "";
     config.locaciones.forEach(loc => {
       const li = document.createElement("li");
       li.classList.add("fade-in");
-      li.style.marginBottom = "5px";
       const a = document.createElement("a");
       a.href = `locacion.html?loc=${loc.id}`;
       a.textContent = loc.nombre;
       a.classList.add("link-blanco");
-
-      // [GA4] click locación
-      a.addEventListener("click", () => {
-        trackEvent("open_locacion", { loc: loc.id, loc_name: loc.nombre || "" });
-      });
-
+      a.addEventListener("click", () => trackEvent("open_locacion", { loc: loc.id }));
       li.appendChild(a);
       ul.appendChild(li);
     });
-  } catch (err) {
-    console.error("Error en populateLocaciones():", err);
-  }
+  } catch(err) { console.error("populateLocaciones:", err); }
 }
 
 async function populateCanchas() {
   try {
     const params = getQueryParams();
-    const locId = params.loc;
-    const url = `data/config_locations.json?cb=${Date.now()}`;
-    const res = await fetch(url, { cache: "no-store" });
-    const config = await res.json();
-    const loc = config.locaciones.find(l => l.id === locId);
+    const config = await (await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" })).json();
+    const loc = config.locaciones.find(l => l.id === params.loc);
     const ul = document.getElementById("canchas-lista");
     if (!ul || !loc) return;
     ul.innerHTML = "";
     const nombreEl = document.getElementById("nombre-locacion");
     if (nombreEl) nombreEl.textContent = loc.nombre;
-
     loc.cancha.forEach(can => {
       const li = document.createElement("li");
       li.classList.add("fade-in");
-      li.style.marginBottom = "5px";
       const a = document.createElement("a");
-
-      // SALTO DE “LADOS” SI SOLO HAY UNO
       const lados = Array.isArray(can.lados) ? can.lados : [];
       if (lados.length === 1) {
-        const unico = lados[0];
-        a.href = `lado.html?loc=${locId}&can=${can.id}&lado=${unico.id}`;
-
-        // [GA4] click cancha mono-lado (directo a lado)
-        a.addEventListener("click", () => {
-          trackEvent("open_lado", {
-            loc: locId,
-            can: can.id,
-            lado: unico.id,
-            can_name: can.nombre || "",
-            via: "direct_from_locacion"
-          });
-        });
-
+        a.href = `lado.html?loc=${params.loc}&can=${can.id}&lado=${lados[0].id}`;
+        a.addEventListener("click", () => trackEvent("open_lado", { loc: params.loc, can: can.id, lado: lados[0].id, via: "direct_from_locacion" }));
       } else {
-        a.href = `cancha.html?loc=${locId}&can=${can.id}`;
-
-        // [GA4] click cancha
-        a.addEventListener("click", () => {
-          trackEvent("open_cancha", { loc: locId, can: can.id, can_name: can.nombre || "" });
-        });
+        a.href = `cancha.html?loc=${params.loc}&can=${can.id}`;
+        a.addEventListener("click", () => trackEvent("open_cancha", { loc: params.loc, can: can.id }));
       }
-
       a.textContent = can.nombre;
       a.classList.add("link-blanco");
       li.appendChild(a);
       ul.appendChild(li);
     });
-  } catch (err) {
-    console.error("Error en populateCanchas():", err);
-  }
+  } catch(err) { console.error("populateCanchas:", err); }
 }
 
 async function populateLados() {
   try {
     const params = getQueryParams();
-    const locId = params.loc;
-    const canId = params.can;
-    const url = `data/config_locations.json?cb=${Date.now()}`;
-    const res = await fetch(url, { cache: "no-store" });
-    const config = await res.json();
-    const loc = config.locaciones.find(l => l.id === locId);
-    const cancha = loc?.cancha.find(c => c.id === canId);
-
-    // REDIRECCIÓN AUTOMÁTICA SI SOLO HAY UN LADO
+    const config = await (await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" })).json();
+    const loc = config.locaciones.find(l => l.id === params.loc);
+    const cancha = loc?.cancha.find(c => c.id === params.can);
     const lados = Array.isArray(cancha?.lados) ? cancha.lados : [];
     if (lados.length === 1) {
-      const unico = lados[0];
-      window.location.href = `lado.html?loc=${locId}&can=${canId}&lado=${unico.id}`;
+      window.location.href = `lado.html?loc=${params.loc}&can=${params.can}&lado=${lados[0].id}`;
       return;
     }
-
     const ul = document.getElementById("lados-lista");
-    if (!ul || !loc || !cancha) return;
+    if (!ul || !cancha) return;
     ul.innerHTML = "";
     const linkClub = document.getElementById("link-club");
     const linkCancha = document.getElementById("link-cancha");
-    if (linkClub) {
-      linkClub.textContent = loc.nombre;
-      linkClub.href = `locacion.html?loc=${locId}`;
-    }
-    if (linkCancha) {
-      linkCancha.textContent = cancha.nombre;
-      linkCancha.href = "#";
-    }
-    const sep2 = document.getElementById("breadcrumb-sep2");
-    if (sep2) sep2.style.display = "none";
-    const nombreLado = document.getElementById("nombre-lado");
-    if (nombreLado) nombreLado.style.display = "none";
-
+    if (linkClub) { linkClub.textContent = loc.nombre; linkClub.href = `locacion.html?loc=${params.loc}`; }
+    if (linkCancha) { linkCancha.textContent = cancha.nombre; linkCancha.href = "#"; }
     cancha.lados.forEach(lado => {
       const li = document.createElement("li");
       li.classList.add("fade-in");
-      li.style.marginBottom = "5px";
       const a = document.createElement("a");
-      a.href = `lado.html?loc=${locId}&can=${canId}&lado=${lado.id}`;
+      a.href = `lado.html?loc=${params.loc}&can=${params.can}&lado=${lado.id}`;
       a.textContent = lado.nombre || lado.id;
       a.classList.add("link-blanco");
-
-      // [GA4] click lado
-      a.addEventListener("click", () => {
-        trackEvent("open_lado", {
-          loc: locId,
-          can: canId,
-          lado: lado.id,
-          lado_name: lado.nombre || ""
-        });
-      });
-
+      a.addEventListener("click", () => trackEvent("open_lado", { loc: params.loc, can: params.can, lado: lado.id }));
       li.appendChild(a);
       ul.appendChild(li);
     });
-  } catch (err) {
-    console.error("Error en populateLados():", err);
-  }
+  } catch(err) { console.error("populateLados:", err); }
 }
 
-
-// ----------------------- PROMOCIONES (multi-club) -----------------------
-let clubPromotions = null;
-let promoConfig = null;
+// ----------------------- PROMOCIONES -----------------------
+let clubPromotions = null, promoConfig = null;
 
 function deepMerge(base, override) {
   if (!override) return structuredClone(base);
   if (!base) return structuredClone(override);
-  if (Array.isArray(base) && Array.isArray(override)) {
-    return structuredClone(override);
-  }
-  if (typeof base === 'object' && typeof override === 'object') {
+  if (Array.isArray(base) && Array.isArray(override)) return structuredClone(override);
+  if (typeof base === "object" && typeof override === "object") {
     const out = { ...base };
-    for (const k of Object.keys(override)) {
-      out[k] = deepMerge(base[k], override[k]);
-    }
+    for (const k of Object.keys(override)) out[k] = deepMerge(base[k], override[k]);
     return out;
   }
   return structuredClone(override);
@@ -682,32 +413,14 @@ function deepMerge(base, override) {
 
 function getButtonStyle(conf) {
   const b = conf?.button || {};
-  return {
-    bg: b.bg_color ?? conf?.bg_color ?? conf?.color ?? "#EA5B0C",
-    fg: b.text_color ?? conf?.text_color ?? "#FFFFFF",
-    border: b.border_color ?? conf?.border_color ?? "#FFFFFF",
-    logo: b.logo ?? conf?.logo ?? null,
-  };
+  return { bg: b.bg_color ?? conf?.bg_color ?? "#EA5B0C", fg: b.text_color ?? "#FFFFFF", border: b.border_color ?? "#FFFFFF", logo: b.logo ?? conf?.logo ?? null };
 }
 
 function resolvePlaceholders(str, entry, extraCtx = {}) {
   if (!str) return str;
   const meta = entry?.nombre ? parseFromName(entry.nombre) : null;
   const params = getQueryParams();
-  const ctx = {
-    videoUrl: entry?.url || "",
-    videoName: entry?.nombre || "",
-    loc: params.loc || meta?.loc || "",
-    can: params.can || meta?.can || "",
-    lado: params.lado || meta?.lado || "",
-    YYYY: meta?.Y || "",
-    MM: meta?.M || "",
-    DD: meta?.D || "",
-    hh: meta?.h || "",
-    mm: meta?.mi || "",
-    ss: meta?.s || "",
-    ...extraCtx
-  };
+  const ctx = { videoUrl: entry?.url || "", videoName: entry?.nombre || "", loc: params.loc || meta?.loc || "", can: params.can || meta?.can || "", lado: params.lado || meta?.lado || "", YYYY: meta?.Y || "", MM: meta?.M || "", DD: meta?.D || "", hh: meta?.h || "", mm: meta?.mi || "", ss: meta?.s || "", ...extraCtx };
   return String(str).replace(/\{(videoUrl|videoName|loc|can|lado|YYYY|MM|DD|hh|mm|ss)\}/g, (_, k) => ctx[k] ?? "");
 }
 
@@ -717,127 +430,39 @@ function resolvePlaceholdersInArray(arr, entry, extraCtx = {}) {
 
 async function loadClubPromotions() {
   if (clubPromotions !== null) return clubPromotions;
-  try {
-    const res = await fetch("data/club_promotions.json?cb=" + Date.now(), { cache: "no-store" });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    clubPromotions = await res.json();
-    return clubPromotions;
-  } catch (err) {
-    console.warn("[promo] No se pudo cargar club_promotions.json", err);
-    return {};
-  }
+  try { clubPromotions = await (await fetch("data/club_promotions.json?cb=" + Date.now(), { cache: "no-store" })).json(); } catch { clubPromotions = {}; }
+  return clubPromotions;
 }
+
 async function loadPromotionDefinitions() {
   if (promoConfig !== null) return promoConfig;
-  try {
-    const res = await fetch("data/promotions_config.json?cb=" + Date.now(), { cache: "no-store" });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    promoConfig = await res.json();
-    return promoConfig;
-  } catch (err) {
-    console.warn("[promo] No se pudo cargar promotions_config.json", err);
-    return {};
-  }
+  try { promoConfig = await (await fetch("data/promotions_config.json?cb=" + Date.now(), { cache: "no-store" })).json(); } catch { promoConfig = {}; }
+  return promoConfig;
 }
 
 function stylePromoButton(el, conf) {
   const st = getButtonStyle(conf);
-  el.style.display = "inline-flex";
-  el.style.alignItems = "center";
-  el.style.justifyContent = "center";
-  el.style.gap = "10px";
-  el.style.padding = "12px 16px";
-  el.style.border = `1px solid ${st.border}`;
-  el.style.borderRadius = "10px";
-  el.style.fontWeight = "700";
-  el.style.textDecoration = "none";
-  el.style.color = st.fg;
-  el.style.background = st.bg;
-  el.style.width = "100%";
-  el.style.minHeight = "44px";
-  el.style.boxSizing = "border-box";
-  el.style.marginTop = "10px";
+  el.style.cssText = `display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px;border:1px solid ${st.border};border-radius:10px;font-weight:700;text-decoration:none;color:${st.fg};background:${st.bg};width:100%;min-height:44px;box-sizing:border-box;margin-top:10px;cursor:pointer;font-family:inherit;`;
 }
 
 let promoModalRoot = null;
 
 function ensurePromoModalRoot() {
   if (promoModalRoot) return promoModalRoot;
-
   const wrap = document.createElement("div");
   wrap.id = "promo-modal-root";
-  wrap.style.position = "fixed";
-  wrap.style.inset = "0";
-  wrap.style.background = "rgba(0,0,0,.7)";
-  wrap.style.display = "none";
-  wrap.style.alignItems = "center";
-  wrap.style.justifyContent = "center";
-  wrap.style.zIndex = "2000";
-
+  wrap.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:2000;";
   const box = document.createElement("div");
   box.id = "promo-modal-box";
-  box.style.width = "90%";
-  box.style.maxWidth = "560px";
-  box.style.background = "#fff";
-  box.style.color = "#000";
-  box.style.border = "2px solid #333";
-  box.style.borderRadius = "12px";
-  box.style.padding = "20px";
-  box.style.textAlign = "left";
-  box.style.maxHeight = "80vh";
-  box.style.overflowY = "auto";
-  box.style.boxSizing = "border-box";
+  box.style.cssText = "width:90%;max-width:560px;background:#fff;color:#000;border:2px solid #333;border-radius:12px;padding:20px;text-align:left;max-height:80vh;overflow-y:auto;box-sizing:border-box;";
   wrap.appendChild(box);
-
-  wrap.addEventListener("click", (e) => {
-    if (e.target === wrap) {
-      wrap.style.display = "none";
-    }
-  });
-
+  wrap.addEventListener("click", e => { if (e.target === wrap) wrap.style.display = "none"; });
   document.body.appendChild(wrap);
   promoModalRoot = wrap;
   return wrap;
 }
 
-function clearNode(el) {
-  while (el.firstChild) el.removeChild(el.firstChild);
-}
-
-function doUrlAction(action) {
-  const href = action?.href || "#";
-  const target = action?.target || "_blank";
-  try { window.open(href, target); } catch { location.href = href; }
-}
-
-function doCloseAction() {
-  const root = ensurePromoModalRoot();
-  root.style.display = "none";
-}
-
-function buildMailto(action, entry) {
-  const to = action?.to || "contacto@puntazoclips.com";
-  const subject = encodeURIComponent(resolvePlaceholders(action?.subject || "", entry));
-  const lines = resolvePlaceholdersInArray(action?.bodyTemplate || [], entry);
-  const body = encodeURIComponent(lines.join("\n"));
-  return `mailto:${to}?subject=${subject}&body=${body}`;
-}
-
-async function doCopyAction(action, entry) {
-  const text = resolvePlaceholders(action?.text || "", entry);
-  try {
-    await navigator.clipboard.writeText(text);
-    toast("Copiado al portapapeles");
-  } catch {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    try { document.execCommand("copy"); toast("Copiado al portapapeles"); }
-    catch { alert("No se pudo copiar"); }
-    finally { ta.remove(); }
-  }
-}
+function clearNode(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 
 let toastTimer = null;
 function toast(msg) {
@@ -845,16 +470,7 @@ function toast(msg) {
   if (!el) {
     el = document.createElement("div");
     el.id = "__promo_toast__";
-    el.style.position = "fixed";
-    el.style.left = "50%";
-    el.style.bottom = "26px";
-    el.style.transform = "translateX(-50%)";
-    el.style.background = "rgba(0,0,0,.8)";
-    el.style.color = "#fff";
-    el.style.padding = "10px 14px";
-    el.style.borderRadius = "8px";
-    el.style.zIndex = "3000";
-    el.style.fontWeight = "600";
+    el.style.cssText = "position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:10px 14px;border-radius:8px;z-index:3000;font-weight:600;";
     document.body.appendChild(el);
   }
   el.textContent = msg;
@@ -863,159 +479,69 @@ function toast(msg) {
   toastTimer = setTimeout(() => { el.style.display = "none"; }, 1600);
 }
 
-function renderPromoModal(conf, entry) {
-  const root = ensurePromoModalRoot();
-  const box = document.getElementById("promo-modal-box");
-  clearNode(box);
+async function doCopyAction(action, entry) {
+  const text = resolvePlaceholders(action?.text || "", entry);
+  try { await navigator.clipboard.writeText(text); toast("Copiado al portapapeles"); }
+  catch { try { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); toast("Copiado"); ta.remove(); } catch { alert("No se pudo copiar"); } }
+}
 
-  const theme = conf?.modal?.theme || {};
-  const borderColor = theme.border_color || "#333";
-  const bgColor = theme.bg_color || "#fff";
-  const fgColor = theme.text_color || "#000";
+function doCloseAction() { const r = ensurePromoModalRoot(); r.style.display = "none"; }
 
-  box.style.border = `2px solid ${borderColor}`;
-  box.style.background = bgColor;
-  box.style.color = fgColor;
-
-  const head = document.createElement("div");
-  head.style.display = "flex";
-  head.style.alignItems = "center";
-  head.style.gap = "10px";
-  const logos = (conf?.modal?.logos || []).slice(0,3);
-  if (logos.length) {
-    logos.forEach(src => {
-      const img = document.createElement("img");
-      img.src = src;
-      img.alt = "logo";
-      img.style.height = "40px";
-      img.style.width = "auto";
-      img.style.objectFit = "contain";
-      head.appendChild(img);
-    });
-  }
-  const title = document.createElement("h2");
-  title.textContent = conf?.modal?.title || resolvePlaceholders(conf?.label || "Promoción", entry);
-  title.style.margin = "0";
-  title.style.color = borderColor;
-  head.appendChild(title);
-  box.appendChild(head);
-
-  const intro = conf?.modal?.intro_list || [];
-  if (intro.length) {
-    const desc = document.createElement("div");
-    desc.style.marginTop = "10px";
-    const ul = document.createElement("ul");
-    ul.style.paddingLeft = "20px";
-    resolvePlaceholdersInArray(intro, entry).forEach(txt => {
-      const li = document.createElement("li");
-      li.textContent = txt;
-      ul.appendChild(li);
-    });
-    desc.appendChild(ul);
-    box.appendChild(desc);
-  }
-
-  const req = conf?.modal?.requirements;
-  if (req?.items?.length) {
-    const reqTitle = document.createElement("p");
-    reqTitle.style.margin = "10px 0 6px";
-    reqTitle.innerHTML = `<strong>${req.title_bold || "Requisitos:"}</strong>`;
-    box.appendChild(reqTitle);
-
-    const reqUl = document.createElement("ul");
-    reqUl.style.paddingLeft = "20px";
-    resolvePlaceholdersInArray(req.items, entry).forEach(txt => {
-      const li = document.createElement("li");
-      li.textContent = txt;
-      reqUl.appendChild(li);
-    });
-    box.appendChild(reqUl);
-  }
-
-  const btnRow = document.createElement("div");
-  btnRow.style.display = "flex";
-  btnRow.style.gap = "8px";
-  btnRow.style.marginTop = "18px";
-
-  const buttons = (conf?.modal?.buttons || []).slice(0,3);
-  buttons.forEach(bc => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = resolvePlaceholders(bc.label || "Acción", entry);
-
-    const s = bc.style || {};
-    btn.style.flex = "1";
-    btn.style.padding = "12px 16px";
-    btn.style.border = `2px solid ${s.border_color || borderColor}`;
-    btn.style.borderRadius = "10px";
-    btn.style.background = s.bg_color || borderColor;
-    btn.style.color = s.text_color || "#fff";
-    btn.style.cursor = "pointer";
-    btn.addEventListener("click", async () => {
-      const act = bc.action || {};
-      await handlePromoAction(act, entry);
-    });
-    btnRow.appendChild(btn);
-  });
-
-  if (!buttons.length) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = "Cerrar";
-    btn.style.flex = "1";
-    btn.style.padding = "12px 16px";
-    btn.style.border = `2px solid ${borderColor}`;
-    btn.style.borderRadius = "10px";
-    btn.style.background = "#f5f5f5";
-    btn.style.color = "#000";
-    btn.style.cursor = "pointer";
-    btn.addEventListener("click", doCloseAction);
-    btnRow.appendChild(btn);
-  }
-
-  box.appendChild(btnRow);
-
-  root.style.display = "flex";
+function buildMailto(action, entry) {
+  return `mailto:${action?.to || "contacto@puntazoclips.com"}?subject=${encodeURIComponent(resolvePlaceholders(action?.subject || "", entry))}&body=${encodeURIComponent(resolvePlaceholdersInArray(action?.bodyTemplate || [], entry).join("\n"))}`;
 }
 
 async function handlePromoAction(action, entry) {
   const type = (action?.type || "").toLowerCase();
-
-  // [GA4] promo action
-  trackEvent("promo_action", gaCtx({
-    action_type: type || "unknown",
-    video_name: entry?.nombre || ""
-  }));
-
-  if (type === "url") {
-    doUrlAction(action);
-    return;
-  }
-  if (type === "mailto") {
-    const href = buildMailto(action, entry);
-    location.href = href;
-    return;
-  }
-  if (type === "copy") {
-    await doCopyAction(action, entry);
-    return;
-  }
-  if (type === "close") {
-    doCloseAction();
-    return;
-  }
+  trackEvent("promo_action", gaCtx({ action_type: type, video_name: entry?.nombre || "" }));
+  if (type === "url") { try { window.open(action.href || "#", action.target || "_blank"); } catch { location.href = action.href; } return; }
+  if (type === "mailto") { location.href = buildMailto(action, entry); return; }
+  if (type === "copy")  { await doCopyAction(action, entry); return; }
   doCloseAction();
 }
 
-function openPromoModal(entry, conf) {
-  if (!conf?.modal?.enabled) {
-    console.warn("[promo] Intento de abrir modal con enabled=false");
-    return;
+function renderPromoModal(conf, entry) {
+  const root = ensurePromoModalRoot();
+  const box  = document.getElementById("promo-modal-box");
+  clearNode(box);
+  const theme = conf?.modal?.theme || {};
+  box.style.border     = `2px solid ${theme.border_color || "#333"}`;
+  box.style.background = theme.bg_color   || "#fff";
+  box.style.color      = theme.text_color || "#000";
+  const head = document.createElement("div");
+  head.style.cssText = "display:flex;align-items:center;gap:10px;";
+  (conf?.modal?.logos || []).slice(0, 3).forEach(src => {
+    const img = document.createElement("img");
+    img.src = src; img.alt = "logo"; img.style.cssText = "height:40px;width:auto;object-fit:contain;";
+    head.appendChild(img);
+  });
+  const title = document.createElement("h2");
+  title.textContent = conf?.modal?.title || resolvePlaceholders(conf?.label || "Promoción", entry);
+  title.style.cssText = `margin:0;color:${theme.border_color || "#333"};`;
+  head.appendChild(title);
+  box.appendChild(head);
+  const intro = conf?.modal?.intro_list || [];
+  if (intro.length) {
+    const ul = document.createElement("ul"); ul.style.paddingLeft = "20px";
+    resolvePlaceholdersInArray(intro, entry).forEach(txt => { const li = document.createElement("li"); li.textContent = txt; ul.appendChild(li); });
+    const d = document.createElement("div"); d.style.marginTop = "10px"; d.appendChild(ul); box.appendChild(d);
   }
+  const btnRow = document.createElement("div"); btnRow.style.cssText = "display:flex;gap:8px;margin-top:18px;";
+  (conf?.modal?.buttons || [{ label: "Cerrar", style: { bg_color: "#f5f5f5", text_color: "#000", border_color: "#ccc" }, action: { type: "close" } }]).slice(0, 3).forEach(bc => {
+    const btn = document.createElement("button"); btn.type = "button";
+    btn.textContent = resolvePlaceholders(bc.label || "Acción", entry);
+    const s = bc.style || {};
+    btn.style.cssText = `flex:1;padding:12px 16px;border:2px solid ${s.border_color || "#333"};border-radius:10px;background:${s.bg_color || "#333"};color:${s.text_color || "#fff"};cursor:pointer;font-family:inherit;`;
+    btn.addEventListener("click", async () => await handlePromoAction(bc.action || {}, entry));
+    btnRow.appendChild(btn);
+  });
+  box.appendChild(btnRow);
+  root.style.display = "flex";
+}
 
-  // [GA4] promo modal open
-  trackEvent("promo_modal_open", gaCtx({ video_name: entry?.nombre || "", promo_label: conf?.label || "" }));
-
+function openPromoModal(entry, conf) {
+  if (!conf?.modal?.enabled) return;
+  trackEvent("promo_modal_open", gaCtx({ video_name: entry?.nombre || "" }));
   renderPromoModal(conf, entry);
 }
 
@@ -1027,32 +553,11 @@ function legacyConvertIfNeeded(conf) {
     c.modal.enabled = true;
     if (!Array.isArray(c.modal.buttons) || !c.modal.buttons.length) {
       c.modal.buttons = [
-        {
-          label: "Nominar mi punto",
-          style: {
-            bg_color: c.border_color || "#004FC8",
-            text_color: "#fff",
-            border_color: c.border_color || "#004FC8"
-          },
-          action: {
-            type: "mailto",
-            to: c.mailto || "contacto@puntazoclips.com",
-            subject: c.subject || "Nominar punto",
-            bodyTemplate: c.bodyTemplate || []
-          }
-        },
-        {
-          label: "Cerrar",
-          style: { bg_color: "#f5f5f5", text_color: "#000", border_color: "#ccc" },
-          action: { type: "close" }
-        }
+        { label: "Nominar mi punto", style: { bg_color: c.border_color || "#004FC8", text_color: "#fff", border_color: c.border_color || "#004FC8" }, action: { type: "mailto", to: c.mailto || "contacto@puntazoclips.com", subject: c.subject || "Nominar punto", bodyTemplate: c.bodyTemplate || [] } },
+        { label: "Cerrar", style: { bg_color: "#f5f5f5", text_color: "#000", border_color: "#ccc" }, action: { type: "close" } }
       ];
     }
-    c.modal.theme = c.modal.theme || {
-      bg_color: c.bg_color || "#fff",
-      text_color: c.text_color || "#000",
-      border_color: c.border_color || "#004FC8"
-    };
+    c.modal.theme = c.modal.theme || { bg_color: c.bg_color || "#fff", text_color: c.text_color || "#000", border_color: c.border_color || "#004FC8" };
     if (!c.modal.logos && c.logo) c.modal.logos = [c.logo];
   }
   return c;
@@ -1060,212 +565,85 @@ function legacyConvertIfNeeded(conf) {
 
 async function buildPromoButtonsForClub(loc, entry) {
   const clubMap = await loadClubPromotions();
-  const defs = await loadPromotionDefinitions();
-
+  const defs    = await loadPromotionDefinitions();
   let promosForLoc = clubMap?.[loc];
   if (!promosForLoc) return [];
-
-  let promoIds = [];
-  let overrides = {};
-
-  if (Array.isArray(promosForLoc)) {
-    promoIds = promosForLoc;
-  } else if (typeof promosForLoc === "object" && Array.isArray(promosForLoc.promos)) {
-    promoIds = promosForLoc.promos;
-    overrides = promosForLoc.overrides || {};
-  } else {
-    return [];
-  }
+  let promoIds = [], overrides = {};
+  if (Array.isArray(promosForLoc)) { promoIds = promosForLoc; }
+  else if (typeof promosForLoc === "object" && Array.isArray(promosForLoc.promos)) { promoIds = promosForLoc.promos; overrides = promosForLoc.overrides || {}; }
+  else return [];
 
   const buttons = [];
-
   for (const pid of promoIds) {
     let base = defs?.[pid];
     if (!base) continue;
-
     base = legacyConvertIfNeeded(base);
-
     const merged = deepMerge(base, overrides[pid] || {});
-
     const actionObj = merged?.action || {};
     const actionType = (actionObj.type || (typeof merged.action === "string" ? merged.action : "") || "").toLowerCase();
-
     const st = getButtonStyle(merged);
     const label = merged?.label || "Promoción";
 
+    const mkBtn = (isAnchor) => {
+      const el = document.createElement(isAnchor ? "a" : "button");
+      if (!isAnchor) { el.type = "button"; }
+      el.className = "btn-promo";
+      stylePromoButton(el, merged);
+      if (st.logo) { const img = document.createElement("img"); img.src = st.logo; img.style.cssText = "height:20px;width:auto;object-fit:contain;"; el.appendChild(img); }
+      const span = document.createElement("span"); span.textContent = resolvePlaceholders(label, entry); el.appendChild(span);
+      return el;
+    };
+
     if (actionType === "url") {
-      const a = document.createElement("a");
-      a.href = actionObj.href || "#";
-      a.target = actionObj.target || "_blank";
-      a.rel = "noopener";
-      a.className = "btn-promo";
-      stylePromoButton(a, merged);
-
-      // [GA4] promo click
-      a.addEventListener("click", () => {
-        trackEvent("promo_click", gaCtx({
-          promo_id: pid,
-          promo_label: label,
-          action_type: "url",
-          video_name: entry?.nombre || ""
-        }));
-      });
-
-      if (st.logo) {
-        const img = document.createElement("img");
-        img.src = st.logo;
-        img.alt = pid;
-        img.style.height = "20px";
-        img.style.width = "auto";
-        img.style.objectFit = "contain";
-        a.appendChild(img);
-      }
-      const span = document.createElement("span");
-      span.textContent = resolvePlaceholders(label, entry);
-      a.appendChild(span);
+      const a = mkBtn(true); a.href = actionObj.href || "#"; a.target = actionObj.target || "_blank"; a.rel = "noopener";
+      a.addEventListener("click", () => trackEvent("promo_click", gaCtx({ promo_id: pid, action_type: "url", video_name: entry?.nombre || "" })));
       buttons.push(a);
-      continue;
-    }
-
-    if (actionType === "modal") {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "btn-promo";
-      stylePromoButton(btn, merged);
-
-      // [GA4] promo click
-      btn.addEventListener("click", () => {
-        trackEvent("promo_click", gaCtx({
-          promo_id: pid,
-          promo_label: label,
-          action_type: "modal",
-          video_name: entry?.nombre || ""
-        }));
-        openPromoModal(entry, merged);
-      });
-
-      if (st.logo) {
-        const img = document.createElement("img");
-        img.src = st.logo;
-        img.alt = pid;
-        img.style.height = "20px";
-        img.style.width = "auto";
-        img.style.objectFit = "contain";
-        btn.appendChild(img);
-      }
-      const span = document.createElement("span");
-      span.textContent = resolvePlaceholders(label, entry);
-      btn.appendChild(span);
-
+    } else if (actionType === "modal") {
+      const btn = mkBtn(false);
+      btn.addEventListener("click", () => { trackEvent("promo_click", gaCtx({ promo_id: pid, action_type: "modal", video_name: entry?.nombre || "" })); openPromoModal(entry, merged); });
       buttons.push(btn);
-      continue;
-    }
-
-    if (!actionType && merged?.url) {
-      const a = document.createElement("a");
-      a.href = merged.url;
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.className = "btn-promo";
-      stylePromoButton(a, merged);
-
-      // [GA4] promo click legacy
-      a.addEventListener("click", () => {
-        trackEvent("promo_click", gaCtx({
-          promo_id: pid,
-          promo_label: label,
-          action_type: "legacy_url",
-          video_name: entry?.nombre || ""
-        }));
-      });
-
-      if (st.logo) {
-        const img = document.createElement("img");
-        img.src = st.logo;
-        img.alt = pid;
-        img.style.height = "20px";
-        img.style.width = "auto";
-        img.style.objectFit = "contain";
-        a.appendChild(img);
-      }
-      const span = document.createElement("span");
-      span.textContent = resolvePlaceholders(label, entry);
-      a.appendChild(span);
+    } else if (!actionType && merged?.url) {
+      const a = mkBtn(true); a.href = merged.url; a.target = "_blank"; a.rel = "noopener";
+      a.addEventListener("click", () => trackEvent("promo_click", gaCtx({ promo_id: pid, action_type: "legacy_url", video_name: entry?.nombre || "" })));
       buttons.push(a);
-      continue;
     }
   }
-
   return buttons;
 }
 
-
-// ----------------------- video + filtros + paginación -----------------------
+// ----------------------- video / paginación -----------------------
 let allVideos = [];
 let visibilityMap = new Map();
 let currentPreviewActive = null;
-
 const PAGE_SIZE = 10;
 let videosListaCompleta = [];
-let paginacionHabilitada = false;
 let paginaActual = 0;
 let cfgGlobal = null;
 let oppInfoCache = null;
 let contenedorVideos = null;
-
 let contenedorBottomControls = null;
-let contFiltroArriba = null;
-let contFiltroAbajo = null;
+let contFiltroArriba = null, contFiltroAbajo = null;
 let ultimoFiltroActivo = null;
-
 let btnOppTopEl = null;
+
 function ensureOppositeTopButton(oppHref, oppName) {
   const btnVolver = document.getElementById("btn-volver");
   if (!btnVolver) return;
-
   const parent = btnVolver.parentElement || document.body;
-  const csParent = window.getComputedStyle(parent);
-  if (csParent.display !== "flex") {
-    parent.style.display = "flex";
-    parent.style.alignItems = "center";
-    parent.style.gap = parent.style.gap || "8px";
-    parent.style.justifyContent = parent.style.justifyContent || "space-between";
-  } else if (!parent.style.justifyContent) {
-    parent.style.justifyContent = "space-between";
+  if (window.getComputedStyle(parent).display !== "flex") {
+    parent.style.cssText = "display:flex;align-items:center;gap:8px;justify-content:space-between;";
   }
-
   if (!btnOppTopEl) {
     btnOppTopEl = document.createElement("a");
     btnOppTopEl.id = "btn-opposite-top";
-    if (btnVolver.className) btnOppTopEl.className = btnVolver.className;
-    else btnOppTopEl.className = "btn-alt";
-    btnOppTopEl.textContent = "Ir al lado opuesto";
-    btnOppTopEl.title = "Cambiar a la otra cámara";
-    btnOppTopEl.setAttribute("aria-label", "Ir al lado opuesto");
+    btnOppTopEl.className = btnVolver.className || "btn-alt";
+    btnOppTopEl.textContent = "← Otro ángulo";
     btnOppTopEl.style.marginLeft = "auto";
-    try {
-      const cs = window.getComputedStyle(btnVolver);
-      btnOppTopEl.style.padding = btnOppTopEl.style.padding || cs.padding;
-      btnOppTopEl.style.borderRadius = btnOppTopEl.style.borderRadius || cs.borderRadius;
-      btnOppTopEl.style.fontSize = btnOppTopEl.style.fontSize || cs.fontSize;
-      btnOppTopEl.style.lineHeight = btnOppTopEl.style.lineHeight || cs.lineHeight;
-    } catch {}
-
-    // [GA4] click lado opuesto (top)
-    btnOppTopEl.addEventListener("click", () => {
-      trackEvent("click_opposite_side", gaCtx({ position: "top" }));
-    });
-
+    btnOppTopEl.addEventListener("click", () => trackEvent("click_opposite_side", gaCtx({ position: "top" })));
     parent.appendChild(btnOppTopEl);
   }
-
-  if (oppHref) {
-    btnOppTopEl.href = oppHref;
-    btnOppTopEl.style.display = "";
-    if (oppName) btnOppTopEl.title = `Cambiar a ${oppName}`;
-  } else {
-    btnOppTopEl.style.display = "none";
-  }
+  if (oppHref) { btnOppTopEl.href = oppHref; btnOppTopEl.style.display = ""; if (oppName) btnOppTopEl.title = `Ver ${oppName}`; }
+  else { btnOppTopEl.style.display = "none"; }
 }
 
 function ensureBottomControlsContainer() {
@@ -1274,224 +652,115 @@ function ensureBottomControlsContainer() {
     if (!contenedorBottomControls) {
       contenedorBottomControls = document.createElement("div");
       contenedorBottomControls.id = "bottom-controls";
-      contenedorBottomControls.style.margin = "24px 0 12px 0";
+      contenedorBottomControls.style.margin = "24px 0 12px";
       contenedorVideos.parentElement.insertBefore(contenedorBottomControls, contenedorVideos.nextSibling);
     }
   }
-  let pagBottom = document.getElementById("paginator-bottom");
-  if (!pagBottom) {
-    pagBottom = document.createElement("div");
-    pagBottom.id = "paginator-bottom";
-    contenedorBottomControls.appendChild(pagBottom);
+  if (!document.getElementById("paginator-bottom")) {
+    const pag = document.createElement("div"); pag.id = "paginator-bottom"; contenedorBottomControls.appendChild(pag);
   }
   contFiltroAbajo = document.getElementById("filtro-horario-bottom");
   if (!contFiltroAbajo) {
-    contFiltroAbajo = document.createElement("div");
-    contFiltroAbajo.id = "filtro-horario-bottom";
-    contFiltroAbajo.style.marginTop = "12px";
-    contenedorBottomControls.appendChild(contFiltroAbajo);
+    contFiltroAbajo = document.createElement("div"); contFiltroAbajo.id = "filtro-horario-bottom"; contFiltroAbajo.style.marginTop = "12px"; contenedorBottomControls.appendChild(contFiltroAbajo);
   }
 }
 
-function renderPaginator(container, totalItems, pageIndex, pageSize, onChange, oppHref) {
+function renderPaginator(container, totalItems, pageIndex, pageSize, onChange) {
   if (!container) return;
   container.innerHTML = "";
-
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  if (totalPages === 1 && !oppHref) return;
+  if (totalPages <= 1) return;
 
   const wrap = document.createElement("div");
-  wrap.style.display = "flex";
-  wrap.style.flexWrap = "wrap";
-  wrap.style.alignItems = "center";
-  wrap.style.gap = "8px";
+  wrap.style.cssText = "display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0;";
 
-  const mkBtn = (label, disabled, handler, title) => {
-    const b = document.createElement("button");
-    b.textContent = label;
-    b.title = title || label;
-    b.disabled = !!disabled;
-    b.style.padding = "6px 10px";
-    b.style.border = "none";
-    b.style.borderRadius = "8px";
-    b.style.cursor = disabled ? "default" : "pointer";
-    b.addEventListener("click", handler);
-    return b;
+  const mkBtn = (label, disabled, handler) => {
+    const b = document.createElement("button"); b.textContent = label; b.disabled = !!disabled;
+    b.style.cssText = `padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#eaf2ff;cursor:${disabled ? "default" : "pointer"};font-family:inherit;font-size:.82rem;font-weight:700;`;
+    b.addEventListener("click", handler); return b;
   };
 
-  wrap.appendChild(mkBtn("‹ Anterior", pageIndex === 0, () => onChange(pageIndex - 1), "Página anterior"));
+  wrap.appendChild(mkBtn("‹ Anterior", pageIndex === 0, () => onChange(pageIndex - 1)));
 
-  const windowSize = 5;
-  let start = Math.max(0, pageIndex - Math.floor(windowSize / 2));
-  let end = Math.min(totalPages - 1, start + windowSize - 1);
-  start = Math.max(0, Math.min(start, Math.max(0, end - windowSize + 1)));
-
+  const windowSize = 5, start = Math.max(0, Math.min(pageIndex - 2, totalPages - windowSize)), end = Math.min(totalPages - 1, start + windowSize - 1);
   for (let i = start; i <= end; i++) {
-    const num = document.createElement("button");
-    num.textContent = String(i + 1);
-    num.style.padding = "6px 10px";
-    num.style.border = "none";
-    num.style.borderRadius = "8px";
-    num.style.cursor = i === pageIndex ? "default" : "pointer";
-    if (i === pageIndex) {
-      num.disabled = true;
-      num.setAttribute("aria-current", "page");
-      num.style.fontWeight = "700";
-      num.style.outline = "1px solid rgba(255,255,255,0.3)";
-    }
-    num.addEventListener("click", () => onChange(i));
+    const num = mkBtn(String(i + 1), i === pageIndex, () => onChange(i));
+    if (i === pageIndex) { num.style.background = "rgba(0,79,200,.28)"; num.style.borderColor = "rgba(11,124,255,.38)"; num.style.color = "#fff"; num.setAttribute("aria-current", "page"); }
     wrap.appendChild(num);
   }
 
-  wrap.appendChild(mkBtn("Siguiente ›", pageIndex >= totalPages - 1, () => onChange(pageIndex + 1), "Página siguiente"));
+  wrap.appendChild(mkBtn("Siguiente ›", pageIndex >= totalPages - 1, () => onChange(pageIndex + 1)));
 
   const info = document.createElement("span");
-  const first = totalItems === 0 ? 0 : pageIndex * pageSize + 1;
-  const last = Math.min((pageIndex + 1) * pageSize, totalItems);
-  const pageLabel = totalPages > 1 ? ` · Página ${pageIndex + 1}/${totalPages}` : "";
-  info.textContent = `Mostrando ${first}–${last} de ${totalItems}${pageLabel}`;
-  info.style.marginLeft = "auto";
-  info.style.opacity = "0.85";
+  const first = totalItems === 0 ? 0 : pageIndex * pageSize + 1, last = Math.min((pageIndex + 1) * pageSize, totalItems);
+  info.textContent = `${first}–${last} de ${totalItems} · Página ${pageIndex + 1}/${totalPages}`;
+  info.style.cssText = "margin-left:auto;font-size:.78rem;opacity:.65;color:#eaf2ff;";
   wrap.appendChild(info);
-
-  if (oppHref) {
-    const opp = document.createElement("a");
-    opp.textContent = "Ir al lado opuesto";
-    const btnVolver = document.getElementById("btn-volver");
-    if (btnVolver && btnVolver.className) {
-      opp.className = btnVolver.className;
-    } else {
-      opp.className = "btn-alt";
-    }
-    opp.href = oppHref;
-
-    // [GA4] click lado opuesto (bottom)
-    opp.addEventListener("click", () => {
-      trackEvent("click_opposite_side", gaCtx({ position: "bottom" }));
-    });
-
-    wrap.appendChild(opp);
-  }
-
   container.appendChild(wrap);
 }
 
 function renderHourFilterIn(container, videos) {
   if (!container) return;
-  const params = getQueryParams();
-  const filtroHoraActivo = params.filtro;
-
+  const filtroHoraActivo = getQueryParams().filtro;
   container.innerHTML = "";
   const horasSet = new Set();
-  videos.forEach(v => {
-    const m = v.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
-    if (m) horasSet.add(m[1]);
-  });
-
+  videos.forEach(v => { const m = v.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/); if (m) horasSet.add(m[1]); });
   [...horasSet].sort().forEach(h => {
-    const btn = document.createElement("button");
+    const btn = document.createElement("button"); btn.type = "button";
     btn.textContent = `${formatAmPm(h)} - ${formatAmPm((+h + 1) % 24)}`;
-    btn.className = "btn-filtro";
-    if (filtroHoraActivo === h) btn.classList.add("activo");
-    btn.addEventListener("click", () => {
-      // [GA4] filtro por hora
-      trackEvent("filter_hour", gaCtx({ hour: h }));
-
-      setQueryParams({ filtro: h, pg: 0, video: "" });
-      populateVideos();
-      scrollToTop();
-    });
+    btn.className = "btn-filtro"; if (filtroHoraActivo === h) btn.classList.add("activo");
+    btn.addEventListener("click", () => { trackEvent("filter_hour", gaCtx({ hour: h })); setQueryParams({ filtro: h, pg: 0, video: "" }); populateVideos(); scrollToTop(); });
     container.appendChild(btn);
   });
-
-  const quitarBtn = document.createElement("button");
-  quitarBtn.textContent = "Quitar filtro";
-  quitarBtn.className = "btn-filtro quitar";
+  const quitarBtn = document.createElement("button"); quitarBtn.textContent = "✕ Quitar filtro"; quitarBtn.className = "btn-filtro quitar";
   if (!filtroHoraActivo) quitarBtn.style.display = "none";
-  quitarBtn.addEventListener("click", () => {
-    // [GA4] quitar filtro
-    trackEvent("filter_remove", gaCtx({ prev_hour: filtroHoraActivo || "" }));
-
-    setQueryParams({ filtro: "", pg: 0, video: "" });
-    populateVideos();
-    scrollToTop();
-  });
+  quitarBtn.addEventListener("click", () => { setQueryParams({ filtro: "", pg: 0, video: "" }); populateVideos(); scrollToTop(); });
   container.appendChild(quitarBtn);
   container.style.display = "flex";
 }
 
 function createHourFilterUI(videos) {
-  const filtroDiv = document.getElementById("filtro-horario");
-  contFiltroArriba = filtroDiv || null;
+  contFiltroArriba = document.getElementById("filtro-horario") || null;
   renderHourFilterIn(contFiltroArriba, videos);
-
   ensureBottomControlsContainer();
   renderHourFilterIn(contFiltroAbajo, videos);
 }
 
+// ----------------------- preview overlay -----------------------
 function createPreviewOverlay(videoSrc, duration, parentCard) {
   const preview = document.createElement("video");
-  preview.muted = true;
-  preview.playsInline = true;
-  preview.preload = "none";
-  preview.src = videoSrc;
-  preview.className = "video-preview";
-  preview.setAttribute("aria-label", "Vista previa");
-
-  let start = duration > 15 ? duration - 15 : 0;
-  const len = 5, end = start + len;
-
+  preview.muted = true; preview.playsInline = true; preview.preload = "none"; preview.src = videoSrc; preview.className = "video-preview";
+  let start = duration > 15 ? duration - 15 : 0, len = 5, end = start + len;
   const onLoadedMeta = () => { try { preview.currentTime = start; } catch {} };
-  const onTimeUpdate = () => {
-    try { if (preview.currentTime >= end) preview.currentTime = start; } catch {}
-  };
+  const onTimeUpdate = () => { try { if (preview.currentTime >= end) preview.currentTime = start; } catch {} };
   preview.addEventListener("loadedmetadata", onLoadedMeta);
   preview.addEventListener("timeupdate", onTimeUpdate);
-
   const io = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       visibilityMap.set(preview, entry.intersectionRatio);
       let max = 0, winner = null;
-      visibilityMap.forEach((ratio, node) => { if (ratio > max) [max, winner] = [ratio, node]; });
+      visibilityMap.forEach((ratio, node) => { if (ratio > max) { max = ratio; winner = node; } });
       if (winner === preview && entry.isIntersecting) {
         const realPlaying = parentCard.querySelector("video.real")?.paused === false;
         if (!realPlaying) {
           if (currentPreviewActive && currentPreviewActive !== preview) currentPreviewActive.pause();
-          currentPreviewActive = preview;
-          preview.play().catch(() => {});
+          currentPreviewActive = preview; preview.play().catch(() => {});
         }
-      } else {
-        preview.pause();
-      }
+      } else { preview.pause(); }
     });
   }, { threshold: [0.25, 0.5, 0.75] });
-
   io.observe(preview);
-  preview._observer = io;
-  preview._onLoadedMeta = onLoadedMeta;
-  preview._onTimeUpdate = onTimeUpdate;
-
+  preview._observer = io; preview._onLoadedMeta = onLoadedMeta; preview._onTimeUpdate = onTimeUpdate;
   preview.addEventListener("click", () => {
-    // [GA4] click preview para reproducir real
-    const id = parentCard?.id || "";
-    trackEvent("click_preview_to_play", gaCtx({ video_name: id }));
-
+    trackEvent("click_preview_to_play", gaCtx({ video_name: parentCard?.id || "" }));
     const realVideo = parentCard.querySelector("video.real");
-    if (realVideo) {
-      preview.style.display = "none";
-      realVideo.style.display = "block";
-      realVideo.currentTime = 0;
-      realVideo.play();
-    }
+    if (realVideo) { preview.style.display = "none"; realVideo.style.display = "block"; realVideo.currentTime = 0; realVideo.play(); }
   });
-
   return preview;
 }
 
 function setupMutualExclusion(list) {
-  list.forEach(v => v.addEventListener("play", () => {
-    list.forEach(o => { if (o !== v) o.pause(); });
-  }));
+  list.forEach(v => v.addEventListener("play", () => { list.forEach(o => { if (o !== v) o.pause(); }); }));
 }
 
 async function loadPreviewsSequentially(previews) {
@@ -1504,767 +773,277 @@ async function loadPreviewsSequentially(previews) {
   }
 }
 
-
 function pauseAllVideos() {
   try { if (currentPreviewActive) currentPreviewActive.pause(); } catch {}
+  currentPreviewActive = null;
   document.querySelectorAll("video.video-preview, video.real").forEach(v => {
-    try { v.pause(); } catch {}
-    try { v.preload = "none"; } catch {}
+    try { v.pause(); } catch {} try { v.preload = "none"; } catch {}
   });
 }
 
-
-// ---------------- DESCARGA CON PROGRESO + COMPARTIR ----------------
-
-// Convierte links de Dropbox "www.dropbox.com" a link directo apto para fetch()
-// y evita parametros que causan redirects (raw=1 / dl=1).
+// ----------------------- Dropbox URLs -----------------------
 function toDropboxDirectFetchUrl(url) {
   try {
     const u = new URL(url);
-
-    // Si viene de www.dropbox.com, pásalo al host directo
-    if (u.hostname === "www.dropbox.com") {
-      u.hostname = "dl.dropboxusercontent.com";
-    }
-
-    // Quita params que meten redirects (y rompen CORS)
-    u.searchParams.delete("raw");
-    u.searchParams.delete("dl");
-
+    if (u.hostname === "www.dropbox.com") u.hostname = "dl.dropboxusercontent.com";
+    u.searchParams.delete("raw"); u.searchParams.delete("dl");
     return u.toString();
-  } catch {
-    return url;
-  }
+  } catch { return url; }
 }
 
-// Fallback: construye un link que fuerza descarga "normal" (sin fetch)
-function toDropboxForceDownloadUrl(url) {
-  try {
-    const u = new URL(url);
-
-    // Para descarga normal, lo correcto es usar www.dropbox.com con dl=1
-    if (u.hostname === "dl.dropboxusercontent.com") {
-      u.hostname = "www.dropbox.com";
-    }
-
-    u.searchParams.delete("raw");
-    u.searchParams.set("dl", "1");
-
-    return u.toString();
-  } catch {
-    return url;
-  }
-}
-
-async function downloadWithProgress(url, { onStart, onProgress, onFinish, signal } = {}) {
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-  const totalHeader = res.headers.get("Content-Length") || res.headers.get("content-length");
-  const total = totalHeader ? parseInt(totalHeader, 10) : 0;
-
-  const defaultType = url.toLowerCase().endsWith(".mp4")
-    ? "video/mp4"
-    : (res.headers.get("Content-Type") || "application/octet-stream");
-
-  const reader = res.body?.getReader?.();
-
-  if (onStart) onStart({ totalKnown: !!total, totalBytes: total });
-
-  if (!reader) {
-    const blob = await res.blob();
-    if (onProgress) onProgress({ percent: 100, loaded: blob.size, total: blob.size, indeterminate: !total });
-    if (onFinish) onFinish();
-    return new Blob([blob], { type: blob.type || defaultType });
-  }
-
-  const chunks = [];
-  let received = 0;
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-
-    chunks.push(value);
-    received += value.byteLength || value.length || 0;
-
-    if (onProgress) {
-      if (total) {
-        const pct = Math.max(0, Math.min(100, Math.round((received / total) * 100)));
-        onProgress({ percent: pct, loaded: received, total, indeterminate: false });
-      } else {
-        onProgress({ percent: null, loaded: received, total: 0, indeterminate: true });
-      }
-    }
-  }
-
-  if (onFinish) onFinish();
-  return new Blob(chunks, { type: defaultType });
-}
-
-// ----------------------- guardados / auth -----------------------
-let puntazoSaveAuthBound = false;
-
-function ensureSavedVideoStyles() {
-  if (document.getElementById("pz-saved-video-styles")) return;
-
-  const style = document.createElement("style");
-  style.id = "pz-saved-video-styles";
-  style.textContent = `
-    .btn-save-video{
-      display:none;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      min-height:48px;
-      padding:0.9rem 1.15rem;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,0.14);
-      background:rgba(255,255,255,0.06);
-      color:#eaf2ff;
-      font-family:inherit;
-      font-size:0.88rem;
-      font-weight:800;
-      line-height:1;
-      cursor:pointer;
-      text-decoration:none;
-      box-shadow:0 10px 26px rgba(0,0,0,.22);
-      backdrop-filter:blur(16px);
-      transition:all .18s ease;
-      white-space:nowrap;
-    }
-
-    .btn-save-video:hover{
-      transform:translateY(-1px);
-      border-color:rgba(11,124,255,.34);
-      background:rgba(0,79,200,.14);
-    }
-
-    .btn-save-video.is-saved{
-      background:linear-gradient(135deg, rgba(11,124,255,.22), rgba(0,79,200,.28));
-      border-color:rgba(11,124,255,.42);
-      color:#fff;
-      box-shadow:0 0 24px rgba(0,79,200,.18), 0 10px 26px rgba(0,0,0,.22);
-    }
-
-    .btn-save-video[disabled]{
-      opacity:.78;
-      cursor:wait;
-      transform:none;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-function bindSaveButtonsToAuth() {
-  if (puntazoSaveAuthBound) return;
-  puntazoSaveAuthBound = true;
-
-  window.addEventListener("puntazo:auth-changed", () => {
-    document.querySelectorAll(".btn-save-video").forEach(btn => {
-      if (typeof btn._syncSavedState === "function") {
-        btn._syncSavedState();
-      }
-    });
-  });
-}
-
+// ----------------------- Auth helpers -----------------------
 function getFirestoreDb() {
   try {
-    if (window.PuntazoFirebase && typeof window.PuntazoFirebase.db === "function") {
-      return window.PuntazoFirebase.db();
-    }
-
-    if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.firestore === "function") {
-      return firebase.firestore();
-    }
+    if (window.PuntazoFirebase && typeof window.PuntazoFirebase.db === "function") return window.PuntazoFirebase.db();
+    if (window.firebase && firebase.apps?.length && typeof firebase.firestore === "function") return firebase.firestore();
   } catch {}
-
   return null;
 }
 
-function getAuthUser() {
-  try {
-    return window.PuntazoAuth?.currentUser || null;
-  } catch {
-    return null;
-  }
-}
-
-function getFirestoreTimestamp() {
-  try {
-    return firebase.firestore.FieldValue.serverTimestamp();
-  } catch {
-    return new Date();
-  }
-}
+function getAuthUser() { try { return window.PuntazoAuth?.currentUser || null; } catch { return null; } }
+function getFirestoreTimestamp() { try { return firebase.firestore.FieldValue.serverTimestamp(); } catch { return new Date(); } }
 
 function buildSavedVideoMeta(entry, loc, can, lado) {
-  const clubLabel = (document.getElementById("link-club")?.textContent || loc || "").trim();
-  const canchaLabel = (document.getElementById("link-cancha")?.textContent || can || "").trim();
-  const ladoLabel = (document.getElementById("nombre-lado")?.textContent || lado || "").trim();
-
-  const fecha = entry?._meta
-    ? `${entry._meta.Y}-${entry._meta.M}-${entry._meta.D}`
-    : "";
-
   return {
-    videoId: entry.nombre,
-    videoUrl: entry.url,
-    club: clubLabel,
-    cancha: canchaLabel,
-    lado: ladoLabel,
-    fecha: fecha,
-    savedAt: getFirestoreTimestamp(),
-
-    // extras útiles para perfil.html después
-    locId: loc,
-    canId: can,
-    ladoId: lado,
-    nombreArchivo: entry.nombre
+    videoId: entry.nombre, videoUrl: entry.url,
+    club:    (document.getElementById("link-club")?.textContent  || loc).trim(),
+    cancha:  (document.getElementById("link-cancha")?.textContent || can).trim(),
+    lado:    (document.getElementById("nombre-lado")?.textContent || lado).trim(),
+    fecha:   entry._meta ? `${entry._meta.Y}-${entry._meta.M}-${entry._meta.D}` : "",
+    savedAt: getFirestoreTimestamp(), locId: loc, canId: can, ladoId: lado, nombreArchivo: entry.nombre,
   };
 }
 
 async function isVideoSavedForCurrentUser(videoId) {
-  const user = getAuthUser();
-  const db = getFirestoreDb();
+  const user = getAuthUser(), db = getFirestoreDb();
   if (!user || !db) return false;
-
-  const snap = await db
-    .collection("usuarios")
-    .doc(user.uid)
-    .collection("guardados")
-    .doc(videoId)
-    .get();
-
-  return snap.exists;
+  return (await db.collection("usuarios").doc(user.uid).collection("guardados").doc(videoId).get()).exists;
 }
 
 async function saveVideoForCurrentUser(meta) {
-  const user = getAuthUser();
-  const db = getFirestoreDb();
-  if (!user || !db) throw new Error("No hay usuario o Firestore no está listo.");
-
-  await db
-    .collection("usuarios")
-    .doc(user.uid)
-    .collection("guardados")
-    .doc(meta.videoId)
-    .set(meta, { merge: true });
+  const user = getAuthUser(), db = getFirestoreDb();
+  if (!user || !db) throw new Error("Sin usuario/DB");
+  await db.collection("usuarios").doc(user.uid).collection("guardados").doc(meta.videoId).set(meta, { merge: true });
 }
 
 async function unsaveVideoForCurrentUser(videoId) {
-  const user = getAuthUser();
-  const db = getFirestoreDb();
-  if (!user || !db) throw new Error("No hay usuario o Firestore no está listo.");
-
-  await db
-    .collection("usuarios")
-    .doc(user.uid)
-    .collection("guardados")
-    .doc(videoId)
-    .delete();
+  const user = getAuthUser(), db = getFirestoreDb();
+  if (!user || !db) throw new Error("Sin usuario/DB");
+  await db.collection("usuarios").doc(user.uid).collection("guardados").doc(videoId).delete();
 }
 
-async function syncSaveButtonState(btn, meta) {
-  const user = getAuthUser();
-
-  if (!user) {
-    btn.style.display = "none";
-    btn.disabled = false;
-    btn.dataset.saved = "0";
-    btn.classList.remove("is-saved");
-    btn.textContent = "💾 Guardar video";
-    return;
-  }
-
-  btn.style.display = "inline-flex";
-
-  try {
-    const saved = await isVideoSavedForCurrentUser(meta.videoId);
-    btn.dataset.saved = saved ? "1" : "0";
-    btn.classList.toggle("is-saved", saved);
-    btn.textContent = saved ? "✅" : "💾";
-    btn.title = saved ? "Guardado en tu perfil" : "Guardar video en tu perfil";
-    btn.setAttribute("aria-label", saved ? "Guardado en tu perfil" : "Guardar video en tu perfil");
-  } catch (err) {
-    console.warn("[guardados] No se pudo sincronizar botón:", err);
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-
-function crearBotonGuardarVideo(entry, loc, can, lado) {
-  ensureSavedVideoStyles();
-  bindSaveButtonsToAuth();
-
-  const meta = buildSavedVideoMeta(entry, loc, can, lado);
-
+// ----------------------- Botones pill -----------------------
+function crearSharePill(entry) {
   const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "btn-save-video";
-  btn.textContent = "💾";
-  btn.title = "Guardar video en tu perfil";
-  btn.setAttribute("aria-label", "Guardar video en tu perfil");
-  btn.style.width = "100%";
-  btn.style.justifyContent = "center";
-  btn.style.textAlign = "center";
-  btn.dataset.saved = "0";
-  btn.dataset.loading = "0";
+  btn.type = "button"; btn.className = "action-pill"; btn.textContent = "🔗"; btn.title = "Copiar enlace";
+  btn.setAttribute("aria-label", "Copiar enlace");
 
-  btn._syncSavedState = () => syncSaveButtonState(btn, meta);
-
-  
-btn.addEventListener("click", async (e) => {
-  e.preventDefault();
-
-  if (!window.PuntazoAuth || typeof window.PuntazoAuth.requireAuth !== "function") {
-    alert("El login todavía no está listo. Recarga la página.");
-    return;
-  }
-
-  if (!window.PuntazoAuth.currentUser) {
-    window.PuntazoAuth.requireAuth(() => btn._syncSavedState());
-    return;
-  }
-
-  if (btn.dataset.loading === "1") return;
-
-  btn.dataset.loading = "1";
-  btn.disabled = true;
-
-  try {
-    const alreadySaved = btn.dataset.saved === "1";
-    const willBeSaved = !alreadySaved;
-
-    if (alreadySaved) {
-      await unsaveVideoForCurrentUser(meta.videoId);
-      trackEvent("unsave_video", gaCtx({ video_name: entry?.nombre || "" }));
-        // NOTE: do not remove immortal once set; saved_by_user is a one-way signal
-        try { updateBusinessMetrics(meta.videoId, { /* no-op */ }); } catch {}
-    } else {
-      await saveVideoForCurrentUser(meta);
-      trackEvent("save_video", gaCtx({ video_name: entry?.nombre || "" }));
-        try {
-          const user = getAuthUser();
-          await updateBusinessMetrics(meta.videoId, { saves: 1 }, {
-            saved_by_user: true,
-            immortal: true,
-            immortal_reasons: { saved_by_user: { uid: user ? user.uid : null, at: getFirestoreTimestamp() } },
-            immortal_markedAt: getFirestoreTimestamp()
-          });
-        } catch (e) { /* noop */ }
-    }
-
-    // UI optimista inmediata
-    btn.dataset.saved = willBeSaved ? "1" : "0";
-    btn.classList.toggle("is-saved", willBeSaved);
-    btn.textContent = willBeSaved ? "✓ Guardado" : "💾 Guardar video";
-
+  btn.addEventListener("click", async () => {
+    const link = `${location.origin}/clip.html?videoId=${encodeURIComponent(entry.nombre)}`;
+    trackEvent("click_share", gaCtx({ video_name: entry.nombre }));
     try {
-      toast(willBeSaved ? "Guardado en tu perfil" : "Quitado de guardados");
+      if (navigator.share) {
+        await navigator.share({ title: "Puntazo", text: "Mira este puntazo 🎾", url: link });
+        try { updateBusinessMetrics(entry.nombre, { shares: 1 }); } catch {}
+        toast("Compartido"); return;
+      }
     } catch {}
-
-    btn.disabled = false;
-    btn.dataset.loading = "0";
-
-    // Sync silencioso de confirmación
-    setTimeout(() => {
-      btn._syncSavedState().catch(err => {
-        console.warn("[guardados] Sync silencioso falló:", err);
-      });
-    }, 300);
-
-  } catch (err) {
-    console.warn("[guardados] Error guardando/quitar guardado:", err);
-    btn.textContent = "Error";
-    btn.disabled = false;
-    btn.dataset.loading = "0";
-
-    setTimeout(() => {
-      btn._syncSavedState().catch(syncErr => {
-        console.warn("[guardados] Sync tras error falló:", syncErr);
-      });
-    }, 1200);
-  }
-});
-
-  Promise.resolve().then(() => btn._syncSavedState());
-
+    try {
+      await navigator.clipboard.writeText(link);
+      btn.textContent = "✓"; setTimeout(() => { btn.textContent = "🔗"; }, 1500);
+      try { updateBusinessMetrics(entry.nombre, { shares: 1 }); } catch {}
+      toast("Enlace copiado");
+    } catch { window.open(link, "_blank"); }
+  });
   return btn;
 }
 
-// ---------------- FULLSCREEN / VER EN HORIZONTAL ----------------
+function crearSavePill(entry, loc, can, lado) {
+  const meta = buildSavedVideoMeta(entry, loc, can, lado);
+  const btn  = document.createElement("button");
+  btn.type = "button"; btn.className = "action-pill"; btn.title = "Guardar en tu perfil";
+  btn.setAttribute("aria-label", "Guardar video");
+  btn.dataset.saved = "0"; btn.dataset.loading = "0";
+
+  const syncState = async () => {
+    const user = getAuthUser();
+    if (!user) { btn.textContent = "💾"; btn.classList.remove("is-saved"); return; }
+    try {
+      const saved = await isVideoSavedForCurrentUser(meta.videoId);
+      btn.dataset.saved = saved ? "1" : "0";
+      btn.classList.toggle("is-saved", saved);
+      btn.textContent = saved ? "✅" : "💾";
+    } catch {}
+  };
+
+  btn._syncSavedState = syncState;
+
+  btn.addEventListener("click", async () => {
+    if (!window.PuntazoAuth?.currentUser) {
+      if (window.PuntazoAuth?.requireAuth) { window.PuntazoAuth.requireAuth(() => syncState()); }
+      return;
+    }
+    if (btn.dataset.loading === "1") return;
+    btn.dataset.loading = "1"; btn.disabled = true;
+    try {
+      const alreadySaved = btn.dataset.saved === "1";
+      if (alreadySaved) {
+        await unsaveVideoForCurrentUser(meta.videoId);
+        trackEvent("unsave_video", gaCtx({ video_name: entry.nombre }));
+      } else {
+        await saveVideoForCurrentUser(meta);
+        trackEvent("save_video", gaCtx({ video_name: entry.nombre }));
+        try {
+          const user = getAuthUser();
+          await updateBusinessMetrics(meta.videoId, { saves: 1 }, {
+            saved_by_user: true, immortal: true,
+            immortal_reasons: { saved_by_user: { uid: user?.uid || null, at: getFirestoreTimestamp() } },
+            immortal_markedAt: getFirestoreTimestamp()
+          });
+        } catch {}
+      }
+      btn.dataset.saved = alreadySaved ? "0" : "1";
+      btn.classList.toggle("is-saved", !alreadySaved);
+      btn.textContent = alreadySaved ? "💾" : "✅";
+      toast(alreadySaved ? "Quitado de guardados" : "Guardado en tu perfil");
+    } catch(err) { console.warn("[guardados]", err); }
+    btn.disabled = false; btn.dataset.loading = "0";
+    setTimeout(() => syncState().catch(() => {}), 300);
+  });
+
+  window.addEventListener("puntazo:auth-changed", () => { if (typeof syncState === "function") syncState(); });
+  Promise.resolve().then(syncState);
+  return btn;
+}
+
+// Fullscreen / pantalla completa
 let puntazoFullscreenUnlockBound = false;
-
-function ensureFullscreenVideoStyles() {
-  if (document.getElementById("pz-fullscreen-video-styles")) return;
-
-  const style = document.createElement("style");
-  style.id = "pz-fullscreen-video-styles";
-  style.textContent = `
-    .btn-fullscreen-video{
-      display:none;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      min-height:48px;
-      padding:0.9rem 1.12rem;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,0.12);
-      background:rgba(255,255,255,0.06);
-      color:#eaf2ff;
-      font-family:inherit;
-      font-size:0.86rem;
-      font-weight:800;
-      line-height:1;
-      cursor:pointer;
-      text-decoration:none;
-      box-shadow:0 10px 26px rgba(0,0,0,.22);
-      backdrop-filter:blur(16px);
-      transition:all .18s ease;
-      white-space:nowrap;
-    }
-
-    .btn-fullscreen-video:hover{
-      transform:translateY(-1px);
-      border-color:rgba(11,124,255,.34);
-      background:rgba(0,79,200,.14);
-    }
-
-    .btn-fullscreen-video.is-active{
-      background:linear-gradient(135deg, rgba(11,124,255,.18), rgba(0,79,200,.24));
-      border-color:rgba(11,124,255,.40);
-      color:#fff;
-      box-shadow:0 0 24px rgba(0,79,200,.18), 0 10px 26px rgba(0,0,0,.22);
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-function safeOrientationUnlock() {
-  try {
-    if (screen.orientation && typeof screen.orientation.unlock === "function") {
-      screen.orientation.unlock();
-    }
-  } catch {}
-}
-
 function bindFullscreenUnlockOnce() {
   if (puntazoFullscreenUnlockBound) return;
   puntazoFullscreenUnlockBound = true;
-
-  document.addEventListener("fullscreenchange", () => {
-    if (!document.fullscreenElement) safeOrientationUnlock();
-  });
-
-  document.addEventListener("webkitfullscreenchange", () => {
-    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
-    if (!fsEl) safeOrientationUnlock();
-  });
+  const unlock = () => { try { if (screen.orientation?.unlock) screen.orientation.unlock(); } catch {} };
+  document.addEventListener("fullscreenchange",       () => { if (!document.fullscreenElement) unlock(); });
+  document.addEventListener("webkitfullscreenchange", () => { if (!document.fullscreenElement && !document.webkitFullscreenElement) unlock(); });
 }
 
 function isThisVideoFullscreen(video) {
-  return !!(
-    document.fullscreenElement === video ||
-    document.webkitFullscreenElement === video ||
-    video.webkitDisplayingFullscreen
-  );
+  return !!(document.fullscreenElement === video || document.webkitFullscreenElement === video || video.webkitDisplayingFullscreen);
 }
 
 async function requestVideoFullscreen(video) {
-  if (video.requestFullscreen) {
-    return await video.requestFullscreen();
-  }
-
-  if (video.webkitRequestFullscreen) {
-    return await video.webkitRequestFullscreen();
-  }
-
-  if (video.webkitEnterFullscreen) {
-    video.webkitEnterFullscreen();
-    return;
-  }
-
-  throw new Error("Fullscreen no soportado en este navegador.");
+  if (video.requestFullscreen)        return video.requestFullscreen();
+  if (video.webkitRequestFullscreen)  return video.webkitRequestFullscreen();
+  if (video.webkitEnterFullscreen)    { video.webkitEnterFullscreen(); return; }
+  throw new Error("Fullscreen no soportado");
 }
 
-async function exitVideoFullscreen(video) {
-  try {
-    if (document.fullscreenElement || document.webkitFullscreenElement) {
-      if (document.exitFullscreen) {
-        await document.exitFullscreen();
-        return;
-      }
-      if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-        return;
-      }
-    }
-  } catch {}
-
-  try {
-    if (video.webkitExitFullscreen) {
-      video.webkitExitFullscreen();
-    }
-  } catch {}
-}
-
-async function verEnHorizontal(video, card) {
-  pauseAllVideos();
-
-  const preview = card?.querySelector("video.video-preview");
-  if (preview) {
-    try { preview.pause(); } catch {}
-    preview.style.display = "none";
-  }
-
-  video.style.display = "block";
-
-  try {
-    if (video.readyState < 1) video.load?.();
-  } catch {}
-
-  await requestVideoFullscreen(video);
-
-  try {
-    await video.play();
-  } catch {}
-
-  try {
-    if (screen.orientation && typeof screen.orientation.lock === "function") {
-      await screen.orientation.lock("landscape");
-    }
-  } catch {}
-}
-
-
-function crearBotonPantallaCompleta(video, card, entry) {
-  ensureFullscreenVideoStyles();
+function crearFullscreenPill(video, card, entry) {
   bindFullscreenUnlockOnce();
-
   const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "btn-fullscreen-video";
-  btn.textContent = "↔ Pantalla Completa";
-  btn.style.width = "100%";
-  btn.style.justifyContent = "center";
-  btn.style.textAlign = "center";
-  btn.setAttribute("aria-label", "Ver video en pantalla completa");
+  btn.type = "button"; btn.className = "action-pill"; btn.textContent = "⛶"; btn.title = "Pantalla completa";
+  btn.setAttribute("aria-label", "Pantalla completa"); btn.style.display = "none";
 
   const syncLabel = () => {
     const active = isThisVideoFullscreen(video);
     btn.classList.toggle("is-active", active);
-    btn.textContent = active ? "✕ Salir" : "⛶ Expandir";
+    btn.textContent = active ? "✕" : "⛶";
   };
 
   const syncVisibility = () => {
-    const visible = !video.paused || isThisVideoFullscreen(video);
-    btn.style.display = visible ? "inline-flex" : "none";
+    btn.style.display = (!video.paused || isThisVideoFullscreen(video)) ? "inline-flex" : "none";
   };
 
-  btn.addEventListener("click", async (e) => {
-    e.preventDefault();
-
+  btn.addEventListener("click", async () => {
     try {
       if (isThisVideoFullscreen(video)) {
-        await exitVideoFullscreen(video);
-        safeOrientationUnlock();
-        syncLabel();
-        syncVisibility();
-
-        trackEvent("video_fullscreen_exit", gaCtx({
-          video_name: entry?.nombre || ""
-        }));
-        return;
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        try { if (screen.orientation?.unlock) screen.orientation.unlock(); } catch {}
+        trackEvent("video_fullscreen_exit", gaCtx({ video_name: entry.nombre }));
+      } else {
+        pauseAllVideos();
+        const prev = card.querySelector("video.video-preview");
+        if (prev) { try { prev.pause(); } catch {} prev.style.display = "none"; }
+        video.style.display = "block";
+        if (video.readyState < 1) video.load?.();
+        await requestVideoFullscreen(video);
+        try { await video.play(); } catch {}
+        try { if (screen.orientation?.lock) await screen.orientation.lock("landscape"); } catch {}
+        trackEvent("video_fullscreen_open", gaCtx({ video_name: entry.nombre }));
       }
-
-      await verEnHorizontal(video, card);
-      syncLabel();
-      syncVisibility();
-
-      trackEvent("video_fullscreen_open", gaCtx({
-        video_name: entry?.nombre || ""
-      }));
-    } catch (err) {
-      console.warn("[fullscreen] No se pudo abrir fullscreen:", err);
-      try { toast("No se pudo abrir pantalla completa"); } catch {}
-    }
+      syncLabel(); syncVisibility();
+    } catch(err) { console.warn("[fullscreen]", err); try { toast("No se pudo abrir pantalla completa"); } catch {} }
   });
 
-  video.addEventListener("play", syncVisibility);
+  video.addEventListener("play",  syncVisibility);
   video.addEventListener("pause", syncVisibility);
   video.addEventListener("ended", syncVisibility);
-
-  document.addEventListener("fullscreenchange", () => {
-    syncLabel();
-    syncVisibility();
-  });
-
-  document.addEventListener("webkitfullscreenchange", () => {
-    syncLabel();
-    syncVisibility();
-  });
-
-  video.addEventListener("webkitbeginfullscreen", () => {
-    syncLabel();
-    syncVisibility();
-  });
-
-  video.addEventListener("webkitendfullscreen", () => {
-    safeOrientationUnlock();
-    syncLabel();
-    syncVisibility();
-  });
-
-  syncLabel();
-  syncVisibility();
+  document.addEventListener("fullscreenchange",        () => { syncLabel(); syncVisibility(); });
+  document.addEventListener("webkitfullscreenchange",  () => { syncLabel(); syncVisibility(); });
+  video.addEventListener("webkitbeginfullscreen",      () => { syncLabel(); syncVisibility(); });
+  video.addEventListener("webkitendfullscreen",        () => { try { if (screen.orientation?.unlock) screen.orientation.unlock(); } catch {}; syncLabel(); syncVisibility(); });
   return btn;
 }
 
-
-
-async function crearBotonAccionCompartir(entry) {
-  const btn = document.createElement("button");
-  btn.className = "btn-share-large";
-  btn.textContent = "📤";
-  btn.title = "Compartir";
-  btn.setAttribute("aria-label", "Compartir");
-  btn.style.width = "100%";
-  btn.style.justifyContent = "center";
-  btn.style.textAlign = "center";
-
-  function buildInternalLink() {
-    const p = getQueryParams();
-    const loc = encodeURIComponent(p.loc || "");
-    const can = encodeURIComponent(p.can || "");
-    const lado = encodeURIComponent(p.lado || "");
-    const video = encodeURIComponent(entry?.nombre || "");
-    // Use canonical clip view by videoId to retain views/reactions inside Puntazo
-    return `${location.origin}/clip.html?videoId=${video}`;
-  }
-
-  const runShareFlow = async () => {
-    trackEvent("click_share", gaCtx({ video_name: entry?.nombre || "" }));
-    const link = buildInternalLink();
-
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "Puntazo", text: "Mira este puntazo", url: link });
-        trackEvent("share_success", gaCtx({ video_name: entry?.nombre || "", mode: "native" }));
-        try { updateBusinessMetrics(entry.nombre, { shares: 1 }); } catch {}
-        toast("Compartido");
-        return;
-      }
-    } catch (e) {
-      // ignore and fallback to copy
-    }
-
-    try {
-      await navigator.clipboard.writeText(link);
-        trackEvent("share_copy", gaCtx({ video_name: entry?.nombre || "" }));
-        try { updateBusinessMetrics(entry.nombre, { shares: 1 }); } catch {}
-      toast("Enlace copiado");
-    } catch (e) {
-      // last resort: open the link
-      window.open(link, "_blank");
-    }
-  };
-
-  btn.addEventListener("click", async (e) => {
-    e.preventDefault();
-    await runShareFlow();
-  });
-
-  return btn;
-}
-
-
+// ----------------------- limpiar página -----------------------
 function limpiarRecursosDePagina() {
   try { if (currentPreviewActive) currentPreviewActive.pause(); } catch {}
-  currentPreviewActive = null;
-  visibilityMap = new Map();
-
+  currentPreviewActive = null; visibilityMap = new Map();
   if (!contenedorVideos) return;
-  const cards = Array.from(contenedorVideos.children);
-  cards.forEach(card => {
-    const real = card.querySelector("video.real");
-    const prev = card.querySelector("video.video-preview");
-
-    [real, prev].forEach(v => {
+  Array.from(contenedorVideos.children).forEach(card => {
+    [card.querySelector("video.real"), card.querySelector("video.video-preview")].forEach(v => {
       if (!v) return;
       try { v.pause?.(); } catch {}
-      if (v === prev && v._observer) {
-        try { v._observer.disconnect(); } catch {}
-        v.removeEventListener?.("loadedmetadata", v._onLoadedMeta);
-        v.removeEventListener?.("timeupdate", v._onTimeUpdate);
-        v._observer = null;
-      }
+      if (v._observer) { try { v._observer.disconnect(); } catch {} v._observer = null; }
       try { v.removeAttribute("src"); v.load?.(); } catch {}
     });
   });
-
   contenedorVideos.innerHTML = "";
   allVideos = [];
 }
 
+// ========== renderPaginaActual: NUEVO LAYOUT DE CARD ==========
 async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
   limpiarRecursosDePagina();
 
   const params = getQueryParams();
   const { loc, can, lado } = params;
-
-  const start = paginaActual * PAGE_SIZE;
-  const end = Math.min(start + PAGE_SIZE, videosListaCompleta.length);
+  const start    = paginaActual * PAGE_SIZE;
+  const end      = Math.min(start + PAGE_SIZE, videosListaCompleta.length);
   const pageSlice = videosListaCompleta.slice(start, end);
 
   for (const entry of pageSlice) {
     const m = entry.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
     let displayTime = entry.nombre.replace(".mp4", "");
     if (m) {
-      const hr = parseInt(m[1],10), mn = m[2], ap = hr>=12?"PM":"AM";
-      displayTime = `${hr%12||12}:${mn} ${ap}`;
+      const hr = parseInt(m[1], 10), mn = m[2], ap = hr >= 12 ? "PM" : "AM";
+      displayTime = `${hr % 12 || 12}:${mn} ${ap}`;
     }
 
+    // ── Card container ──
     const card = document.createElement("div");
     card.className = "video-card";
     card.id = entry.nombre;
 
-    const title = document.createElement("div");
-    title.className = "video-title";
-    title.textContent = displayTime;
-    card.appendChild(title);
-    // Tags: Recuperado / Nuevo
-    if (entry._isRecovered || entry._isNew) {
-      const tags = document.createElement("div");
-      tags.style.display = "flex";
-      tags.style.gap = "8px";
-      tags.style.alignItems = "center";
-      tags.style.margin = "6px 0 2px";
-    
-      const mkTag = (text) => {
-        const t = document.createElement("span");
-        t.textContent = text;
-        t.style.padding = "4px 8px";
-        t.style.borderRadius = "999px";
-        t.style.fontSize = "0.80rem";
-        t.style.fontWeight = "900";
-        t.style.border = "1px solid rgba(255,255,255,0.18)";
-        t.style.background = "rgba(255,255,255,0.08)";
-        t.style.color = "rgba(255,255,255,0.95)";
-        return t;
-      };
-    
-      if (entry._isRecovered) tags.appendChild(mkTag("↻ Recuperado"));
-      if (entry._isNew) tags.appendChild(mkTag("🔴 Nuevo"));
-    
-      card.appendChild(tags);
-    }
+    // ── 1. Header: hora + emoji preview ──
+    const cardTop = document.createElement("div");
+    cardTop.className = "card-top";
 
+    const timeEl = document.createElement("span");
+    timeEl.className = "card-time";
+    timeEl.textContent = displayTime;
+    cardTop.appendChild(timeEl);
+
+    const rxnPreview = document.createElement("div");
+    rxnPreview.className = "card-rxn-preview";
+    rxnPreview.setAttribute("data-rxn-preview", "");
+    cardTop.appendChild(rxnPreview);
+
+    card.appendChild(cardTop);
+
+    // ── 2. Video ──
     const wrap = document.createElement("div");
-    wrap.style.position = "relative";
-    wrap.style.width = "100%";
+    wrap.className = "video-wrap";
 
     const real = document.createElement("video");
     real.className = "real";
@@ -2274,180 +1053,132 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     real.src = entry.url;
     real.style.display = "none";
     real.style.width = "100%";
-    real.style.borderRadius = "6px";
-
-    // [GA4] play video (once per card)
+    real.style.borderRadius = "8px";
     real.addEventListener("play", () => {
-      trackEvent("play_video", gaCtx({ video_name: entry?.nombre || "" }));
-      // Métrica comercial: contar vistas (desde feed/mejores/perfil/clip)
+      trackEvent("play_video", gaCtx({ video_name: entry.nombre }));
       try { updateBusinessMetrics(entry.nombre, { views: 1 }); } catch {}
     }, { once: true });
 
-    const preview = createPreviewOverlay(entry.url, entry.duracion||60, card);
+    const preview = createPreviewOverlay(entry.url, entry.duracion || 60, card);
+    preview.style.width = "100%";
+    preview.style.borderRadius = "8px";
 
     wrap.appendChild(real);
     wrap.appendChild(preview);
     card.appendChild(wrap);
 
+    // ── 3. Participantes slot (reactions.js lo puebla) ──
+    const participantsSlot = document.createElement("div");
+    participantsSlot.setAttribute("data-participants-slot", "");
+    card.appendChild(participantsSlot);
+
+    // ── 4. Botones de acción pill ──
+    const actionPills = document.createElement("div");
+    actionPills.className = "action-pills";
+
+    const shareBtn = crearSharePill(entry);
+    actionPills.appendChild(shareBtn);
+
+    const saveBtn = crearSavePill(entry, loc, can, lado);
+    actionPills.appendChild(saveBtn);
+
+    const fsBtn = crearFullscreenPill(real, card, entry);
+    actionPills.appendChild(fsBtn);
+
+    card.appendChild(actionPills);
+
+    // ── Promociones del club ──
     try {
       const promoButtons = await buildPromoButtonsForClub(loc, entry);
       if (promoButtons.length) {
         const promoContainer = document.createElement("div");
         promoContainer.className = "botones-container";
-        promoContainer.style.display = "flex";
-        promoContainer.style.flexDirection = "column";
-        promoContainer.style.gap = "8px";
-        promoContainer.style.marginTop = "12px";
+        promoContainer.style.cssText = "display:flex;flex-direction:column;gap:8px;margin-top:8px;";
         promoButtons.forEach(b => promoContainer.appendChild(b));
         card.appendChild(promoContainer);
       }
-    } catch (e) {
-      console.warn("[promo] No se pudieron renderizar promos:", e);
+    } catch {}
+
+    // ── 5. Reacciones slot ──
+    const rxnSlot = document.createElement("div");
+    rxnSlot.setAttribute("data-rxn-slot", "");
+    card.appendChild(rxnSlot);
+
+    // ── 6. Comentarios slot ──
+    const commentsSlot = document.createElement("div");
+    commentsSlot.setAttribute("data-comments-slot", "");
+    card.appendChild(commentsSlot);
+
+    // ── 7. Claim slot ──
+    const claimSlot = document.createElement("div");
+    claimSlot.setAttribute("data-claim-slot", "");
+    card.appendChild(claimSlot);
+
+    // ── Reacciones: attach en slot mode ──
+    if (window.PuntazoReactions) {
+      const fecha = entry._meta ? `${entry._meta.Y}-${entry._meta.M}-${entry._meta.D}` : "";
+      PuntazoReactions.attach(card, { videoId: entry.nombre, videoUrl: entry.url, club: loc, cancha: can, lado, fecha });
     }
 
-    const btnContainer = document.createElement("div");
-    btnContainer.className = "botones-container";
-    btnContainer.style.display = "grid";
-    btnContainer.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
-    btnContainer.style.gap = "10px";
-    btnContainer.style.marginTop = "12px";
-    btnContainer.style.alignItems = "stretch";
-    
-    const actionBtn = await crearBotonAccionCompartir(entry);
-    actionBtn.style.removeProperty("flex");
-    actionBtn.style.width = "100%";
-    btnContainer.appendChild(actionBtn);
-    
-    const fullscreenBtn = crearBotonPantallaCompleta(real, card, entry);
-    fullscreenBtn.style.width = "100%";
-    btnContainer.appendChild(fullscreenBtn);
-    
-    const saveBtn = crearBotonGuardarVideo(entry, loc, can, lado);
-    saveBtn.style.gridColumn = "1 / -1";
-    saveBtn.style.width = "100%";
-    btnContainer.appendChild(saveBtn);
-
-
+    // ── Link a otro ángulo (asíncrono) ──
     (async () => {
       try {
         const opposite = await findOppositeVideo(entry, cfgGlobal, loc, can, lado);
-        if (opposite && opposite.nombre) {
+        if (opposite?.nombre) {
           const btnAlt = document.createElement("a");
-          btnAlt.className = "btn-alt";
-          btnAlt.textContent = "Ver otra perspectiva";
-          btnAlt.title = "Cambiar a la otra cámara";
+          btnAlt.className = "btn-alt"; btnAlt.textContent = "← Otro ángulo";
+          btnAlt.title = "Ver desde la otra cámara";
           btnAlt.href = `lado.html?loc=${loc}&can=${can}&lado=${opposite.lado}&video=${encodeURIComponent(opposite.nombre)}`;
-
-          // [GA4] click otra perspectiva (per video)
-          btnAlt.addEventListener("click", () => {
-            trackEvent("click_other_perspective", gaCtx({
-              video_name: entry?.nombre || "",
-              target_lado: opposite.lado || ""
-            }));
-          });
-
-          btnContainer.appendChild(btnAlt);
+          btnAlt.addEventListener("click", () => trackEvent("click_other_perspective", gaCtx({ video_name: entry.nombre, target_lado: opposite.lado })));
+          actionPills.appendChild(btnAlt);
         }
       } catch {}
     })();
-
-    card.appendChild(btnContainer);
-
-    // ── REACCIONES PUNTAZO ──
-    if (window.PuntazoReactions) {
-      const reactTarget = document.createElement("div");
-      card.appendChild(reactTarget);
-
-      const fecha = entry._meta
-        ? `${entry._meta.Y}-${entry._meta.M}-${entry._meta.D}`
-        : "";
-
-      PuntazoReactions.attach(reactTarget, {
-        videoId:  entry.nombre,
-        videoUrl: entry.url,
-        club:     loc,
-        cancha:   can,
-        lado:     lado,
-        fecha:    fecha,
-      });
-    }
-    // ── FIN REACCIONES ──
 
     contenedorVideos.appendChild(card);
     allVideos.push(real);
   }
 
   setupMutualExclusion(allVideos);
-
-  const previews = Array.from(contenedorVideos.querySelectorAll("video.video-preview"));
-  loadPreviewsSequentially(previews);
-
-  const total = videosListaCompleta.length;
-  const p = getQueryParams();
-
-  const oppHref = oppInfoCache?.oppId
-    ? (() => {
-        const base = `lado.html?loc=${p.loc}&can=${p.can}&lado=${oppInfoCache.oppId}`;
-        const parts = [];
-        if (typeof paginaActual === "number") parts.push(`pg=${paginaActual}`);
-        if (p.filtro) parts.push(`filtro=${encodeURIComponent(p.filtro)}`);
-        return parts.length ? `${base}&${parts.join("&")}` : base;
-      })()
-    : null;
+  loadPreviewsSequentially(Array.from(contenedorVideos.querySelectorAll("video.video-preview")));
 
   const pagBottom = document.getElementById("paginator-bottom");
-  const onChange = (newPage) => {
-    if (newPage < 0) newPage = 0;
-    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-    if (newPage > totalPages - 1) newPage = totalPages - 1;
-
-    // [GA4] paginate
-    trackEvent("paginate", gaCtx({
-      from: paginaActual,
-      to: newPage,
-      total_items: total,
-      page_size: PAGE_SIZE
-    }));
-
+  renderPaginator(pagBottom, videosListaCompleta.length, paginaActual, PAGE_SIZE, (newPage) => {
+    const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
+    newPage = Math.min(Math.max(0, newPage), totalPages - 1);
+    trackEvent("paginate", gaCtx({ from: paginaActual, to: newPage }));
     paginaActual = newPage;
-    setQueryParams({ pg: paginaActual }, false);
+    setQueryParams({ pg: paginaActual });
     renderPaginaActual({ fueCambioDePagina: true });
     scrollToTop();
-  };
-  renderPaginator(pagBottom, total, paginaActual, PAGE_SIZE, onChange, oppHref);
+  });
 
   if (fueCambioDePagina && contenedorVideos.firstElementChild) {
     contenedorVideos.firstElementChild.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
+// ----------------------- populateVideos -----------------------
 async function populateVideos() {
   const params = getQueryParams();
   const { loc, can, lado, filtro, video: targetId } = params;
-  const urlCfg = `data/config_locations.json?cb=${Date.now()}`;
 
   try {
-    const resCfg = await fetch(urlCfg, { cache: "no-store" });
+    const resCfg = await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" });
     cfgGlobal = await resCfg.json();
 
-    const locObj = cfgGlobal.locaciones.find(l => l.id === loc);
-    const canObj = locObj?.cancha.find(c => c.id === can);
+    const locObj  = cfgGlobal.locaciones.find(l => l.id === loc);
+    const canObj  = locObj?.cancha.find(c => c.id === can);
     const ladoObj = canObj?.lados.find(l => l.id === lado);
     contenedorVideos = document.getElementById("videos-container");
     const loading = document.getElementById("loading");
+
     if (!ladoObj?.json_url || !contenedorVideos) {
-      if (contenedorVideos) contenedorVideos.innerHTML = "<p style='color:#fff;'>Lado no encontrado.</p>";
+      if (contenedorVideos) contenedorVideos.innerHTML = "<p style='color:#fff;padding:20px 0'>Lado no encontrado.</p>";
       return;
     }
 
-    // [GA4] view side (entrada a página de videos)
-    trackEvent("view_side", gaCtx({
-      loc: loc,
-      can: can,
-      lado: lado,
-      filtro: filtro || "",
-      has_target_video: !!targetId
-    }));
+    trackEvent("view_side", gaCtx({ loc, can, lado, filtro: filtro || "", has_target_video: !!targetId }));
 
     const res = await fetch(`${ladoObj.json_url}?cb=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) throw new Error("No se pudo acceder al JSON.");
@@ -2455,152 +1186,93 @@ async function populateVideos() {
     if (loading) loading.style.display = "block";
     contenedorVideos.innerHTML = "";
 
-    const linkClub = document.getElementById("link-club");
+    const linkClub   = document.getElementById("link-club");
     const linkCancha = document.getElementById("link-cancha");
     const nombreLado = document.getElementById("nombre-lado");
-    if (linkClub) { linkClub.textContent = locObj?.nombre || loc; linkClub.href = `locacion.html?loc=${loc}`; }
-    if (linkCancha) { linkCancha.textContent = canObj?.nombre || can; linkCancha.href = `cancha.html?loc=${loc}&can=${can}`; }
+    if (linkClub)   { linkClub.textContent = locObj?.nombre || loc; linkClub.href = `locacion.html?loc=${loc}`; }
+    if (linkCancha) { linkCancha.textContent = canObj?.nombre || can; }
     if (nombreLado) { nombreLado.textContent = ladoObj?.nombre || lado; }
 
     oppInfoCache = await findOppositeConfig(cfgGlobal, loc, can, lado);
     const oppTopHref = oppInfoCache?.oppId
-      ? (() => {
-          const base = `lado.html?loc=${loc}&can=${can}&lado=${oppInfoCache.oppId}`;
-          const parts = [];
-          if (params.pg !== undefined) parts.push(`pg=${encodeURIComponent(params.pg)}`);
-          if (params.filtro) parts.push(`filtro=${encodeURIComponent(params.filtro)}`);
-          return parts.length ? `${base}&${parts.join("&")}` : base;
-        })()
+      ? `lado.html?loc=${loc}&can=${can}&lado=${oppInfoCache.oppId}` + (params.filtro ? `&filtro=${encodeURIComponent(params.filtro)}` : "")
       : null;
     ensureOppositeTopButton(oppTopHref, oppInfoCache?.oppName);
 
     const raw = Array.isArray(data.videos) ? data.videos : [];
-    
-    // 1) agrega meta por nombre (ya soporta DDMMYYYY)
     raw.forEach(v => { v._meta = parseFromName(v.nombre); });
-    
-    // 2) intenta sacar "fecha de subida" (para bolita roja real cuando se pueda)
     await prefetchUploadTimes(raw, 12);
-    
-    // 3) decide día seleccionado
+
     let selectedKey = params.dia || ymdFromDate(new Date());
-    
-    // Si vienes por link con ?video=..., fuerza el día de ese video para que sí aparezca
-    if (targetId) {
-      const tm = parseFromName(targetId);
-      if (tm?.ymd) selectedKey = tm.ymd;
-    }
-    
-    // Render tabs por día (Hoy/Ayer/2d/3d) + pill Recuperados
+    if (targetId) { const tm = parseFromName(targetId); if (tm?.ymd) selectedKey = tm.ymd; }
+
     const model = renderDayFilterBar(raw, selectedKey);
 
-// ✅ AUTO: si NO eligieron día (no hay ?dia=) y hoy no tiene videos, pero ayer sí,
-// entra directo a ayer para que no se vea vacío.
+    // Auto-fall a ayer si hoy está vacío y no hay día explícito
     const hasExplicitDay = ("dia" in params) && !!params.dia;
     if (!hasExplicitDay && !targetId) {
-      const todayKey = model.dayKeys?.[0];
-      const yKey = model.dayKeys?.[1];
-      const nToday = (todayKey ? (model.byKey.get(todayKey) || []).length : 0);
-      const nY = (yKey ? (model.byKey.get(yKey) || []).length : 0);
-    
+      const todayKey = model.dayKeys?.[0], yKey = model.dayKeys?.[1];
+      const nToday = todayKey ? (model.byKey.get(todayKey) || []).length : 0;
+      const nY     = yKey     ? (model.byKey.get(yKey)     || []).length : 0;
       if (nToday === 0 && nY > 0) {
         selectedKey = yKey;
-    
-        // opcional pero recomendado: reflejar selección en URL sin crear historial
         setQueryParams({ dia: selectedKey, pg: 0, video: "" }, true);
-    
-        // re-render para que se marque el tab correcto
         renderDayFilterBar(raw, selectedKey);
       }
     }
-    
-    // si te pasaron un día raro, cae a "Hoy"
+
     if (!model.dayKeys.includes(selectedKey)) {
       selectedKey = model.dayKeys[0] || ymdFromDate(new Date());
       renderDayFilterBar(raw, selectedKey);
     }
 
-    
-    // 4) filtra por día
     let list = raw.filter(v => v._meta?.ymd === selectedKey);
-    
-    // 5) flag de recuperado/nuevo (para usar más abajo y para badges por card)
-    list.forEach(v => {
-      v._isRecovered = isRecovered(v);
-      v._isNew = isNewVideo(v);
-    });
-    
-    // 6) si el usuario activó "Recuperados", filtra
-    if (getQueryParams().rec === "1") {
-      list = list.filter(v => v._isRecovered);
-    }
-    
-    // 7) el filtro por hora ahora depende del día seleccionado (esto es lo que querías)
+    list.forEach(v => { v._isNew = isNewVideo(v); });
+
     createHourFilterUI(list);
-    
-    // 8) sigue tu flow normal: filtro por hora (si hay)
-    if (filtro) {
-      list = list.filter(v => {
-        const m = v.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/);
-        return m && m[1] === filtro;
-      });
-    }
+    if (filtro) list = list.filter(v => { const m = v.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/); return m && m[1] === filtro; });
 
     list.sort((a, b) => {
-      const pa = parseFromName(a.nombre);
-      const pb = parseFromName(b.nombre);
-      const ta = pa ? pa.tsKey : -Infinity;
-      const tb = pb ? pb.tsKey : -Infinity;
+      const ta = parseFromName(a.nombre)?.tsKey ?? -Infinity;
+      const tb = parseFromName(b.nombre)?.tsKey ?? -Infinity;
       return tb - ta;
     });
 
-    ultimoFiltroActivo = filtro || null;
-    videosListaCompleta = list;
-    paginacionHabilitada = videosListaCompleta.length > 7;
+    ultimoFiltroActivo   = filtro || null;
+    videosListaCompleta  = list;
 
     ensureBottomControlsContainer();
 
-    const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
     let desiredPg = parseInt(params.pg || "0", 10);
     if (Number.isNaN(desiredPg)) desiredPg = 0;
-
     if (targetId) {
-      const idx = videosListaCompleta.findIndex(v => v.nombre === targetId);
-      if (idx >= 0 && paginacionHabilitada) desiredPg = Math.floor(idx / PAGE_SIZE);
+      const idx = list.findIndex(v => v.nombre === targetId);
+      if (idx >= 0) desiredPg = Math.floor(idx / PAGE_SIZE);
     }
-
     paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
     setQueryParams({ pg: paginaActual }, !("pg" in params));
 
     await renderPaginaActual({ fueCambioDePagina: false });
-
     if (loading) loading.style.display = "none";
-
     if (targetId) scrollToVideoById(targetId);
-  } catch (err) {
-    console.error("Error en populateVideos():", err);
+
+  } catch(err) {
+    console.error("populateVideos:", err);
     const vc = document.getElementById("videos-container");
-    if (vc) vc.innerHTML = "<p style='color:#fff;'>No hay videos disponibles.</p>";
+    if (vc) vc.innerHTML = "<p style='color:#fff;padding:20px 0'>No hay videos disponibles.</p>";
     const loading = document.getElementById("loading");
     if (loading) loading.style.display = "none";
   }
 }
 
-
-// ----------------------- scroll-top -----------------------
+// ----------------------- scroll top -----------------------
 function createScrollToTopBtn() {
   const btn = document.createElement("button");
-  btn.textContent = "↑";
-  btn.className = "scroll-top";
-  btn.style.display = "none";
+  btn.textContent = "↑"; btn.className = "scroll-top"; btn.style.display = "none";
   btn.setAttribute("aria-label", "Ir arriba");
-  btn.addEventListener("click", () => {
-    // [GA4] scroll to top
-    trackEvent("scroll_to_top", gaCtx({}));
-    scrollToTop();
-  });
+  btn.addEventListener("click", () => { trackEvent("scroll_to_top", gaCtx({})); scrollToTop(); });
   document.body.appendChild(btn);
-
   let lastY = window.scrollY;
   window.addEventListener("scroll", () => {
     const y = window.scrollY;
@@ -2610,22 +1282,15 @@ function createScrollToTopBtn() {
   });
 }
 
-// ---------- Helper: detectar si una cancha es “mono-lado” ----------
 async function isSingleLado(locId, canId) {
   try {
     let cfg = cfgGlobal;
-    if (!cfg) {
-      const res = await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" });
-      cfg = await res.json();
-    }
+    if (!cfg) cfg = await (await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" })).json();
     const loc = cfg?.locaciones?.find(l => l.id === locId);
     const can = loc?.cancha?.find(c => c.id === canId);
     return Array.isArray(can?.lados) && can.lados.length === 1;
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
-
 
 // ----------------------- arranque -----------------------
 document.addEventListener("DOMContentLoaded", () => {
@@ -2633,69 +1298,40 @@ document.addEventListener("DOMContentLoaded", () => {
   const p = getQueryParams();
 
   (async () => {
-    // Landing is `index.html` (static content). The exploración/lista de locaciones
-    // se carga en `explorar.html`. Aceptar index, explorar o la raíz como punto
-    // para poblar locaciones.
     if (path.endsWith("index.html") || path.endsWith("explorar.html") || path === "/") {
-      populateLocaciones();
-      return;
+      populateLocaciones(); return;
     }
-
-    if (path.endsWith("locacion.html")) {
-      populateCanchas();
-      return;
-    }
-
+    if (path.endsWith("locacion.html")) { populateCanchas(); return; }
     if (path.endsWith("cancha.html")) {
       const ok = await requireCanchaPassword(p.loc, p.can);
-      if (!ok) {
-        window.location.href = `locacion.html?loc=${p.loc}`;
-        return;
-      }
-      // Si la cancha solo tiene un lado, redirigimos directo al lado
+      if (!ok) { window.location.href = `locacion.html?loc=${p.loc}`; return; }
       try {
-        const res = await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" });
-        const cfg = await res.json();
+        const cfg = await (await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" })).json();
         const loc = cfg.locaciones.find(l => l.id === p.loc);
         const can = loc?.cancha.find(c => c.id === p.can);
         const lados = Array.isArray(can?.lados) ? can.lados : [];
-        if (lados.length === 1) {
-          const unico = lados[0];
-          window.location.href = `lado.html?loc=${p.loc}&can=${p.can}&lado=${unico.id}`;
-          return;
-        }
+        if (lados.length === 1) { window.location.href = `lado.html?loc=${p.loc}&can=${p.can}&lado=${lados[0].id}`; return; }
       } catch {}
-      populateLados();
-      return;
+      populateLados(); return;
     }
-
     if (path.endsWith("lado.html")) {
       const ok = await requireCanchaPassword(p.loc, p.can);
-      if (!ok) {
-        window.location.href = `cancha.html?loc=${p.loc}&can=${p.can}`;
-        return;
-      }
-      populateVideos();
-      createScrollToTopBtn();
-      return;
+      if (!ok) { window.location.href = `cancha.html?loc=${p.loc}&can=${p.can}`; return; }
+      populateVideos(); createScrollToTopBtn(); return;
     }
   })();
 
-  // href del botón "Regresar a la cancha" con salto si es mono-lado
+  // Botón volver
   const btnVolver = document.getElementById("btn-volver");
   if (btnVolver) {
     (async () => {
-      const path2 = window.location.pathname;
       const p2 = getQueryParams();
-      if (path2.endsWith("lado.html")) {
+      if (path.endsWith("lado.html")) {
         const mono = await isSingleLado(p2.loc, p2.can);
-        btnVolver.href = mono
-          ? `locacion.html?loc=${p2.loc}`          // salto al menú de canchas (no al de lados)
-          : `cancha.html?loc=${p2.loc}&can=${p2.can}`;
-      } else if (path2.endsWith("cancha.html")) {
+        btnVolver.href = mono ? `locacion.html?loc=${p2.loc}` : `cancha.html?loc=${p2.loc}&can=${p2.can}`;
+      } else if (path.endsWith("cancha.html")) {
         btnVolver.href = `locacion.html?loc=${p2.loc}`;
-      } else if (path2.endsWith("locacion.html")) {
-        // Volver a la lista de exploración (ahora en explorar.html)
+      } else if (path.endsWith("locacion.html")) {
         btnVolver.href = "explorar.html";
       }
     })();
@@ -2704,8 +1340,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.addEventListener("popstate", () => {
   const p = getQueryParams();
-  const newFilter = p.filtro || null;
-  if (newFilter !== ultimoFiltroActivo) {
+  if ((p.filtro || null) !== ultimoFiltroActivo) {
     populateVideos();
   } else {
     const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
@@ -2713,113 +1348,45 @@ window.addEventListener("popstate", () => {
     if (Number.isNaN(desiredPg)) desiredPg = 0;
     paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
     renderPaginaActual({ fueCambioDePagina: true });
-
     if (cfgGlobal && p.loc && p.can && p.lado) {
       findOppositeConfig(cfgGlobal, p.loc, p.can, p.lado).then(info => {
-        const base = info?.oppId
-          ? `lado.html?loc=${p.loc}&can=${p.can}&lado=${info.oppId}`
-          : null;
-        const parts = [];
-        if (p.pg !== undefined) parts.push(`pg=${encodeURIComponent(p.pg)}`);
-        if (p.filtro) parts.push(`filtro=${encodeURIComponent(p.filtro)}`);
-        const oppTopHref = base ? (parts.length ? `${base}&${parts.join("&")}` : base) : null;
-        ensureOppositeTopButton(oppTopHref, info?.oppName);
+        const base = info?.oppId ? `lado.html?loc=${p.loc}&can=${p.can}&lado=${info.oppId}` : null;
+        ensureOppositeTopButton(base ? (p.filtro ? `${base}&filtro=${encodeURIComponent(p.filtro)}` : base) : null, info?.oppName);
       }).catch(() => {});
     }
   }
 });
 
-
-// Cierra navbar al scrollear o click fuera
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.querySelector('.menu-toggle');
-  const nav = document.querySelector('.navbar');
-
-  if (btn && nav) {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      nav.classList.toggle('show');
-    });
-
-    document.addEventListener('click', (e) => {
-      if (nav.classList.contains('show') && !nav.contains(e.target) && e.target !== btn) {
-        nav.classList.remove('show');
-      }
-    });
-
-    window.addEventListener('scroll', () => {
-      if (nav.classList.contains('show')) nav.classList.remove('show');
-    });
-  }
-});
-
-// === NAVBAR: toggle + cerrar al scroll o click fuera ===
-function initNavbar(){
-  // Intentionally no __navInited guard: allow re-initialization when header
-  // is re-rendered. To avoid stacking handlers we remove previous ones if present.
-
-  // Remove previous click handler if any
+// ── Navbar ──
+function initNavbar() {
   if (window.__pz_nav_click_handler) {
-    try { document.removeEventListener('click', window.__pz_nav_click_handler); } catch {}
-    window.__pz_nav_click_handler = null;
+    try { document.removeEventListener("click", window.__pz_nav_click_handler); } catch {}
   }
-
   const handler = function(e) {
-    const toggle = e.target && e.target.closest && e.target.closest('.menu-toggle');
-
-    // If clicked the hamburger
+    const toggle = e.target?.closest?.(".menu-toggle");
     if (toggle) {
-      console.log('menu-toggle clicked');
-
-      // On desktop never open the mobile dropdown
-      if (window.innerWidth > 860) {
-        document.querySelector('.navbar')?.classList.remove('show');
-        document.querySelector('#nav-menu')?.classList.remove('show');
-        return;
-      }
-
+      if (window.innerWidth > 860) { document.querySelector(".navbar")?.classList.remove("show"); return; }
       e.stopPropagation();
-      const nav = document.querySelector('.navbar') || document.querySelector('#nav-menu');
-      if (nav) nav.classList.toggle('show');
+      const nav = document.querySelector(".navbar") || document.querySelector("#nav-menu");
+      if (nav) nav.classList.toggle("show");
       return;
     }
-
-    // Click outside: close any open menu
-    const insideNav = e.target && e.target.closest && e.target.closest('.navbar');
-    if (!insideNav) {
-      document.querySelector('.navbar')?.classList.remove('show');
-      document.querySelector('#nav-menu')?.classList.remove('show');
+    if (!e.target?.closest?.(".navbar")) {
+      document.querySelector(".navbar")?.classList.remove("show");
+      document.querySelector("#nav-menu")?.classList.remove("show");
     }
   };
-
   window.__pz_nav_click_handler = handler;
-  document.addEventListener('click', handler);
+  document.addEventListener("click", handler);
 
-  // Scroll handler: remove previous and attach new
-  if (window.__pz_nav_scroll_handler) {
-    try { window.removeEventListener('scroll', window.__pz_nav_scroll_handler); } catch {}
-    window.__pz_nav_scroll_handler = null;
-  }
-  const scrollHandler = () => {
-    document.querySelector('.navbar')?.classList.remove('show');
-    document.querySelector('#nav-menu')?.classList.remove('show');
-  };
-  window.__pz_nav_scroll_handler = scrollHandler;
-  window.addEventListener('scroll', scrollHandler, { passive: true });
+  if (window.__pz_nav_scroll_handler) { try { window.removeEventListener("scroll", window.__pz_nav_scroll_handler); } catch {} }
+  const scrollH = () => { document.querySelector(".navbar")?.classList.remove("show"); document.querySelector("#nav-menu")?.classList.remove("show"); };
+  window.__pz_nav_scroll_handler = scrollH;
+  window.addEventListener("scroll", scrollH, { passive: true });
 
-  // Resize handler: ensure menu closed on desktop widths
-  if (window.__pz_nav_resize_handler) {
-    try { window.removeEventListener('resize', window.__pz_nav_resize_handler); } catch {}
-    window.__pz_nav_resize_handler = null;
-  }
-  const resizeHandler = () => {
-    if (window.innerWidth > 860) {
-      document.querySelector('.navbar')?.classList.remove('show');
-      document.querySelector('#nav-menu')?.classList.remove('show');
-    }
-  };
-  window.__pz_nav_resize_handler = resizeHandler;
-  window.addEventListener('resize', resizeHandler);
+  if (window.__pz_nav_resize_handler) { try { window.removeEventListener("resize", window.__pz_nav_resize_handler); } catch {} }
+  const resizeH = () => { if (window.innerWidth > 860) { document.querySelector(".navbar")?.classList.remove("show"); document.querySelector("#nav-menu")?.classList.remove("show"); } };
+  window.__pz_nav_resize_handler = resizeH;
+  window.addEventListener("resize", resizeH);
 }
-
-window.addEventListener('puntazo:header-rendered', initNavbar);
+window.addEventListener("puntazo:header-rendered", initNavbar);
