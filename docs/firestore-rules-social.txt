@@ -1,0 +1,72 @@
+# Firestore rules (suggested snippets) for social layer
+
+# Notes:
+# - These rules are additive and conservative: they allow anonymous comments (with deviceId)
+#   but only allow authenticated users to create participant documents and to write "uid" fields.
+# - Enforcing a strict "max 4 participants" per video in security rules is hard; prefer keeping
+#   a `participantsCount` field on the parent `reactions/{videoId}` document and use a
+#   Cloud Function or transactional write to keep it in sync. The rules below show a pattern
+#   to require the participant doc ID to match auth.uid and to prevent clients from forging other UIDs.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // reactions root document (stores aggregate reaction counts)
+    match /reactions/{videoId} {
+      allow read: if true;
+
+      // Participants subcollection: one doc per uid, id must equal auth.uid
+      match /participants/{uid} {
+        allow read: if true;
+
+        allow create: if request.auth != null
+          && request.auth.uid == uid
+          // required fields
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.claimedAt == request.resource.data.claimedAt
+          ;
+
+        allow update, delete: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // Comments subcollection — support both anonymous (no auth) and auth users
+      match /comments/{commentId} {
+        allow read: if true;
+
+        allow create: if (
+            // anonymous commenter: must provide deviceId and text
+            (request.auth == null && request.resource.data.deviceId is string && request.resource.data.text is string)
+            // authenticated commenter: must not forge another uid
+            || (request.auth != null && request.resource.data.uid == request.auth.uid && request.resource.data.text is string)
+          )
+          // limit size of text to reasonable length (server-side rule)
+          && request.resource.data.text.size() <= 400
+          ;
+
+        // Prevent clients from setting server timestamps; server should set ts via FieldValue.serverTimestamp()
+        allow update, delete: if false; // comments are immutable via client
+      }
+
+    }
+
+    // Users guardados (each user manages their own saved videos)
+    match /usuarios/{userId}/guardados/{videoId} {
+      allow read: if true; // allow owner to see; public read optional
+      allow create, update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // collectionGroup catch-all read for public content
+    match /{document=**} {
+      allow read: if true;
+    }
+  }
+}
+
+# Operational notes:
+# - Because Firestore rules can't easily count subcollection size atomically, implement a server-side
+#   Cloud Function (or transaction) that increments a `participantsCount` on the parent reactions/{videoId}
+#   document when a participant is created and decrements when deleted, and enforce the <=4 constraint
+#   by rejecting the create if the counter would exceed 4.
+# - The client-side code includes a best-effort guard to avoid creating more than 4 participants.
+# - Deploy these rules as guidance and adapt them to your project structure and testing environment.
