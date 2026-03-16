@@ -1,0 +1,301 @@
+/* =============================================================
+   card.css — Puntazo · Tarjeta universal de video
+   Incluir en: clip.html, jugador.html, perfil.html, mejores.html
+   (lado.html tiene sus propios estilos inline equivalentes)
+   ============================================================= */
+
+/* ── Card ── */
+.video-card {
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 18px;
+  padding: 16px 16px 14px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+  position: relative;
+  transition: border-color .2s ease;
+}
+
+.video-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* ── Header: hora + emoji preview ── */
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.card-time {
+  font-size: 1.55rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.6px;
+  line-height: 1;
+}
+
+.card-rxn-preview {
+  display: flex;
+  gap: 3px;
+  font-size: 1.1rem;
+  min-height: 24px;
+  align-items: center;
+}
+
+/* ── Subtítulo (club/cancha en mejores.html) ── */
+.card-subtitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(234, 242, 255, 0.65);
+  margin-bottom: 10px;
+  margin-top: -6px;
+}
+
+/* ── Video wrap ── */
+.video-wrap {
+  position: relative;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.video-wrap video {
+  width: 100%;
+  display: block;
+  border-radius: 10px;
+}
+
+/* ── Action pills ── */
+.action-pills {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 6px;
+  flex-wrap: wrap;
+}
+
+.action-pill {
+  flex: 1;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #eaf2ff;
+  font-size: 1.05rem;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+  font-weight: 700;
+  transition: all .18s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.action-pill:hover {
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.action-pill:active {
+  transform: scale(0.93);
+}
+
+.action-pill.is-saved {
+  background: rgba(0, 79, 200, 0.22);
+  border-color: rgba(11, 124, 255, 0.40);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(0, 79, 200, 0.15);
+}
+
+.action-pill.is-active {
+  background: rgba(0, 79, 200, 0.18);
+  border-color: rgba(11, 124, 255, 0.35);
+  color: #fff;
+}
+
+.action-pill.remove-pill {
+  background: rgba(255, 60, 40, 0.08);
+  border-color: rgba(255, 60, 40, 0.18);
+  color: rgba(255, 120, 100, 0.80);
+  flex: 0;
+  min-width: 44px;
+}
+
+.action-pill.remove-pill:hover {
+  background: rgba(255, 60, 40, 0.16);
+  border-color: rgba(255, 60, 40, 0.34);
+  color: #ff8070;
+}
+
+/* ── Rank badge (mejores.html) ── */
+.rank-badge {
+  position: absolute;
+  top: 12px; left: 12px;
+  z-index: 8;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 900;
+  pointer-events: none;
+}
+
+.rank-badge.top1 { background: rgba(255,190,0,.22); border-color: rgba(255,190,0,.48); color: #ffe89a; }
+.rank-badge.top2 { background: rgba(180,180,180,.18); border-color: rgba(200,200,200,.38); color: #d8d8d8; }
+.rank-badge.top3 { background: rgba(180,100,30,.22); border-color: rgba(200,120,40,.38); color: #e09060; }
+
+/* ── Btn-alt (otro ángulo, etc.) ── */
+.btn-alt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.52rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: #eaf2ff;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all .18s ease;
+  flex: 1;
+  text-align: center;
+}
+
+.btn-alt:hover {
+  background: rgba(255,255,255,.11);
+  border-color: rgba(255,255,255,.22);
+  transform: translateY(-1px);
+}
+
+/* ── Filtros de hora (compartido) ── */
+.btn-filtro {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  color: rgba(234,242,255,.75);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.btn-filtro:hover,
+.btn-filtro.activo {
+  background: rgba(0,79,200,.20);
+  border-color: rgba(11,124,255,.35);
+  color: #fff;
+}
+
+/* ── Grid de cards ── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 560px) {
+  .cards-grid { grid-template-columns: 1fr; }
+  .card-time { font-size: 1.35rem; }
+  .action-pill { font-size: 0.95rem; padding: 0.5rem 0.65rem; }
+}
+
+/* ── Tabs (perfil.html) ── */
+.pz-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  padding-bottom: 1px;
+}
+
+.pz-tab-btn {
+  padding: 10px 20px;
+  border-radius: 999px 999px 0 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(234,242,255,.55);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pz-tab-btn:hover {
+  color: #eaf2ff;
+  background: rgba(255,255,255,.04);
+}
+
+.pz-tab-btn.active {
+  color: #fff;
+  background: rgba(0,79,200,.18);
+  border-color: rgba(11,124,255,.30);
+  border-bottom-color: transparent;
+}
+
+.pz-tab-pane { display: none; }
+.pz-tab-pane.active { display: block; }
+
+/* ── Estado vacío ── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: rgba(234,242,255,.55);
+}
+
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 14px; }
+.empty-state h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; color: #eaf2ff; }
+.empty-state p { font-size: 0.90rem; max-width: 320px; margin: 0 auto; }
+
+/* ── Skeletons ── */
+.skeleton-card {
+  border-radius: 18px;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(255,255,255,.10);
+  overflow: hidden;
+  animation: pz-shimmer 1.6s infinite;
+}
+
+.skeleton-thumb {
+  width: 100%;
+  padding-top: 56.25%;
+  background: rgba(255,255,255,.04);
+}
+
+.skeleton-body { padding: 16px; }
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(255,255,255,.06);
+  margin-bottom: 10px;
+}
+
+.skeleton-line.short { width: 55%; }
+.skeleton-line.xshort { width: 35%; }
+
+@keyframes pz-shimmer {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .55; }
+}
