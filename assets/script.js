@@ -2779,10 +2779,8 @@ function initNavbar(){
       }
 
       e.stopPropagation();
-      const nav = document.querySelector('.navbar');
-      const menu = document.querySelector('#nav-menu');
+      const nav = document.querySelector('.navbar') || document.querySelector('#nav-menu');
       if (nav) nav.classList.toggle('show');
-      if (menu) menu.classList.toggle('show');
       return;
     }
 
