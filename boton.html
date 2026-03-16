@@ -548,7 +548,7 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
     const club   = encodeURIComponent($clubSel.value);
     const cancha = encodeURIComponent($canchaSel.value);
     // cancha.html muestra todos los lados de esa cancha
-    window.location.href = `/cancha.html?loc=${club}&can=${cancha}`;
+    window.location.href = `/lado.html?loc=${club}&can=${cancha}&lado=LadoA`;
   }
 
   document.getElementById('btnContinue').addEventListener('click', enterButton);
