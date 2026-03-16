@@ -663,20 +663,40 @@ footer{
 .hero .primary-cta{
   display:inline-flex;align-items:center;gap:0.6rem;
   background:linear-gradient(135deg,var(--blue2),var(--blue));
-  color:#fff;padding:0.95rem 1.6rem;border-radius:14px;font-weight:900;
-  box-shadow:0 10px 34px rgba(11,124,255,0.18);text-decoration:none;border:0;
+  color:#fff;padding:1.05rem 1.9rem;border-radius:18px;font-weight:900;
+  font-size:1.05rem;letter-spacing:0.2px;
+  box-shadow:0 18px 46px rgba(11,124,255,0.22);text-decoration:none;border:0;
 }
 .hero .primary-cta:hover{transform:translateY(-2px)}
 .hero .secondary-cta{
   display:inline-flex;align-items:center;gap:0.5rem;
   background:transparent;border:1px solid rgba(255,255,255,0.06);
-  padding:0.75rem 1.2rem;border-radius:12px;color:var(--muted);
+  padding:0.7rem 1.1rem;border-radius:12px;color:var(--muted);font-weight:800;
   text-decoration:none;font-weight:800
 }
 .hero .secondary-cta:hover{color:#fff;border-color:rgba(255,255,255,0.12)}
 .hero .hero-aux{margin-top:0.8rem}
 .hero .phone-link{color:var(--muted);font-size:0.92rem;text-decoration:underline;display:inline-block}
 .hero .phone-link:hover{color:#fff}
+
+/* Compatibility aliases for legacy classes used in inicio.html */
+.btn-clips{display:inline-flex;align-items:center;gap:0.6rem;background:linear-gradient(135deg,var(--blue2),var(--blue));color:#fff;padding:1.05rem 1.9rem;border-radius:18px;font-weight:900;font-size:1.05rem;box-shadow:0 18px 46px rgba(11,124,255,0.22);text-decoration:none;border:0;}
+.btn-ranking{display:inline-flex;align-items:center;gap:0.5rem;background:transparent;border:1px solid rgba(255,255,255,0.06);padding:0.7rem 1.1rem;border-radius:12px;color:var(--muted);text-decoration:none;font-weight:800}
+.btn-live{display:inline-flex;align-items:center;gap:0.5rem;color:var(--muted);font-size:0.92rem;text-decoration:underline}
+.btn-secondary{display:inline-flex;align-items:center;gap:0.4rem;color:var(--muted);text-decoration:none;padding:0.6rem 1rem;border-radius:50px;border:1px solid var(--border2)}
+
+/* Hero title & spacing emphasis */
+.hero h1{font-size:clamp(1.9rem,5vw,3.6rem);font-weight:900;line-height:1.02;margin-bottom:0.4rem;color:#fff}
+.hero .hero-sub{font-size:1.05rem;color:var(--muted);max-width:720px;margin:0.4rem auto 0.9rem}
+.hero .hero-btns{display:flex;gap:1rem;justify-content:center;margin-top:1.25rem;z-index:1}
+
+@media(max-width:720px){
+  .hero{padding:6.5rem 1rem 3rem}
+  .hero h1{font-size:1.6rem}
+  .hero .primary-cta, .btn-clips{width:100%;justify-content:center}
+  .hero .secondary-cta{width:100%;justify-content:center}
+  .hero .hero-btns{flex-direction:column}
+}
 
 /* Make the moved stats visually lighter */
 .hero-stats.subdued{display:flex;gap:2rem;justify-content:center;margin:1.5rem 0 2rem;opacity:0.82}
