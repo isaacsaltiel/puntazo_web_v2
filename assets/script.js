@@ -2778,6 +2778,4 @@ function initNavbar(){
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  initNavbar();
-});
+window.addEventListener('puntazo:header-rendered', initNavbar);
