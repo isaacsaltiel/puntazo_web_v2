@@ -1,99 +1,300 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Jugador · Puntazo</title>
-  <link rel="stylesheet" href="/assets/estilo.css" />
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="/assets/firebase-core.js"></script>
-  <style>
-    body{background:#050914;color:#eaf2ff;font-family:system-ui, -apple-system,Segoe UI,Roboto,Arial;margin:0}
-    main{max-width:900px;margin:28px auto;padding:20px}
-    .player-card{display:flex;gap:16px;align-items:center}
-    .player-avatar{width:86px;height:86px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
-    .player-name{font-weight:900;font-size:22px}
-    .appearances-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:18px}
-    .video-card{border-radius:12px;background:rgba(255,255,255,.04);overflow:hidden;border:1px solid rgba(255,255,255,.06)}
-    .card-video-wrap{position:relative;padding-top:56.25%;background:#000}
-    .card-video-wrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-    .card-body{padding:10px}
-    .empty{padding:40px;text-align:center;color:rgba(234,242,255,.6)}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<base href="/" />
+<title>Jugador · Puntazo</title>
+
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
+<script>
+  window.dataLayer=window.dataLayer||[];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js',new Date()); gtag('config','G-7HTMSTJ035');
+</script>
+
+<meta name="theme-color" content="#050914" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="assets/estilo.css" />
+<link rel="stylesheet" href="/assets/card.css" />
+<link rel="stylesheet" href="/assets/reactions.css" />
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/reactions.js"></script>
+<script src="/assets/card.js"></script>
+
+<style>
+  .player-wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+
+  /* Header del jugador */
+  .player-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 28px;
+    padding: 20px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.10);
+  }
+
+  .player-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: rgba(0,79,200,.35);
+    border: 2px solid rgba(255,255,255,.14);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #fff;
+    overflow: hidden;
+  }
+
+  .player-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .player-name {
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .player-sub {
+    color: rgba(234,242,255,.55);
+    font-size: 0.84rem;
+  }
+
+  .section-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: rgba(234,242,255,.75);
+    margin-bottom: 16px;
+    letter-spacing: 0.2px;
+  }
+
+  /* Skeleton del header */
+  .player-header-skeleton {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 20px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    animation: pz-shimmer 1.6s infinite;
+    margin-bottom: 28px;
+  }
+
+  .player-header-skeleton .sk-avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.07);
+    flex-shrink: 0;
+  }
+
+  .player-header-skeleton .sk-lines { flex: 1; }
+  .player-header-skeleton .sk-line {
+    height: 14px; border-radius: 6px;
+    background: rgba(255,255,255,.07);
+    margin-bottom: 10px;
+  }
+  .player-header-skeleton .sk-line.short { width: 55%; }
+
+  @media (max-width: 480px) {
+    .player-header { flex-direction: column; text-align: center; }
+    .player-header { align-items: center; }
+  }
+</style>
 </head>
 <body>
-  <main>
-    <a href="/index.html">← Volver</a>
-    <div id="header" class="player-card" style="margin-top:12px">
-      <img id="avatar" class="player-avatar" src="" alt="Avatar" style="display:none" />
-      <div>
-        <div id="playerName" class="player-name">Jugador Público</div>
-        <div id="playerMeta" style="color:rgba(234,242,255,.6);margin-top:6px">Perfil público</div>
+
+<div class="page-bg"></div>
+
+<div id="nav-root" data-nav-variant="internal"></div>
+<script src="/assets/header.js"></script>
+
+<main class="site-content fade-in">
+  <div class="player-wrap">
+
+    <!-- Skeleton mientras carga -->
+    <div id="headerSkeleton" class="player-header-skeleton">
+      <div class="sk-avatar"></div>
+      <div class="sk-lines">
+        <div class="sk-line"></div>
+        <div class="sk-line short"></div>
       </div>
     </div>
 
-    <h3 style="margin-top:22px">Apariciones</h3>
-    <div id="appearances" class="appearances-grid"></div>
-    <div id="empty" class="empty" style="display:none">No encontramos apariciones públicas para este usuario.</div>
-  </main>
+    <!-- Header del jugador (oculto hasta cargar) -->
+    <div id="playerHeader" class="player-header" style="display:none">
+      <div id="playerAvatar" class="player-avatar"></div>
+      <div>
+        <div id="playerName" class="player-name">Jugador</div>
+        <div id="playerSub" class="player-sub">Perfil público · Puntazo</div>
+      </div>
+    </div>
 
-  <script>
-    (async function(){
-      function qs(k){ return new URLSearchParams(location.search).get(k); }
-      const uid = qs('uid');
-      if (!uid) {
-        document.getElementById('empty').textContent = 'UID no especificado';
-        document.getElementById('empty').style.display = '';
-        return;
-      }
+    <!-- Error / no encontrado -->
+    <div id="playerError" class="empty-state" style="display:none">
+      <div class="empty-icon">🕵️</div>
+      <h3>Perfil no encontrado</h3>
+      <p>Este jugador no tiene apariciones públicas todavía.</p>
+    </div>
+
+    <!-- Grid de apariciones -->
+    <div id="appearancesSection" style="display:none">
+      <p class="section-title">🥷 Apariciones</p>
+      <div id="appearancesGrid" class="cards-grid"></div>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-redes">
+    <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
+    <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
+  </div>
+  <p class="footer-copy">© 2026 Puntazo</p>
+</footer>
+
+<script>
+(async function () {
+  'use strict';
+
+  const uid = new URLSearchParams(location.search).get('uid') || '';
+
+  const $headerSkeleton   = document.getElementById('headerSkeleton');
+  const $playerHeader     = document.getElementById('playerHeader');
+  const $playerAvatar     = document.getElementById('playerAvatar');
+  const $playerName       = document.getElementById('playerName');
+  const $playerSub        = document.getElementById('playerSub');
+  const $playerError      = document.getElementById('playerError');
+  const $appearSection    = document.getElementById('appearancesSection');
+  const $grid             = document.getElementById('appearancesGrid');
+
+  function showError(msg) {
+    $headerSkeleton.style.display = 'none';
+    $playerError.style.display = 'block';
+    if (msg) $playerError.querySelector('p').textContent = msg;
+  }
+
+  if (!uid) { showError('UID no especificado'); return; }
+
+  // Esperar deps
+  async function waitFor(check, retries) {
+    for (let i=0; i<(retries||40); i++) {
+      if (check()) return true;
+      await new Promise(r=>setTimeout(r,200));
+    }
+    return false;
+  }
+
+  const ready = await waitFor(()=> window.PuntazoCard && window.PuntazoFirebase?.db, 40);
+  if (!ready) { showError('Error cargando dependencias'); return; }
+
+  const db = PuntazoCard.getDb();
+  if (!db) { showError(); return; }
+
+  try {
+    // Query participaciones de este usuario
+    const snap = await db.collectionGroup('participants')
+      .where('uid', '==', uid)
+      .orderBy('claimedAt', 'desc')
+      .limit(30)
+      .get();
+
+    $headerSkeleton.style.display = 'none';
+
+    if (snap.empty) { showError('Este jugador no tiene apariciones públicas todavía.'); return; }
+
+    // Datos del jugador del primer doc
+    const firstData = snap.docs[0].data();
+    const playerName  = firstData.displayName || 'Jugador';
+    const playerPhoto = firstData.photoURL     || '';
+
+    document.title = `${playerName} · Puntazo`;
+
+    // Renderizar header
+    if (playerPhoto) {
+      $playerAvatar.innerHTML = `<img src="${PuntazoCard.escapeHTML(playerPhoto)}" alt="${PuntazoCard.escapeHTML(playerName)}" />`;
+    } else {
+      $playerAvatar.textContent = playerName.charAt(0).toUpperCase();
+    }
+    $playerName.textContent = playerName;
+    $playerSub.textContent  = `${snap.size} aparición${snap.size !== 1 ? 'es' : ''} · Perfil público`;
+    $playerHeader.style.display = 'flex';
+
+    // Para cada aparición, obtener metadata del video
+    $appearSection.style.display = 'block';
+
+    for (const doc of snap.docs) {
+      const p = doc.data();
+      if (!p.videoId) continue;
+
+      // Obtener datos del video desde reactions doc
+      let entry = {
+        nombre:  p.videoId,
+        url:     '',
+        club:    '',
+        cancha:  '',
+        lado:    '',
+        fecha:   '',
+      };
 
       try {
-        window.PuntazoFirebase.ensureApp();
-      } catch(e){}
-      const db = firebase.firestore();
-
-      const listEl = document.getElementById('appearances');
-      const emptyEl = document.getElementById('empty');
-      const playerNameEl = document.getElementById('playerName');
-      const avatarEl = document.getElementById('avatar');
-
-      try {
-        const snap = await db.collectionGroup('participants').where('uid','==', uid).orderBy('claimedAt','desc').get();
-        if (snap.empty) { emptyEl.style.display=''; return; }
-
-        let foundName = '';
-        for (const doc of snap.docs) {
-          const p = doc.data();
-          if (!foundName && p.displayName) foundName = p.displayName;
-          // attempt to fetch parent reaction doc for metadata
-          let parent = null;
-          try { parent = await db.collection('reactions').doc(p.videoId).get(); } catch(e){}
-          const d = parent && parent.exists ? parent.data() : p;
-
-          const card = document.createElement('div');
-          card.className = 'video-card';
-          card.innerHTML = `
-            <div class="card-video-wrap"><video src="${d.videoUrl||''}" muted playsinline preload="metadata" loop></video></div>
-            <div class="card-body">
-              <div style="font-weight:800">${d.club||'Puntazo'}</div>
-              <div style="color:rgba(234,242,255,.6);font-size:13px">${d.cancha?('Cancha '+d.cancha+(d.lado?(' '+d.lado):'')) : ''}</div>
-            </div>
-          `;
-
-          listEl.appendChild(card);
+        const rxDoc = await db.collection('reactions').doc(p.videoId).get();
+        if (rxDoc.exists) {
+          const d = rxDoc.data();
+          entry.url    = d.videoUrl || '';
+          entry.club   = d.club     || '';
+          entry.cancha = d.cancha   || '';
+          entry.lado   = d.lado     || '';
+          entry.fecha  = d.fecha    || '';
         }
+      } catch {}
 
-        if (foundName) {
-          playerNameEl.textContent = foundName;
-          avatarEl.style.display = 'none';
-        }
-      } catch (err) {
-        console.error('Error cargando perfil público', err);
-        emptyEl.style.display='';
-      }
+      if (!entry.url) continue; // sin URL no podemos mostrar el video
 
-    })();
-  </script>
+      PuntazoCard.buildAndAppend(entry, {
+        showSave: true, showShare: true, showFullscreen: true,
+        showClaim: false,          // no puede reclamar en el perfil de otro
+        showReactions: true,
+        showComments: false,       // mantener perfil limpio
+        showClubInfo: true,
+      }, $grid);
+    }
+
+    if (!$grid.children.length) {
+      showError('No encontramos videos con URL disponible para este jugador.');
+    }
+
+  } catch (err) {
+    console.error('[jugador]', err);
+    showError('Error cargando el perfil. Intenta de nuevo.');
+  }
+})();
+</script>
+
 </body>
 </html>
