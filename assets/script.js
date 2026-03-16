@@ -1643,10 +1643,15 @@ function bindSaveButtonsToAuth() {
 
 function getFirestoreDb() {
   try {
+    if (window.PuntazoFirebase && typeof window.PuntazoFirebase.db === "function") {
+      return window.PuntazoFirebase.db();
+    }
+
     if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.firestore === "function") {
       return firebase.firestore();
     }
   } catch {}
+
   return null;
 }
 
