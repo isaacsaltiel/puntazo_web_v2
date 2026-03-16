@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Jugador · Puntazo</title>
+  <link rel="stylesheet" href="/assets/estilo.css" />
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="/assets/firebase-core.js"></script>
+  <style>
+    body{background:#050914;color:#eaf2ff;font-family:system-ui, -apple-system,Segoe UI,Roboto,Arial;margin:0}
+    main{max-width:900px;margin:28px auto;padding:20px}
+    .player-card{display:flex;gap:16px;align-items:center}
+    .player-avatar{width:86px;height:86px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+    .player-name{font-weight:900;font-size:22px}
+    .appearances-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:18px}
+    .video-card{border-radius:12px;background:rgba(255,255,255,.04);overflow:hidden;border:1px solid rgba(255,255,255,.06)}
+    .card-video-wrap{position:relative;padding-top:56.25%;background:#000}
+    .card-video-wrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    .card-body{padding:10px}
+    .empty{padding:40px;text-align:center;color:rgba(234,242,255,.6)}
+  </style>
+</head>
+<body>
+  <main>
+    <a href="/index.html">← Volver</a>
+    <div id="header" class="player-card" style="margin-top:12px">
+      <img id="avatar" class="player-avatar" src="" alt="Avatar" style="display:none" />
+      <div>
+        <div id="playerName" class="player-name">Jugador Público</div>
+        <div id="playerMeta" style="color:rgba(234,242,255,.6);margin-top:6px">Perfil público</div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:22px">Apariciones</h3>
+    <div id="appearances" class="appearances-grid"></div>
+    <div id="empty" class="empty" style="display:none">No encontramos apariciones públicas para este usuario.</div>
+  </main>
+
+  <script>
+    (async function(){
+      function qs(k){ return new URLSearchParams(location.search).get(k); }
+      const uid = qs('uid');
+      if (!uid) {
+        document.getElementById('empty').textContent = 'UID no especificado';
+        document.getElementById('empty').style.display = '';
+        return;
+      }
+
+      try {
+        window.PuntazoFirebase.ensureApp();
+      } catch(e){}
+      const db = firebase.firestore();
+
+      const listEl = document.getElementById('appearances');
+      const emptyEl = document.getElementById('empty');
+      const playerNameEl = document.getElementById('playerName');
+      const avatarEl = document.getElementById('avatar');
+
+      try {
+        const snap = await db.collectionGroup('participants').where('uid','==', uid).orderBy('claimedAt','desc').get();
+        if (snap.empty) { emptyEl.style.display=''; return; }
+
+        let foundName = '';
+        for (const doc of snap.docs) {
+          const p = doc.data();
+          if (!foundName && p.displayName) foundName = p.displayName;
+          // attempt to fetch parent reaction doc for metadata
+          let parent = null;
+          try { parent = await db.collection('reactions').doc(p.videoId).get(); } catch(e){}
+          const d = parent && parent.exists ? parent.data() : p;
+
+          const card = document.createElement('div');
+          card.className = 'video-card';
+          card.innerHTML = `
+            <div class="card-video-wrap"><video src="${d.videoUrl||''}" muted playsinline preload="metadata" loop></video></div>
+            <div class="card-body">
+              <div style="font-weight:800">${d.club||'Puntazo'}</div>
+              <div style="color:rgba(234,242,255,.6);font-size:13px">${d.cancha?('Cancha '+d.cancha+(d.lado?(' '+d.lado):'')) : ''}</div>
+            </div>
+          `;
+
+          listEl.appendChild(card);
+        }
+
+        if (foundName) {
+          playerNameEl.textContent = foundName;
+          avatarEl.style.display = 'none';
+        }
+      } catch (err) {
+        console.error('Error cargando perfil público', err);
+        emptyEl.style.display='';
+      }
+
+    })();
+  </script>
+</body>
+</html>
