@@ -5,15 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <base href="/" />
   <title>Puntazo · Redireccionando</title>
-  <meta http-equiv="refresh" content="0; url=/inicio.html" />
+  <!-- Landing: no redirect — index.html is the main landing now -->
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-  <script>window.location.replace('/inicio.html');</script>
+  <!-- No automatic redirect. Landing content will load here. -->
 </head>
 <body>
   <main style="display:flex;align-items:center;justify-content:center;min-height:60vh;padding:2rem;text-align:center;">
     <div>
-      <h1>Redirigiendo a Puntazo</h1>
-      <p>Si la redirección no ocurre automáticamente, <a href="/inicio.html">haz clic aquí</a>.</p>
+      <h1>Bienvenido a Puntazo</h1>
+      <p>Explora los clips recientes o descubre los mejores momentos del mes.</p>
+      <p style="margin-top:1rem;display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+        <a href="explorar.html" style="background:#004FC8;color:#fff;padding:0.9rem 1.6rem;border-radius:999px;text-decoration:none;font-weight:800;">▶ Encuentra tus clips</a>
+        <a href="mejores.html" style="background:transparent;color:#fff;padding:0.9rem 1.6rem;border-radius:999px;border:1px solid rgba(255,255,255,0.12);text-decoration:none;font-weight:700;">🏆 Mejores del mes</a>
+      </p>
     </div>
   </main>
 </body>
