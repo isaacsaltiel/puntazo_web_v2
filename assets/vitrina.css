@@ -1,0 +1,63 @@
+/* =============================================================
+   vitrina.css — Puntazo · Separadores de fecha y vitrina
+   Incluir en lado.html
+   ============================================================= */
+
+/* ── Separador de fecha ─────────────────────────────────────── */
+.date-separator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 16px;
+}
+
+.date-separator:first-of-type {
+  margin-top: 4px;
+}
+
+.date-sep-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.14) 20%,
+    rgba(255, 255, 255, 0.14) 80%,
+    transparent
+  );
+}
+
+.date-sep-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(234, 242, 255, 0.45);
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+/* ── Botón "Ver más" ─────────────────────────────────────────── */
+.btn-ver-mas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 8px 0 20px;
+  padding: 12px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(234, 242, 255, 0.65);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .18s ease;
+}
+
+.btn-ver-mas:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #eaf2ff;
+}
