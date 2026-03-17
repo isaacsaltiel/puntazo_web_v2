@@ -7,20 +7,16 @@
 <title>Jugador · Puntazo</title>
 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
-
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
-
 <link rel="stylesheet" href="assets/estilo.css" />
 <link rel="stylesheet" href="/assets/card.css" />
 <link rel="stylesheet" href="/assets/reactions.css" />
-
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/reactions.js"></script>
 <script src="/assets/card.js"></script>
-
 <style>
   .player-wrap { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
 
@@ -29,23 +25,17 @@
     padding:20px; border-radius:18px;
     background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.10);
   }
-
   .player-avatar {
-    width:72px; height:72px; border-radius:50%; object-fit:cover;
+    width:72px; height:72px; border-radius:50%;
     background:rgba(0,79,200,.35); border:2px solid rgba(255,255,255,.14);
     flex-shrink:0; display:flex; align-items:center; justify-content:center;
     font-size:1.6rem; font-weight:900; color:#fff; overflow:hidden;
   }
   .player-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
-
   .player-name { font-size:1.35rem; font-weight:900; color:#fff; margin-bottom:4px; }
   .player-sub  { color:rgba(234,242,255,.55); font-size:.84rem; }
+  .section-title { font-size:1rem; font-weight:800; color:rgba(234,242,255,.75); margin-bottom:16px; }
 
-  .section-title {
-    font-size:1rem; font-weight:800; color:rgba(234,242,255,.75); margin-bottom:16px;
-  }
-
-  /* Skeleton */
   .player-header-skeleton {
     display:flex; align-items:center; gap:18px; padding:20px; border-radius:18px;
     background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
@@ -56,11 +46,18 @@
   .player-header-skeleton .sk-line { height:14px; border-radius:6px; background:rgba(255,255,255,.07); margin-bottom:10px; }
   .player-header-skeleton .sk-line.short { width:55%; }
 
+  /* error técnico (visible en dev) */
+  .tech-error {
+    margin-top:12px; padding:10px 14px; border-radius:10px;
+    background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.20);
+    font-size:.75rem; color:#fca5a5; font-family:monospace; word-break:break-all;
+    display:none;
+  }
+
   @media(max-width:480px) { .player-header{flex-direction:column;text-align:center;align-items:center;} }
 </style>
 </head>
 <body>
-
 <div class="page-bg"></div>
 <div id="nav-root" data-nav-variant="internal"></div>
 <script src="/assets/header.js"></script>
@@ -83,8 +80,9 @@
 
     <div id="playerError" class="empty-state" style="display:none">
       <div class="empty-icon">🕵️</div>
-      <h3>Perfil no encontrado</h3>
+      <h3 id="errorTitle">Perfil no encontrado</h3>
       <p id="errorMsg">Este jugador no tiene apariciones públicas todavía.</p>
+      <div id="techError" class="tech-error"></div>
     </div>
 
     <div id="appearancesSection" style="display:none">
@@ -105,44 +103,55 @@
 
   const uid = new URLSearchParams(location.search).get('uid') || '';
 
-  const $skeleton  = document.getElementById('headerSkeleton');
-  const $header    = document.getElementById('playerHeader');
-  const $avatar    = document.getElementById('playerAvatar');
-  const $name      = document.getElementById('playerName');
-  const $sub       = document.getElementById('playerSub');
-  const $error     = document.getElementById('playerError');
-  const $errorMsg  = document.getElementById('errorMsg');
-  const $section   = document.getElementById('appearancesSection');
-  const $grid      = document.getElementById('appearancesGrid');
+  const $skeleton = document.getElementById('headerSkeleton');
+  const $header   = document.getElementById('playerHeader');
+  const $avatar   = document.getElementById('playerAvatar');
+  const $name     = document.getElementById('playerName');
+  const $sub      = document.getElementById('playerSub');
+  const $error    = document.getElementById('playerError');
+  const $errTitle = document.getElementById('errorTitle');
+  const $errMsg   = document.getElementById('errorMsg');
+  const $techErr  = document.getElementById('techError');
+  const $section  = document.getElementById('appearancesSection');
+  const $grid     = document.getElementById('appearancesGrid');
 
-  function showError(msg) {
+  function showError(title, msg, tech) {
     $skeleton.style.display = 'none';
-    if (msg) $errorMsg.textContent = msg;
+    if (title) $errTitle.textContent = title;
+    if (msg)   $errMsg.textContent   = msg;
+    if (tech)  { $techErr.textContent = tech; $techErr.style.display = 'block'; }
     $error.style.display = 'block';
   }
 
-  if (!uid) { showError('UID no especificado'); return; }
+  if (!uid) { showError('Sin UID', 'No se especificó el identificador del jugador.'); return; }
 
-  async function waitFor(check, retries) {
-    for (let i=0; i<(retries||40); i++) {
+  // Esperar deps
+  async function waitFor(check, n) {
+    for (let i=0; i<(n||40); i++) {
       if (check()) return true;
       await new Promise(r=>setTimeout(r,200));
     }
     return false;
   }
 
-  const ready = await waitFor(()=> window.PuntazoCard && window.PuntazoFirebase?.db, 40);
-  if (!ready) { showError('Error cargando dependencias'); return; }
+  // 1. Esperar Firebase primero (no depende de PuntazoCard)
+  const fbReady = await waitFor(()=> window.firebase && window.PuntazoFirebase?.db, 40);
+  if (!fbReady) { showError('Error de conexión', 'No se pudo conectar con la base de datos.', 'PuntazoFirebase no disponible tras 8s'); return; }
 
-  const db = PuntazoCard.getDb();
-  if (!db) { showError('Sin conexión a base de datos'); return; }
+  const db = window.PuntazoFirebase.db();
 
+  // 2. Esperar card.js (puede tardar un poco más)
+  const cardReady = await waitFor(()=> window.PuntazoCard, 20);
+
+  // 3. Leer videos_index.json en paralelo
+  let videoIndex = {};
   try {
-    // ── Query sin orderBy para evitar necesidad de índice compuesto ──
-    // Firestore permite where sin orderBy sin índice adicional.
-    // Si queremos orderBy más adelante, agregar índice en Firebase Console:
-    //   Collection group: participants
-    //   uid ASC + claimedAt DESC
+    const res = await fetch('/data/videos_index.json?cb='+Date.now(), { cache:'no-store' });
+    if (res.ok) { const idx = await res.json(); videoIndex = idx.videos || {}; }
+  } catch(e) { console.warn('[jugador] videos_index no disponible:', e); }
+
+  // 4. Query de participaciones
+  try {
     const snap = await db.collectionGroup('participants')
       .where('uid', '==', uid)
       .limit(30)
@@ -151,20 +160,16 @@
     $skeleton.style.display = 'none';
 
     if (snap.empty) {
-      showError('Este jugador no tiene apariciones públicas todavía.');
+      showError('Sin apariciones', 'Este jugador no tiene apariciones públicas todavía.');
       return;
     }
 
-    // Ordenar client-side por claimedAt desc (evita requerir índice compuesto)
+    // Ordenar client-side (evita índice compuesto)
     const docs = [];
     snap.forEach(doc => docs.push({ id: doc.id, data: doc.data() }));
-    docs.sort((a, b) => {
-      const ta = a.data.claimedAt?.seconds || 0;
-      const tb = b.data.claimedAt?.seconds || 0;
-      return tb - ta;
-    });
+    docs.sort((a, b) => (b.data.claimedAt?.seconds||0) - (a.data.claimedAt?.seconds||0));
 
-    // Datos del jugador
+    // Header del jugador
     const firstData  = docs[0].data;
     const playerName = firstData.displayName || 'Jugador';
     const playerPhoto= firstData.photoURL    || '';
@@ -172,40 +177,23 @@
     document.title = `${playerName} · Puntazo`;
 
     if (playerPhoto) {
-      $avatar.innerHTML = `<img src="${PuntazoCard.escapeHTML(playerPhoto)}" alt="${PuntazoCard.escapeHTML(playerName)}" />`;
+      $avatar.innerHTML = `<img src="${escapeHTML(playerPhoto)}" alt="${escapeHTML(playerName)}" />`;
     } else {
       $avatar.textContent = playerName.charAt(0).toUpperCase();
     }
     $name.textContent = playerName;
     $sub.textContent  = `${docs.length} aparición${docs.length!==1?'es':''} · Perfil público`;
     $header.style.display = 'flex';
-
-    // Intentar cargar videos desde videos_index.json primero
-    let videoIndex = {};
-    try {
-      const res = await fetch('/data/videos_index.json?cb='+Date.now(), { cache:'no-store' });
-      if (res.ok) {
-        const idx = await res.json();
-        videoIndex = idx.videos || {};
-      }
-    } catch {}
-
     $section.style.display = 'block';
 
+    // Cards
     for (const doc of docs) {
       const p = doc.data;
       if (!p.videoId) continue;
 
-      let entry = {
-        nombre:  p.videoId,
-        url:     '',
-        club:    '',
-        cancha:  '',
-        lado:    '',
-        fecha:   '',
-      };
+      let entry = { nombre:p.videoId, url:'', club:'', cancha:'', lado:'', fecha:'' };
 
-      // 1. Buscar en índice global
+      // 1. Índice global
       const hit = videoIndex[p.videoId];
       if (hit && hit.url) {
         entry.url    = hit.url;
@@ -214,11 +202,11 @@
         entry.lado   = hit.lado   || '';
         entry.fecha  = hit.fecha  || '';
       } else {
-        // 2. Fallback Firestore
+        // 2. Firestore fallback
         try {
           const rxDoc = await db.collection('reactions').doc(p.videoId).get();
           if (rxDoc.exists) {
-            const d    = rxDoc.data();
+            const d = rxDoc.data();
             entry.url    = d.videoUrl || '';
             entry.club   = d.club     || '';
             entry.cancha = d.cancha   || '';
@@ -230,28 +218,43 @@
 
       if (!entry.url) continue;
 
-      PuntazoCard.buildAndAppend(entry, {
-        showSave:true, showShare:true, showFullscreen:true,
-        showClaim:false, showReactions:true, showComments:false,
-        showClubInfo:true, showHeroName:false,
-      }, $grid);
+      if (!cardReady || !window.PuntazoCard) {
+        // Fallback mínimo si card.js tardó demasiado
+        const div = document.createElement('div');
+        div.className = 'video-card';
+        div.innerHTML = `<video src="${escapeHTML(entry.url)}" controls playsinline style="width:100%;border-radius:10px"></video>`;
+        $grid.appendChild(div);
+      } else {
+        PuntazoCard.buildAndAppend(entry, {
+          showSave:true, showShare:true, showFullscreen:true,
+          showClaim:false, showReactions:true, showComments:false,
+          showClubInfo:true, showHeroName:false,
+          // En jugador NO mostramos hora — mostramos club
+          topLabel: entry.club || '',
+        }, $grid);
+      }
     }
 
     if (!$grid.children.length) {
-      showError('No encontramos clips disponibles para este jugador.');
+      showError('Sin clips disponibles', 'No encontramos videos con URL disponible para este jugador.');
     }
 
   } catch (err) {
     console.error('[jugador]', err);
-    // Si el error menciona "requires an index", dar hint específico
-    if (String(err).includes('index') || String(err).includes('índice')) {
-      showError('Falta configurar un índice en Firestore. Consulta la consola para el link directo.');
+    const msg = String(err.message || err);
+    if (msg.toLowerCase().includes('index') || msg.toLowerCase().includes('índice')) {
+      showError('Índice faltante', 'Falta un índice en Firestore. Ábrelo en la consola del navegador para ver el link de creación.', msg);
+    } else if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('permiso')) {
+      showError('Sin permisos', 'Las reglas de Firestore no permiten esta consulta. Revisa firestore.rules.', msg);
     } else {
-      showError('Error cargando el perfil. Intenta de nuevo en unos segundos.');
+      showError('Error cargando', 'Ocurrió un error. Intenta de nuevo.', msg);
     }
+  }
+
+  function escapeHTML(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 })();
 </script>
-
 </body>
 </html>
