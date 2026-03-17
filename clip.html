@@ -6,7 +6,14 @@
 <base href="/" />
 <title>Clip · Puntazo</title>
 <meta name="description" content="Ver clip en Puntazo" />
+
+<!-- Favicons -->
 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="icon" type="image/png" sizes="32x32"   href="/assets/icons/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16"   href="/assets/icons/favicon-16x16.png" />
+<link rel="manifest" href="/assets/icons/manifest.json" />
+<meta name="theme-color" content="#050914" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
@@ -24,9 +31,7 @@
 <style>
   .clip-wrap { max-width:680px; margin:0 auto; padding:24px 16px 60px; }
 
-  .clip-breadcrumb {
-    margin-bottom:16px;
-  }
+  .clip-breadcrumb { margin-bottom:16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .clip-club-link {
     display:inline-flex; align-items:center; gap:6px;
     padding:.45rem .9rem; border-radius:999px;
@@ -34,26 +39,30 @@
     color:rgba(234,242,255,.85)!important; text-decoration:none;
     font-weight:800; font-size:.86rem; transition:all .18s;
   }
-  .clip-club-link:hover { background:rgba(0,79,200,.22); border-color:rgba(11,124,255,.40); color:#eaf2ff!important; }
+  .clip-club-link:hover { background:rgba(0,79,200,.22); color:#eaf2ff!important; }
 
-  /* Error / expirado */
+  .clip-loading { text-align:center; padding:60px 20px; color:rgba(234,242,255,.55); font-size:.9rem; }
+
   .clip-error { text-align:center; padding:60px 20px; }
   .clip-error-icon { font-size:52px; margin-bottom:16px; }
   .clip-error h2 { font-size:1.3rem; font-weight:900; color:#eaf2ff; margin-bottom:10px; }
-  .clip-error p { color:rgba(234,242,255,.60); margin-bottom:24px; }
+  .clip-error p { color:rgba(234,242,255,.60); margin-bottom:24px; line-height:1.6; }
   .clip-error a {
     display:inline-flex; align-items:center; gap:8px;
     padding:.85rem 1.4rem; border-radius:999px;
     background:linear-gradient(135deg,rgba(255,190,0,.16),rgba(0,79,200,.22));
     border:1px solid rgba(255,190,0,.26); color:#fff; text-decoration:none;
-    font-weight:800; font-size:.92rem; transition:all .18s;
+    font-weight:800; transition:all .18s;
   }
   .clip-error a:hover { border-color:rgba(255,190,0,.42); }
 
-  /* Loading */
-  .clip-loading { text-align:center; padding:60px 20px; color:rgba(234,242,255,.55); font-size:.9rem; }
+  .immortal-note {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 12px; border-radius:999px; margin-bottom:12px;
+    background:rgba(255,190,0,.08); border:1px solid rgba(255,190,0,.20);
+    color:rgba(255,210,60,.85); font-size:.76rem; font-weight:700;
+  }
 
-  /* Footer */
   .clip-footer {
     margin-top:32px; padding:20px; border-radius:18px;
     background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
@@ -64,23 +73,11 @@
   .btn-more-clips {
     display:inline-flex; align-items:center; gap:8px; padding:.75rem 1.2rem;
     border-radius:999px; background:rgba(0,79,200,.18); border:1px solid rgba(11,124,255,.32);
-    color:#eaf2ff; text-decoration:none; font-weight:800; font-size:.88rem; transition:all .18s;
-    white-space:nowrap;
+    color:#eaf2ff; text-decoration:none; font-weight:800; font-size:.88rem; transition:all .18s; white-space:nowrap;
   }
-  .btn-more-clips:hover { background:rgba(0,79,200,.28); border-color:rgba(11,124,255,.50); transform:translateY(-1px); }
+  .btn-more-clips:hover { background:rgba(0,79,200,.28); transform:translateY(-1px); }
 
-  /* Nota de video inmortal */
-  .immortal-note {
-    display:inline-flex; align-items:center; gap:6px;
-    padding:5px 12px; border-radius:999px; margin-bottom:12px;
-    background:rgba(255,190,0,.08); border:1px solid rgba(255,190,0,.20);
-    color:rgba(255,210,60,.85); font-size:.76rem; font-weight:700;
-  }
-
-  @media(max-width:480px) {
-    .clip-footer { flex-direction:column; }
-    .btn-more-clips { width:100%; justify-content:center; }
-  }
+  @media(max-width:480px) { .clip-footer{flex-direction:column;} .btn-more-clips{width:100%;justify-content:center;} }
 </style>
 </head>
 <body>
@@ -93,7 +90,7 @@
   <div class="clip-wrap">
 
     <div id="clipBreadcrumb" class="clip-breadcrumb" style="display:none"></div>
-    <div id="immortalNote" class="immortal-note" style="display:none">⭐ Video inmortal — este puntazo no expira</div>
+    <div id="immortalNote" class="immortal-note" style="display:none">⭐ Video inmortal — este clip no expira</div>
 
     <div id="clipLoading" class="clip-loading">
       <div style="font-size:32px;margin-bottom:12px">🎾</div>
@@ -105,16 +102,17 @@
     <div id="clipError" class="clip-error" style="display:none">
       <div class="clip-error-icon">📭</div>
       <h2>Este clip ya expiró</h2>
-      <p>Los clips se guardan por tiempo limitado.<br>Pero los mejores de siempre están aquí:</p>
+      <p>Los clips de los últimos días están disponibles en la cancha.<br>
+         Los mejores puntazos del mes no expiran nunca:</p>
       <a href="mejores.html">🏆 Ver Puntazos del mes</a>
     </div>
 
     <div id="clipFooter" class="clip-footer" style="display:none">
       <div class="clip-footer-text">
         <strong id="clipFooterClub"></strong>
-        ¿Quieres ver más clips de este club?
+        Ver más clips de este club
       </div>
-      <a id="clipFooterLink" href="#" class="btn-more-clips">Ver más clips →</a>
+      <a id="clipFooterLink" href="#" class="btn-more-clips">Ver clips →</a>
     </div>
 
   </div>
@@ -133,20 +131,24 @@
 (async function () {
   'use strict';
 
+  // URL del índice global — construido por generar_stats.py
+  const INDEX_URL = '/data/videos_index.json';
+
   const params  = new URLSearchParams(location.search);
   const videoId = params.get('videoId') || params.get('v') || '';
 
-  const $breadcrumb = document.getElementById('clipBreadcrumb');
+  const $breadcrumb   = document.getElementById('clipBreadcrumb');
   const $immortalNote = document.getElementById('immortalNote');
-  const $loading  = document.getElementById('clipLoading');
-  const $card     = document.getElementById('clipCard');
-  const $error    = document.getElementById('clipError');
-  const $footer   = document.getElementById('clipFooter');
+  const $loading      = document.getElementById('clipLoading');
+  const $card         = document.getElementById('clipCard');
+  const $error        = document.getElementById('clipError');
+  const $footer       = document.getElementById('clipFooter');
 
   function showError() { $loading.style.display='none'; $error.style.display='block'; }
 
   if (!videoId) { showError(); return; }
 
+  // Esperar a que las deps estén disponibles
   async function waitFor(check, retries) {
     for (let i=0; i<(retries||40); i++) {
       if (check()) return true;
@@ -158,56 +160,87 @@
   const ready = await waitFor(()=> window.PuntazoCard && window.PuntazoFirebase?.db, 40);
   if (!ready) { showError(); return; }
 
-  // 1. Intentar cargar desde videos_recientes.json (config_locations)
-  let entry = await PuntazoCard.loadEntryFromConfig(videoId);
-  let fromFirestoreFallback = false;
+  // ── 1. Buscar en el índice global ──────────────────────────
+  let entry = null;
+  let fromFirestore = false;
 
-  // 2. Si no está en los recientes, buscar en Firestore (videos inmortales)
-  if (!entry) {
-    entry = await PuntazoCard.loadEntryFromFirestore(videoId);
-    if (entry) fromFirestoreFallback = true;
+  try {
+    const res = await fetch(INDEX_URL + '?cb=' + Date.now(), { cache: 'no-store' });
+    if (res.ok) {
+      const idx = await res.json();
+      const hit = idx?.videos?.[videoId];
+      if (hit && hit.url) {
+        entry = {
+          nombre:  videoId,
+          url:     hit.url,
+          club:    hit.club    || '',
+          cancha:  hit.cancha  || '',
+          lado:    hit.lado    || '',
+          fecha:   hit.fecha   || '',
+          _meta:   PuntazoCard.parseFromName(videoId),
+          _ladoHref: hit.loc_id
+            ? `/lado.html?loc=${encodeURIComponent(hit.loc_id)}&can=${encodeURIComponent(hit.can_id)}&lado=${encodeURIComponent(hit.lado_id)}`
+            : null,
+          _canchaHref: hit.loc_id
+            ? `/cancha.html?loc=${encodeURIComponent(hit.loc_id)}&can=${encodeURIComponent(hit.can_id)}`
+            : null,
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('[clip] videos_index.json no disponible:', e);
   }
 
+  // ── 2. Fallback: Firestore (videos inmortales / guardados) ──
+  if (!entry) {
+    entry = await PuntazoCard.loadEntryFromFirestore(videoId);
+    if (entry) {
+      fromFirestore = true;
+      // Construir hrefs desde el nombre del archivo si está disponible
+      const m = PuntazoCard.parseFromName(videoId);
+      if (m) {
+        entry._ladoHref   = `/lado.html?loc=${encodeURIComponent(m.loc)}&can=${encodeURIComponent(m.can)}&lado=${encodeURIComponent(m.lado)}`;
+        entry._canchaHref = `/cancha.html?loc=${encodeURIComponent(m.loc)}&can=${encodeURIComponent(m.can)}`;
+      }
+    }
+  }
+
+  // ── 3. No encontrado ────────────────────────────────────────
   if (!entry || !entry.url) { showError(); return; }
 
-  // Registrar vista
+  // ── 4. Registrar vista en Firestore ─────────────────────────
   try {
     const db = PuntazoCard.getDb();
-    if (db && videoId) {
+    if (db) {
       await db.collection('reactions').doc(videoId).set({
-        views: firebase.firestore.FieldValue.increment(1),
-        videoId: entry.nombre,
-        videoUrl: entry.url||'',
-        club: entry.club||'',
-        cancha: entry.cancha||'',
-        lado: entry.lado||'',
-        fecha: entry.fecha||'',
-      }, {merge:true});
+        views:    firebase.firestore.FieldValue.increment(1),
+        videoId:  entry.nombre,
+        videoUrl: entry.url,
+        club:     entry.club,
+        cancha:   entry.cancha,
+        lado:     entry.lado,
+        fecha:    entry.fecha,
+      }, { merge: true });
     }
   } catch {}
 
-  // Actualizar título
-  document.title = `${entry.club||'Puntazo'} · Clip`;
+  // ── 5. Render ────────────────────────────────────────────────
+  document.title = `${entry.club || 'Puntazo'} · Clip`;
 
-  // Breadcrumb
   if (entry.club) {
     const lnk = document.createElement('a');
     lnk.className = 'clip-club-link';
-    lnk.href = entry._ladoHref || entry._canchaHref || '#';
+    lnk.href      = entry._ladoHref || entry._canchaHref || '#';
     lnk.textContent = entry.club;
     $breadcrumb.appendChild(lnk);
-    $breadcrumb.style.display = 'block';
+    $breadcrumb.style.display = 'flex';
   }
 
-  // Nota inmortal
-  if (entry.immortal || fromFirestoreFallback) {
+  if (entry.immortal || fromFirestore) {
     $immortalNote.style.display = 'inline-flex';
   }
 
-  // Mensaje de share para clip — invitar a votar
-  const shareMsg = '¡Mira este puntazo! 🎾 Reacciona para que gane el premio del mes 🏆';
-
-  // Build card
+  const shareMsg = '¡Vota por este puntazo! 🔥 Puede ganar el premio del mes en Puntazo 🏆';
   const card = PuntazoCard.build(entry, {
     showSave:true, showShare:true, showFullscreen:true,
     showClaim:true, showReactions:true, showComments:true,
@@ -215,6 +248,7 @@
     topLabel: entry.club || PuntazoCard.formatDisplayTime(entry.nombre),
     shareMessage: shareMsg,
   });
+
   $loading.style.display = 'none';
   $card.appendChild(card);
   PuntazoCard.attachReactions(card, entry);
@@ -223,9 +257,9 @@
   const footerClub = document.getElementById('clipFooterClub');
   const footerLink = document.getElementById('clipFooterLink');
   if (footerClub && entry.club) footerClub.textContent = entry.club;
-  if (footerLink && (entry._canchaHref || entry._ladoHref)) footerLink.href = entry._canchaHref || entry._ladoHref;
+  if (footerLink && (entry._canchaHref || entry._ladoHref))
+    footerLink.href = entry._canchaHref || entry._ladoHref;
   $footer.style.display = 'flex';
-
 })();
 </script>
 
