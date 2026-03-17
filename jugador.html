@@ -173,21 +173,23 @@
   } catch(e) { log('videos_index.json: no disponible (' + e.message + ')', 'warn'); }
 
   // ── 5. Query Firestore ───────────────────────────────────────
-  log('Consultando participants donde uid == ' + uid.slice(0,12) + '…');
+    log('Consultando participants uid==' + uid.slice(0,12));
   let snap;
   try {
-    snap = await db.collectionGroup('participants')
-      .where('uid', '==', uid)
-      .limit(30)
-      .get();
-    log('Query OK — docs encontrados: ' + snap.size, snap.size > 0 ? 'ok' : 'warn');
+    snap = await Promise.race([
+      db.collectionGroup('participants').where('uid', '==', uid).limit(30).get(),
+      new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('TIMEOUT')); }, 8000); })
+    ]);
+    log('Query OK: ' + snap.size + ' docs', snap.size > 0 ? 'ok' : 'warn');
   } catch(e) {
-    log('Error en query: ' + e.message, 'err');
-    // Si menciona índice, dar link directo
-    if (String(e.message).toLowerCase().includes('index')) {
-      log('→ Falta índice. Busca en la consola del navegador el link de Firestore para crearlo.', 'warn');
+    const msg = String(e.message || e);
+    log('Error query: ' + msg, 'err');
+    if (msg === 'TIMEOUT') {
+      log('Timeout: participants vacio o red lenta.', 'warn');
+      showError('Sin apariciones', 'Este jugador no ha reclamado ningun video con Soy yo todavia.');
+    } else {
+      showError('Error Firestore', msg);
     }
-    showError('Error consultando Firestore', e.message);
     return;
   }
 
