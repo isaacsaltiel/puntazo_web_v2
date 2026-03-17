@@ -48,9 +48,7 @@ window.PuntazoCard = (function () {
       el.style.cssText = 'position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(0,0,0,.86);color:#fff;padding:10px 18px;border-radius:10px;z-index:9999;font-weight:600;font-size:14px;pointer-events:none;white-space:nowrap;transition:opacity .2s;';
       document.body.appendChild(el);
     }
-    el.textContent = msg;
-    el.style.display = 'block';
-    el.style.opacity = '1';
+    el.textContent = msg; el.style.display = 'block'; el.style.opacity = '1';
     clearTimeout(_toastTimer);
     _toastTimer = setTimeout(()=>{ el.style.opacity='0'; setTimeout(()=>{ el.style.display='none'; },200); }, 1800);
   }
@@ -106,7 +104,6 @@ window.PuntazoCard = (function () {
   function isFs(video) {
     return !!(document.fullscreenElement===video||document.webkitFullscreenElement===video||video.webkitDisplayingFullscreen);
   }
-
   function unlockOri() { try { if(screen.orientation?.unlock) screen.orientation.unlock(); } catch {} }
 
   async function requestFs(video) {
@@ -115,14 +112,12 @@ window.PuntazoCard = (function () {
     if (video.webkitEnterFullscreen) { video.webkitEnterFullscreen(); return; }
     throw new Error('No fullscreen');
   }
-
   async function exitFs() {
     try { if(document.fullscreenElement&&document.exitFullscreen){await document.exitFullscreen();return;} } catch {}
     try { if(document.webkitFullscreenElement&&document.webkitExitFullscreen){document.webkitExitFullscreen();return;} } catch {}
   }
 
   // ── Pills de acción ────────────────────────────────────────
-
   function makePill(emoji, title, extraClass) {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -132,12 +127,14 @@ window.PuntazoCard = (function () {
     return btn;
   }
 
-  function buildSharePill(entry) {
-    const btn = makePill('🔗', 'Copiar enlace');
+  function buildSharePill(entry, opts) {
+    opts = opts || {};
+    const btn = makePill('🔗', 'Compartir enlace');
+    const shareText = opts.shareMessage || '¡Mira este puntazo! 🎾';
     btn.addEventListener('click', async () => {
       const link = `${location.origin}/clip.html?videoId=${encodeURIComponent(entry.nombre)}`;
       try {
-        if (navigator.share) { await navigator.share({title:'Puntazo',text:'Mira este puntazo 🎾',url:link}); toast('Compartido'); return; }
+        if (navigator.share) { await navigator.share({title:'Puntazo',text:shareText,url:link}); toast('Compartido ✓'); return; }
       } catch {}
       try { await navigator.clipboard.writeText(link); btn.textContent='✓'; setTimeout(()=>{btn.textContent='🔗';},1500); toast('Enlace copiado'); }
       catch { window.open(link,'_blank'); }
@@ -145,25 +142,15 @@ window.PuntazoCard = (function () {
     return btn;
   }
 
-  /**
-   * buildSavePill
-   * - 💾 siempre (mismo emoji)
-   * - Azul cuando está guardado, gris/normal cuando no
-   * - opts.onUnsave?: fn() — llamada extra cuando se quita de guardados (ej: para remover la card del DOM)
-   */
   function buildSavePill(entry, opts) {
     opts = opts || {};
     const btn = makePill('💾', 'Guardar en tu perfil');
-    btn.dataset.saved = '0';
-    btn.dataset.loading = '0';
+    btn.dataset.saved = '0'; btn.dataset.loading = '0';
+    btn.textContent = '💾'; // siempre el mismo emoji
 
     const sync = async () => {
       const user = getUser();
-      if (!user) {
-        btn.classList.remove('is-saved');
-        btn.title = 'Guardar en tu perfil';
-        return;
-      }
+      if (!user) { btn.classList.remove('is-saved'); btn.title='Guardar en tu perfil'; return; }
       try {
         const saved = await isVideoSaved(entry.nombre);
         btn.dataset.saved = saved ? '1' : '0';
@@ -171,40 +158,25 @@ window.PuntazoCard = (function () {
         btn.title = saved ? 'Guardado (toca para quitar)' : 'Guardar en tu perfil';
       } catch {}
     };
-
     btn._sync = sync;
 
     btn.addEventListener('click', async () => {
       const auth = window.PuntazoAuth;
-      if (!auth?.currentUser) {
-        if (auth?.requireAuth) auth.requireAuth(()=>sync());
-        return;
-      }
-      if (btn.dataset.loading === '1') return;
-      btn.dataset.loading = '1';
-      btn.disabled = true;
-
+      if (!auth?.currentUser) { if (auth?.requireAuth) auth.requireAuth(()=>sync()); return; }
+      if (btn.dataset.loading==='1') return;
+      btn.dataset.loading='1'; btn.disabled=true;
       try {
-        const alreadySaved = btn.dataset.saved === '1';
+        const alreadySaved = btn.dataset.saved==='1';
         if (alreadySaved) {
-          await unsaveVideo(entry.nombre);
-          toast('Quitado de guardados');
-          btn.dataset.saved = '0';
-          btn.classList.remove('is-saved');
-          btn.title = 'Guardar en tu perfil';
-          // Si hay callback de unsave (ej: perfil.html quiere remover la card), llamarlo
-          if (typeof opts.onUnsave === 'function') opts.onUnsave();
+          await unsaveVideo(entry.nombre); toast('Quitado de guardados');
+          btn.dataset.saved='0'; btn.classList.remove('is-saved'); btn.title='Guardar en tu perfil';
+          if (typeof opts.onUnsave==='function') opts.onUnsave();
         } else {
-          await saveVideo(entry);
-          toast('¡Guardado en tu perfil!');
-          btn.dataset.saved = '1';
-          btn.classList.add('is-saved');
-          btn.title = 'Guardado (toca para quitar)';
+          await saveVideo(entry); toast('¡Guardado en tu perfil!');
+          btn.dataset.saved='1'; btn.classList.add('is-saved'); btn.title='Guardado (toca para quitar)';
         }
       } catch(e) { console.warn('[PuntazoCard save]', e); }
-
-      btn.disabled = false;
-      btn.dataset.loading = '0';
+      btn.disabled=false; btn.dataset.loading='0';
       setTimeout(()=>sync().catch(()=>{}), 400);
     });
 
@@ -245,53 +217,62 @@ window.PuntazoCard = (function () {
 
   // ── build() ────────────────────────────────────────────────
   /**
-   * build(entry, opts) → HTMLElement
-   *
    * opts:
    *   showSave, showShare, showFullscreen: true
    *   showClaim, showReactions, showComments: true
    *   showClubInfo: false
-   *   rankBadge: null | 1|2|3
-   *   onUnsave: null | fn()  → llamado cuando se quita de guardados
-   *                            (típicamente: () => card.remove() en perfil.html)
+   *   rankBadge: null | 1|2|3|N  → badge inline en card-top (NO absolute)
+   *   onUnsave: null | fn()
+   *   topLabel: null | string   → texto en card-time (null = hora del archivo)
+   *   showHeroName: false       → slot data-hero-name bajo el video (para perfil/clip/jugador)
+   *   shareMessage: null | string
    */
   function build(entry, opts) {
     opts = Object.assign({
       showSave:true, showShare:true, showFullscreen:true,
       showClaim:true, showReactions:true, showComments:true,
       showClubInfo:false, rankBadge:null, onUnsave:null,
+      topLabel:null, showHeroName:false, shareMessage:null,
     }, opts||{});
 
     if (!entry._meta && entry.nombre) entry._meta = parseFromName(entry.nombre);
 
     const card = document.createElement('div');
-    card.className = 'video-card';
+    card.className = 'video-card' + (opts.rankBadge ? ' has-rank' : '');
     if (entry.nombre) card.id = entry.nombre;
 
-    // Rank badge
+    // 1. Header: [rank badge?] label rxn-preview
+    const topEl = document.createElement('div');
+    topEl.className = 'card-top';
+
+    // Rank badge dentro del card-top (NO absolute) cuando has-rank
     if (opts.rankBadge) {
       const badge = document.createElement('div');
       const cls   = opts.rankBadge===1?'top1':opts.rankBadge===2?'top2':opts.rankBadge===3?'top3':'';
       badge.className = `rank-badge ${cls}`;
       badge.textContent = opts.rankBadge===1?'🥇':opts.rankBadge===2?'🥈':opts.rankBadge===3?'🥉':'#'+opts.rankBadge;
-      card.appendChild(badge);
+      topEl.appendChild(badge);
     }
 
-    // 1. Header: tiempo + rxn preview
-    const topEl = document.createElement('div');
-    topEl.className = 'card-top';
-    const timeEl = document.createElement('span');
-    timeEl.className = 'card-time';
-    timeEl.textContent = formatDisplayTime(entry.nombre) || (entry.fecha||'');
+    const labelEl = document.createElement('div');
+    labelEl.className = 'card-time';
+    // topLabel: si se pasa explícitamente úsalo; si no, usar la hora del archivo
+    labelEl.textContent = opts.topLabel !== null && opts.topLabel !== undefined
+      ? opts.topLabel
+      : (formatDisplayTime(entry.nombre) || entry.fecha || '');
+    // Para ranked cards: reactions.js actualizará el texto a nombre del jugador
+    if (opts.rankBadge) labelEl.setAttribute('data-card-label', '');
+    topEl.appendChild(labelEl);
+
     const rxnPreview = document.createElement('div');
     rxnPreview.className = 'card-rxn-preview';
     rxnPreview.setAttribute('data-rxn-preview','');
-    topEl.appendChild(timeEl);
     topEl.appendChild(rxnPreview);
+
     card.appendChild(topEl);
 
-    // Subtítulo (club/cancha)
-    if (opts.showClubInfo && (entry.club||entry.cancha)) {
+    // Subtítulo (club·cancha) — para tarjetas sin rank
+    if (opts.showClubInfo && !opts.rankBadge && (entry.club||entry.cancha)) {
       const sub = document.createElement('div');
       sub.className = 'card-subtitle';
       sub.textContent = [entry.club, entry.cancha?'· '+entry.cancha:''].filter(Boolean).join(' ');
@@ -310,6 +291,14 @@ window.PuntazoCard = (function () {
     wrap.appendChild(video);
     card.appendChild(wrap);
 
+    // Hero name slot (solo en tarjetas SIN rank, para perfil/clip/jugador)
+    if (opts.showHeroName && !opts.rankBadge) {
+      const heroEl = document.createElement('div');
+      heroEl.className = 'card-hero-name';
+      heroEl.setAttribute('data-hero-name','');
+      card.appendChild(heroEl);
+    }
+
     // 3. Participants slot
     const pSlot = document.createElement('div');
     pSlot.setAttribute('data-participants-slot','');
@@ -318,31 +307,22 @@ window.PuntazoCard = (function () {
     // 4. Action pills
     const pillsEl = document.createElement('div');
     pillsEl.className = 'action-pills';
-
-    if (opts.showShare)       pillsEl.appendChild(buildSharePill(entry));
-    if (opts.showSave)        pillsEl.appendChild(buildSavePill(entry, { onUnsave: opts.onUnsave }));
-    if (opts.showFullscreen)  pillsEl.appendChild(buildFullscreenPill(video));
+    if (opts.showShare) pillsEl.appendChild(buildSharePill(entry, { shareMessage: opts.shareMessage }));
+    if (opts.showSave)  pillsEl.appendChild(buildSavePill(entry, { onUnsave: opts.onUnsave }));
+    if (opts.showFullscreen) pillsEl.appendChild(buildFullscreenPill(video));
     card.appendChild(pillsEl);
 
     // 5. Reactions slot
     if (opts.showReactions) {
-      const rxnSlot = document.createElement('div');
-      rxnSlot.setAttribute('data-rxn-slot','');
-      card.appendChild(rxnSlot);
+      const rxnSlot = document.createElement('div'); rxnSlot.setAttribute('data-rxn-slot',''); card.appendChild(rxnSlot);
     }
-
     // 6. Comments slot
     if (opts.showComments) {
-      const cSlot = document.createElement('div');
-      cSlot.setAttribute('data-comments-slot','');
-      card.appendChild(cSlot);
+      const cSlot = document.createElement('div'); cSlot.setAttribute('data-comments-slot',''); card.appendChild(cSlot);
     }
-
     // 7. Claim slot
     if (opts.showClaim) {
-      const clSlot = document.createElement('div');
-      clSlot.setAttribute('data-claim-slot','');
-      card.appendChild(clSlot);
+      const clSlot = document.createElement('div'); clSlot.setAttribute('data-claim-slot',''); card.appendChild(clSlot);
     }
 
     return card;
@@ -404,14 +384,31 @@ window.PuntazoCard = (function () {
       lado:   ladoObj.nombre || meta.lado,
       fecha:  `${meta.Y}-${meta.M}-${meta.D}`,
       _meta:  meta,
-      _ladoHref: `/lado.html?loc=${encodeURIComponent(meta.loc)}&can=${encodeURIComponent(meta.can)}&lado=${encodeURIComponent(meta.lado)}`,
+      _ladoHref:   `/lado.html?loc=${encodeURIComponent(meta.loc)}&can=${encodeURIComponent(meta.can)}&lado=${encodeURIComponent(meta.lado)}`,
+      _canchaHref: `/cancha.html?loc=${encodeURIComponent(meta.loc)}&can=${encodeURIComponent(meta.can)}`,
     };
+  }
+
+  async function loadEntryFromFirestore(videoId) {
+    const db = getDb();
+    if (!db) return null;
+    try {
+      const doc = await db.collection('reactions').doc(videoId).get();
+      if (!doc.exists) return null;
+      const d = doc.data();
+      if (!d.videoUrl) return null;
+      return {
+        nombre: videoId, url: d.videoUrl,
+        club: d.club||'', cancha: d.cancha||'', lado: d.lado||'', fecha: d.fecha||'',
+        _meta: parseFromName(videoId), immortal: d.immortal||false, _fromFirestore: true,
+      };
+    } catch { return null; }
   }
 
   return {
     build, buildAndAppend, attachReactions,
     buildSharePill, buildSavePill, buildFullscreenPill,
-    loadEntryFromConfig,
+    loadEntryFromConfig, loadEntryFromFirestore,
     parseFromName, formatDisplayTime, escapeHTML,
     isVideoSaved, saveVideo, unsaveVideo,
     getUser, getDb, toast,
