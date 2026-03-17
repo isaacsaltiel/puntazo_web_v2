@@ -5,18 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <base href="/" />
 <title>Jugador · Puntazo</title>
-
 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
-<script>
-  window.dataLayer=window.dataLayer||[];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js',new Date()); gtag('config','G-7HTMSTJ035');
-</script>
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
 
-<meta name="theme-color" content="#050914" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
 
 <link rel="stylesheet" href="assets/estilo.css" />
@@ -30,138 +22,71 @@
 <script src="/assets/card.js"></script>
 
 <style>
-  .player-wrap {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 24px 16px 60px;
-  }
+  .player-wrap { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
 
-  /* Header del jugador */
   .player-header {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    margin-bottom: 28px;
-    padding: 20px;
-    border-radius: 18px;
-    background: rgba(255,255,255,.05);
-    border: 1px solid rgba(255,255,255,.10);
+    display:flex; align-items:center; gap:18px; margin-bottom:28px;
+    padding:20px; border-radius:18px;
+    background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.10);
   }
 
   .player-avatar {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: rgba(0,79,200,.35);
-    border: 2px solid rgba(255,255,255,.14);
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.6rem;
-    font-weight: 900;
-    color: #fff;
-    overflow: hidden;
+    width:72px; height:72px; border-radius:50%; object-fit:cover;
+    background:rgba(0,79,200,.35); border:2px solid rgba(255,255,255,.14);
+    flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem; font-weight:900; color:#fff; overflow:hidden;
   }
+  .player-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
 
-  .player-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-  }
-
-  .player-name {
-    font-size: 1.35rem;
-    font-weight: 900;
-    color: #fff;
-    margin-bottom: 4px;
-  }
-
-  .player-sub {
-    color: rgba(234,242,255,.55);
-    font-size: 0.84rem;
-  }
+  .player-name { font-size:1.35rem; font-weight:900; color:#fff; margin-bottom:4px; }
+  .player-sub  { color:rgba(234,242,255,.55); font-size:.84rem; }
 
   .section-title {
-    font-size: 1rem;
-    font-weight: 800;
-    color: rgba(234,242,255,.75);
-    margin-bottom: 16px;
-    letter-spacing: 0.2px;
+    font-size:1rem; font-weight:800; color:rgba(234,242,255,.75); margin-bottom:16px;
   }
 
-  /* Skeleton del header */
+  /* Skeleton */
   .player-header-skeleton {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    padding: 20px;
-    border-radius: 18px;
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.08);
-    animation: pz-shimmer 1.6s infinite;
-    margin-bottom: 28px;
+    display:flex; align-items:center; gap:18px; padding:20px; border-radius:18px;
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+    animation:pz-shimmer 1.6s infinite; margin-bottom:28px;
   }
+  .player-header-skeleton .sk-av { width:72px; height:72px; border-radius:50%; background:rgba(255,255,255,.07); flex-shrink:0; }
+  .player-header-skeleton .sk-lines { flex:1; }
+  .player-header-skeleton .sk-line { height:14px; border-radius:6px; background:rgba(255,255,255,.07); margin-bottom:10px; }
+  .player-header-skeleton .sk-line.short { width:55%; }
 
-  .player-header-skeleton .sk-avatar {
-    width: 72px; height: 72px;
-    border-radius: 50%;
-    background: rgba(255,255,255,.07);
-    flex-shrink: 0;
-  }
-
-  .player-header-skeleton .sk-lines { flex: 1; }
-  .player-header-skeleton .sk-line {
-    height: 14px; border-radius: 6px;
-    background: rgba(255,255,255,.07);
-    margin-bottom: 10px;
-  }
-  .player-header-skeleton .sk-line.short { width: 55%; }
-
-  @media (max-width: 480px) {
-    .player-header { flex-direction: column; text-align: center; }
-    .player-header { align-items: center; }
-  }
+  @media(max-width:480px) { .player-header{flex-direction:column;text-align:center;align-items:center;} }
 </style>
 </head>
 <body>
 
 <div class="page-bg"></div>
-
 <div id="nav-root" data-nav-variant="internal"></div>
 <script src="/assets/header.js"></script>
 
 <main class="site-content fade-in">
   <div class="player-wrap">
 
-    <!-- Skeleton mientras carga -->
     <div id="headerSkeleton" class="player-header-skeleton">
-      <div class="sk-avatar"></div>
-      <div class="sk-lines">
-        <div class="sk-line"></div>
-        <div class="sk-line short"></div>
-      </div>
+      <div class="sk-av"></div>
+      <div class="sk-lines"><div class="sk-line"></div><div class="sk-line short"></div></div>
     </div>
 
-    <!-- Header del jugador (oculto hasta cargar) -->
     <div id="playerHeader" class="player-header" style="display:none">
       <div id="playerAvatar" class="player-avatar"></div>
       <div>
         <div id="playerName" class="player-name">Jugador</div>
-        <div id="playerSub" class="player-sub">Perfil público · Puntazo</div>
+        <div id="playerSub"  class="player-sub">Perfil público · Puntazo</div>
       </div>
     </div>
 
-    <!-- Error / no encontrado -->
     <div id="playerError" class="empty-state" style="display:none">
       <div class="empty-icon">🕵️</div>
       <h3>Perfil no encontrado</h3>
-      <p>Este jugador no tiene apariciones públicas todavía.</p>
+      <p id="errorMsg">Este jugador no tiene apariciones públicas todavía.</p>
     </div>
 
-    <!-- Grid de apariciones -->
     <div id="appearancesSection" style="display:none">
       <p class="section-title">🥷 Apariciones</p>
       <div id="appearancesGrid" class="cards-grid"></div>
@@ -171,10 +96,6 @@
 </main>
 
 <footer class="site-footer">
-  <div class="footer-redes">
-    <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
-    <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
-  </div>
   <p class="footer-copy">© 2026 Puntazo</p>
 </footer>
 
@@ -184,24 +105,24 @@
 
   const uid = new URLSearchParams(location.search).get('uid') || '';
 
-  const $headerSkeleton   = document.getElementById('headerSkeleton');
-  const $playerHeader     = document.getElementById('playerHeader');
-  const $playerAvatar     = document.getElementById('playerAvatar');
-  const $playerName       = document.getElementById('playerName');
-  const $playerSub        = document.getElementById('playerSub');
-  const $playerError      = document.getElementById('playerError');
-  const $appearSection    = document.getElementById('appearancesSection');
-  const $grid             = document.getElementById('appearancesGrid');
+  const $skeleton  = document.getElementById('headerSkeleton');
+  const $header    = document.getElementById('playerHeader');
+  const $avatar    = document.getElementById('playerAvatar');
+  const $name      = document.getElementById('playerName');
+  const $sub       = document.getElementById('playerSub');
+  const $error     = document.getElementById('playerError');
+  const $errorMsg  = document.getElementById('errorMsg');
+  const $section   = document.getElementById('appearancesSection');
+  const $grid      = document.getElementById('appearancesGrid');
 
   function showError(msg) {
-    $headerSkeleton.style.display = 'none';
-    $playerError.style.display = 'block';
-    if (msg) $playerError.querySelector('p').textContent = msg;
+    $skeleton.style.display = 'none';
+    if (msg) $errorMsg.textContent = msg;
+    $error.style.display = 'block';
   }
 
   if (!uid) { showError('UID no especificado'); return; }
 
-  // Esperar deps
   async function waitFor(check, retries) {
     for (let i=0; i<(retries||40); i++) {
       if (check()) return true;
@@ -214,45 +135,67 @@
   if (!ready) { showError('Error cargando dependencias'); return; }
 
   const db = PuntazoCard.getDb();
-  if (!db) { showError(); return; }
+  if (!db) { showError('Sin conexión a base de datos'); return; }
 
   try {
-    // Query participaciones de este usuario
+    // ── Query sin orderBy para evitar necesidad de índice compuesto ──
+    // Firestore permite where sin orderBy sin índice adicional.
+    // Si queremos orderBy más adelante, agregar índice en Firebase Console:
+    //   Collection group: participants
+    //   uid ASC + claimedAt DESC
     const snap = await db.collectionGroup('participants')
       .where('uid', '==', uid)
-      .orderBy('claimedAt', 'desc')
       .limit(30)
       .get();
 
-    $headerSkeleton.style.display = 'none';
+    $skeleton.style.display = 'none';
 
-    if (snap.empty) { showError('Este jugador no tiene apariciones públicas todavía.'); return; }
+    if (snap.empty) {
+      showError('Este jugador no tiene apariciones públicas todavía.');
+      return;
+    }
 
-    // Datos del jugador del primer doc
-    const firstData = snap.docs[0].data();
-    const playerName  = firstData.displayName || 'Jugador';
-    const playerPhoto = firstData.photoURL     || '';
+    // Ordenar client-side por claimedAt desc (evita requerir índice compuesto)
+    const docs = [];
+    snap.forEach(doc => docs.push({ id: doc.id, data: doc.data() }));
+    docs.sort((a, b) => {
+      const ta = a.data.claimedAt?.seconds || 0;
+      const tb = b.data.claimedAt?.seconds || 0;
+      return tb - ta;
+    });
+
+    // Datos del jugador
+    const firstData  = docs[0].data;
+    const playerName = firstData.displayName || 'Jugador';
+    const playerPhoto= firstData.photoURL    || '';
 
     document.title = `${playerName} · Puntazo`;
 
-    // Renderizar header
     if (playerPhoto) {
-      $playerAvatar.innerHTML = `<img src="${PuntazoCard.escapeHTML(playerPhoto)}" alt="${PuntazoCard.escapeHTML(playerName)}" />`;
+      $avatar.innerHTML = `<img src="${PuntazoCard.escapeHTML(playerPhoto)}" alt="${PuntazoCard.escapeHTML(playerName)}" />`;
     } else {
-      $playerAvatar.textContent = playerName.charAt(0).toUpperCase();
+      $avatar.textContent = playerName.charAt(0).toUpperCase();
     }
-    $playerName.textContent = playerName;
-    $playerSub.textContent  = `${snap.size} aparición${snap.size !== 1 ? 'es' : ''} · Perfil público`;
-    $playerHeader.style.display = 'flex';
+    $name.textContent = playerName;
+    $sub.textContent  = `${docs.length} aparición${docs.length!==1?'es':''} · Perfil público`;
+    $header.style.display = 'flex';
 
-    // Para cada aparición, obtener metadata del video
-    $appearSection.style.display = 'block';
+    // Intentar cargar videos desde videos_index.json primero
+    let videoIndex = {};
+    try {
+      const res = await fetch('/data/videos_index.json?cb='+Date.now(), { cache:'no-store' });
+      if (res.ok) {
+        const idx = await res.json();
+        videoIndex = idx.videos || {};
+      }
+    } catch {}
 
-    for (const doc of snap.docs) {
-      const p = doc.data();
+    $section.style.display = 'block';
+
+    for (const doc of docs) {
+      const p = doc.data;
       if (!p.videoId) continue;
 
-      // Obtener datos del video desde reactions doc
       let entry = {
         nombre:  p.videoId,
         url:     '',
@@ -262,36 +205,50 @@
         fecha:   '',
       };
 
-      try {
-        const rxDoc = await db.collection('reactions').doc(p.videoId).get();
-        if (rxDoc.exists) {
-          const d = rxDoc.data();
-          entry.url    = d.videoUrl || '';
-          entry.club   = d.club     || '';
-          entry.cancha = d.cancha   || '';
-          entry.lado   = d.lado     || '';
-          entry.fecha  = d.fecha    || '';
-        }
-      } catch {}
+      // 1. Buscar en índice global
+      const hit = videoIndex[p.videoId];
+      if (hit && hit.url) {
+        entry.url    = hit.url;
+        entry.club   = hit.club   || '';
+        entry.cancha = hit.cancha || '';
+        entry.lado   = hit.lado   || '';
+        entry.fecha  = hit.fecha  || '';
+      } else {
+        // 2. Fallback Firestore
+        try {
+          const rxDoc = await db.collection('reactions').doc(p.videoId).get();
+          if (rxDoc.exists) {
+            const d    = rxDoc.data();
+            entry.url    = d.videoUrl || '';
+            entry.club   = d.club     || '';
+            entry.cancha = d.cancha   || '';
+            entry.lado   = d.lado     || '';
+            entry.fecha  = d.fecha    || '';
+          }
+        } catch {}
+      }
 
-      if (!entry.url) continue; // sin URL no podemos mostrar el video
+      if (!entry.url) continue;
 
       PuntazoCard.buildAndAppend(entry, {
-        showSave: true, showShare: true, showFullscreen: true,
-        showClaim: false,          // no puede reclamar en el perfil de otro
-        showReactions: true,
-        showComments: false,       // mantener perfil limpio
-        showClubInfo: true,
+        showSave:true, showShare:true, showFullscreen:true,
+        showClaim:false, showReactions:true, showComments:false,
+        showClubInfo:true, showHeroName:false,
       }, $grid);
     }
 
     if (!$grid.children.length) {
-      showError('No encontramos videos con URL disponible para este jugador.');
+      showError('No encontramos clips disponibles para este jugador.');
     }
 
   } catch (err) {
     console.error('[jugador]', err);
-    showError('Error cargando el perfil. Intenta de nuevo.');
+    // Si el error menciona "requires an index", dar hint específico
+    if (String(err).includes('index') || String(err).includes('índice')) {
+      showError('Falta configurar un índice en Firestore. Consulta la consola para el link directo.');
+    } else {
+      showError('Error cargando el perfil. Intenta de nuevo en unos segundos.');
+    }
   }
 })();
 </script>
