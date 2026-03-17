@@ -12,13 +12,28 @@
 <link rel="stylesheet" href="assets/estilo.css" />
 <link rel="stylesheet" href="/assets/card.css" />
 <link rel="stylesheet" href="/assets/reactions.css" />
+
+<!-- Firebase PRIMERO, antes que cualquier otro script -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
+
+<!-- card y reactions DESPUÉS de firebase -->
 <script src="/assets/reactions.js"></script>
 <script src="/assets/card.js"></script>
+
 <style>
   .player-wrap { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
+
+  .diag-box {
+    padding:14px 16px; border-radius:12px; margin-bottom:16px;
+    border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.25);
+    font-size:.78rem; font-family:monospace; color:rgba(234,242,255,.70);
+    line-height:1.7; word-break:break-all;
+  }
+  .diag-box .ok  { color:#86efac; }
+  .diag-box .err { color:#fca5a5; }
+  .diag-box .warn{ color:#fde68a; }
 
   .player-header {
     display:flex; align-items:center; gap:18px; margin-bottom:28px;
@@ -35,25 +50,6 @@
   .player-name { font-size:1.35rem; font-weight:900; color:#fff; margin-bottom:4px; }
   .player-sub  { color:rgba(234,242,255,.55); font-size:.84rem; }
   .section-title { font-size:1rem; font-weight:800; color:rgba(234,242,255,.75); margin-bottom:16px; }
-
-  .player-header-skeleton {
-    display:flex; align-items:center; gap:18px; padding:20px; border-radius:18px;
-    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
-    animation:pz-shimmer 1.6s infinite; margin-bottom:28px;
-  }
-  .player-header-skeleton .sk-av { width:72px; height:72px; border-radius:50%; background:rgba(255,255,255,.07); flex-shrink:0; }
-  .player-header-skeleton .sk-lines { flex:1; }
-  .player-header-skeleton .sk-line { height:14px; border-radius:6px; background:rgba(255,255,255,.07); margin-bottom:10px; }
-  .player-header-skeleton .sk-line.short { width:55%; }
-
-  /* error técnico (visible en dev) */
-  .tech-error {
-    margin-top:12px; padding:10px 14px; border-radius:10px;
-    background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.20);
-    font-size:.75rem; color:#fca5a5; font-family:monospace; word-break:break-all;
-    display:none;
-  }
-
   @media(max-width:480px) { .player-header{flex-direction:column;text-align:center;align-items:center;} }
 </style>
 </head>
@@ -65,10 +61,8 @@
 <main class="site-content fade-in">
   <div class="player-wrap">
 
-    <div id="headerSkeleton" class="player-header-skeleton">
-      <div class="sk-av"></div>
-      <div class="sk-lines"><div class="sk-line"></div><div class="sk-line short"></div></div>
-    </div>
+    <!-- Diagnóstico — siempre visible durante carga -->
+    <div id="diagBox" class="diag-box">⏳ Iniciando…</div>
 
     <div id="playerHeader" class="player-header" style="display:none">
       <div id="playerAvatar" class="player-avatar"></div>
@@ -78,11 +72,10 @@
       </div>
     </div>
 
-    <div id="playerError" class="empty-state" style="display:none">
-      <div class="empty-icon">🕵️</div>
-      <h3 id="errorTitle">Perfil no encontrado</h3>
-      <p id="errorMsg">Este jugador no tiene apariciones públicas todavía.</p>
-      <div id="techError" class="tech-error"></div>
+    <div id="mainError" class="empty-state" style="display:none">
+      <div class="empty-icon">⚠️</div>
+      <h3 id="errTitle">Error</h3>
+      <p id="errMsg"></p>
     </div>
 
     <div id="appearancesSection" style="display:none">
@@ -93,167 +86,206 @@
   </div>
 </main>
 
-<footer class="site-footer">
-  <p class="footer-copy">© 2026 Puntazo</p>
-</footer>
+<footer class="site-footer"><p class="footer-copy">© 2026 Puntazo</p></footer>
 
 <script>
 (async function () {
   'use strict';
 
+  const $diag    = document.getElementById('diagBox');
+  const $header  = document.getElementById('playerHeader');
+  const $avatar  = document.getElementById('playerAvatar');
+  const $name    = document.getElementById('playerName');
+  const $sub     = document.getElementById('playerSub');
+  const $errBox  = document.getElementById('mainError');
+  const $errTitle= document.getElementById('errTitle');
+  const $errMsg  = document.getElementById('errMsg');
+  const $section = document.getElementById('appearancesSection');
+  const $grid    = document.getElementById('appearancesGrid');
+
+  function log(msg, type) {
+    const span = document.createElement('span');
+    span.className = type || '';
+    span.textContent = msg;
+    $diag.appendChild(document.createElement('br'));
+    $diag.appendChild(span);
+    console.log('[jugador]', msg);
+  }
+
+  function showError(title, msg) {
+    $errTitle.textContent = title;
+    $errMsg.textContent   = msg;
+    $errBox.style.display = 'block';
+  }
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── 1. Leer UID ──────────────────────────────────────────────
   const uid = new URLSearchParams(location.search).get('uid') || '';
+  log('UID: ' + (uid ? uid.slice(0,20)+'…' : '⚠️ VACÍO'), uid ? 'ok' : 'err');
 
-  const $skeleton = document.getElementById('headerSkeleton');
-  const $header   = document.getElementById('playerHeader');
-  const $avatar   = document.getElementById('playerAvatar');
-  const $name     = document.getElementById('playerName');
-  const $sub      = document.getElementById('playerSub');
-  const $error    = document.getElementById('playerError');
-  const $errTitle = document.getElementById('errorTitle');
-  const $errMsg   = document.getElementById('errorMsg');
-  const $techErr  = document.getElementById('techError');
-  const $section  = document.getElementById('appearancesSection');
-  const $grid     = document.getElementById('appearancesGrid');
-
-  function showError(title, msg, tech) {
-    $skeleton.style.display = 'none';
-    if (title) $errTitle.textContent = title;
-    if (msg)   $errMsg.textContent   = msg;
-    if (tech)  { $techErr.textContent = tech; $techErr.style.display = 'block'; }
-    $error.style.display = 'block';
+  if (!uid) {
+    showError('Sin UID', 'No se encontró el identificador del jugador en la URL (?uid=...).');
+    return;
   }
 
-  if (!uid) { showError('Sin UID', 'No se especificó el identificador del jugador.'); return; }
+  // ── 2. Esperar Firebase ──────────────────────────────────────
+  log('Esperando Firebase…');
+  let fbWait = 0;
+  while (fbWait < 50) {
+    if (window.firebase && window.firebase.apps && window.firebase.apps.length > 0) break;
+    await new Promise(r => setTimeout(r, 200));
+    fbWait++;
+  }
 
-  // Esperar deps
-  async function waitFor(check, n) {
-    for (let i=0; i<(n||40); i++) {
-      if (check()) return true;
-      await new Promise(r=>setTimeout(r,200));
+  const fbOk = !!(window.firebase && window.firebase.apps && window.firebase.apps.length > 0);
+  log('Firebase app: ' + (fbOk ? '✓' : '✗ NO inicializado'), fbOk ? 'ok' : 'err');
+
+  if (!fbOk) {
+    showError('Firebase no inicializado', 'Revisa que firebase-core.js cargue correctamente y que las credenciales sean válidas.');
+    return;
+  }
+
+  // ── 3. Obtener db ────────────────────────────────────────────
+  let db;
+  try {
+    if (window.PuntazoFirebase && typeof window.PuntazoFirebase.db === 'function') {
+      db = window.PuntazoFirebase.db();
+      log('db() via PuntazoFirebase: ✓', 'ok');
+    } else {
+      db = firebase.firestore();
+      log('db() via firebase.firestore(): ✓', 'ok');
     }
-    return false;
+  } catch(e) {
+    log('Error obteniendo db: ' + e.message, 'err');
+    showError('Error de Firestore', e.message);
+    return;
   }
 
-  // 1. Esperar Firebase primero (no depende de PuntazoCard)
-  const fbReady = await waitFor(()=> window.firebase && window.PuntazoFirebase?.db, 40);
-  if (!fbReady) { showError('Error de conexión', 'No se pudo conectar con la base de datos.', 'PuntazoFirebase no disponible tras 8s'); return; }
-
-  const db = window.PuntazoFirebase.db();
-
-  // 2. Esperar card.js (puede tardar un poco más)
-  const cardReady = await waitFor(()=> window.PuntazoCard, 20);
-
-  // 3. Leer videos_index.json en paralelo
+  // ── 4. Cargar videos_index.json ──────────────────────────────
   let videoIndex = {};
   try {
     const res = await fetch('/data/videos_index.json?cb='+Date.now(), { cache:'no-store' });
-    if (res.ok) { const idx = await res.json(); videoIndex = idx.videos || {}; }
-  } catch(e) { console.warn('[jugador] videos_index no disponible:', e); }
+    if (res.ok) { const idx = await res.json(); videoIndex = idx.videos || {}; log('videos_index.json: ✓ (' + Object.keys(videoIndex).length + ' videos)', 'ok'); }
+    else         { log('videos_index.json: HTTP ' + res.status, 'warn'); }
+  } catch(e) { log('videos_index.json: no disponible (' + e.message + ')', 'warn'); }
 
-  // 4. Query de participaciones
+  // ── 5. Query Firestore ───────────────────────────────────────
+  log('Consultando participants donde uid == ' + uid.slice(0,12) + '…');
+  let snap;
   try {
-    const snap = await db.collectionGroup('participants')
+    snap = await db.collectionGroup('participants')
       .where('uid', '==', uid)
       .limit(30)
       .get();
-
-    $skeleton.style.display = 'none';
-
-    if (snap.empty) {
-      showError('Sin apariciones', 'Este jugador no tiene apariciones públicas todavía.');
-      return;
+    log('Query OK — docs encontrados: ' + snap.size, snap.size > 0 ? 'ok' : 'warn');
+  } catch(e) {
+    log('Error en query: ' + e.message, 'err');
+    // Si menciona índice, dar link directo
+    if (String(e.message).toLowerCase().includes('index')) {
+      log('→ Falta índice. Busca en la consola del navegador el link de Firestore para crearlo.', 'warn');
     }
-
-    // Ordenar client-side (evita índice compuesto)
-    const docs = [];
-    snap.forEach(doc => docs.push({ id: doc.id, data: doc.data() }));
-    docs.sort((a, b) => (b.data.claimedAt?.seconds||0) - (a.data.claimedAt?.seconds||0));
-
-    // Header del jugador
-    const firstData  = docs[0].data;
-    const playerName = firstData.displayName || 'Jugador';
-    const playerPhoto= firstData.photoURL    || '';
-
-    document.title = `${playerName} · Puntazo`;
-
-    if (playerPhoto) {
-      $avatar.innerHTML = `<img src="${escapeHTML(playerPhoto)}" alt="${escapeHTML(playerName)}" />`;
-    } else {
-      $avatar.textContent = playerName.charAt(0).toUpperCase();
-    }
-    $name.textContent = playerName;
-    $sub.textContent  = `${docs.length} aparición${docs.length!==1?'es':''} · Perfil público`;
-    $header.style.display = 'flex';
-    $section.style.display = 'block';
-
-    // Cards
-    for (const doc of docs) {
-      const p = doc.data;
-      if (!p.videoId) continue;
-
-      let entry = { nombre:p.videoId, url:'', club:'', cancha:'', lado:'', fecha:'' };
-
-      // 1. Índice global
-      const hit = videoIndex[p.videoId];
-      if (hit && hit.url) {
-        entry.url    = hit.url;
-        entry.club   = hit.club   || '';
-        entry.cancha = hit.cancha || '';
-        entry.lado   = hit.lado   || '';
-        entry.fecha  = hit.fecha  || '';
-      } else {
-        // 2. Firestore fallback
-        try {
-          const rxDoc = await db.collection('reactions').doc(p.videoId).get();
-          if (rxDoc.exists) {
-            const d = rxDoc.data();
-            entry.url    = d.videoUrl || '';
-            entry.club   = d.club     || '';
-            entry.cancha = d.cancha   || '';
-            entry.lado   = d.lado     || '';
-            entry.fecha  = d.fecha    || '';
-          }
-        } catch {}
-      }
-
-      if (!entry.url) continue;
-
-      if (!cardReady || !window.PuntazoCard) {
-        // Fallback mínimo si card.js tardó demasiado
-        const div = document.createElement('div');
-        div.className = 'video-card';
-        div.innerHTML = `<video src="${escapeHTML(entry.url)}" controls playsinline style="width:100%;border-radius:10px"></video>`;
-        $grid.appendChild(div);
-      } else {
-        PuntazoCard.buildAndAppend(entry, {
-          showSave:true, showShare:true, showFullscreen:true,
-          showClaim:false, showReactions:true, showComments:false,
-          showClubInfo:true, showHeroName:false,
-          // En jugador NO mostramos hora — mostramos club
-          topLabel: entry.club || '',
-        }, $grid);
-      }
-    }
-
-    if (!$grid.children.length) {
-      showError('Sin clips disponibles', 'No encontramos videos con URL disponible para este jugador.');
-    }
-
-  } catch (err) {
-    console.error('[jugador]', err);
-    const msg = String(err.message || err);
-    if (msg.toLowerCase().includes('index') || msg.toLowerCase().includes('índice')) {
-      showError('Índice faltante', 'Falta un índice en Firestore. Ábrelo en la consola del navegador para ver el link de creación.', msg);
-    } else if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('permiso')) {
-      showError('Sin permisos', 'Las reglas de Firestore no permiten esta consulta. Revisa firestore.rules.', msg);
-    } else {
-      showError('Error cargando', 'Ocurrió un error. Intenta de nuevo.', msg);
-    }
+    showError('Error consultando Firestore', e.message);
+    return;
   }
 
-  function escapeHTML(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  // ── 6. Sin resultados ────────────────────────────────────────
+  if (snap.empty) {
+    log('0 apariciones encontradas para este uid', 'warn');
+    showError('Sin apariciones', 'Este jugador no ha reclamado ningún video con "🥷 Soy yo" todavía.');
+    return;
   }
+
+  // ── 7. Render header ─────────────────────────────────────────
+  const docs = [];
+  snap.forEach(doc => docs.push({ id: doc.id, data: doc.data() }));
+  docs.sort((a, b) => (b.data.claimedAt?.seconds||0) - (a.data.claimedAt?.seconds||0));
+
+  const firstData  = docs[0].data;
+  const playerName = firstData.displayName || 'Jugador';
+  const playerPhoto= firstData.photoURL    || '';
+
+  document.title = `${playerName} · Puntazo`;
+
+  if (playerPhoto) {
+    $avatar.innerHTML = `<img src="${esc(playerPhoto)}" alt="${esc(playerName)}" />`;
+  } else {
+    $avatar.textContent = playerName.charAt(0).toUpperCase();
+  }
+  $name.textContent = playerName;
+  $sub.textContent  = `${docs.length} aparición${docs.length!==1?'es':''} · Perfil público`;
+  $header.style.display = 'flex';
+
+  // Ocultar diag después de éxito
+  setTimeout(() => { $diag.style.display = 'none'; }, 3000);
+
+  // ── 8. Render cards ──────────────────────────────────────────
+  $section.style.display = 'block';
+  log('Cargando ' + docs.length + ' cards…');
+
+  // Esperar card.js si aún no está
+  let cardWait = 0;
+  while (!window.PuntazoCard && cardWait < 20) {
+    await new Promise(r => setTimeout(r, 200));
+    cardWait++;
+  }
+  log('PuntazoCard: ' + (window.PuntazoCard ? '✓' : '✗ no disponible'), window.PuntazoCard ? 'ok' : 'warn');
+
+  let cardsBuilt = 0;
+  for (const doc of docs) {
+    const p = doc.data;
+    if (!p.videoId) { log('Doc sin videoId, saltando', 'warn'); continue; }
+
+    let url='', club='', cancha='', lado='', fecha='';
+
+    // Índice global
+    const hit = videoIndex[p.videoId];
+    if (hit && hit.url) {
+      url=hit.url; club=hit.club||''; cancha=hit.cancha||''; lado=hit.lado||''; fecha=hit.fecha||'';
+    } else {
+      // Fallback Firestore
+      try {
+        const rxDoc = await db.collection('reactions').doc(p.videoId).get();
+        if (rxDoc.exists) {
+          const d = rxDoc.data();
+          url=d.videoUrl||''; club=d.club||''; cancha=d.cancha||''; lado=d.lado||''; fecha=d.fecha||'';
+        }
+      } catch(e2) { log('Error leyendo reactions/' + p.videoId + ': ' + e2.message, 'err'); }
+    }
+
+    if (!url) { log('Sin URL para ' + p.videoId.slice(0,30) + '…, saltando', 'warn'); continue; }
+
+    const entry = { nombre:p.videoId, url, club, cancha, lado, fecha };
+
+    if (window.PuntazoCard) {
+      const card = window.PuntazoCard.build(entry, {
+        showSave:true, showShare:true, showFullscreen:true,
+        showClaim:false, showReactions:true, showComments:false,
+        showClubInfo:true, showHeroName:false,
+        topLabel: club || '',
+      });
+      $grid.appendChild(card);
+      window.PuntazoCard.attachReactions(card, entry);
+    } else {
+      // Fallback HTML puro
+      const div = document.createElement('div');
+      div.className = 'video-card';
+      div.innerHTML = `
+        <div class="card-top"><span class="card-time">${esc(club||'Puntazo')}</span></div>
+        <div class="video-wrap"><video src="${esc(url)}" controls playsinline preload="metadata" style="width:100%;border-radius:10px"></video></div>`;
+      $grid.appendChild(div);
+    }
+    cardsBuilt++;
+  }
+
+  log('Cards construidas: ' + cardsBuilt, cardsBuilt > 0 ? 'ok' : 'warn');
+
+  if (!$grid.children.length) {
+    showError('Sin clips disponibles', 'No encontramos videos con URL disponible para este jugador.');
+  }
+
 })();
 </script>
 </body>
