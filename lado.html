@@ -26,6 +26,7 @@
 
 <link rel="stylesheet" href="assets/estilo.css" />
 <link rel="stylesheet" href="/assets/reactions.css" />
+<link rel="stylesheet" href="/assets/vitrina.css" />
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -438,12 +439,12 @@ video.video-preview {
     <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
     <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
     <a href="https://wa.me/522206804856?text=Hola%20Puntazo!" target="_blank" rel="noopener">WhatsApp</a>
-    <a href="mailto:isaacsaltiel@gmail.com">Email</a>
+    <a href="/cdn-cgi/l/email-protection#f8918b99999b8b99948c919d94b89f95999194d69b9795">Email</a>
   </div>
   <p class="footer-copy">© 2026 Puntazo – Todos los derechos reservados</p>
 </footer>
 
-<script src="assets/script.js?v=20260316"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="assets/script.js?v=20260316"></script>
 
 <!-- ── Performance patches ── -->
 <script>
@@ -569,15 +570,4 @@ video.video-preview {
         var badge = document.createElement('div');
         var icons = ['🥇','🥈','🥉'];
         badge.className = 'pz-top-month-badge rank-' + info.rank;
-        badge.innerHTML = '<span>' + icons[info.rank - 1] + '</span><small>Top ' + info.rank + '</small>';
-        card.insertBefore(badge, card.firstChild);
-      });
-    }
-
-    buildTop3();
-  }, 40);
-})();
-</script>
-
-</body>
-</html>
+        badge.innerHTML = '<span>' + icons[info.rank - 1] + '</span><small>Top ' +
