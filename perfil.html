@@ -5,166 +5,76 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <base href="/" />
 <title>Mi perfil · Puntazo</title>
-
 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
-<script>
-  window.dataLayer=window.dataLayer||[];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js',new Date()); gtag('config','G-7HTMSTJ035');
-</script>
-
-<meta name="theme-color" content="#050914" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
-
 <link rel="stylesheet" href="assets/estilo.css" />
 <link rel="stylesheet" href="/assets/card.css" />
 <link rel="stylesheet" href="/assets/reactions.css" />
-
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/reactions.js"></script>
 <script src="/assets/card.js"></script>
-
 <style>
-  .perfil-wrap {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 24px 16px 60px;
-  }
+  .perfil-wrap { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
 
-  /* ── Header del perfil ── */
   .perfil-header {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    margin-bottom: 28px;
-    padding: 20px;
-    border-radius: 18px;
-    background: rgba(255,255,255,.055);
-    border: 1px solid rgba(255,255,255,.10);
+    display:flex; align-items:center; gap:18px; margin-bottom:28px;
+    padding:20px; border-radius:18px;
+    background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.10);
   }
-
   .perfil-avatar {
-    width: 76px;
-    height: 76px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: rgba(0,79,200,.35);
-    border: 2px solid rgba(255,255,255,.14);
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.7rem;
-    font-weight: 900;
-    color: #fff;
-    overflow: hidden;
+    width:76px; height:76px; border-radius:50%;
+    background:rgba(0,79,200,.35); border:2px solid rgba(255,255,255,.14);
+    flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.7rem; font-weight:900; color:#fff; overflow:hidden;
   }
-
-  .perfil-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-  }
-
-  .perfil-info { flex: 1; min-width: 0; }
-
-  .perfil-name {
-    font-size: 1.35rem;
-    font-weight: 900;
-    color: #fff;
-    margin-bottom: 6px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .perfil-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
+  .perfil-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+  .perfil-info { flex:1; min-width:0; }
+  .perfil-name { font-size:1.35rem; font-weight:900; color:#fff; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .perfil-actions { display:flex; gap:8px; flex-wrap:wrap; }
 
   .btn-share-profile {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0.5rem 0.95rem;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,.14);
-    background: rgba(255,255,255,.06);
-    color: rgba(234,242,255,.80);
-    font-family: inherit;
-    font-size: 0.80rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all .18s;
+    display:inline-flex; align-items:center; gap:6px; padding:.5rem .95rem;
+    border-radius:999px; border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.06); color:rgba(234,242,255,.80);
+    font-family:inherit; font-size:.80rem; font-weight:700; cursor:pointer; transition:all .18s;
   }
+  .btn-share-profile:hover { background:rgba(255,255,255,.11); border-color:rgba(255,255,255,.24); color:#eaf2ff; }
 
-  .btn-share-profile:hover {
-    background: rgba(255,255,255,.11);
-    border-color: rgba(255,255,255,.24);
-    color: #eaf2ff;
-  }
-
-  /* ── Login required ── */
-  .login-required {
-    text-align: center;
-    padding: 60px 20px;
-  }
-
-  .login-required .icon { font-size: 52px; margin-bottom: 16px; }
-  .login-required h2 { font-size: 1.25rem; font-weight: 900; color: #eaf2ff; margin-bottom: 10px; }
-  .login-required p { color: rgba(234,242,255,.60); margin-bottom: 24px; }
+  .login-required { text-align:center; padding:60px 20px; }
+  .login-required .icon { font-size:52px; margin-bottom:16px; }
+  .login-required h2 { font-size:1.25rem; font-weight:900; color:#eaf2ff; margin-bottom:10px; }
+  .login-required p { color:rgba(234,242,255,.60); margin-bottom:24px; }
   .login-required button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0.85rem 1.6rem;
-    border-radius: 999px;
-    border: 1px solid rgba(11,124,255,.40);
-    background: rgba(0,79,200,.18);
-    color: #eaf2ff;
-    font-family: inherit;
-    font-size: 0.95rem;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all .18s;
+    display:inline-flex; align-items:center; gap:8px;
+    padding:.85rem 1.6rem; border-radius:999px;
+    border:1px solid rgba(11,124,255,.40); background:rgba(0,79,200,.18);
+    color:#eaf2ff; font-family:inherit; font-size:.95rem; font-weight:800; cursor:pointer; transition:all .18s;
   }
-  .login-required button:hover {
-    background: rgba(0,79,200,.28);
-    border-color: rgba(11,124,255,.55);
-  }
+  .login-required button:hover { background:rgba(0,79,200,.28); border-color:rgba(11,124,255,.55); }
 
-  @media (max-width: 480px) {
-    .perfil-header { flex-direction: column; text-align: center; align-items: center; }
-    .perfil-actions { justify-content: center; }
+  @media(max-width:480px) {
+    .perfil-header { flex-direction:column; text-align:center; align-items:center; }
+    .perfil-actions { justify-content:center; }
   }
 </style>
 </head>
 <body>
-
 <div class="page-bg"></div>
-
 <div id="nav-root" data-nav-variant="internal"></div>
 <script src="/assets/header.js"></script>
 
 <main class="site-content fade-in">
   <div class="perfil-wrap">
 
-    <!-- Loading -->
     <div id="perfilLoading" class="empty-state">
       <div class="empty-icon">⏳</div>
       <h3>Cargando tu perfil…</h3>
     </div>
 
-    <!-- Login required -->
     <div id="loginRequired" class="login-required" style="display:none">
       <div class="icon">🔐</div>
       <h2>Inicia sesión para ver tu perfil</h2>
@@ -172,10 +82,8 @@
       <button id="loginBtn">Iniciar sesión</button>
     </div>
 
-    <!-- Perfil autenticado -->
     <div id="perfilContent" style="display:none">
 
-      <!-- Header -->
       <div class="perfil-header">
         <div id="perfilAvatar" class="perfil-avatar"></div>
         <div class="perfil-info">
@@ -186,13 +94,11 @@
         </div>
       </div>
 
-      <!-- Tabs -->
       <div class="pz-tabs">
         <button class="pz-tab-btn active" data-tab="saved">💾 Mis guardados</button>
         <button class="pz-tab-btn" data-tab="appearances">🥷 Mis apariciones</button>
       </div>
 
-      <!-- Tab: Guardados -->
       <div id="tab-saved" class="pz-tab-pane active">
         <div id="savedGrid" class="cards-grid"></div>
         <div id="savedEmpty" class="empty-state" style="display:none">
@@ -206,7 +112,6 @@
         </div>
       </div>
 
-      <!-- Tab: Apariciones -->
       <div id="tab-appearances" class="pz-tab-pane">
         <div id="appearGrid" class="cards-grid"></div>
         <div id="appearEmpty" class="empty-state" style="display:none">
@@ -221,7 +126,6 @@
       </div>
 
     </div>
-
   </div>
 </main>
 
@@ -229,7 +133,7 @@
   <div class="footer-redes">
     <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
     <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
-    <a href="https://wa.me/522206804856?text=Hola%20Puntazo!" target="_blank" rel="noopener">WhatsApp</a>
+    <a href="https://wa.me/522206804856" target="_blank" rel="noopener">WhatsApp</a>
   </div>
   <p class="footer-copy">© 2026 Puntazo</p>
 </footer>
@@ -241,21 +145,25 @@
   let _user = null;
   let _savedLoaded = false;
   let _appearLoaded = false;
+  let _videoIndex = {};
 
-  // ── DOM refs ──
-  const $loading      = document.getElementById('perfilLoading');
-  const $loginReq     = document.getElementById('loginRequired');
-  const $content      = document.getElementById('perfilContent');
-  const $loginBtn     = document.getElementById('loginBtn');
-  const $perfilAvatar = document.getElementById('perfilAvatar');
-  const $perfilName   = document.getElementById('perfilName');
-  const $shareProfile = document.getElementById('shareProfileBtn');
-  const $savedGrid    = document.getElementById('savedGrid');
-  const $savedEmpty   = document.getElementById('savedEmpty');
-  const $savedLoading = document.getElementById('savedLoading');
-  const $appearGrid   = document.getElementById('appearGrid');
-  const $appearEmpty  = document.getElementById('appearEmpty');
+  const $loading       = document.getElementById('perfilLoading');
+  const $loginReq      = document.getElementById('loginRequired');
+  const $content       = document.getElementById('perfilContent');
+  const $loginBtn      = document.getElementById('loginBtn');
+  const $perfilAvatar  = document.getElementById('perfilAvatar');
+  const $perfilName    = document.getElementById('perfilName');
+  const $shareProfile  = document.getElementById('shareProfileBtn');
+  const $savedGrid     = document.getElementById('savedGrid');
+  const $savedEmpty    = document.getElementById('savedEmpty');
+  const $savedLoading  = document.getElementById('savedLoading');
+  const $appearGrid    = document.getElementById('appearGrid');
+  const $appearEmpty   = document.getElementById('appearEmpty');
   const $appearLoading = document.getElementById('appearLoading');
+
+  // ── Cargar videos_index.json al inicio ──
+  fetch('/data/videos_index.json?cb='+Date.now(), { cache:'no-store' })
+    .then(r=>r.ok?r.json():null).then(idx=>{ if(idx) _videoIndex=idx.videos||{}; }).catch(()=>{});
 
   // ── Tabs ──
   document.querySelectorAll('.pz-tab-btn').forEach(function(btn) {
@@ -263,215 +171,175 @@
       document.querySelectorAll('.pz-tab-btn').forEach(b=>b.classList.remove('active'));
       document.querySelectorAll('.pz-tab-pane').forEach(p=>p.classList.remove('active'));
       btn.classList.add('active');
-      const tabId = 'tab-' + btn.dataset.tab;
-      document.getElementById(tabId).classList.add('active');
-
-      // Lazy load
-      if (btn.dataset.tab === 'saved' && !_savedLoaded && _user) loadSaved(_user);
-      if (btn.dataset.tab === 'appearances' && !_appearLoaded && _user) loadAppearances(_user);
+      document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab==='saved' && !_savedLoaded && _user) loadSaved(_user);
+      if (btn.dataset.tab==='appearances' && !_appearLoaded && _user) loadAppearances(_user);
     });
   });
 
-  // ── Login button ──
   $loginBtn.addEventListener('click', function() {
-    if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === 'function') {
-      window.PuntazoAuth.signIn();
-    }
+    if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn==='function') window.PuntazoAuth.signIn();
   });
 
-  // ── Share profile ──
   $shareProfile.addEventListener('click', async function() {
     if (!_user) return;
     const link = `${location.origin}/jugador.html?uid=${encodeURIComponent(_user.uid)}`;
-    try {
-      if (navigator.share) { await navigator.share({title:'Puntazo',text:'Mira mis apariciones 🥷',url:link}); return; }
-    } catch {}
-    try { await navigator.clipboard.writeText(link); PuntazoCard.toast('Enlace de perfil copiado'); }
+    try { if (navigator.share) { await navigator.share({title:'Puntazo',text:'Mira mis apariciones 🥷',url:link}); return; } } catch {}
+    try { await navigator.clipboard.writeText(link); if(window.PuntazoCard) window.PuntazoCard.toast('Enlace de perfil copiado'); }
     catch { window.open(link,'_blank'); }
   });
 
   // ── Auth flow ──
-  function showLoginRequired() {
-    $loading.style.display = 'none';
-    $loginReq.style.display = 'block';
-  }
+  function showLoginRequired() { $loading.style.display='none'; $loginReq.style.display='block'; }
+
+  function escapeHTML(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   function renderProfile(user) {
     _user = user;
-    $loading.style.display = 'none';
-    $loginReq.style.display = 'none';
-    $content.style.display = 'block';
-
-    // Avatar
+    $loading.style.display = 'none'; $loginReq.style.display='none'; $content.style.display='block';
     if (user.photoURL) {
-      $perfilAvatar.innerHTML = `<img src="${PuntazoCard.escapeHTML(user.photoURL)}" alt="${PuntazoCard.escapeHTML(user.displayName||'')}" />`;
+      $perfilAvatar.innerHTML = `<img src="${escapeHTML(user.photoURL)}" alt="${escapeHTML(user.displayName||'')}" />`;
     } else {
       $perfilAvatar.textContent = (user.displayName||user.email||'P').charAt(0).toUpperCase();
     }
     $perfilName.textContent = user.displayName || user.email || 'Mi perfil';
-
-    // Load active tab
-    loadSaved(user);
-    _savedLoaded = true;
+    loadSaved(user); _savedLoaded=true;
   }
 
-  // ── Load saved videos ──
+  // ── Helpers para build de cards ──
+  function buildCard(entry, onUnsave) {
+    if (!window.PuntazoCard) return null;
+    return window.PuntazoCard.build(entry, {
+      showSave:true, showShare:true, showFullscreen:true,
+      showClaim:false, showReactions:true, showComments:true,
+      showClubInfo:true, showHeroName:false,
+      // Sin hora — mostrar el club
+      topLabel: entry.club || '',
+      onUnsave: onUnsave || null,
+    });
+  }
+
+  async function getEntryUrl(videoId) {
+    // 1. Índice global
+    const hit = _videoIndex[videoId];
+    if (hit && hit.url) return hit;
+    // 2. Firestore
+    try {
+      const db = window.PuntazoCard?.getDb();
+      if (!db) return null;
+      const d = await db.collection('reactions').doc(videoId).get();
+      if (!d.exists) return null;
+      const data = d.data();
+      if (!data.videoUrl) return null;
+      return { url:data.videoUrl, club:data.club||'', cancha:data.cancha||'', lado:data.lado||'', fecha:data.fecha||'' };
+    } catch { return null; }
+  }
+
+  // ── Tab: Guardados ──
   async function loadSaved(user) {
-    const db = PuntazoCard.getDb();
+    const db = window.PuntazoCard?.getDb();
     if (!db) { $savedLoading.style.display='none'; $savedEmpty.style.display='block'; return; }
-
-    $savedLoading.style.display = 'block';
-    $savedEmpty.style.display = 'none';
-
+    $savedLoading.style.display='block'; $savedEmpty.style.display='none';
     try {
       const snap = await db.collection('usuarios').doc(user.uid).collection('guardados')
         .orderBy('savedAt','desc').limit(50).get();
+      $savedLoading.style.display='none';
+      if (snap.empty) { $savedEmpty.style.display='block'; return; }
 
-      $savedLoading.style.display = 'none';
-
-      if (snap.empty) { $savedEmpty.style.display = 'block'; return; }
-
-      snap.forEach(function(doc) {
+      for (const doc of snap.docs) {
         const d = doc.data();
-        if (!d.videoId || !d.videoUrl) return;
+        if (!d.videoId) continue;
 
-        const entry = {
-          nombre:  d.videoId,
-          url:     d.videoUrl,
-          club:    d.club   || '',
-          cancha:  d.cancha || '',
-          lado:    d.lado   || '',
-          fecha:   d.fecha  || '',
-        };
+        let url    = d.videoUrl || '';
+        let club   = d.club     || '';
+        let cancha = d.cancha   || '';
+        let lado   = d.lado     || '';
+        let fecha  = d.fecha    || '';
 
-        const card = PuntazoCard.build(entry, {
-          showSave: true,
-          showShare: true,
-          showFullscreen: true,
-          showClaim: false,
-          showReactions: true,
-          showComments: true,
-          showClubInfo: true,
-          onRemove: async function() {
-            try {
-              await PuntazoCard.unsaveVideo(entry.nombre);
-              card.style.opacity = '0.4';
-              setTimeout(function() { card.remove(); }, 300);
-              PuntazoCard.toast('Quitado de guardados');
-            } catch(e) {
-              console.warn('[perfil remove]', e);
-              PuntazoCard.toast('Error al quitar el video');
-            }
-          },
+        if (!url) {
+          const hit = await getEntryUrl(d.videoId);
+          if (!hit || !hit.url) continue;
+          url=hit.url; club=hit.club||''; cancha=hit.cancha||''; lado=hit.lado||''; fecha=hit.fecha||'';
+        }
+
+        const entry = { nombre:d.videoId, url, club, cancha, lado, fecha };
+        const card  = buildCard(entry, function() {
+          card.style.opacity='0.4';
+          setTimeout(()=>{ card.remove(); }, 300);
+          if(window.PuntazoCard) window.PuntazoCard.toast('Quitado de guardados');
         });
-
+        if (!card) continue;
         $savedGrid.appendChild(card);
-        PuntazoCard.attachReactions(card, entry);
-      });
-
-      if (!$savedGrid.children.length) {
-        $savedEmpty.style.display = 'block';
+        if (window.PuntazoCard) window.PuntazoCard.attachReactions(card, entry);
       }
+
+      if (!$savedGrid.children.length) $savedEmpty.style.display='block';
     } catch(e) {
       console.error('[perfil saved]', e);
-      $savedLoading.style.display = 'none';
-      $savedEmpty.style.display = 'block';
+      $savedLoading.style.display='none'; $savedEmpty.style.display='block';
     }
   }
 
-  // ── Load appearances ──
+  // ── Tab: Apariciones ──
   async function loadAppearances(user) {
     _appearLoaded = true;
-    const db = PuntazoCard.getDb();
+    const db = window.PuntazoCard?.getDb();
     if (!db) { $appearLoading.style.display='none'; $appearEmpty.style.display='block'; return; }
-
-    $appearLoading.style.display = 'block';
-    $appearEmpty.style.display = 'none';
-
+    $appearLoading.style.display='block'; $appearEmpty.style.display='none';
     try {
       const snap = await db.collectionGroup('participants')
         .where('uid', '==', user.uid)
-        .orderBy('claimedAt', 'desc')
         .limit(30)
         .get();
 
-      $appearLoading.style.display = 'none';
+      $appearLoading.style.display='none';
+      if (snap.empty) { $appearEmpty.style.display='block'; return; }
 
-      if (snap.empty) { $appearEmpty.style.display = 'block'; return; }
+      const docs = [];
+      snap.forEach(doc=>docs.push(doc.data()));
+      docs.sort((a,b)=>(b.claimedAt?.seconds||0)-(a.claimedAt?.seconds||0));
 
-      for (var i=0; i<snap.docs.length; i++) {
-        var p = snap.docs[i].data();
+      for (const p of docs) {
         if (!p.videoId) continue;
+        const hit = await getEntryUrl(p.videoId);
+        if (!hit || !hit.url) continue;
 
-        var entry = { nombre:p.videoId, url:'', club:'', cancha:'', lado:'', fecha:'' };
-
-        try {
-          var rxDoc = await db.collection('reactions').doc(p.videoId).get();
-          if (rxDoc.exists) {
-            var d = rxDoc.data();
-            entry.url    = d.videoUrl || '';
-            entry.club   = d.club     || '';
-            entry.cancha = d.cancha   || '';
-            entry.lado   = d.lado     || '';
-            entry.fecha  = d.fecha    || '';
-          }
-        } catch {}
-
-        if (!entry.url) continue;
-
-        (function(e) {
-          var card = PuntazoCard.build(e, {
-            showSave:true, showShare:true, showFullscreen:true,
-            showClaim:false, showReactions:true, showComments:false,
-            showClubInfo:true,
-          });
-          $appearGrid.appendChild(card);
-          PuntazoCard.attachReactions(card, e);
-        })(entry);
+        const entry = { nombre:p.videoId, url:hit.url, club:hit.club||'', cancha:hit.cancha||'', lado:hit.lado||'', fecha:hit.fecha||'' };
+        const card  = buildCard(entry, null);
+        if (!card) continue;
+        $appearGrid.appendChild(card);
+        if (window.PuntazoCard) window.PuntazoCard.attachReactions(card, entry);
       }
 
-      if (!$appearGrid.children.length) {
-        $appearEmpty.style.display = 'block';
-      }
+      if (!$appearGrid.children.length) $appearEmpty.style.display='block';
     } catch(e) {
       console.error('[perfil appearances]', e);
-      $appearLoading.style.display = 'none';
-      $appearEmpty.style.display = 'block';
+      $appearLoading.style.display='none'; $appearEmpty.style.display='block';
     }
   }
 
   // ── Esperar auth ──
   function initAuth() {
-    // Chequeo inmediato
     const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     if (user) { renderProfile(user); return; }
-
     window.addEventListener('puntazo:auth-changed', function handler(e) {
       const u = e.detail && e.detail.user;
       window.removeEventListener('puntazo:auth-changed', handler);
-      if (u) { renderProfile(u); }
-      else   { showLoginRequired(); }
+      if (u) renderProfile(u); else showLoginRequired();
     });
-
-    // Timeout de seguridad si auth nunca dispara
     setTimeout(function() {
       if ($loading.style.display !== 'none') {
         const u2 = window.PuntazoAuth && window.PuntazoAuth.currentUser;
-        if (u2) renderProfile(u2);
-        else showLoginRequired();
+        if (u2) renderProfile(u2); else showLoginRequired();
       }
-    }, 4000);
+    }, 4500);
   }
 
-  // Esperar a que header.js esté listo (ya que carga auth)
   if (window.__PZ_HEADER_LOADED__) {
     setTimeout(initAuth, 100);
   } else {
-    window.addEventListener('puntazo:header-rendered', function() {
-      setTimeout(initAuth, 150);
-    });
-    // También directo si el evento ya pasó
-    setTimeout(initAuth, 1200);
+    window.addEventListener('puntazo:header-rendered', function() { setTimeout(initAuth, 150); });
+    setTimeout(initAuth, 1500);
   }
 })();
 </script>
