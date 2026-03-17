@@ -177,7 +177,7 @@
   let snap;
   try {
     snap = await Promise.race([
-      db.collectionGroup('participants').where('uid', '==', uid).limit(30).get(),
+      db.collectionGroup('participants').where('uid', '==', uid).orderBy('claimedAt', 'desc').limit(30).get(),
       new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('TIMEOUT')); }, 8000); })
     ]);
     log('Query OK: ' + snap.size + ' docs', snap.size > 0 ? 'ok' : 'warn');
