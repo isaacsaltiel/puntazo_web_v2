@@ -1,6 +1,5 @@
 // =============================================================
 // reactions.js — Puntazo · Reacciones + Comentarios
-// Fix: "Ver más" en comentarios ahora funciona correctamente.
 // =============================================================
 
 const ADMIN_PASS = "puntazo2025";
@@ -31,7 +30,6 @@ function getDeviceId() {
 }
 function getVoted(vid) { try { return JSON.parse(localStorage.getItem("pz_voted_"+vid)||"{}"); } catch { return {}; } }
 function saveVoted(vid, key, val) { const v=getVoted(vid); v[key]=val; localStorage.setItem("pz_voted_"+vid, JSON.stringify(v)); }
-
 function escapeHTML(str) {
   return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
@@ -68,7 +66,7 @@ function buildCommentsHTML(videoId) {
         <input class="pz-comment-input" id="pz-ci-${videoId}" type="text"
                placeholder="Escribe un comentario…" maxlength="200" autocomplete="off" />
         <button class="pz-send-btn" aria-label="Enviar">➤</button>
-        <button class="pz-send-incognito-btn" style="display:none" aria-label="🥷">🥷</button>
+        <button class="pz-send-incognito-btn" style="display:none" aria-label="🥷 Incógnito">🥷</button>
       </div>
       <div class="pz-char-count">200</div>
     </div>`;
@@ -81,7 +79,9 @@ function wireReactionsCore({
   $rxnBtns, $participants, $claimBtn,
   $toggle, $section, $list, $input,
   $sendNormal, $sendIncognito, $charCount, $showMoreBtn, $rxnPreview,
-  $heroName,
+  $heroName,   // slot separado (perfil/clip/jugador — tarjetas sin rank)
+  $cardLabel,  // [data-card-label] en card-top (mejores — tarjetas con rank)
+  $defaultLabel, // texto por defecto del $cardLabel (club name) para restaurar
 }) {
 
   if ($input && $charCount) {
@@ -100,7 +100,7 @@ function wireReactionsCore({
     });
   }
 
-  // ── Reacciones (snapshot) ──
+  // ── Snapshot reacciones ──
   docRef.onSnapshot(snap=>{
     const data=snap.exists?snap.data():{};
     const voted=getVoted(videoId);
@@ -118,7 +118,7 @@ function wireReactionsCore({
     } catch {}
   });
 
-  // ── Participantes ──
+  // ── Snapshot participantes ──
   if ($participants) {
     participantsRef.orderBy("claimedAt","asc").onSnapshot(snap=>{
       $participants.innerHTML="";
@@ -133,15 +133,32 @@ function wireReactionsCore({
           :`<span class="pz-p-initial">${escapeHTML((p.displayName||"")[0]||"J")}</span><span>${escapeHTML(p.displayName||"Jugador")}</span>`;
         $participants.appendChild(chip);
       });
-      // Hero name: primer participante
-      if ($heroName) {
-        if (snap.size>0) {
-          const first=snap.docs[0].data();
-          const name=first.displayName||"";
-          if (name) { $heroName.textContent="🥷 "+name; $heroName.style.display="inline-flex"; }
-          else { $heroName.style.display="none"; }
-        } else { $heroName.style.display="none"; }
+
+      const firstName = snap.size > 0 ? (snap.docs[0].data().displayName||"") : "";
+
+      // A) En tarjetas CON rank (mejores.html): actualizar el label del card-top
+      //    Si alguien reclamó → nombre del jugador
+      //    Si nadie reclamó → volver al label por defecto (club)
+      if ($cardLabel) {
+        if (firstName) {
+          $cardLabel.textContent = "🥷 " + firstName;
+          $cardLabel.title = firstName;
+        } else if ($defaultLabel) {
+          $cardLabel.textContent = $defaultLabel;
+          $cardLabel.title = "";
+        }
       }
+
+      // B) En tarjetas SIN rank (perfil/clip/jugador): slot hero-name separado
+      if ($heroName) {
+        if (firstName) {
+          $heroName.textContent = "🥷 " + firstName;
+          $heroName.style.display = "inline-flex";
+        } else {
+          $heroName.style.display = "none";
+        }
+      }
+
       if ($claimBtn) {
         const authUser=window.PuntazoAuth?.currentUser;
         const myClaim=authUser&&snap.docs&&snap.docs.find(d=>d.id===authUser.uid);
@@ -153,38 +170,28 @@ function wireReactionsCore({
     });
   }
 
-  // ── Comentarios ──────────────────────────────────────────────
-  // FIX: "showAllComments" se manejaba con un toggle pero el onSnapshot
-  // no se volvía a disparar. Ahora se cachea el array de docs y se re-renderiza
-  // desde el cliente cuando el usuario hace clic en "Ver más".
-  let _cachedDocs = [];
-  let showAll     = false;
+  // ── Comentarios ──
+  let _cachedDocs = [], showAll = false;
   const MAX_SHOWN = 3;
 
   function renderCommentsList() {
     if (!$list) return;
-    $list.innerHTML = "";
-    const authUser = window.PuntazoAuth?.currentUser;
-    const toShow   = showAll ? _cachedDocs : _cachedDocs.slice(-MAX_SHOWN);
-
-    toShow.forEach(item => {
-      const d   = item.data;
-      const ago = d.ts?.toDate ? timeAgo(d.ts.toDate()) : "";
-      const isMe = d.deviceId===DEVICE || (d.uid&&authUser&&d.uid===authUser.uid);
-      const el = document.createElement("div");
-      el.className = "pz-comment"+(isMe?" pz-mine":"");
-
+    $list.innerHTML="";
+    const authUser=window.PuntazoAuth?.currentUser;
+    const toShow=showAll?_cachedDocs:_cachedDocs.slice(-MAX_SHOWN);
+    toShow.forEach(item=>{
+      const d=item.data, ago=d.ts?.toDate?timeAgo(d.ts.toDate()):"";
+      const isMe=d.deviceId===DEVICE||(d.uid&&authUser&&d.uid===authUser.uid);
+      const el=document.createElement("div"); el.className="pz-comment"+(isMe?" pz-mine":"");
       let authorHtml="";
       if (d.uid&&d.public===true) {
-        const n=escapeHTML(d.displayName||"Jugador");
-        const ph=d.photoURL?`<img class="pz-comment-avatar" src="${escapeHTML(d.photoURL)}" alt="${n}" />`:"";
+        const n=escapeHTML(d.displayName||"Jugador"), ph=d.photoURL?`<img class="pz-comment-avatar" src="${escapeHTML(d.photoURL)}" alt="${n}" />`:"";
         authorHtml=`<a class="pz-comment-author" href="/jugador.html?uid=${encodeURIComponent(d.uid)}">${ph}<strong>${n}</strong></a>`;
       } else if (d.uid&&d.public===false) {
         authorHtml=`<span class="pz-comment-author">🥷 Incógnito</span>`;
       } else {
         authorHtml=`<span class="pz-comment-author" style="color:rgba(234,242,255,.35)">Anónimo</span>`;
       }
-
       const canDel=isMe&&d.uid&&authUser&&d.uid===authUser.uid;
       el.innerHTML=`
         <div class="pz-comment-head">
@@ -195,7 +202,6 @@ function wireReactionsCore({
           </div>
         </div>
         <div class="pz-comment-text">${escapeHTML(d.text)}</div>`;
-
       const $del=el.querySelector(".pz-comment-delete");
       if ($del) {
         $del.addEventListener("click",async()=>{
@@ -206,24 +212,16 @@ function wireReactionsCore({
       }
       $list.appendChild(el);
     });
-
-    // "Ver más" / "Ver menos"
     if ($showMoreBtn) {
-      const total = _cachedDocs.length;
-      if (total > MAX_SHOWN) {
-        $showMoreBtn.style.display = "inline-block";
-        $showMoreBtn.textContent   = showAll
-          ? "Ver menos"
-          : `Ver ${total - MAX_SHOWN} más`;
-      } else {
-        $showMoreBtn.style.display = "none";
-      }
+      const total=_cachedDocs.length;
+      $showMoreBtn.style.display=total>MAX_SHOWN?"inline-block":"none";
+      if (total>MAX_SHOWN) $showMoreBtn.textContent=showAll?`Ver menos`:`Ver ${total-MAX_SHOWN} más`;
     }
-
     if ($toggle) {
       const $txt=$toggle.querySelector(".pz-ct-text");
       if ($txt) $txt.textContent=_cachedDocs.length>0?`Comentarios (${_cachedDocs.length})`:"Comentar";
     }
+    if (!$section?.hidden&&showAll&&$list) $list.scrollTop=$list.scrollHeight;
   }
 
   if ($list) {
@@ -231,16 +229,11 @@ function wireReactionsCore({
       _cachedDocs=[];
       snap.forEach(doc=>_cachedDocs.push({id:doc.id,data:doc.data()}));
       renderCommentsList();
-      if (!$section?.hidden && showAll && $list) $list.scrollTop=$list.scrollHeight;
     });
   }
 
   if ($showMoreBtn) {
-    $showMoreBtn.addEventListener("click",()=>{
-      showAll=!showAll;
-      renderCommentsList();
-      if (showAll && $list) $list.scrollTop=$list.scrollHeight;
-    });
+    $showMoreBtn.addEventListener("click",()=>{ showAll=!showAll; renderCommentsList(); if(showAll&&$list) $list.scrollTop=$list.scrollHeight; });
   }
 
   // ── Click en reacción ──
@@ -265,9 +258,9 @@ function wireReactionsCore({
   async function sendComment(incognito=false) {
     if (!$input) return;
     const text=$input.value.trim(); if(!text) return;
-    if ($sendNormal)    $sendNormal.disabled=true;
-    if ($sendIncognito) $sendIncognito.disabled=true;
-    if ($input)         $input.disabled=true;
+    if($sendNormal) $sendNormal.disabled=true;
+    if($sendIncognito) $sendIncognito.disabled=true;
+    if($input) $input.disabled=true;
     try {
       const payload={text,deviceId:DEVICE,ts:firebase.firestore.FieldValue.serverTimestamp()};
       const u=window.PuntazoAuth?.currentUser||null;
@@ -278,14 +271,14 @@ function wireReactionsCore({
       $input.value=""; if($charCount)$charCount.textContent="200";
       if($list)$list.scrollTop=$list.scrollHeight;
     } catch(e) { console.error("[Reactions] comentar:",e); }
-    if ($sendNormal)    $sendNormal.disabled=false;
-    if ($sendIncognito) $sendIncognito.disabled=false;
-    if ($input) { $input.disabled=false; $input.focus(); }
+    if($sendNormal) $sendNormal.disabled=false;
+    if($sendIncognito) $sendIncognito.disabled=false;
+    if($input) { $input.disabled=false; $input.focus(); }
   }
 
-  if ($sendNormal)    $sendNormal.addEventListener("click",()=>sendComment(false));
-  if ($sendIncognito) $sendIncognito.addEventListener("click",()=>sendComment(true));
-  if ($input) { $input.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendComment(false);} }); }
+  if($sendNormal) $sendNormal.addEventListener("click",()=>sendComment(false));
+  if($sendIncognito) $sendIncognito.addEventListener("click",()=>sendComment(true));
+  if($input) { $input.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendComment(false);} }); }
 
   function syncAuthUI(user) { if($sendIncognito) $sendIncognito.style.display=user?"flex":"none"; }
   window.addEventListener("puntazo:auth-changed",e=>{ try{syncAuthUI(e.detail?.user);}catch{} });
@@ -340,6 +333,9 @@ async function attachReactions(container, meta) {
     const clSlot     = container.querySelector("[data-claim-slot]");
     const rxnPreview = container.querySelector("[data-rxn-preview]");
     const heroName   = container.querySelector("[data-hero-name]");
+    // Para tarjetas con rank: el label del card-top es el que tiene data-card-label
+    const cardLabel  = container.querySelector("[data-card-label]");
+    const defaultLabel = cardLabel ? cardLabel.textContent : null;
 
     rxnSlot.innerHTML = buildRxnBarHTML(admin);
     if (pSlot)  pSlot.innerHTML  = `<div class="pz-participants"></div>`;
@@ -363,6 +359,8 @@ async function attachReactions(container, meta) {
       $showMoreBtn:   cSlot?.querySelector(".pz-show-more-comments"),
       $rxnPreview:    rxnPreview||null,
       $heroName:      heroName||null,
+      $cardLabel:     cardLabel||null,
+      $defaultLabel:  defaultLabel,
     });
   } else {
     container.insertAdjacentHTML("beforeend", buildUI(videoId,admin));
@@ -380,7 +378,7 @@ async function attachReactions(container, meta) {
       $sendIncognito: wrap.querySelector(".pz-send-incognito-btn"),
       $charCount:     wrap.querySelector(".pz-char-count"),
       $showMoreBtn:   wrap.querySelector(".pz-show-more-comments"),
-      $rxnPreview:    null, $heroName:null,
+      $rxnPreview:    null, $heroName:null, $cardLabel:null, $defaultLabel:null,
     });
   }
 }
