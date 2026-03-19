@@ -529,6 +529,12 @@
       "count": 12
     },
     {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2026-03-18",
+      "count": 12
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-08-24",
@@ -1132,12 +1138,6 @@
       "loc": "breakpoint",
       "can": "cancha4",
       "date": "2026-03-12",
-      "count": 6
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha3",
-      "date": "2026-03-18",
       "count": 6
     },
     {
@@ -3705,6 +3705,12 @@
       "count": 13
     },
     {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "18",
+      "count": 13
+    },
+    {
       "loc": "breakpoint",
       "can": "cancha3",
       "hour": "18",
@@ -3816,12 +3822,6 @@
       "loc": "interpadel",
       "can": "cancha4",
       "hour": "09",
-      "count": 10
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha3",
-      "hour": "18",
       "count": 10
     },
     {
@@ -3948,6 +3948,12 @@
       "loc": "interpadel",
       "can": "cancha3",
       "hour": "14",
+      "count": 7
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "17",
       "count": 7
     },
     {
@@ -4096,12 +4102,6 @@
     },
     {
       "loc": "interpadel",
-      "can": "cancha3",
-      "hour": "17",
-      "count": 5
-    },
-    {
-      "loc": "interpadel",
       "can": "cancha4",
       "hour": "19",
       "count": 5
@@ -4176,6 +4176,12 @@
       "loc": "testclub",
       "can": "testcancha",
       "hour": "19",
+      "count": 4
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "16",
       "count": 4
     },
     {
@@ -4260,12 +4266,6 @@
       "loc": "interpadel",
       "can": "cancha4",
       "hour": "11",
-      "count": 3
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha3",
-      "hour": "16",
       "count": 3
     },
     {
@@ -9566,7 +9566,7 @@
       "can": "cancha3",
       "date": "2026-03-18",
       "counts_por_lado": {
-        "ladoa": 6
+        "ladoa": 12
       },
       "diff": 0
     },
@@ -9580,5 +9580,5 @@
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-03-18T16:46:29.264709+00:00"
+  "generated_at_utc": "2026-03-19T01:06:26.428203+00:00"
 }
