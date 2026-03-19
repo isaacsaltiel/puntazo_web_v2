@@ -1,81 +1,225 @@
 {
-  "canchas": [
+  "locaciones": [
     {
-      "loc": "Interpadel",
-      "can": "Cancha3",
-      "enabled": false,
-      "sha256": "035cebe449b1f1e63aab1c63122bfaa418fd2297bd348500df887050d1e19676",
-      "remember_hours": 24
+      "id": "Interpadel",
+      "nombre": "Interpadel",
+      "cancha": [
+        {
+          "id": "Cancha3",
+          "nombre": "Cancha 3",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/Interpadel/Cancha3/LadoA/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Cancha4",
+          "nombre": "Cancha 4",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/Interpadel/Cancha4/LadoA/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Cancha5",
+          "nombre": "Cancha 5",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/Interpadel/Cancha5/LadoA/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Cancha6",
+          "nombre": "Cancha 6",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/Interpadel/Cancha6/LadoA/videos_recientes.json"
+            }
+          ]
+        }
+      ]
     },
     {
-      "loc": "Interpadel",
-      "can": "Cancha4",
-      "enabled": false,
-      "sha256": "035cebe449b1f1e63aab1c63122bfaa418fd2297bd348500df887050d1e19676",
-      "remember_hours": 24
+      "id": "BreakPoint",
+      "nombre": "BreakPoint",
+      "cancha": [
+        {
+          "id": "Cancha1",
+          "nombre": "Cancha 1",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/BreakPoint/Cancha1/LadoA/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Cancha2",
+          "nombre": "Cancha 2",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/BreakPoint/Cancha2/LadoA/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Cancha3",
+          "nombre": "Cancha 3",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/BreakPoint/Cancha3/LadoA/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Cancha4",
+          "nombre": "Cancha 4",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/BreakPoint/Cancha4/LadoA/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Cancha5",
+          "nombre": "Cancha 5",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/BreakPoint/Cancha5/LadoA/videos_recientes.json"
+            }
+          ]
+        }
+      ]
     },
     {
-      "loc": "Puntazo",
-      "can": "CanchaX",
-      "enabled": true,
-      "sha256": "3a0f8d8df77a093cf294318e26a73f60a79db7d740569d0e9e11cea57b6bee4d",
-      "remember_hours": 24
+      "id": "Scorpion",
+      "nombre": "Scorpion",
+      "cancha": [
+        {
+          "id": "Cancha1",
+          "nombre": "Cancha 1",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/Scorpion/Cancha1/LadoA/videos_recientes.json"
+            },
+            {
+              "id": "LadoB",
+              "nombre": "Lado B",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/Scorpion/Cancha1/LadoB/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Cancha2",
+          "nombre": "Cancha 2",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/Scorpion/Cancha2/LadoA/videos_recientes.json"
+            },
+            {
+              "id": "LadoB",
+              "nombre": "Lado B",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/Scorpion/Cancha2/LadoB/videos_recientes.json"
+            }
+          ]
+        }
+      ]
     },
     {
-      "loc": "Scorpion",
-      "can": "Cancha1",
-      "enabled": true,
-      "sha256": "e51e7180a7ebb7a774721cbe44f677e378ce82289bc345c398a253acd06fe4b1",
-      "remember_hours": 24
-    },
-    {
-      "loc": "Scorpion",
-      "can": "Cancha2",
-      "enabled": true,
-      "sha256": "7a9b050891181d28e46c2f0dd01721e98851a2490b647389c5acb28c35af5101",
-      "remember_hours": 24
-    },
-    {
-      "loc": "WellStreet-Pickleball",
-      "can": "Cancha1",
-      "enabled": true,
-      "sha256": "73c3de4175449987ef6047f6e0bea91c1036a8599b43113b3f990104ab294a47",
-      "remember_hours": 24
-    },
-    {
-      "loc": "WellStreet-Pickleball",
-      "can": "Cancha2",
-      "enabled": true,
-      "sha256": "73c3de4175449987ef6047f6e0bea91c1036a8599b43113b3f990104ab294a47",
-      "remember_hours": 24
-    },
-    {
-      "loc": "WellStreet-Pickleball",
-      "can": "Cancha3",
-      "enabled": true,
-      "sha256": "73c3de4175449987ef6047f6e0bea91c1036a8599b43113b3f990104ab294a47",
-      "remember_hours": 24
-    },
-    {
-      "loc": "WellStreet-Pickleball",
-      "can": "Cancha4",
-      "enabled": true,
-      "sha256": "73c3de4175449987ef6047f6e0bea91c1036a8599b43113b3f990104ab294a47",
-      "remember_hours": 24
-    },
-    {
-      "loc": "WellStreet-Pickleball",
-      "can": "Cancha5",
-      "enabled": true,
-      "sha256": "73c3de4175449987ef6047f6e0bea91c1036a8599b43113b3f990104ab294a47",
-      "remember_hours": 24
-    },
-    {
-      "loc": "WellStreet-Pickleball",
-      "can": "Cancha6",
-      "enabled": true,
-      "sha256": "73c3de4175449987ef6047f6e0bea91c1036a8599b43113b3f990104ab294a47",
-      "remember_hours": 24
+      "id": "WellStreet-Pickleball",
+      "nombre": "WellStreet - Pickleball",
+      "cancha": [
+        {
+          "id": "Cancha1",
+          "nombre": "Cancha 1",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/WellStreet-Pickleball/Cancha1/LadoA/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Cancha2",
+          "nombre": "Cancha 2",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/WellStreet-Pickleball/Cancha2/LadoA/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Cancha3",
+          "nombre": "Cancha 3",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/WellStreet-Pickleball/Cancha3/LadoA/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Cancha4",
+          "nombre": "Cancha 4",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/WellStreet-Pickleball/Cancha4/LadoA/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Cancha5",
+          "nombre": "Cancha 5",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/WellStreet-Pickleball/Cancha5/LadoA/videos_recientes.json"
+            }
+          ]
+        },
+        {
+          "id": "Cancha6",
+          "nombre": "Cancha 6",
+          "lados": [
+            {
+              "id": "LadoA",
+              "nombre": "Lado A",
+              "json_url": "https://raw.githubusercontent.com/isaacsaltiel/puntazo_web_v2/refs/heads/master/data/Locaciones/WellStreet-Pickleball/Cancha6/LadoA/videos_recientes.json"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
