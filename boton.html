@@ -543,12 +543,16 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
     endCooldown();
   }
 
+
+  const CLUB_URL_MAP = {
+    "WellStreet - Pickleball": "WellStreet-Pickleball",
+  };
+
   function goToMyClips() {
-    // Navegar al lado/cancha del club y cancha seleccionados
-    const club   = encodeURIComponent($clubSel.value);
+    const clubDisplay = $clubSel.value;
+    const clubId = CLUB_URL_MAP[clubDisplay] || clubDisplay;
     const cancha = encodeURIComponent($canchaSel.value);
-    // cancha.html muestra todos los lados de esa cancha
-    window.location.href = `/lado.html?loc=${club}&can=Cancha${cancha}&lado=LadoA`;
+    window.location.href = `/lado.html?loc=${encodeURIComponent(clubId)}&can=Cancha${cancha}&lado=LadoA&pg=0`;
   }
 
   document.getElementById('btnContinue').addEventListener('click', enterButton);
