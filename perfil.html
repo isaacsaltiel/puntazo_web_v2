@@ -56,6 +56,15 @@
   }
   .login-required button:hover { background:rgba(0,79,200,.28); border-color:rgba(11,124,255,.55); }
 
+  /* Hint para apariciones */
+  .appear-hint {
+    display:flex; align-items:center; gap:10px;
+    padding:10px 14px; border-radius:12px; margin-bottom:14px;
+    background:rgba(0,79,200,.10); border:1px solid rgba(11,124,255,.20);
+    font-size:.78rem; color:rgba(234,242,255,.72); line-height:1.55;
+  }
+  .appear-hint strong { color:#7eb8ff; }
+
   @media(max-width:480px) {
     .perfil-header { flex-direction:column; text-align:center; align-items:center; }
     .perfil-actions { justify-content:center; }
@@ -113,6 +122,10 @@
       </div>
 
       <div id="tab-appearances" class="pz-tab-pane">
+        <!-- Hint: se puede quitar el reclamo -->
+        <div class="appear-hint">
+          🥷 Aquí aparecen los videos donde dijiste "Soy yo". Toca <strong>✓ Quitar reclamo</strong> en cualquier video para eliminarte.
+        </div>
         <div id="appearGrid" class="cards-grid"></div>
         <div id="appearEmpty" class="empty-state" style="display:none">
           <div class="empty-icon">🥷</div>
@@ -172,7 +185,7 @@
       document.querySelectorAll('.pz-tab-pane').forEach(p=>p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-      if (btn.dataset.tab==='saved' && !_savedLoaded && _user) loadSaved(_user);
+      if (btn.dataset.tab==='saved' && !_savedLoaded && _user) { loadSaved(_user); _savedLoaded=true; }
       if (btn.dataset.tab==='appearances' && !_appearLoaded && _user) loadAppearances(_user);
     });
   });
@@ -207,23 +220,38 @@
   }
 
   // ── Helpers para build de cards ──
-  function buildCard(entry, onUnsave) {
+
+  // Card para GUARDADOS (sin claim, con unsave)
+  function buildSavedCard(entry, onUnsave) {
     if (!window.PuntazoCard) return null;
     return window.PuntazoCard.build(entry, {
       showSave:true, showShare:true, showFullscreen:true,
       showClaim:false, showReactions:true, showComments:true,
       showClubInfo:true, showHeroName:false,
-      // Sin hora — mostrar el club
       topLabel: entry.club || '',
       onUnsave: onUnsave || null,
     });
   }
 
-  async function getEntryUrl(videoId) {
-    // 1. Índice global
+  // Card para APARICIONES (con claim habilitado para poder quitar)
+  function buildAppearCard(entry) {
+    if (!window.PuntazoCard) return null;
+    return window.PuntazoCard.build(entry, {
+      showSave:true, showShare:true, showFullscreen:true,
+      showClaim:true,   // <-- habilitado para poder quitar el reclamo
+      showReactions:true, showComments:true,
+      showClubInfo:true, showHeroName:true,
+      topLabel: entry.club || '',
+    });
+  }
+
+  async function getEntryUrl(videoId, fallbackData) {
+    // 1. Usar datos del doc de aparicion (tienen url guardada)
+    if (fallbackData && fallbackData.videoUrl) return fallbackData;
+    // 2. Índice global
     const hit = _videoIndex[videoId];
     if (hit && hit.url) return hit;
-    // 2. Firestore
+    // 3. Firestore reactions
     try {
       const db = window.PuntazoCard?.getDb();
       if (!db) return null;
@@ -257,13 +285,13 @@
         let fecha  = d.fecha    || '';
 
         if (!url) {
-          const hit = await getEntryUrl(d.videoId);
+          const hit = await getEntryUrl(d.videoId, null);
           if (!hit || !hit.url) continue;
           url=hit.url; club=hit.club||''; cancha=hit.cancha||''; lado=hit.lado||''; fecha=hit.fecha||'';
         }
 
         const entry = { nombre:d.videoId, url, club, cancha, lado, fecha };
-        const card  = buildCard(entry, function() {
+        const card  = buildSavedCard(entry, function() {
           card.style.opacity='0.4';
           setTimeout(()=>{ card.remove(); }, 300);
           if(window.PuntazoCard) window.PuntazoCard.toast('Quitado de guardados');
@@ -281,18 +309,71 @@
   }
 
   // ── Tab: Apariciones ──
+  // FIX: consulta usuarios/{uid}/apariciones en lugar de collectionGroup
+  // (collectionGroup requiere índice compuesto en Firestore que puede no estar creado)
+  // reactions.js ya escribe ahí desde la versión actualizada.
   async function loadAppearances(user) {
     _appearLoaded = true;
     const db = window.PuntazoCard?.getDb();
     if (!db) { $appearLoading.style.display='none'; $appearEmpty.style.display='block'; return; }
     $appearLoading.style.display='block'; $appearEmpty.style.display='none';
+
+    try {
+      const snap = await db
+        .collection('usuarios').doc(user.uid)
+        .collection('apariciones')
+        .orderBy('claimedAt', 'desc')
+        .limit(30)
+        .get();
+
+      $appearLoading.style.display='none';
+
+      if (snap.empty) {
+        // Fallback: intentar collectionGroup por si hay claims anteriores sin migrar
+        await loadAppearancesFallback(user, db);
+        return;
+      }
+
+      for (const doc of snap.docs) {
+        const d = doc.data();
+        if (!d.videoId) continue;
+
+        const hit = await getEntryUrl(d.videoId, d);
+        if (!hit || !hit.url) continue;
+
+        const entry = {
+          nombre: d.videoId,
+          url:    hit.url    || d.videoUrl || '',
+          club:   hit.club   || d.club     || '',
+          cancha: hit.cancha || d.cancha   || '',
+          lado:   hit.lado   || d.lado     || '',
+          fecha:  hit.fecha  || d.fecha    || '',
+        };
+
+        const card = buildAppearCard(entry);
+        if (!card) continue;
+        $appearGrid.appendChild(card);
+        if (window.PuntazoCard) window.PuntazoCard.attachReactions(card, entry);
+      }
+
+      if (!$appearGrid.children.length) $appearEmpty.style.display='block';
+
+    } catch(e) {
+      console.error('[perfil appearances]', e);
+      $appearLoading.style.display='none';
+      // Intentar fallback con collectionGroup
+      await loadAppearancesFallback(user, db);
+    }
+  }
+
+  // Fallback: collectionGroup (requiere índice Firestore, puede fallar sin él)
+  async function loadAppearancesFallback(user, db) {
     try {
       const snap = await db.collectionGroup('participants')
         .where('uid', '==', user.uid)
         .limit(30)
         .get();
 
-      $appearLoading.style.display='none';
       if (snap.empty) { $appearEmpty.style.display='block'; return; }
 
       const docs = [];
@@ -301,20 +382,21 @@
 
       for (const p of docs) {
         if (!p.videoId) continue;
-        const hit = await getEntryUrl(p.videoId);
+        const hit = await getEntryUrl(p.videoId, null);
         if (!hit || !hit.url) continue;
 
         const entry = { nombre:p.videoId, url:hit.url, club:hit.club||'', cancha:hit.cancha||'', lado:hit.lado||'', fecha:hit.fecha||'' };
-        const card  = buildCard(entry, null);
+        const card  = buildAppearCard(entry);
         if (!card) continue;
         $appearGrid.appendChild(card);
         if (window.PuntazoCard) window.PuntazoCard.attachReactions(card, entry);
       }
 
       if (!$appearGrid.children.length) $appearEmpty.style.display='block';
+
     } catch(e) {
-      console.error('[perfil appearances]', e);
-      $appearLoading.style.display='none'; $appearEmpty.style.display='block';
+      console.warn('[perfil appearances fallback]', e);
+      if (!$appearGrid.children.length) $appearEmpty.style.display='block';
     }
   }
 
