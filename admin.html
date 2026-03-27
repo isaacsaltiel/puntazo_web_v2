@@ -21,7 +21,7 @@
 :root{
   --bg:#050914;--card:rgba(255,255,255,.06);--border:rgba(255,255,255,.10);
   --text:#eaf2ff;--muted:rgba(234,242,255,.50);--blue:#004FC8;--blue2:#0B7CFF;
-  --gold:#ffe066;--green:#22c55e;
+  --gold:#ffe066;--green:#22c55e;--red:#ef4444;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html,body{min-height:100%;font-family:'Montserrat',system-ui,sans-serif;background:var(--bg);color:var(--text);}
@@ -43,7 +43,12 @@ a{color:inherit;}
 
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:var(--text);font-family:inherit;font-size:.80rem;font-weight:700;cursor:pointer;transition:all .15s;text-decoration:none;white-space:nowrap;}
 .btn:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.24);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
 .btn.primary{background:rgba(0,79,200,.22);border-color:rgba(11,124,255,.40);}
+.btn.primary:hover:not(:disabled){background:rgba(0,79,200,.34);border-color:rgba(11,124,255,.60);}
+.btn.danger{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.30);color:#fca5a5;}
+.btn.danger:hover:not(:disabled){background:rgba(239,68,68,.24);}
+.btn.success{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.30);color:#86efac;}
 .btn.sm{padding:5px 12px;font-size:.74rem;}
 .btn.active{background:rgba(0,79,200,.30);border-color:rgba(11,124,255,.55);color:#fff;}
 
@@ -98,6 +103,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
 .pill-blue {background:rgba(0,79,200,.22);color:#7eb8ff;}
 .pill-gold {background:rgba(255,190,0,.18);color:var(--gold);}
 .pill-green{background:rgba(34,197,94,.18);color:#86efac;}
+.pill-red  {background:rgba(239,68,68,.18);color:#fca5a5;}
 .pill-muted{background:rgba(255,255,255,.08);color:var(--muted);}
 
 .club-block{margin-bottom:14px;border-radius:14px;border:1px solid var(--border);overflow:hidden;}
@@ -118,6 +124,59 @@ tr:hover td{background:rgba(255,255,255,.025);}
 .info-box a{color:#7eb8ff;}
 .empty-note{padding:24px;color:var(--muted);font-size:.85rem;text-align:center;}
 
+/* ── CONFIG TAB styles ── */
+.cfg-section{margin-bottom:28px;}
+.cfg-section-title{font-size:.88rem;font-weight:900;color:rgba(234,242,255,.85);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+
+.cfg-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px;}
+.cfg-card-header{padding:12px 16px;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;cursor:pointer;}
+.cfg-card-header:hover{background:rgba(255,255,255,.07);}
+.cfg-card-body{display:none;padding:14px 16px;border-top:1px solid var(--border);}
+.cfg-card.open .cfg-card-body{display:block;}
+.cfg-card-toggle{font-size:.75rem;color:var(--muted);transition:transform .2s;}
+.cfg-card.open .cfg-card-toggle{transform:rotate(180deg);}
+
+.cfg-field-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px;}
+.cfg-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px;}
+.cfg-field label{font-size:.69rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.cfg-input{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:var(--text);font-family:inherit;font-size:.82rem;width:100%;outline:none;transition:border-color .15s;}
+.cfg-input:focus{border-color:rgba(11,124,255,.50);}
+.cfg-input.mono{font-family:monospace;font-size:.76rem;}
+.cfg-toggle{display:flex;align-items:center;gap:8px;font-size:.80rem;font-weight:700;color:var(--text);}
+.cfg-toggle input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--blue2);}
+
+.lado-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);margin-bottom:8px;flex-wrap:wrap;}
+.lado-row .cfg-input{flex:1;min-width:100px;}
+
+.sub-section{margin-top:14px;padding:12px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06);}
+.sub-section-title{font-size:.75rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+
+/* GitHub PAT modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.70);z-index:3000;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:#0d1529;border:1px solid var(--border);border-radius:20px;padding:28px;width:90%;max-width:480px;}
+.modal-title{font-size:1.1rem;font-weight:900;margin-bottom:8px;}
+.modal-sub{font-size:.80rem;color:var(--muted);margin-bottom:18px;line-height:1.6;}
+.modal-sub a{color:#7eb8ff;}
+
+/* Asset upload */
+.asset-drop-zone{border:2px dashed rgba(255,255,255,.15);border-radius:14px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;}
+.asset-drop-zone:hover,.asset-drop-zone.drag-over{border-color:rgba(11,124,255,.50);background:rgba(0,79,200,.06);}
+.asset-drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.asset-drop-icon{font-size:2rem;margin-bottom:8px;}
+.asset-drop-label{font-size:.82rem;font-weight:700;color:var(--text);}
+.asset-drop-sub{font-size:.72rem;color:var(--muted);margin-top:4px;}
+.asset-preview{margin-top:10px;padding:8px 12px;border-radius:10px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.20);font-size:.76rem;color:#86efac;font-weight:700;display:flex;align-items:center;gap:8px;}
+.asset-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:14px;}
+
+/* Save bar */
+.save-bar{position:sticky;bottom:16px;background:rgba(8,14,28,.95);border:1px solid var(--border);border-radius:16px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;backdrop-filter:blur(12px);z-index:100;margin-top:24px;}
+.save-bar-msg{font-size:.80rem;color:var(--muted);}
+.save-status{font-size:.76rem;font-weight:700;padding:4px 10px;border-radius:999px;}
+.save-status.ok{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.28);color:#86efac;}
+.save-status.err{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.28);color:#fca5a5;}
+.save-status.saving{background:rgba(11,124,255,.12);border:1px solid rgba(11,124,255,.28);color:#7eb8ff;}
+
 /* Auth wall */
 #accessDenied{display:none;text-align:center;padding:80px 20px;}
 #accessDenied h2{font-size:1.4rem;font-weight:900;margin-bottom:12px;}
@@ -128,6 +187,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
 @media(max-width:640px){
   .kpi-grid{grid-template-columns:repeat(2,1fr);}
   th,td{padding:7px 8px;}
+  .cfg-field-row{gap:6px;}
 }
 </style>
 </head>
@@ -140,6 +200,26 @@ tr:hover td{background:rgba(255,255,255,.025);}
   <input type="password" id="pwInput" placeholder="Contraseña" />
   <br/><br/>
   <button class="btn primary" onclick="checkPw()">Entrar</button>
+</div>
+
+<!-- GitHub PAT modal -->
+<div class="modal-overlay" id="patModal">
+  <div class="modal-box">
+    <div class="modal-title">🔑 GitHub Personal Access Token</div>
+    <div class="modal-sub">
+      Necesario para guardar cambios en el repo. El token se guarda solo en sessionStorage (se borra al cerrar la pestaña).<br><br>
+      Permisos necesarios: <strong>Contents → Read & Write</strong>.<br>
+      <a href="https://github.com/settings/tokens/new" target="_blank">Crear token en GitHub ↗</a>
+    </div>
+    <div class="cfg-field" style="margin-bottom:14px;">
+      <label>Token (github_pat_...)</label>
+      <input class="cfg-input mono" type="password" id="patInput" placeholder="github_pat_..." autocomplete="off" />
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn primary" onclick="savePAT()">Guardar token</button>
+      <button class="btn" onclick="closePatModal()">Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <div id="mainContent" style="display:none">
@@ -163,7 +243,6 @@ tr:hover td{background:rgba(255,255,255,.025);}
     <div class="src-badge load" id="srcFS">🔥 Firestore: cargando…</div>
   </div>
 
-  <!-- KPIs globales (histórico completo, sin filtro de tiempo) -->
   <div class="kpi-grid">
     <div class="kpi src-gh"><div class="kpi-value" id="kpiTotalHistorico">—</div><div class="kpi-label">Videos (histórico)</div></div>
     <div class="kpi src-gh"><div class="kpi-value" id="kpiDias">—</div><div class="kpi-label">Días con videos</div></div>
@@ -177,7 +256,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
     <div class="kpi src-fs"><div class="kpi-value" id="kpiClaims">—</div><div class="kpi-label">Claims "Soy yo"</div></div>
   </div>
   <p style="color:var(--muted);font-size:.71rem;margin-top:-14px;margin-bottom:24px">
-    🔵 Azul = videos_log.csv en GitHub (datos de grabación). 🟡 Amarillo/verde = Firestore (engagement). Los KPIs son totales históricos; el filtro de tiempo aplica en cada tab.
+    🔵 Azul = videos_log.csv en GitHub (datos de grabación). 🟡 Amarillo/verde = Firestore (engagement).
   </p>
 
   <div class="tabs">
@@ -188,6 +267,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
     <button class="tab-btn" data-tab="players">🥷 Jugadores</button>
     <button class="tab-btn" data-tab="users">👤 Usuarios</button>
     <button class="tab-btn" data-tab="recent">🕐 Reciente</button>
+    <button class="tab-btn" data-tab="config">⚙️ Configuración</button>
   </div>
 
   <div id="tab-clubs"     class="tab-pane active"></div>
@@ -197,22 +277,34 @@ tr:hover td{background:rgba(255,255,255,.025);}
   <div id="tab-players"   class="tab-pane"></div>
   <div id="tab-users"     class="tab-pane"></div>
   <div id="tab-recent"    class="tab-pane"></div>
+  <div id="tab-config"    class="tab-pane"></div>
 
 </div>
 </div>
 
 <script>
+// ════════════════════════════════════════════════════════════
+//  CONSTANTES
+// ════════════════════════════════════════════════════════════
 const ADMIN_KEY  = 'puntazo2025';
 const STATS_URL  = 'data/metrics/stats_summary.json';
+const GH_REPO    = 'isaacsaltiel/puntazo_web_v2';
+const GH_BRANCH  = 'master';
 
 // ── Estado ──
-let _ghStats   = null;   // stats_summary.json completo
-let _historial = [];     // [{fecha,loc,can,lado,count}] — de videos_log.csv
-let _fsDocs    = [];     // Firestore reactions
+let _ghStats   = null;
+let _historial = [];
+let _fsDocs    = [];
 let _players   = [];
 let _users     = [];
 let _timeMode  = 'today';
 let _timeOffset = 0;
+
+// Config state (para el tab de configuración)
+let _cfgLocations   = null;  // parsed JSON
+let _cfgPasswords   = null;  // parsed JSON
+let _cfgLocSHA      = '';    // SHA del archivo en GitHub
+let _cfgPwSHA       = '';    // SHA del archivo en GitHub
 
 // ── Auth wall ──
 function checkPw(){
@@ -243,10 +335,508 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='config') renderConfigTab();
   });
 });
 
-// ── Tiempo ──
+// ════════════════════════════════════════════════════════════
+//  GITHUB PAT (sessionStorage)
+// ════════════════════════════════════════════════════════════
+function getGHToken(){ return sessionStorage.getItem('pz_gh_pat')||''; }
+function savePAT(){
+  const v=document.getElementById('patInput').value.trim();
+  if(!v){alert('Ingresa el token');return;}
+  sessionStorage.setItem('pz_gh_pat',v);
+  closePatModal();
+  showToast('Token guardado en sesión ✓');
+}
+function openPatModal(){ document.getElementById('patModal').classList.add('open'); }
+function closePatModal(){ document.getElementById('patModal').classList.remove('open'); document.getElementById('patInput').value=''; }
+document.getElementById('patModal').addEventListener('click',e=>{ if(e.target===document.getElementById('patModal')) closePatModal(); });
+
+async function ghFetch(path, opts={}){
+  const token = getGHToken();
+  if(!token){ openPatModal(); throw new Error('Sin token GitHub'); }
+  const url=`https://api.github.com/repos/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`;
+  const res=await fetch(url,{
+    headers:{
+      'Authorization':'Bearer '+token,
+      'Accept':'application/vnd.github+json',
+      'X-GitHub-Api-Version':'2022-11-28',
+      ...opts.headers
+    },
+    ...opts
+  });
+  if(!res.ok){ const err=await res.json().catch(()=>{}); throw new Error(`GitHub ${res.status}: ${err?.message||res.statusText}`); }
+  return res.json();
+}
+
+async function ghGetFile(path){
+  const data=await ghFetch(path);
+  const text=atob(data.content.replace(/\n/g,''));
+  return { text, sha: data.sha };
+}
+
+async function ghPutFile(path, content, sha, message){
+  const token=getGHToken();
+  if(!token){ openPatModal(); throw new Error('Sin token'); }
+  const url=`https://api.github.com/repos/${GH_REPO}/contents/${path}`;
+  const body={message,content:btoa(unescape(encodeURIComponent(content))),branch:GH_BRANCH};
+  if(sha) body.sha=sha;
+  const res=await fetch(url,{
+    method:'PUT',
+    headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},
+    body:JSON.stringify(body),
+  });
+  if(!res.ok){ const err=await res.json().catch(()=>{}); throw new Error(`GitHub ${res.status}: ${err?.message||res.statusText}`); }
+  return res.json();
+}
+
+async function ghPutBinary(path, base64Content, sha, message){
+  const token=getGHToken();
+  if(!token){ openPatModal(); throw new Error('Sin token'); }
+  const url=`https://api.github.com/repos/${GH_REPO}/contents/${path}`;
+  const body={message,content:base64Content,branch:GH_BRANCH};
+  if(sha) body.sha=sha;
+  const res=await fetch(url,{
+    method:'PUT',
+    headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},
+    body:JSON.stringify(body),
+  });
+  if(!res.ok){ const err=await res.json().catch(()=>{}); throw new Error(`GitHub ${res.status}: ${err?.message||res.statusText}`); }
+  return res.json();
+}
+
+// Helper: intentar obtener SHA de un archivo que puede no existir
+async function ghGetSHA(path){
+  try{const d=await ghFetch(path);return d.sha||'';}catch{return '';}
+}
+
+// ── SHA-256 para passwords ──
+async function sha256Hex(text){
+  const enc=new TextEncoder().encode(text);
+  const buf=await crypto.subtle.digest('SHA-256',enc);
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Toast ──
+function showToast(msg,duration=2200){
+  let el=document.getElementById('__admin_toast__');
+  if(!el){el=document.createElement('div');el.id='__admin_toast__';el.style.cssText='position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:rgba(0,0,0,.88);color:#fff;padding:10px 18px;border-radius:10px;z-index:9999;font-weight:700;font-size:.82rem;pointer-events:none;white-space:nowrap;transition:opacity .2s;';document.body.appendChild(el);}
+  el.textContent=msg;el.style.display='block';el.style.opacity='1';
+  clearTimeout(el._t);el._t=setTimeout(()=>{el.style.opacity='0';setTimeout(()=>{el.style.display='none';},200);},duration);
+}
+
+// ════════════════════════════════════════════════════════════
+//  TAB CONFIGURACIÓN
+// ════════════════════════════════════════════════════════════
+async function renderConfigTab(){
+  const $pane=document.getElementById('tab-config');
+  $pane.innerHTML=`<div class="empty-note">⏳ Cargando configuración desde GitHub…</div>`;
+
+  // Cargar los dos archivos de config
+  try{
+    const [locR,pwR]=await Promise.allSettled([
+      ghGetFile('data/config_locations.json'),
+      ghGetFile('data/passwords.json'),
+    ]);
+    if(locR.status==='fulfilled'){
+      _cfgLocations=JSON.parse(locR.value.text);
+      _cfgLocSHA=locR.value.sha;
+    }
+    if(pwR.status==='fulfilled'){
+      _cfgPasswords=JSON.parse(pwR.value.text);
+      _cfgPwSHA=pwR.value.sha;
+    }
+  }catch(e){
+    // Si no hay token todavía, el error ya habrá abierto el modal
+    $pane.innerHTML=`<div class="info-box">⚠️ No se pudo cargar la config. Verifica tu token de GitHub.</div>
+      <button class="btn primary" onclick="renderConfigTab()">↺ Reintentar</button>`;
+    return;
+  }
+
+  $pane.innerHTML=`
+    <!-- ── Sección 1: Locaciones ── -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">
+        <span>🗺️ Locaciones (config_locations.json)</span>
+        <button class="btn sm primary" onclick="addClub()">+ Nuevo club</button>
+      </div>
+      <div id="cfgLocList"></div>
+      <div class="save-bar">
+        <span class="save-bar-msg">Los cambios no se guardan hasta pulsar el botón.</span>
+        <span id="saveLocStatus" class="save-status" style="display:none"></span>
+        <button class="btn primary" onclick="saveLocations()">💾 Guardar locaciones</button>
+      </div>
+    </div>
+
+    <div style="height:1px;background:var(--border);margin:24px 0;"></div>
+
+    <!-- ── Sección 2: Contraseñas ── -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">
+        <span>🔐 Contraseñas de canchas (passwords.json)</span>
+        <button class="btn sm primary" onclick="addPwRule()">+ Nueva regla</button>
+      </div>
+      <div id="cfgPwList"></div>
+      <div class="save-bar">
+        <span class="save-bar-msg">Las contraseñas se convierten a SHA-256 antes de guardar.</span>
+        <span id="savePwStatus" class="save-status" style="display:none"></span>
+        <button class="btn primary" onclick="savePasswords()">💾 Guardar contraseñas</button>
+      </div>
+    </div>
+
+    <div style="height:1px;background:var(--border);margin:24px 0;"></div>
+
+    <!-- ── Sección 3: Assets de club ── -->
+    <div class="cfg-section">
+      <div class="cfg-section-title">
+        <span>📁 Assets por club (intro / outro / anuncio)</span>
+      </div>
+      <div id="cfgAssets"></div>
+    </div>
+  `;
+
+  renderLocList();
+  renderPwList();
+  renderAssets();
+}
+
+// ════════════════════════════════════════════════════════════
+//  LOCACIONES
+// ════════════════════════════════════════════════════════════
+function renderLocList(){
+  const $el=document.getElementById('cfgLocList');
+  if(!$el||!_cfgLocations) return;
+  const locs=_cfgLocations.locaciones||[];
+  if(!locs.length){$el.innerHTML=`<div class="empty-note">Sin locaciones. Agrega una con el botón.</div>`;return;}
+
+  $el.innerHTML=locs.map((loc,li)=>`
+    <div class="cfg-card" id="cfgLoc${li}">
+      <div class="cfg-card-header" onclick="toggleCfgCard('cfgLoc${li}')">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+          <span style="font-weight:900;font-size:.95rem">${esc(loc.nombre||loc.id)}</span>
+          <span class="pill pill-muted">${loc.cancha?.length||0} canchas</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn sm danger" onclick="event.stopPropagation();removeClub(${li})">🗑 Quitar</button>
+          <span class="cfg-card-toggle">▼</span>
+        </div>
+      </div>
+      <div class="cfg-card-body">
+        <div class="cfg-field-row">
+          <div class="cfg-field"><label>ID (sin espacios)</label>
+            <input class="cfg-input mono" value="${esc(loc.id)}" onchange="_cfgLocations.locaciones[${li}].id=this.value" /></div>
+          <div class="cfg-field"><label>Nombre visible</label>
+            <input class="cfg-input" value="${esc(loc.nombre||loc.id)}" onchange="_cfgLocations.locaciones[${li}].nombre=this.value" /></div>
+        </div>
+
+        <div class="sub-section">
+          <div class="sub-section-title">Canchas
+            <button class="btn sm" style="margin-left:8px" onclick="addCancha(${li})">+ Cancha</button>
+          </div>
+          ${(loc.cancha||[]).map((can,ci)=>`
+            <div class="cfg-card" id="cfgCan${li}_${ci}" style="margin-bottom:8px">
+              <div class="cfg-card-header" onclick="toggleCfgCard('cfgCan${li}_${ci}')">
+                <span style="font-weight:700;font-size:.85rem">${esc(can.nombre||can.id)}</span>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <button class="btn sm danger" onclick="event.stopPropagation();removeCancha(${li},${ci})">🗑</button>
+                  <span class="cfg-card-toggle">▼</span>
+                </div>
+              </div>
+              <div class="cfg-card-body">
+                <div class="cfg-field-row">
+                  <div class="cfg-field"><label>ID cancha</label>
+                    <input class="cfg-input mono" value="${esc(can.id)}" onchange="_cfgLocations.locaciones[${li}].cancha[${ci}].id=this.value" /></div>
+                  <div class="cfg-field"><label>Nombre cancha</label>
+                    <input class="cfg-input" value="${esc(can.nombre||can.id)}" onchange="_cfgLocations.locaciones[${li}].cancha[${ci}].nombre=this.value" /></div>
+                </div>
+
+                <div class="sub-section">
+                  <div class="sub-section-title">Lados (cámaras)
+                    <button class="btn sm" style="margin-left:8px" onclick="addLado(${li},${ci})">+ Lado</button>
+                  </div>
+                  ${(can.lados||[]).map((lado,ldi)=>`
+                    <div class="lado-row" id="cfgLado${li}_${ci}_${ldi}">
+                      <div class="cfg-field" style="min-width:80px;max-width:100px">
+                        <label>ID</label>
+                        <input class="cfg-input mono" value="${esc(lado.id)}" onchange="_cfgLocations.locaciones[${li}].cancha[${ci}].lados[${ldi}].id=this.value" />
+                      </div>
+                      <div class="cfg-field" style="min-width:80px;max-width:120px">
+                        <label>Nombre</label>
+                        <input class="cfg-input" value="${esc(lado.nombre||lado.id)}" onchange="_cfgLocations.locaciones[${li}].cancha[${ci}].lados[${ldi}].nombre=this.value" />
+                      </div>
+                      <div class="cfg-field" style="flex:3">
+                        <label>json_url (GitHub raw)</label>
+                        <input class="cfg-input mono" value="${esc(lado.json_url||'')}" onchange="_cfgLocations.locaciones[${li}].cancha[${ci}].lados[${ldi}].json_url=this.value" />
+                      </div>
+                      <button class="btn sm danger" onclick="removeLado(${li},${ci},${ldi})">🗑</button>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleCfgCard(id){ document.getElementById(id)?.classList.toggle('open'); }
+
+function addClub(){
+  if(!_cfgLocations) return;
+  _cfgLocations.locaciones=_cfgLocations.locaciones||[];
+  _cfgLocations.locaciones.push({id:'NuevoClub',nombre:'Nuevo Club',cancha:[]});
+  renderLocList();
+  // Abrir el nuevo card
+  const last=_cfgLocations.locaciones.length-1;
+  setTimeout(()=>{ document.getElementById(`cfgLoc${last}`)?.classList.add('open'); },50);
+}
+function removeClub(li){ if(!confirm('¿Eliminar este club?')) return; _cfgLocations.locaciones.splice(li,1); renderLocList(); }
+
+function addCancha(li){
+  const loc=_cfgLocations.locaciones[li]; if(!loc) return;
+  loc.cancha=loc.cancha||[];
+  loc.cancha.push({id:'CanxhaX',nombre:'Cancha X',lados:[]});
+  renderLocList();
+  setTimeout(()=>{ document.getElementById(`cfgCan${li}_${loc.cancha.length-1}`)?.classList.add('open'); },50);
+}
+function removeCancha(li,ci){ if(!confirm('¿Eliminar esta cancha?')) return; _cfgLocations.locaciones[li].cancha.splice(ci,1); renderLocList(); }
+
+function addLado(li,ci){
+  const can=_cfgLocations.locaciones[li]?.cancha[ci]; if(!can) return;
+  can.lados=can.lados||[];
+  can.lados.push({id:'LadoA',nombre:'Lado A',json_url:''});
+  renderLocList();
+  setTimeout(()=>{ document.getElementById(`cfgCan${li}_${ci}`)?.classList.add('open'); },50);
+}
+function removeLado(li,ci,ldi){ _cfgLocations.locaciones[li].cancha[ci].lados.splice(ldi,1); renderLocList(); }
+
+async function saveLocations(){
+  const $st=document.getElementById('saveLocStatus');
+  setSaveStatus($st,'saving','⏳ Guardando…');
+  try{
+    const json=JSON.stringify(_cfgLocations,null,2);
+    const res=await ghPutFile('data/config_locations.json',json,_cfgLocSHA,'Admin: actualizar config_locations.json');
+    _cfgLocSHA=res.content?.sha||_cfgLocSHA;
+    setSaveStatus($st,'ok','✓ Guardado en GitHub');
+    showToast('✅ config_locations.json guardado');
+  }catch(e){
+    setSaveStatus($st,'err','✗ '+e.message);
+    showToast('❌ Error: '+e.message,4000);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  CONTRASEÑAS
+// ════════════════════════════════════════════════════════════
+function renderPwList(){
+  const $el=document.getElementById('cfgPwList');
+  if(!$el||!_cfgPasswords) return;
+  const rules=_cfgPasswords.canchas||[];
+  if(!rules.length){$el.innerHTML=`<div class="empty-note">Sin reglas de contraseña. Agrega una.</div>`;return;}
+
+  $el.innerHTML=`
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Club (loc)</th><th>Cancha (can)</th><th>Contraseña</th><th>Hash actual</th>
+          <th>Recuerda (h)</th><th>Activa</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${rules.map((r,i)=>`
+            <tr id="pwRow${i}">
+              <td><input class="cfg-input mono" style="min-width:100px" value="${esc(r.loc)}" onchange="_cfgPasswords.canchas[${i}].loc=this.value" /></td>
+              <td><input class="cfg-input mono" style="min-width:100px" value="${esc(r.can)}" onchange="_cfgPasswords.canchas[${i}].can=this.value" /></td>
+              <td>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <input class="cfg-input" type="text" id="pwPlain${i}" placeholder="Nueva contraseña" style="min-width:120px" />
+                  <button class="btn sm" onclick="applyPwHash(${i})" title="Hashear y aplicar">🔒 Aplicar</button>
+                </div>
+              </td>
+              <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;font-family:monospace;font-size:.68rem;color:var(--muted)">${esc((r.sha256||'').slice(0,20))}…</td>
+              <td><input class="cfg-input" type="number" min="1" max="720" value="${r.remember_hours||24}" style="width:70px" onchange="_cfgPasswords.canchas[${i}].remember_hours=Number(this.value)" /></td>
+              <td>
+                <label class="cfg-toggle">
+                  <input type="checkbox" ${r.enabled?'checked':''} onchange="_cfgPasswords.canchas[${i}].enabled=this.checked" />
+                  ${r.enabled?'<span class="pill pill-green">Sí</span>':'<span class="pill pill-muted">No</span>'}
+                </label>
+              </td>
+              <td><button class="btn sm danger" onclick="removePwRule(${i})">🗑</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function applyPwHash(i){
+  const input=document.getElementById(`pwPlain${i}`);
+  const plain=input?.value?.trim();
+  if(!plain){showToast('Escribe la contraseña primero');return;}
+  const hash=await sha256Hex(plain);
+  _cfgPasswords.canchas[i].sha256=hash;
+  input.value='';
+  input.placeholder='✓ Hash aplicado';
+  showToast('Hash SHA-256 aplicado');
+  // Actualizar el hash visible
+  renderPwList();
+}
+
+function addPwRule(){
+  if(!_cfgPasswords) return;
+  _cfgPasswords.canchas=_cfgPasswords.canchas||[];
+  _cfgPasswords.canchas.push({loc:'Club',can:'CanxhaX',enabled:true,sha256:'',remember_hours:24});
+  renderPwList();
+}
+function removePwRule(i){ if(!confirm('¿Quitar esta regla?')) return; _cfgPasswords.canchas.splice(i,1); renderPwList(); }
+
+async function savePasswords(){
+  const $st=document.getElementById('savePwStatus');
+  setSaveStatus($st,'saving','⏳ Guardando…');
+  // Validar que todos los enabled tengan sha256
+  const bad=(_cfgPasswords.canchas||[]).filter(r=>r.enabled&&!r.sha256);
+  if(bad.length){setSaveStatus($st,'err','✗ Hay reglas activas sin contraseña');showToast('⚠️ Aplica un hash a todas las reglas activas',3500);return;}
+  try{
+    const json=JSON.stringify(_cfgPasswords,null,2);
+    const res=await ghPutFile('data/passwords.json',json,_cfgPwSHA,'Admin: actualizar passwords.json');
+    _cfgPwSHA=res.content?.sha||_cfgPwSHA;
+    setSaveStatus($st,'ok','✓ Guardado en GitHub');
+    showToast('✅ passwords.json guardado');
+  }catch(e){
+    setSaveStatus($st,'err','✗ '+e.message);
+    showToast('❌ Error: '+e.message,4000);
+  }
+}
+
+function setSaveStatus(el,type,msg){
+  if(!el)return;
+  el.style.display='inline-flex';
+  el.className='save-status '+type;
+  el.textContent=msg;
+  if(type==='ok'||type==='err') setTimeout(()=>{el.style.display='none';},4000);
+}
+
+// ════════════════════════════════════════════════════════════
+//  ASSETS POR CLUB
+// ════════════════════════════════════════════════════════════
+const _assetFiles = {}; // {locId: {intro: File, outro: File, anuncio: File}}
+
+function renderAssets(){
+  const $el=document.getElementById('cfgAssets');
+  if(!$el) return;
+  const locs=(_cfgLocations?.locaciones||[]);
+  if(!locs.length){$el.innerHTML=`<div class="empty-note">Carga primero la config de locaciones.</div>`;return;}
+
+  $el.innerHTML=locs.map(loc=>{
+    const id=loc.id;
+    return `
+      <div class="cfg-card" id="cfgAsset_${id}" style="margin-bottom:12px">
+        <div class="cfg-card-header" onclick="toggleCfgCard('cfgAsset_${id}')">
+          <span style="font-weight:900">${esc(loc.nombre||id)}</span>
+          <span class="cfg-card-toggle">▼</span>
+        </div>
+        <div class="cfg-card-body">
+          <div class="asset-grid">
+            ${renderDropZone(id,'intro','intro.mp4','video/mp4,video/*','🎬','Video intro','MP4, hasta 100MB')}
+            ${renderDropZone(id,'outro','outro.mp4','video/mp4,video/*','🎬','Video outro','MP4, hasta 100MB')}
+            ${renderDropZone(id,'anuncio','anuncio.png','image/png,image/jpeg,image/*','🖼️','Anuncio (imagen)','PNG o JPG')}
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn primary" onclick="uploadAssets('${id}')">⬆ Subir assets a GitHub</button>
+            <span id="assetStatus_${id}" class="save-status" style="display:none"></span>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:8px">
+            Se guardarán en <code style="color:#7eb8ff">assets/clubs/${id}/</code> en el repo de GitHub.
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Bind drag & drop + file input para cada zona
+  document.querySelectorAll('.asset-drop-zone').forEach(zone=>{
+    zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over');});
+    zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
+    zone.addEventListener('drop',e=>{
+      e.preventDefault();zone.classList.remove('drag-over');
+      const f=e.dataTransfer.files[0];
+      if(f) handleAssetFile(zone.dataset.loc,zone.dataset.field,zone.dataset.fname,f,zone);
+    });
+    const inp=zone.querySelector('input[type=file]');
+    if(inp) inp.addEventListener('change',()=>{
+      const f=inp.files[0];
+      if(f) handleAssetFile(zone.dataset.loc,zone.dataset.field,zone.dataset.fname,f,zone);
+    });
+  });
+}
+
+function renderDropZone(locId,field,fname,accept,icon,label,sub){
+  return `
+    <div class="asset-drop-zone" data-loc="${locId}" data-field="${field}" data-fname="${fname}" id="dz_${locId}_${field}">
+      <input type="file" accept="${accept}" />
+      <div class="asset-drop-icon">${icon}</div>
+      <div class="asset-drop-label">${label}</div>
+      <div class="asset-drop-sub">${sub}</div>
+      <div id="dzPreview_${locId}_${field}"></div>
+    </div>`;
+}
+
+function handleAssetFile(locId,field,fname,file,zone){
+  _assetFiles[locId]=_assetFiles[locId]||{};
+  _assetFiles[locId][field]={file,fname};
+  const $prev=document.getElementById(`dzPreview_${locId}_${field}`);
+  if($prev) $prev.innerHTML=`<div class="asset-preview">✓ ${esc(file.name)} (${(file.size/1024/1024).toFixed(1)} MB)</div>`;
+  zone.classList.remove('drag-over');
+}
+
+async function fileToBase64(file){
+  return new Promise((res,rej)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const b64=reader.result.split(',')[1];
+      res(b64);
+    };
+    reader.onerror=rej;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadAssets(locId){
+  const assets=_assetFiles[locId]||{};
+  const $st=document.getElementById(`assetStatus_${locId}`);
+  const entries=Object.entries(assets);
+  if(!entries.length){showToast('Selecciona al menos un archivo primero');return;}
+
+  setSaveStatus($st,'saving',`⏳ Subiendo ${entries.length} archivo(s)…`);
+  let ok=0,err=0;
+  for(const[field,{file,fname}] of entries){
+    try{
+      const b64=await fileToBase64(file);
+      const path=`assets/clubs/${locId}/${fname}`;
+      const sha=await ghGetSHA(path); // si ya existe, necesitamos su SHA
+      await ghPutBinary(path,b64,sha,`Admin: actualizar ${fname} para ${locId}`);
+      ok++;
+    }catch(e){
+      err++;
+      console.error(`[upload ${locId}/${field}]`,e);
+    }
+  }
+  if(err===0){
+    setSaveStatus($st,'ok',`✓ ${ok} archivo(s) subido(s)`);
+    showToast(`✅ Assets de ${locId} guardados en GitHub`);
+    _assetFiles[locId]={};
+  }else{
+    setSaveStatus($st,'err',`✗ ${err} error(s) al subir`);
+    showToast(`⚠️ ${ok} subidos, ${err} fallaron`,4000);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  TIEMPO
+// ════════════════════════════════════════════════════════════
 function getDateRange(){
   const now=new Date();let start,end,label;
   if(_timeMode==='today'){
@@ -273,17 +863,8 @@ function getDateRange(){
 }
 function fd(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function inRange(f,s,e){return f&&f>=s&&f<=e;}
-
-// historial filtrado por rango
-function filteredHistorial(){
-  const{start,end}=getDateRange();
-  return _historial.filter(h=>inRange(h.fecha,start,end));
-}
-// Firestore filtrado
-function filteredFS(){
-  const{start,end}=getDateRange();
-  return _fsDocs.filter(d=>inRange(d.fecha||'',start,end));
-}
+function filteredHistorial(){const{start,end}=getDateRange();return _historial.filter(h=>inRange(h.fecha,start,end));}
+function filteredFS(){const{start,end}=getDateRange();return _fsDocs.filter(d=>inRange(d.fecha||'',start,end));}
 
 function buildTimeBar(tabId){
   const{label}=getDateRange();
@@ -306,7 +887,9 @@ function renderTab(t){
   if(t==='saves')     renderTopFS('tab-saves','saves','💾 Top por guardados','green');
 }
 
-// ── Init ──
+// ════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════
 async function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 async function waitFB(n){for(let i=0;i<(n||40);i++){if(window.PuntazoFirebase&&typeof window.PuntazoFirebase.db==='function')return true;await sleep(200);}return false;}
 
@@ -340,17 +923,14 @@ async function refreshAll(){
 
 function setBadge(id,cls,txt){const el=document.getElementById(id);if(el){el.className='src-badge '+cls;el.textContent=txt;}}
 
-// ── GitHub stats_summary.json ──
 async function fetchGH(){
   const res=await fetch(STATS_URL+'?cb='+Date.now(),{cache:'no-store'});
   if(!res.ok) throw new Error('HTTP '+res.status);
   _ghStats=await res.json();
-  // historial: [{fecha,loc,can,lado,count}]
   _historial=_ghStats.historial||[];
-  if(!_historial.length) throw new Error('historial vacío — corre el workflow primero');
+  if(!_historial.length) throw new Error('historial vacío');
 }
 
-// ── Firestore ──
 async function fetchFS(){
   const db=window.PuntazoFirebase.db();
   const snap=await db.collection('reactions').limit(600).get();
@@ -372,15 +952,12 @@ async function fetchFS(){
   }catch{_players=[];}
 }
 
-// ── KPIs ──
 function renderKPIs(){
-  // GitHub / histórico (totales sin filtro de tiempo)
   const t=_ghStats?.totales||{};
   s('kpiTotalHistorico',fmt(t.videos_historico));
   s('kpiDias',          fmt(t.dias_con_videos));
   s('kpiClubs',         fmt(t.clubs_activos));
   s('kpiActivos',       fmt(t.videos_activos));
-  // Firestore (totales sin filtro)
   const fs=_fsDocs.reduce((a,d)=>({
     views:    a.views    +(d.views||0),
     rxn:      a.rxn      +(d.total||0),
@@ -396,111 +973,75 @@ function renderKPIs(){
   s('kpiUsers',    fmt(_users.length));
 }
 
-// ── Tab Clubs — fuente: historial (videos_log.csv) + Firestore engagement ──
+// ── Tab Clubs ──
 function renderClubs(){
   const $pane=document.getElementById('tab-clubs');
   const filtered=filteredHistorial();
   const{label}=getDateRange();
-
-  // Índice Firestore por videoId
-  const fsIdx={};
-  for(const d of _fsDocs){if(d.videoId)fsIdx[d.videoId]=d;}
-
-  if(!filtered.length){
-    $pane.innerHTML=buildTimeBar('clubs')+`<div class="empty-note">Sin videos en este período en <code>videos_log.csv</code>.</div>`;
-    return;
-  }
-
-  // Agrupar historial filtrado: club → cancha → [{lado,count,fecha}]
-  // videos_log.csv usa loc/can/lado como IDs; mapear a nombres con config
   const cfgIdx={};
   for(const club of (_ghStats?.clubs||[])){
     for(const cancha of (club.canchas||[])){
       for(const lado of (cancha.lados||[])){
-        cfgIdx[`${club.id}|${cancha.id}|${lado.id}`]={
-          clubNombre:club.nombre||club.id,
-          canchaNombre:cancha.nombre||cancha.id,
-          ladoNombre:lado.nombre||lado.id,
-        };
+        cfgIdx[`${club.id}|${cancha.id}|${lado.id}`]={clubNombre:club.nombre||club.id,canchaNombre:cancha.nombre||cancha.id,ladoNombre:lado.nombre||lado.id};
       }
     }
   }
-
-  // Agregar: club → cancha → total videos en período
+  if(!filtered.length){$pane.innerHTML=buildTimeBar('clubs')+`<div class="empty-note">Sin videos en este período.</div>`;return;}
   const clubMap=new Map();
   for(const h of filtered){
     const meta=cfgIdx[`${h.loc}|${h.can}|${h.lado}`]||{clubNombre:h.loc,canchaNombre:h.can,ladoNombre:h.lado};
     if(!clubMap.has(h.loc)) clubMap.set(h.loc,{nombre:meta.clubNombre,total:0,canchas:new Map()});
-    const c=clubMap.get(h.loc);
-    c.total+=h.count;
+    const c=clubMap.get(h.loc); c.total+=h.count;
     if(!c.canchas.has(h.can)) c.canchas.set(h.can,{nombre:meta.canchaNombre,total:0,lados:new Map()});
-    const ca=c.canchas.get(h.can);
-    ca.total+=h.count;
+    const ca=c.canchas.get(h.can); ca.total+=h.count;
     if(!ca.lados.has(h.lado)) ca.lados.set(h.lado,{nombre:meta.ladoNombre,total:0});
     ca.lados.get(h.lado).total+=h.count;
   }
-
   const sortedClubs=Array.from(clubMap.values()).sort((a,b)=>b.total-a.total);
   const maxClub=sortedClubs[0]?.total||1;
   let totalPeriodo=sortedClubs.reduce((s,c)=>s+c.total,0);
-
   const blocks=sortedClubs.map((club,ci)=>{
     const sortedCanchas=Array.from(club.canchas.values()).sort((a,b)=>b.total-a.total);
-    const maxC=sortedCanchas[0]?.total||1;
     const canchaRows=sortedCanchas.map(cancha=>{
       const sortedLados=Array.from(cancha.lados.values()).sort((a,b)=>b.total-a.total);
-      const ladoRows=sortedLados.map(lado=>{
-        const pct=Math.round((lado.total/cancha.lados.size>0?cancha.total:1)*100);
-        return`<tr>
-          <td style="padding:6px 12px;font-size:.78rem;color:var(--muted)">${esc(lado.nombre)}</td>
-          <td class="td-bar" style="padding:6px 12px"><div class="bar"><div class="bar-fill" style="width:${Math.round(lado.total/(cancha.total||1)*100)}%"></div></div></td>
-          <td class="td-num" style="padding:6px 12px">${fmt(lado.total)}</td>
-        </tr>`;
-      }).join('');
-      const pct=Math.round((cancha.total/maxC)*100);
+      const ladoRows=sortedLados.map(lado=>`<tr>
+        <td style="padding:6px 12px;font-size:.78rem;color:var(--muted)">${esc(lado.nombre)}</td>
+        <td class="td-bar" style="padding:6px 12px"><div class="bar"><div class="bar-fill" style="width:${Math.round(lado.total/(cancha.total||1)*100)}%"></div></div></td>
+        <td class="td-num" style="padding:6px 12px">${fmt(lado.total)}</td>
+      </tr>`).join('');
       return`<div class="cancha-block">
-        <div class="cancha-header">
-          🎾 <strong style="color:#fff">${esc(cancha.nombre)}</strong>
-          <span class="pill pill-blue">${fmt(cancha.total)} videos</span>
-        </div>
+        <div class="cancha-header">🎾 <strong style="color:#fff">${esc(cancha.nombre)}</strong><span class="pill pill-blue">${fmt(cancha.total)} videos</span></div>
         <table><tbody>${ladoRows}</tbody></table>
       </div>`;
     }).join('');
-
     const pct=Math.round((club.total/maxClub)*100);
     return`<div class="club-block" id="cbl-${ci}">
       <div class="club-header" onclick="tgClub('cbl-${ci}')">
-        <div>
-          <div class="club-name">${esc(club.nombre)}</div>
-        </div>
+        <div><div class="club-name">${esc(club.nombre)}</div></div>
         <div class="club-meta">
           <span class="pill pill-blue">${fmt(club.total)} videos</span>
-          <span class="pill pill-muted">${fmt(Math.round(club.total/totalPeriodo*100))}% del total</span>
-          <div class="bar" style="width:80px;margin-top:0"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <span class="pill pill-muted">${fmt(Math.round(club.total/totalPeriodo*100))}%</span>
+          <div class="bar" style="width:80px"><div class="bar-fill" style="width:${pct}%"></div></div>
           <span class="club-toggle">▼</span>
         </div>
       </div>
       <div class="club-body" style="padding:8px 0 4px">${canchaRows}</div>
     </div>`;
   }).join('');
-
   $pane.innerHTML=buildTimeBar('clubs')+`
     <div class="info-box" style="font-size:.73rem">
-      <strong>Fuente:</strong> <code>videos_log.csv</code> (todos los videos grabados en el período) · <strong>${totalPeriodo.toLocaleString()}</strong> videos en "${label}".<br>
-      Stats generadas: <strong>${_ghStats?.generado_el?.slice(0,16).replace('T',' ')||'—'}</strong>
+      <strong>Fuente:</strong> <code>videos_log.csv</code> · <strong>${totalPeriodo.toLocaleString()}</strong> videos en "${label}".
+      Stats: <strong>${_ghStats?.generado_el?.slice(0,16).replace('T',' ')||'—'}</strong>
     </div>
     <div class="section">
-      <div class="section-title">🏢 Clubs — ${esc(label)} <span class="badge">${sortedClubs.length} clubs · ${totalPeriodo.toLocaleString()} videos</span><span class="src-tag gh">videos_log.csv</span></div>
+      <div class="section-title">🏢 Clubs — ${esc(label)} <span class="badge">${sortedClubs.length} clubs · ${totalPeriodo.toLocaleString()} videos</span></div>
       ${blocks}
     </div>`;
-
-  // Abrir primer club
   document.querySelector('.club-block')?.classList.add('open');
 }
-
 function tgClub(id){document.getElementById(id)?.classList.toggle('open');}
 
-// ── Top Firestore (filtrado por tiempo) ──
+// ── Top Firestore ──
 function renderTopFS(tabId,field,title,color){
   const $pane=document.getElementById(tabId);
   const docs=filteredFS().filter(d=>(d[field]||0)>0).sort((a,b)=>(b[field]||0)-(a[field]||0)).slice(0,25);
@@ -513,13 +1054,7 @@ function renderTopFS(tabId,field,title,color){
     const link=d.videoId?`/clip.html?videoId=${encodeURIComponent(d.videoId)}`:'#';
     return`<tr>
       <td class="td-rank">${rankEmoji(i)}</td>
-      <td class="td-name">
-        <a href="${link}" target="_blank" style="color:#eaf2ff;text-decoration:none">
-          ${videoLabel(d)}
-          <small>${esc(d.club||'')} ${d.cancha?'· '+esc(d.cancha):''} ${d.fecha?'· '+d.fecha:''}</small>
-        </a>
-        ${d.immortal?'<span class="pill pill-gold" style="margin-left:4px">⭐</span>':''}
-      </td>
+      <td class="td-name"><a href="${link}" target="_blank" style="color:#eaf2ff;text-decoration:none">${videoLabel(d)}<small>${esc(d.club||'')} ${d.cancha?'· '+esc(d.cancha):''} ${d.fecha?'· '+d.fecha:''}</small></a>${d.immortal?'<span class="pill pill-gold" style="margin-left:4px">⭐</span>':''}</td>
       <td class="td-bar"><div class="bar"><div class="bar-fill ${color}" style="width:${pct}%"></div></div></td>
       <td class="td-num">${fmt(d[field]||0)}</td>
     </tr>`;
@@ -531,10 +1066,9 @@ function renderTopFS(tabId,field,title,color){
     </div>`;
 }
 
-// ── Jugadores ──
 function renderPlayers(){
   const $pane=document.getElementById('tab-players');
-  if(!_players.length){$pane.innerHTML=`<div class="info-box"><strong>Sin datos todavía.</strong> El índice collectionGroup puede tardar unos minutos.</div>`;return;}
+  if(!_players.length){$pane.innerHTML=`<div class="info-box"><strong>Sin datos todavía.</strong></div>`;return;}
   const maxC=_players[0]?.claims||1;
   const rows=_players.slice(0,25).map((p,i)=>{
     const pct=Math.round((p.claims/maxC)*100);
@@ -546,21 +1080,16 @@ function renderPlayers(){
       <td class="td-num">${p.claims} clip${p.claims!==1?'s':''}</td>
     </tr>`;
   }).join('');
-  $pane.innerHTML=`<div class="info-box">Rankeados por claims "🥷 Soy yo". Las reacciones 🔥 son anónimas (localStorage) — para trackearlas por uid habría que modificar reactions.js.</div>
-    <div class="section"><div class="section-title">🥷 Jugadores <span class="badge">${_players.length}</span><span class="src-tag fs">Firestore</span></div>
-    <div class="table-wrap"><table><thead><tr><th>#</th><th>Jugador</th><th></th><th>Clips reclamados</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  $pane.innerHTML=`<div class="section"><div class="section-title">🥷 Jugadores <span class="badge">${_players.length}</span><span class="src-tag fs">Firestore</span></div>
+  <div class="table-wrap"><table><thead><tr><th>#</th><th>Jugador</th><th></th><th>Clips reclamados</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
-// ── Usuarios ──
 function renderUsers(){
   const $pane=document.getElementById('tab-users');
   const pByUid=new Map(_players.map(p=>[p.uid,p]));
   const allUids=new Set([..._players.map(p=>p.uid),..._users.map(u=>u.uid)]);
   if(!allUids.size){$pane.innerHTML=`<div class="empty-note">Sin usuarios todavía.</div>`;return;}
-  const rows=Array.from(allUids).map(uid=>{
-    const p=pByUid.get(uid)||{};
-    return{uid,displayName:p.displayName||'',photoURL:p.photoURL||'',claims:p.claims||0};
-  }).sort((a,b)=>b.claims-a.claims).slice(0,30).map((u,i)=>{
+  const rows=Array.from(allUids).map(uid=>{const p=pByUid.get(uid)||{};return{uid,displayName:p.displayName||'',photoURL:p.photoURL||'',claims:p.claims||0};}).sort((a,b)=>b.claims-a.claims).slice(0,30).map((u,i)=>{
     const av=u.photoURL?`<img src="${esc(u.photoURL)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">`:`<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(0,79,200,.35);font-weight:900;font-size:11px;margin-right:8px">${(u.displayName||'?')[0].toUpperCase()}</span>`;
     return`<tr>
       <td class="td-rank" style="font-size:.82rem">${i+1}</td>
@@ -568,15 +1097,11 @@ function renderUsers(){
       <td class="td-num"><span class="pill pill-green">${u.claims} reclamados</span></td>
     </tr>`;
   }).join('');
-  $pane.innerHTML=`<div class="info-box">
-    <strong>${_users.length} usuarios</strong> con docs en Firestore (guardados/acciones).<br>
-    Total con Google Sign-In: <a href="https://console.firebase.google.com/project/_/authentication/users" target="_blank">Firebase Console → Authentication ↗</a>
-  </div>
-  <div class="section"><div class="section-title">👤 Usuarios conocidos <span class="badge">${allUids.size}</span><span class="src-tag fs">Firestore</span></div>
+  $pane.innerHTML=`<div class="info-box"><strong>${_users.length} usuarios</strong> con docs en Firestore.<br>Auth completo: <a href="https://console.firebase.google.com/project/_/authentication/users" target="_blank">Firebase Console ↗</a></div>
+  <div class="section"><div class="section-title">👤 Usuarios <span class="badge">${allUids.size}</span></div>
   <div class="table-wrap"><table><thead><tr><th>#</th><th>Usuario</th><th>Actividad</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
-// ── Reciente ──
 function renderRecent(){
   const $pane=document.getElementById('tab-recent');
   const recent=[..._fsDocs].filter(d=>d.lastInteractionAt?.seconds).sort((a,b)=>(b.lastInteractionAt?.seconds||0)-(a.lastInteractionAt?.seconds||0)).slice(0,20);
@@ -593,13 +1118,12 @@ function renderRecent(){
       <td class="td-num" style="font-size:.86rem">${rxn||'—'}</td>
     </tr>`;
   }).join('');
-  $pane.innerHTML=`<div class="section"><div class="section-title">🕐 Reciente <span class="badge">${recent.length}</span><span class="src-tag fs">Firestore</span></div>
+  $pane.innerHTML=`<div class="section"><div class="section-title">🕐 Reciente <span class="badge">${recent.length}</span></div>
   <div class="table-wrap"><table><thead><tr><th>#</th><th>Video</th><th>Última actividad</th><th>Reacciones</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
-// ── Export CSV ──
 function exportCSV(){
-  if(!_historial.length){alert('Sin datos históricos todavía');return;}
+  if(!_historial.length){alert('Sin datos históricos');return;}
   const cols=['fecha','loc','can','lado','count'];
   const csv=[cols.join(','),..._historial.map(r=>cols.map(c=>JSON.stringify(r[c]??'')).join(','))].join('\n');
   const a=Object.assign(document.createElement('a'),{
