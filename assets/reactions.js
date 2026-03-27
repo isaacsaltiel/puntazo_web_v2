@@ -79,9 +79,9 @@ function wireReactionsCore({
   $rxnBtns, $participants, $claimBtn,
   $toggle, $section, $list, $input,
   $sendNormal, $sendIncognito, $charCount, $showMoreBtn, $rxnPreview,
-  $heroName,   // slot separado (perfil/clip/jugador — tarjetas sin rank)
-  $cardLabel,  // [data-card-label] en card-top (mejores — tarjetas con rank)
-  $defaultLabel, // texto por defecto del $cardLabel (club name) para restaurar
+  $heroName,
+  $cardLabel,
+  $defaultLabel,
 }) {
 
   if ($input && $charCount) {
@@ -136,9 +136,6 @@ function wireReactionsCore({
 
       const firstName = snap.size > 0 ? (snap.docs[0].data().displayName||"") : "";
 
-      // A) En tarjetas CON rank (mejores.html): actualizar el label del card-top
-      //    Si alguien reclamó → nombre del jugador
-      //    Si nadie reclamó → volver al label por defecto (club)
       if ($cardLabel) {
         if (firstName) {
           $cardLabel.textContent = "🥷 " + firstName;
@@ -149,7 +146,6 @@ function wireReactionsCore({
         }
       }
 
-      // B) En tarjetas SIN rank (perfil/clip/jugador): slot hero-name separado
       if ($heroName) {
         if (firstName) {
           $heroName.textContent = "🥷 " + firstName;
@@ -289,15 +285,44 @@ function wireReactionsCore({
     const user=window.PuntazoAuth?.currentUser; if(!user) return;
     const uid=user.uid;
     const doc=await participantsRef.doc(uid).get();
+
     if (doc.exists) {
+      // ── UNCLAIM: quitar de participants Y de usuarios/{uid}/apariciones ──
       await participantsRef.doc(uid).delete();
       try { await docRef.set({claims_count:firebase.firestore.FieldValue.increment(-1)},{merge:true}); } catch {}
+      // Quitar de la colección de apariciones del usuario (para perfil.html)
+      try {
+        await db.collection("usuarios").doc(uid).collection("apariciones").doc(videoId).delete();
+      } catch(e) { console.warn("[Reactions] No se pudo quitar aparicion:", e); }
       return;
     }
+
     const snapCount=await participantsRef.get();
     if (snapCount.size>=4) { alert("Este video ya tiene 4 participantes"); return; }
-    await participantsRef.doc(uid).set({uid,displayName:user.displayName||"",photoURL:user.photoURL||"",claimedAt:firebase.firestore.FieldValue.serverTimestamp(),videoId});
+
+    // ── CLAIM: escribir en participants Y en usuarios/{uid}/apariciones ──
+    const claimData = {
+      uid,
+      displayName: user.displayName||"",
+      photoURL: user.photoURL||"",
+      claimedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      videoId,
+    };
+    await participantsRef.doc(uid).set(claimData);
     try { await docRef.set({claims_count:firebase.firestore.FieldValue.increment(1)},{merge:true}); } catch {}
+
+    // Escribir en colección de apariciones del usuario (para perfil.html sin necesitar collectionGroup index)
+    try {
+      await db.collection("usuarios").doc(uid).collection("apariciones").doc(videoId).set({
+        videoId,
+        videoUrl:   meta.videoUrl || "",
+        club:       meta.club     || "",
+        cancha:     meta.cancha   || "",
+        lado:       meta.lado     || "",
+        fecha:      meta.fecha    || "",
+        claimedAt:  firebase.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+    } catch(e) { console.warn("[Reactions] No se pudo guardar aparicion:", e); }
   }
 
   if ($claimBtn) {
@@ -333,7 +358,6 @@ async function attachReactions(container, meta) {
     const clSlot     = container.querySelector("[data-claim-slot]");
     const rxnPreview = container.querySelector("[data-rxn-preview]");
     const heroName   = container.querySelector("[data-hero-name]");
-    // Para tarjetas con rank: el label del card-top es el que tiene data-card-label
     const cardLabel  = container.querySelector("[data-card-label]");
     const defaultLabel = cardLabel ? cardLabel.textContent : null;
 
