@@ -2353,6 +2353,12 @@
       "count": 3
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "date": "2026-04-03",
+      "count": 3
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -2931,12 +2937,6 @@
     {
       "loc": "breakpoint",
       "can": "cancha1",
-      "date": "2026-04-03",
-      "count": 2
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha4",
       "date": "2026-04-03",
       "count": 2
     },
@@ -3827,6 +3827,12 @@
       "can": "cancha4",
       "date": "2026-04-03",
       "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "date": "2026-04-03",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -4103,6 +4109,12 @@
     {
       "loc": "breakpoint",
       "can": "cancha4",
+      "hour": "10",
+      "count": 26
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
       "hour": "06",
       "count": 26
     },
@@ -4116,12 +4128,6 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "16",
-      "count": 25
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha4",
-      "hour": "10",
       "count": 25
     },
     {
@@ -4689,6 +4695,12 @@
       "count": 7
     },
     {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "hour": "18",
+      "count": 7
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "14",
@@ -4746,12 +4758,6 @@
       "loc": "interpadel",
       "can": "cancha5",
       "hour": "20",
-      "count": 6
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha6",
-      "hour": "18",
       "count": 6
     },
     {
@@ -11543,10 +11549,19 @@
       "can": "cancha4",
       "date": "2026-04-03",
       "counts_por_lado": {
-        "ladoa": 2
+        "ladoa": 3
+      },
+      "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "date": "2026-04-03",
+      "counts_por_lado": {
+        "ladoa": 1
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-04-03T16:26:02.876612+00:00"
+  "generated_at_utc": "2026-04-04T01:05:24.264691+00:00"
 }
