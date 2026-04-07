@@ -3881,6 +3881,12 @@
       "can": "cancha3",
       "date": "2026-04-06",
       "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "date": "2026-04-06",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -4667,6 +4673,12 @@
     {
       "loc": "interpadel",
       "can": "cancha6",
+      "hour": "18",
+      "count": 8
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha6",
       "hour": "21",
       "count": 8
     },
@@ -4740,12 +4752,6 @@
       "loc": "interpadel",
       "can": "cancha4",
       "hour": "03",
-      "count": 7
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha6",
-      "hour": "18",
       "count": 7
     },
     {
@@ -11681,7 +11687,16 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "date": "2026-04-06",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-04-06T16:33:14.236426+00:00"
+  "generated_at_utc": "2026-04-07T01:12:35.048981+00:00"
 }
