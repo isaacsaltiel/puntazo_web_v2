@@ -1861,6 +1861,12 @@
       "count": 4
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "date": "2026-04-14",
+      "count": 4
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "date": "2025-08-25",
@@ -4115,6 +4121,12 @@
       "can": "cancha3",
       "date": "2026-04-13",
       "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-04-14",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -5427,6 +5439,12 @@
       "count": 3
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "hour": "00",
+      "count": 3
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "09",
@@ -6000,6 +6018,18 @@
       "loc": "wellstreet-pickleball",
       "can": "cancha1",
       "hour": "23",
+      "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "00",
+      "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "hour": "01",
       "count": 1
     }
   ],
@@ -12278,7 +12308,25 @@
         "ladoa": 2
       },
       "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-04-14",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "date": "2026-04-14",
+      "counts_por_lado": {
+        "ladoa": 4
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-04-14T01:18:20.912295+00:00"
+  "generated_at_utc": "2026-04-14T09:07:02.101652+00:00"
 }
