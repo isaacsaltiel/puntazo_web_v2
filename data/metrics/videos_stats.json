@@ -4193,6 +4193,12 @@
       "can": "cancha5",
       "date": "2026-04-16",
       "count": 1
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "date": "2026-04-16",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -5488,6 +5494,12 @@
     },
     {
       "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "hour": "17",
+      "count": 3
+    },
+    {
+      "loc": "wellstreet-pickleball",
       "can": "cancha3",
       "hour": "02",
       "count": 3
@@ -5676,12 +5688,6 @@
       "loc": "wellstreet-pickleball",
       "can": "cancha1",
       "hour": "21",
-      "count": 2
-    },
-    {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha1",
-      "hour": "17",
       "count": 2
     },
     {
@@ -12491,7 +12497,16 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "date": "2026-04-16",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-04-17T01:18:39.889661+00:00"
+  "generated_at_utc": "2026-04-17T09:06:18.818639+00:00"
 }
