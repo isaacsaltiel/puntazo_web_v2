@@ -3229,6 +3229,18 @@
       "count": 2
     },
     {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "date": "2026-04-22",
+      "count": 2
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2026-04-22",
+      "count": 2
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-09-10",
@@ -4412,19 +4424,7 @@
     },
     {
       "loc": "interpadel",
-      "can": "cancha4",
-      "date": "2026-04-22",
-      "count": 1
-    },
-    {
-      "loc": "interpadel",
       "can": "cancha6",
-      "date": "2026-04-22",
-      "count": 1
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha3",
       "date": "2026-04-22",
       "count": 1
     },
@@ -4935,6 +4935,12 @@
       "count": 14
     },
     {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "18",
+      "count": 14
+    },
+    {
       "loc": "frondoso",
       "can": "cancha1",
       "hour": "16",
@@ -4998,12 +5004,6 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "07",
-      "count": 13
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha3",
-      "hour": "18",
       "count": 13
     },
     {
@@ -5529,6 +5529,12 @@
       "count": 4
     },
     {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "hour": "18",
+      "count": 4
+    },
+    {
       "loc": "frondoso",
       "can": "cancha1",
       "hour": "15",
@@ -5634,12 +5640,6 @@
       "loc": "interpadel",
       "can": "cancha4",
       "hour": "17",
-      "count": 3
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha4",
-      "hour": "18",
       "count": 3
     },
     {
@@ -13091,7 +13091,7 @@
       "can": "cancha4",
       "date": "2026-04-22",
       "counts_por_lado": {
-        "ladoa": 1
+        "ladoa": 2
       },
       "diff": 0
     },
@@ -13109,7 +13109,7 @@
       "can": "cancha3",
       "date": "2026-04-22",
       "counts_por_lado": {
-        "ladoa": 1
+        "ladoa": 2
       },
       "diff": 0
     },
@@ -13123,5 +13123,5 @@
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-04-22T16:47:07.693543+00:00"
+  "generated_at_utc": "2026-04-23T01:21:55.708195+00:00"
 }
