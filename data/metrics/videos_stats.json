@@ -1009,6 +1009,12 @@
       "count": 8
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "date": "2026-04-28",
+      "count": 8
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-09-08",
@@ -2668,6 +2674,18 @@
       "loc": "breakpoint",
       "can": "cancha4",
       "date": "2026-04-27",
+      "count": 3
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "date": "2026-04-28",
+      "count": 3
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "date": "2026-04-28",
       "count": 3
     },
     {
@@ -4577,6 +4595,12 @@
       "can": "cancha1",
       "date": "2026-04-27",
       "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-04-28",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -4614,7 +4638,7 @@
       "loc": "breakpoint",
       "can": "cancha2",
       "hour": "08",
-      "count": 76
+      "count": 79
     },
     {
       "loc": "scorpion",
@@ -4623,15 +4647,15 @@
       "count": 75
     },
     {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "hour": "10",
-      "count": 72
-    },
-    {
       "loc": "breakpoint",
       "can": "cancha2",
       "hour": "06",
+      "count": 75
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "10",
       "count": 72
     },
     {
@@ -4659,6 +4683,12 @@
       "count": 70
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "hour": "07",
+      "count": 69
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "19",
@@ -4668,12 +4698,6 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "21",
-      "count": 67
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha2",
-      "hour": "07",
       "count": 67
     },
     {
@@ -4768,8 +4792,20 @@
     },
     {
       "loc": "breakpoint",
+      "can": "cancha3",
+      "hour": "07",
+      "count": 40
+    },
+    {
+      "loc": "breakpoint",
       "can": "cancha4",
       "hour": "11",
+      "count": 39
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "hour": "10",
       "count": 39
     },
     {
@@ -4780,14 +4816,8 @@
     },
     {
       "loc": "breakpoint",
-      "can": "cancha3",
-      "hour": "07",
-      "count": 38
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha4",
-      "hour": "10",
+      "can": "cancha1",
+      "hour": "06",
       "count": 38
     },
     {
@@ -4798,8 +4828,8 @@
     },
     {
       "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "06",
+      "can": "cancha4",
+      "hour": "08",
       "count": 37
     },
     {
@@ -4807,12 +4837,6 @@
       "can": "cancha2",
       "hour": "11",
       "count": 36
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha4",
-      "hour": "08",
-      "count": 35
     },
     {
       "loc": "scorpion",
@@ -4869,14 +4893,14 @@
       "count": 28
     },
     {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "hour": "08",
-      "count": 26
-    },
-    {
       "loc": "breakpoint",
       "can": "cancha3",
+      "hour": "08",
+      "count": 27
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
       "hour": "08",
       "count": 26
     },
@@ -13481,7 +13505,43 @@
         "ladoa": 7
       },
       "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-04-28",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "date": "2026-04-28",
+      "counts_por_lado": {
+        "ladoa": 8
+      },
+      "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "date": "2026-04-28",
+      "counts_por_lado": {
+        "ladoa": 3
+      },
+      "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "date": "2026-04-28",
+      "counts_por_lado": {
+        "ladoa": 3
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-04-28T10:03:22.960392+00:00"
+  "generated_at_utc": "2026-04-28T17:26:51.910058+00:00"
 }
