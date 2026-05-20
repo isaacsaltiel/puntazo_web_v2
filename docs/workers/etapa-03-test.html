@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Etapa 3 — Test de matches.js (Puntazo)</title>
+
+  <!--
+    PÁGINA DE TEST TRANSITORIA — Etapa 3 worker.
+    Sirve para validar manualmente el módulo assets/matches.js contra
+    Firestore real (proyecto puntazo-clips). Se puede borrar tras
+    aprobar la etapa.
+
+    REQUIERE servidor local en la raíz del repo:
+        python -m http.server 8080
+    y luego abrir:
+        http://localhost:8080/docs/workers/etapa-03-test.html
+  -->
+
+  <!-- <base> hace que todos los paths relativos resuelvan desde la raíz
+       del repo, no desde docs/workers/. Así assets/matches.js y
+       data/config_locations.json (que matches.js fetchea) se pueden
+       cargar igual que en producción. -->
+  <base href="../../" />
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0a1020;
+      --fg: #eaf2ff;
+      --muted: rgba(234,242,255,0.6);
+      --accent: #0b7cff;
+      --good: #2dd47f;
+      --bad: #ef4444;
+      --warn: #f59e0b;
+      --panel: rgba(255,255,255,0.05);
+      --border: rgba(255,255,255,0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.5;
+    }
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 18px 80px;
+    }
+    h1 { margin: 0 0 6px; font-size: 1.4rem; }
+    h2 { margin: 24px 0 8px; font-size: 1.05rem; color: var(--accent); }
+    p.note { color: var(--muted); margin: 4px 0 16px; font-size: 0.9rem; }
+
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; align-items: center; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin: 12px 0;
+    }
+
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.88rem;
+    }
+    button.secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--fg);
+      border: 1px solid var(--border);
+    }
+    button.danger { background: var(--bad); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 130px;
+    }
+    input[type="text"], input[type="number"] {
+      background: rgba(0,0,0,0.25);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 0.88rem;
+      font-family: inherit;
+    }
+
+    pre.log {
+      background: #050912;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.78rem;
+      color: #c4d6f4;
+      max-height: 360px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .log .ok   { color: var(--good); }
+    .log .err  { color: var(--bad); }
+    .log .warn { color: var(--warn); }
+    .log .dim  { color: var(--muted); }
+
+    .status-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: rgba(255,255,255,0.08);
+      color: var(--muted);
+    }
+    .status-pill.ok  { background: rgba(45,212,127,0.15); color: var(--good); }
+    .status-pill.err { background: rgba(239,68,68,0.15);  color: var(--bad);  }
+
+    .user-bar {
+      display: flex; gap: 12px; align-items: center;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      background: rgba(11,124,255,0.08);
+      border: 1px solid rgba(11,124,255,0.25);
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+    .user-bar img { width: 28px; height: 28px; border-radius: 50%; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Etapa 3 — Test manual de <code>PuntazoMatches</code></h1>
+  <p class="note">
+    Página transitoria para validar el módulo <code>assets/matches.js</code>
+    contra Firestore real. <strong>No es UI de producción</strong> — se
+    puede borrar tras aprobar la etapa. Requiere servir el repo desde
+    su raíz (<code>python -m http.server 8080</code>) y abrir esta página
+    en <code>http://localhost:8080/docs/workers/etapa-03-test.html</code>.
+  </p>
+
+  <!-- Auth -->
+  <div class="user-bar">
+    <span id="auth-status" class="status-pill">Cargando…</span>
+    <div id="auth-user-info" style="display:none; align-items:center; gap:8px;">
+      <img id="auth-photo" alt="" />
+      <span id="auth-name"></span>
+      <span id="auth-uid" class="status-pill"></span>
+    </div>
+    <div style="margin-left:auto; display:flex; gap:6px;">
+      <button id="btn-login">Entrar con Google</button>
+      <button id="btn-logout" class="secondary" style="display:none">Salir</button>
+    </div>
+  </div>
+
+  <!-- create -->
+  <div class="panel">
+    <h2>1 · create({ loc, can, lado })</h2>
+    <div class="row">
+      <label>loc <input id="in-loc" type="text" value="Puntazo" /></label>
+      <label>can <input id="in-can" type="text" value="CanchaX" /></label>
+      <label>lado <input id="in-lado" type="text" value="LadoA" /></label>
+      <label>jugadores (CSV) <input id="in-jug" type="text" value="Isaac,Pablo" /></label>
+      <button id="btn-create">create</button>
+    </div>
+    <div class="row" style="margin-top:4px;">
+      <label style="min-width:260px">último matchId
+        <input id="out-mid" type="text" readonly />
+      </label>
+      <button id="btn-mid-copy" class="secondary">Copiar</button>
+    </div>
+  </div>
+
+  <!-- listByUser / getActiveForUser -->
+  <div class="panel">
+    <h2>2 · listByUser / getActiveForUser</h2>
+    <div class="row">
+      <label>limit <input id="in-limit" type="number" value="20" /></label>
+      <label>status (opt)
+        <input id="in-status-filter" type="text" placeholder="active|ended|cancelled" />
+      </label>
+      <button id="btn-list">listByUser(currentUid)</button>
+      <button id="btn-active">getActiveForUser(currentUid)</button>
+    </div>
+  </div>
+
+  <!-- get / end / cancel -->
+  <div class="panel">
+    <h2>3 · get / end / cancel</h2>
+    <div class="row">
+      <label style="min-width:300px">matchId
+        <input id="in-target-mid" type="text" placeholder="auto-rellenado tras create" />
+      </label>
+      <button id="btn-get">get</button>
+      <button id="btn-end">end (marcador ejemplo)</button>
+      <button id="btn-cancel" class="danger">cancel</button>
+    </div>
+    <p class="note" style="margin:6px 0 0;">
+      <code>end</code> envía <code>{ sets: [{team1:6,team2:4},{team1:3,team2:6},{team1:7,team2:5}] }</code> como marcador. (Firestore prohíbe nested arrays — por eso objetos por set.)
+    </p>
+  </div>
+
+  <!-- findClipsForMatch -->
+  <div class="panel">
+    <h2>4 · findClipsForMatch(matchDoc)</h2>
+    <div class="row">
+      <button id="btn-clips-current">Sobre matchId actual</button>
+      <button id="btn-clips-wide" class="secondary">Ventana amplia (loc/can/lado de inputs, -24h..+24h)</button>
+    </div>
+    <p class="note" style="margin:6px 0 0;">
+      "Ventana amplia" arma un <em>matchDoc</em> sintético con los inputs de loc/can/lado y un rango de ±24h alrededor de ahora; útil para confirmar que la lectura del <code>videos_recientes.json</code> funciona aunque no haya un match real en la ventana.
+    </p>
+  </div>
+
+  <!-- log -->
+  <div class="panel">
+    <h2>Log</h2>
+    <div class="row">
+      <button id="btn-clear-log" class="secondary">Limpiar</button>
+    </div>
+    <pre id="log" class="log">Esperando acciones…</pre>
+  </div>
+</main>
+
+<!-- Firebase compat SDK (misma versión que admin.html / lado.html) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<!-- Módulos Puntazo -->
+<script src="assets/firebase-core.js"></script>
+<script src="assets/auth.js"></script>
+<script src="assets/matches.js"></script>
+
+<script>
+(function () {
+  "use strict";
+
+  const $log = document.getElementById("log");
+  function ts() {
+    const d = new Date();
+    return d.toTimeString().slice(0, 8);
+  }
+  function log(msg, cls) {
+    const line = document.createElement("div");
+    if (cls) line.className = cls;
+    line.textContent = `[${ts()}] ${msg}`;
+    if ($log.textContent === "Esperando acciones…") $log.textContent = "";
+    $log.appendChild(line);
+    $log.scrollTop = $log.scrollHeight;
+  }
+  function logJSON(label, obj) {
+    let txt;
+    try {
+      txt = JSON.stringify(obj, function (_k, v) {
+        if (v && typeof v === "object" && typeof v.toDate === "function") {
+          try { return "<Timestamp " + v.toDate().toISOString() + ">"; } catch { return "<Timestamp>"; }
+        }
+        return v;
+      }, 2);
+    } catch (e) {
+      txt = String(obj);
+    }
+    log(label + ":\n" + txt);
+  }
+  function logError(label, err) {
+    const code = err && err.code ? " (" + err.code + ")" : "";
+    log(label + ": " + (err && err.message ? err.message : String(err)) + code, "err");
+    console.error(label, err);
+  }
+
+  // ---------- Auth wiring ----------
+  const $authStatus = document.getElementById("auth-status");
+  const $authInfo   = document.getElementById("auth-user-info");
+  const $authPhoto  = document.getElementById("auth-photo");
+  const $authName   = document.getElementById("auth-name");
+  const $authUid    = document.getElementById("auth-uid");
+  const $btnLogin   = document.getElementById("btn-login");
+  const $btnLogout  = document.getElementById("btn-logout");
+
+  function renderAuth(user) {
+    if (user) {
+      $authStatus.textContent = "Autenticado";
+      $authStatus.className = "status-pill ok";
+      $authInfo.style.display = "inline-flex";
+      $authPhoto.src = user.photoURL || "";
+      $authName.textContent = user.displayName || user.email || "(sin nombre)";
+      $authUid.textContent = "uid: " + user.uid;
+      $btnLogin.style.display  = "none";
+      $btnLogout.style.display = "inline-block";
+    } else {
+      $authStatus.textContent = "Sin sesión";
+      $authStatus.className = "status-pill";
+      $authInfo.style.display = "none";
+      $btnLogin.style.display  = "inline-block";
+      $btnLogout.style.display = "none";
+    }
+  }
+
+  window.addEventListener("puntazo:auth-changed", function (e) {
+    renderAuth(e.detail && e.detail.user);
+  });
+  window.addEventListener("puntazo:auth-ready", function () {
+    renderAuth(window.PuntazoAuth && window.PuntazoAuth.currentUser);
+    log("Firebase + Auth listos. Project: " + (window.PuntazoFirebase && window.PuntazoFirebase.config && window.PuntazoFirebase.config.projectId), "dim");
+  });
+
+  $btnLogin.addEventListener("click", async function () {
+    try {
+      log("Iniciando login Google…", "dim");
+      await window.PuntazoAuth.signIn();
+    } catch (e) { logError("signIn", e); }
+  });
+  $btnLogout.addEventListener("click", async function () {
+    try {
+      log("Cerrando sesión…", "dim");
+      await window.PuntazoAuth.signOut();
+    } catch (e) { logError("signOut", e); }
+  });
+
+  // ---------- Helpers ----------
+  function uid() {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!u) { log("Necesitas estar autenticado.", "warn"); return null; }
+    return u.uid;
+  }
+  function val(id) { return document.getElementById(id).value.trim(); }
+  function setVal(id, v) { document.getElementById(id).value = v; }
+
+  function parseCSV(s) {
+    return s.split(",").map(x => x.trim()).filter(Boolean).map(n => ({ nombre: n }));
+  }
+
+  // ---------- create ----------
+  document.getElementById("btn-create").addEventListener("click", async function () {
+    if (!uid()) return;
+    try {
+      const loc = val("in-loc"), can = val("in-can"), lado = val("in-lado");
+      const jugadores = parseCSV(val("in-jug"));
+      log(`create({ loc: "${loc}", can: "${can}", lado: "${lado}", jugadores: ${jugadores.length} })…`, "dim");
+      const id = await window.PuntazoMatches.create({ loc, can, lado, jugadores });
+      setVal("out-mid", id);
+      setVal("in-target-mid", id);
+      log("create OK → matchId: " + id, "ok");
+    } catch (e) { logError("create", e); }
+  });
+
+  document.getElementById("btn-mid-copy").addEventListener("click", async function () {
+    const v = val("out-mid");
+    if (!v) return;
+    try { await navigator.clipboard.writeText(v); log("matchId copiado: " + v, "dim"); }
+    catch (e) { logError("clipboard", e); }
+  });
+
+  // ---------- list / active ----------
+  document.getElementById("btn-list").addEventListener("click", async function () {
+    const u = uid(); if (!u) return;
+    try {
+      const limit = Number(val("in-limit")) || 20;
+      const st = val("in-status-filter") || null;
+      log(`listByUser("${u}", { limit: ${limit}, status: ${st ? '"'+st+'"' : "null"} })…`, "dim");
+      const arr = await window.PuntazoMatches.listByUser(u, { limit, status: st });
+      log("listByUser OK → " + arr.length + " docs", "ok");
+      logJSON("Docs", arr);
+    } catch (e) { logError("listByUser", e); }
+  });
+
+  document.getElementById("btn-active").addEventListener("click", async function () {
+    const u = uid(); if (!u) return;
+    try {
+      log(`getActiveForUser("${u}")…`, "dim");
+      const m = await window.PuntazoMatches.getActiveForUser(u);
+      if (m) { log("getActiveForUser OK → id: " + m.id, "ok"); logJSON("Match", m); }
+      else   { log("getActiveForUser → null (no hay activos)", "ok"); }
+    } catch (e) { logError("getActiveForUser", e); }
+  });
+
+  // ---------- get / end / cancel ----------
+  function targetId() {
+    const id = val("in-target-mid");
+    if (!id) { log("Falta matchId objetivo.", "warn"); return null; }
+    return id;
+  }
+
+  document.getElementById("btn-get").addEventListener("click", async function () {
+    const id = targetId(); if (!id) return;
+    try {
+      log(`get("${id}")…`, "dim");
+      const m = await window.PuntazoMatches.get(id);
+      if (m) { log("get OK", "ok"); logJSON("Match", m); }
+      else   { log("get → null (no existe)", "warn"); }
+    } catch (e) { logError("get", e); }
+  });
+
+  document.getElementById("btn-end").addEventListener("click", async function () {
+    const id = targetId(); if (!id) return;
+    try {
+      const marcador = { sets: [{team1:6,team2:4},{team1:3,team2:6},{team1:7,team2:5}] };
+      log(`end("${id}", ${JSON.stringify({ marcador })})…`, "dim");
+      await window.PuntazoMatches.end(id, { marcador });
+      log("end OK (revisa Firebase Console)", "ok");
+    } catch (e) { logError("end", e); }
+  });
+
+  document.getElementById("btn-cancel").addEventListener("click", async function () {
+    const id = targetId(); if (!id) return;
+    if (!confirm("¿Cancelar el partido " + id + "?")) return;
+    try {
+      log(`cancel("${id}")…`, "dim");
+      await window.PuntazoMatches.cancel(id);
+      log("cancel OK", "ok");
+    } catch (e) { logError("cancel", e); }
+  });
+
+  // ---------- findClipsForMatch ----------
+  document.getElementById("btn-clips-current").addEventListener("click", async function () {
+    const id = targetId(); if (!id) return;
+    try {
+      log(`findClipsForMatch (match real id=${id})…`, "dim");
+      const m = await window.PuntazoMatches.get(id);
+      if (!m) { log("matchDoc no existe", "warn"); return; }
+      const clips = await window.PuntazoMatches.findClipsForMatch(m);
+      log("findClipsForMatch OK → " + clips.length + " clips", "ok");
+      logJSON("Clips", clips);
+    } catch (e) { logError("findClipsForMatch", e); }
+  });
+
+  document.getElementById("btn-clips-wide").addEventListener("click", async function () {
+    try {
+      const loc = val("in-loc"), can = val("in-can"), lado = val("in-lado");
+      const synthetic = {
+        loc, can, lado,
+        startedAt: new Date(Date.now() - 24 * 3600 * 1000),
+        endedAt:   new Date(Date.now() + 24 * 3600 * 1000),
+      };
+      log(`findClipsForMatch (sintético ±24h, ${loc}/${can}/${lado})…`, "dim");
+      const clips = await window.PuntazoMatches.findClipsForMatch(synthetic);
+      log("findClipsForMatch OK → " + clips.length + " clips", "ok");
+      logJSON("Clips", clips);
+    } catch (e) { logError("findClipsForMatch", e); }
+  });
+
+  // ---------- clear log ----------
+  document.getElementById("btn-clear-log").addEventListener("click", function () {
+    $log.textContent = "Esperando acciones…";
+  });
+})();
+</script>
+</body>
+</html>
