@@ -31,6 +31,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/reactions.js"></script>
+<script src="/assets/matches.js"></script>
 
 <style>
 /* ═══════════════════════════════════════════════════
@@ -387,6 +388,9 @@ video.video-preview {
 <div id="nav-root" data-nav-variant="internal"></div>
 <script src="/assets/header.js"></script>
 
+<!-- ── Banner CTA de partido (Etapa 4) — totalmente aditivo, render desde IIFE al final del body ── -->
+<div id="pz-match-banner"></div>
+
 <!-- ── CONTENIDO ── -->
 <main class="site-content fade-in">
 
@@ -571,3 +575,192 @@ video.video-preview {
         var icons = ['🥇','🥈','🥉'];
         badge.className = 'pz-top-month-badge rank-' + info.rank;
         badge.innerHTML = '<span>' + icons[info.rank - 1] + '</span><small>Top ' +
+          /* NOTE WORKER#2 (Etapa 4): archivo truncado en producción; cierre mínimo
+             SIN invocar buildTop3() para preservar el comportamiento inerte previo. */
+          '';
+      });
+    }
+  });
+})();
+</script>
+
+<!-- ── Banner CTA de partido (Etapa 4) — IIFE defensiva, no rompe nada si falla ── -->
+<style>
+  #pz-match-banner { margin: 70px 16px 0; max-width: 880px; margin-left: auto; margin-right: auto; }
+  .pz-mb {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all .18s ease;
+  }
+  .pz-mb .pz-mb-text { flex: 1; min-width: 0; }
+  .pz-mb .pz-mb-cta {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    background: rgba(255,255,255,0.16);
+    border: 1px solid rgba(255,255,255,0.22);
+    color: #fff;
+  }
+  .pz-mb.continuar {
+    background: linear-gradient(135deg, rgba(0,79,200,0.32), rgba(11,124,255,0.18));
+    border-color: rgba(11,124,255,0.42);
+    box-shadow: 0 8px 28px rgba(0,79,200,0.22);
+  }
+  .pz-mb.continuar:hover { transform: translateY(-1px); border-color: rgba(11,124,255,0.60); }
+  .pz-mb.iniciar {
+    background: rgba(0,79,200,0.10);
+    border-color: rgba(11,124,255,0.24);
+  }
+  .pz-mb.iniciar:hover { background: rgba(0,79,200,0.16); border-color: rgba(11,124,255,0.40); }
+  .pz-mb[disabled], .pz-mb.is-busy { opacity: .65; pointer-events: none; }
+  @media (max-width: 480px) {
+    #pz-match-banner { margin-top: 60px; margin-left: 12px; margin-right: 12px; }
+    .pz-mb { font-size: 0.84rem; padding: 10px 12px; }
+    .pz-mb .pz-mb-cta { font-size: 0.78rem; padding: 7px 11px; }
+  }
+</style>
+<script>
+(function () {
+  "use strict";
+
+  function getQueryParams() {
+    var params = {};
+    window.location.search.substring(1).split("&").forEach(function (pair) {
+      var i = pair.indexOf("=");
+      if (i < 0) { if (pair) params[decodeURIComponent(pair)] = ""; return; }
+      var k = decodeURIComponent(pair.substring(0, i));
+      var v = decodeURIComponent(pair.substring(i + 1) || "");
+      if (k) params[k] = v;
+    });
+    return params;
+  }
+
+  function safe(fn) { try { return fn(); } catch (e) { console.warn("[pz-banner]", e); return null; } }
+
+  function renderContinuar(matchId) {
+    try {
+      var host = document.getElementById("pz-match-banner");
+      if (!host) return;
+      host.innerHTML = "";
+      var a = document.createElement("a");
+      a.className = "pz-mb continuar";
+      a.href = "/mi-partido.html?matchId=" + encodeURIComponent(matchId);
+      a.innerHTML = '<span class="pz-mb-text">🎾 Tienes un partido en curso aquí</span><span class="pz-mb-cta">Continuar →</span>';
+      host.appendChild(a);
+    } catch (e) { console.warn("[pz-banner] renderContinuar", e); }
+  }
+
+  function renderIniciar(loc, can, lado) {
+    try {
+      var host = document.getElementById("pz-match-banner");
+      if (!host) return;
+      host.innerHTML = "";
+      var a = document.createElement("a");
+      a.className = "pz-mb iniciar";
+      a.href = "#";
+      a.innerHTML = '<span class="pz-mb-text">🎾 Inicia un partido para guardar tus puntazos aquí</span><span class="pz-mb-cta">Iniciar partido</span>';
+      a.addEventListener("click", async function (ev) {
+        ev.preventDefault();
+        try {
+          if (a.classList.contains("is-busy")) return;
+          if (!window.PuntazoMatches || typeof window.PuntazoMatches.create !== "function") return;
+          var user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+          if (!user) return;
+          a.classList.add("is-busy");
+          a.querySelector(".pz-mb-cta").textContent = "Creando…";
+          var matchId = await window.PuntazoMatches.create({ loc: loc, can: can, lado: lado });
+          window.location.href = "/mi-partido.html?matchId=" + encodeURIComponent(matchId);
+        } catch (err) {
+          console.warn("[pz-banner] create failed", err);
+          a.classList.remove("is-busy");
+          a.querySelector(".pz-mb-cta").textContent = "Iniciar partido";
+        }
+      });
+      host.appendChild(a);
+    } catch (e) { console.warn("[pz-banner] renderIniciar", e); }
+  }
+
+  function clearBanner() {
+    try {
+      var host = document.getElementById("pz-match-banner");
+      if (host) host.innerHTML = "";
+    } catch (e) {}
+  }
+
+  async function evaluate() {
+    try {
+      var params = getQueryParams();
+      var loc = (params.loc || "").trim();
+      var can = (params.can || "").trim();
+      var lado = (params.lado || "").trim();
+      if (!loc || !can || !lado) { clearBanner(); return; }
+
+      var user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      if (!user) { clearBanner(); return; }
+
+      if (!window.PuntazoMatches || typeof window.PuntazoMatches.getActiveForUser !== "function") {
+        clearBanner();
+        return;
+      }
+
+      var active = null;
+      try {
+        active = await window.PuntazoMatches.getActiveForUser(user.uid);
+      } catch (e) {
+        console.warn("[pz-banner] getActiveForUser failed (no banner):", e);
+        clearBanner();
+        return;
+      }
+
+      if (active && active.loc === loc && active.can === can && active.lado === lado) {
+        renderContinuar(active.id);
+      } else {
+        renderIniciar(loc, can, lado);
+      }
+    } catch (e) {
+      console.warn("[pz-banner] evaluate failed (no banner):", e);
+      clearBanner();
+    }
+  }
+
+  function init() {
+    try {
+      // Espera a que auth esté listo antes de decidir qué renderizar
+      var fired = false;
+      function go() { if (fired) return; fired = true; evaluate(); }
+
+      window.addEventListener("puntazo:auth-ready", function () { go(); });
+      window.addEventListener("puntazo:auth-changed", function () {
+        // Re-evalúa cuando cambia la sesión
+        evaluate();
+      });
+
+      // Fallback: si auth-ready ya disparó antes de que cargáramos el listener,
+      // o si tarda demasiado, intentamos evaluar tras un timeout.
+      setTimeout(function () { go(); }, 3500);
+    } catch (e) {
+      console.warn("[pz-banner] init failed:", e);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+</script>
+
+</body>
+</html>
