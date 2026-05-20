@@ -12,7 +12,9 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
@@ -178,11 +180,17 @@ tr:hover td{background:rgba(255,255,255,.025);}
 .save-status.saving{background:rgba(11,124,255,.12);border:1px solid rgba(11,124,255,.28);color:#7eb8ff;}
 
 /* Auth wall */
-#accessDenied{display:none;text-align:center;padding:80px 20px;}
+#accessDenied{display:none;text-align:center;padding:80px 20px;max-width:420px;margin:0 auto;}
 #accessDenied h2{font-size:1.4rem;font-weight:900;margin-bottom:12px;}
-#accessDenied p{color:var(--muted);margin-bottom:24px;}
-#accessDenied input{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:14px;width:240px;outline:none;}
-#accessDenied input:focus{border-color:rgba(11,124,255,.50);}
+#accessDenied p{color:var(--muted);margin-bottom:24px;line-height:1.5;}
+#accessDenied .signin-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:50px;padding:0 24px;border:none;border-radius:999px;cursor:pointer;font-weight:800;font-size:.95rem;color:#09111f;background:#fff;font-family:inherit;box-shadow:0 10px 28px rgba(0,0,0,.35);transition:transform .15s,box-shadow .15s;}
+#accessDenied .signin-btn:hover{transform:translateY(-1px);box-shadow:0 14px 32px rgba(0,0,0,.40);}
+#accessDenied .signin-btn[disabled]{opacity:.6;cursor:wait;}
+#accessDenied .signin-btn svg{width:18px;height:18px;}
+#accessDenied .denied-msg{margin-top:18px;padding:12px 16px;border-radius:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);color:#fca5a5;font-size:.85rem;display:none;}
+#accessDenied .denied-msg.show{display:block;}
+#accessDenied .signed-as{margin-top:14px;font-size:.78rem;color:var(--muted);}
+#accessDenied .signed-as a{color:#7eb8ff;cursor:pointer;text-decoration:underline;}
 
 @media(max-width:640px){
   .kpi-grid{grid-template-columns:repeat(2,1fr);}
@@ -196,10 +204,18 @@ tr:hover td{background:rgba(255,255,255,.025);}
 <div id="accessDenied">
   <div style="font-size:52px;margin-bottom:16px">🔐</div>
   <h2>Acceso restringido</h2>
-  <p>Panel de administración de Puntazo.</p>
-  <input type="password" id="pwInput" placeholder="Contraseña" />
-  <br/><br/>
-  <button class="btn primary" onclick="checkPw()">Entrar</button>
+  <p>Panel de administración de Puntazo.<br/>Entra con tu cuenta de Google autorizada.</p>
+  <button class="signin-btn" id="signInBtn" onclick="adminSignIn()">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.239 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+      <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 16.108 19.003 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4c-7.682 0-14.347 4.337-17.694 10.691z"/>
+      <path fill="#4CAF50" d="M24 44c5.169 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.144 35.091 26.688 36 24 36c-5.218 0-9.62-3.329-11.283-7.946l-6.522 5.025C9.5 39.556 16.227 44 24 44z"/>
+      <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.084 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+    </svg>
+    <span id="signInLabel">Entrar con Google</span>
+  </button>
+  <div class="denied-msg" id="deniedMsg"></div>
+  <div class="signed-as" id="signedAs"></div>
 </div>
 
 <!-- GitHub PAT modal -->
@@ -286,7 +302,6 @@ tr:hover td{background:rgba(255,255,255,.025);}
 // ════════════════════════════════════════════════════════════
 //  CONSTANTES
 // ════════════════════════════════════════════════════════════
-const ADMIN_KEY  = 'puntazo2025';
 const STATS_URL  = 'data/metrics/stats_summary.json';
 const GH_REPO    = 'isaacsaltiel/puntazo_web_v2';
 const GH_BRANCH  = 'master';
@@ -306,27 +321,81 @@ let _cfgPasswords   = null;  // parsed JSON
 let _cfgLocSHA      = '';    // SHA del archivo en GitHub
 let _cfgPwSHA       = '';    // SHA del archivo en GitHub
 
-// ── Auth wall ──
-function checkPw(){
-  const v=document.getElementById('pwInput').value.trim();
-  if(v===ADMIN_KEY){
-    document.getElementById('accessDenied').style.display='none';
-    document.getElementById('mainContent').style.display='block';
-    init();
+// ── Auth wall (Firebase Auth + email allowlist) ──
+let _adminInitDone = false;
+
+function showDenied(msg){
+  const d=document.getElementById('deniedMsg');
+  if(d){ d.textContent=msg||''; d.classList.toggle('show', !!msg); }
+}
+function showSignedAs(email){
+  const s=document.getElementById('signedAs');
+  if(!s) return;
+  if(email){
+    s.innerHTML = `Sesión actual: <strong>${email}</strong> · <a onclick="adminSignOut()">cerrar sesión</a>`;
   } else {
-    const i=document.getElementById('pwInput');
-    i.style.borderColor='#ef4444';setTimeout(()=>{i.style.borderColor='';},1200);
+    s.innerHTML = '';
   }
 }
-document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPw();});
-(function(){
-  const k=new URLSearchParams(location.search).get('key')||new URLSearchParams(location.search).get('admin');
-  if(k===ADMIN_KEY){
+function setSignInLoading(loading){
+  const b=document.getElementById('signInBtn');
+  const l=document.getElementById('signInLabel');
+  if(b) b.disabled = !!loading;
+  if(l) l.textContent = loading ? 'Entrando…' : 'Entrar con Google';
+}
+
+async function adminSignIn(){
+  showDenied('');
+  setSignInLoading(true);
+  try{
+    await window.PuntazoAuth.signIn();
+  } catch(e){
+    showDenied('No se pudo iniciar sesión. Intenta de nuevo.');
+  } finally {
+    setSignInLoading(false);
+  }
+}
+async function adminSignOut(){
+  try { await window.PuntazoAuth.signOut(); } catch(e){}
+  location.reload();
+}
+
+function handleAuthState(user){
+  const email = user && user.email ? String(user.email).toLowerCase() : null;
+  const isAdmin = window.PuntazoFirebase && window.PuntazoFirebase.isAdminEmail(email);
+
+  if(isAdmin){
     document.getElementById('accessDenied').style.display='none';
     document.getElementById('mainContent').style.display='block';
-    if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded',init);
-  } else { document.getElementById('accessDenied').style.display='block'; }
-})();
+    if(!_adminInitDone){
+      _adminInitDone = true;
+      if(document.readyState!=='loading') init();
+      else document.addEventListener('DOMContentLoaded', init);
+    }
+    return;
+  }
+
+  document.getElementById('mainContent').style.display='none';
+  document.getElementById('accessDenied').style.display='block';
+  if(email){
+    showDenied(`La cuenta ${email} no tiene acceso al panel admin.`);
+    showSignedAs(email);
+  } else {
+    showDenied('');
+    showSignedAs(null);
+  }
+}
+
+window.addEventListener('puntazo:auth-changed', function(ev){
+  handleAuthState(ev.detail && ev.detail.user);
+});
+window.addEventListener('puntazo:auth-ready', function(){
+  handleAuthState(window.PuntazoAuth && window.PuntazoAuth.currentUser);
+});
+// Fallback: auth ya estaba listo antes de cargar este script.
+setTimeout(function(){
+  if(window.PuntazoAuth) handleAuthState(window.PuntazoAuth.currentUser);
+}, 300);
 
 // ── Tabs ──
 document.querySelectorAll('.tab-btn').forEach(btn=>{
