@@ -62,7 +62,7 @@ cliente por ventana temporal (ver §5).
 | `status` | `string` | no | no | Enum: `"active"` \| `"ended"` \| `"cancelled"`. Inicia en `"active"`. |
 | `startedAt` | `Timestamp` | no | sí | `serverTimestamp()` al crear. |
 | `endedAt` | `Timestamp` \| `null` | sí | "write-once" | Se setea con `serverTimestamp()` al llamar `end()`. Una vez no-null, las rules impiden modificarlo. |
-| `marcador` | `object` \| `null` | sí | no | Forma sugerida: `{ sets: [[6,4],[3,6],[7,5]], ganador?: "team1" \| "team2" }`. No validado por rules. |
+| `marcador` | `object` \| `null` | sí | no | Forma canónica: `{ sets: [{team1:6,team2:4},{team1:3,team2:6},{team1:7,team2:5}], ganador?: "team1" \| "team2" }`. **Firestore prohíbe arrays anidados** a cualquier profundidad — por eso cada set es un objeto, no `[6,4]`. `validateMarcador()` en `matches.js` lanza error si detecta nested arrays. Rules no validan shape. |
 | `jugadores` | `array` | no | no | `[{ nombre: string, uid?: string }, ...]`. Longitud 0-4 (truncado por el cliente). |
 | `clipCount` | `number` | no | no | Denormalización: cantidad de clips dentro de la ventana del partido. Se recalcula al hacer `end()` (best-effort). |
 | `createdAt` | `Timestamp` | no | sí | `serverTimestamp()` al crear. |
@@ -84,7 +84,14 @@ adelante haya migración de datos sin que el ID lleve información.
   "status": "ended",
   "startedAt": "<Timestamp 2026-05-20 14:00:00 UTC>",
   "endedAt":   "<Timestamp 2026-05-20 15:32:00 UTC>",
-  "marcador": { "sets": [[6, 4], [3, 6], [7, 5]], "ganador": "team1" },
+  "marcador": {
+    "sets": [
+      { "team1": 6, "team2": 4 },
+      { "team1": 3, "team2": 6 },
+      { "team1": 7, "team2": 5 }
+    ],
+    "ganador": "team1"
+  },
   "jugadores": [
     { "nombre": "Isaac", "uid": "ABCDEF1234567890" },
     { "nombre": "Pablo" }

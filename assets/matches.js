@@ -60,6 +60,25 @@
       });
   }
 
+  // Firestore prohíbe arrays anidados a cualquier profundidad.
+  // Shape canónico de marcador.sets: array de objetos { team1, team2 },
+  // NO array de arrays [[6,4],...]. Ver docs/matches-schema.md §2.
+  function validateMarcador(m) {
+    if (m == null) return null;
+    if (typeof m !== "object") return null;
+    if (Array.isArray(m.sets)) {
+      for (const s of m.sets) {
+        if (Array.isArray(s)) {
+          throw new Error(
+            "[Matches] marcador.sets contiene arrays anidados (no soportado por Firestore). " +
+            "Usa objetos por set: { sets: [{team1:6,team2:4},{team1:3,team2:6},{team1:7,team2:5}] }"
+          );
+        }
+      }
+    }
+    return m;
+  }
+
   // parseFromName: réplica idéntica de la lógica en assets/script.js.
   // Se duplica a propósito para que matches.js sea self-contained y no
   // dependa de cargar script.js (que ejecuta DOMContentLoaded handlers
@@ -163,7 +182,7 @@
       status: "active",
       startedAt: FV().serverTimestamp(),
       endedAt: null,
-      marcador: o.marcadorInicial && typeof o.marcadorInicial === "object" ? o.marcadorInicial : null,
+      marcador: validateMarcador(o.marcadorInicial),
       jugadores: sanitizeJugadores(o.jugadores),
       clipCount: 0,
       createdAt: FV().serverTimestamp(),
@@ -191,7 +210,7 @@
       updatedAt: FV().serverTimestamp(),
     };
     if (o.marcador !== undefined) {
-      update.marcador = (o.marcador && typeof o.marcador === "object") ? o.marcador : null;
+      update.marcador = validateMarcador(o.marcador);
     }
     await ref.update(update);
 
