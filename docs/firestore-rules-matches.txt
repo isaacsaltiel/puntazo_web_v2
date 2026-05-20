@@ -1,0 +1,131 @@
+// =============================================================
+// Firestore Security Rules — Puntazo · matches/ (DRAFT, NO DESPLEGADAS)
+// =============================================================
+//
+// Este archivo es un DRAFT producido por la Etapa 3 (worker). NO se ha
+// desplegado en Firebase Console. Está pensado para que Isaac (master)
+// lo revise y, cuando esté listo, lo combine con las reglas activas en
+// `firestore.rules` del proyecto `puntazo-clips`.
+//
+// IMPORTANTE — coexistencia con reglas existentes:
+// -----------------------------------------------------------------
+// El repo tiene DOS drafts previos en /docs:
+//   - firestore-rules-analytics.txt
+//   - firestore-rules-social.txt
+// No es público desde el worker cuál de las dos está realmente activa
+// (eso requiere ver Firebase Console). Para evitar romper nada, este
+// archivo añade ÚNICAMENTE el bloque `match /matches/{matchId} { ... }`
+// y NO redefine ninguna otra colección. Cuando se despliegue, debe
+// insertarse dentro del `service cloud.firestore { match /databases/...
+// /documents { ... } }` ya existente, junto a las reglas actuales.
+//
+// Diseño general (ver docs/matches-schema.md para schema completo):
+//
+//   READ:
+//     - dueño (resource.data.userId == auth.uid): siempre
+//     - cualquiera (incl. anónimo): solo si status == "ended"
+//       (motivo: el resumen estilo Strava se comparte públicamente)
+//
+//   CREATE:
+//     - request.auth != null
+//     - userId == auth.uid (no se puede crear partido a nombre de otro)
+//     - status == "active"
+//     - startedAt y createdAt deben ser serverTimestamp (== request.time)
+//
+//   UPDATE:
+//     - solo el dueño (resource.data.userId == auth.uid)
+//     - inmutables: userId, loc, can, lado, startedAt, createdAt
+//     - status válido: "active" | "ended" | "cancelled"
+//     - endedAt: settable UNA SOLA VEZ
+//         · si resource.data.endedAt es null  → cualquier valor OK
+//         · si resource.data.endedAt != null → debe quedar igual
+//
+//   DELETE:
+//     - denegado. Para "borrar" se usa status = "cancelled" vía update.
+//
+// -----------------------------------------------------------------
+// BLOQUE A AGREGAR DENTRO DE `match /databases/{database}/documents`:
+// -----------------------------------------------------------------
+
+match /matches/{matchId} {
+
+  function statusValid(s) {
+    return s == "active" || s == "ended" || s == "cancelled";
+  }
+
+  function fieldUnchanged(name) {
+    return request.resource.data[name] == resource.data[name];
+  }
+
+  // READ — dueño siempre; otros solo si el partido ya terminó.
+  allow read: if (request.auth != null && request.auth.uid == resource.data.userId)
+              || (resource.data.status == "ended");
+
+  // CREATE — usuario autenticado, no puede falsificar userId,
+  // status inicial debe ser "active", timestamps validados con request.time.
+  allow create: if request.auth != null
+                && request.resource.data.userId == request.auth.uid
+                && request.resource.data.status == "active"
+                && request.resource.data.startedAt == request.time
+                && request.resource.data.createdAt == request.time
+                && statusValid(request.resource.data.status);
+
+  // UPDATE — solo el dueño; campos inmutables protegidos; endedAt write-once.
+  allow update: if request.auth != null
+                && request.auth.uid == resource.data.userId
+                && fieldUnchanged('userId')
+                && fieldUnchanged('loc')
+                && fieldUnchanged('can')
+                && fieldUnchanged('lado')
+                && fieldUnchanged('startedAt')
+                && fieldUnchanged('createdAt')
+                && statusValid(request.resource.data.status)
+                && (
+                     resource.data.endedAt == null
+                     || request.resource.data.endedAt == resource.data.endedAt
+                   );
+
+  // DELETE — denegado. Borrado lógico via status = "cancelled".
+  allow delete: if false;
+}
+
+// =============================================================
+// Notas operacionales:
+//
+// 1) Índices compuestos requeridos en Firebase Console → Firestore
+//    → Índices, para que listByUser / getActiveForUser funcionen:
+//
+//      a) Colección: matches
+//         Campos: userId Asc, startedAt Desc
+//         (usado por listByUser sin filtro de status)
+//
+//      b) Colección: matches
+//         Campos: userId Asc, status Asc, startedAt Desc
+//         (usado por listByUser con filtro status y por getActiveForUser)
+//
+//    En desarrollo, la primera vez que el cliente ejecute la query
+//    Firestore devuelve un error con un link directo para crear el
+//    índice — pero conviene crearlos a mano de antemano.
+//
+// 2) Subcolecciones futuras (NO en esta etapa):
+//    - matches/{matchId}/clips/{videoId}  — si en el futuro se quiere
+//      asociación explícita clip↔match (en vez de ventana temporal).
+//      Para esto habría que modificar el pipeline Python local; está
+//      fuera de alcance de Etapa 3.
+//
+// 3) Validación de marcador / jugadores: las rules NO validan la forma
+//    de estos campos. Se confía en el cliente (assets/matches.js) que
+//    sanitiza jugadores a [{nombre, uid?}] con longitud <= 4. Si se
+//    quisiera endurecer, agregar:
+//       && (request.resource.data.jugadores is list)
+//       && (request.resource.data.jugadores.size() <= 4)
+//
+// 4) Lecturas públicas de partidos "ended": el dueño puede compartir
+//    el matchId vía URL (ej. /resumen.html?id=XYZ) y cualquier persona
+//    podrá leer el documento. Esto es intencional — el resumen es para
+//    compartir tipo Strava. Si más adelante hace falta privacidad
+//    granular, agregar un campo `visibility: "public" | "private"` y
+//    cambiar la rule de read a:
+//       allow read: if isOwner() || (status == "ended" && visibility == "public");
+//
+// =============================================================
