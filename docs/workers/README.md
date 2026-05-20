@@ -25,9 +25,11 @@ Cada etapa tiene un archivo en este folder con el nombre `etapa-NN-slug.md`. El 
 
 ## Branching
 
-- Cada worker crea su propia branch desde `master`: `etapa-NN-slug`.
-- Worker commitea y pushea su branch. **Nunca** mergea a `master` ni a la branch de integración `rediseno-jugador`.
+- Cada worker crea su propia branch desde la branch base que indica su brief: `etapa-NN-slug`.
+- **Branch base por defecto**: `rediseno-jugador` (durante la fase de rediseño del jugador, etapas que dependen de `assets/matches.js` u otros módulos del rediseño). Para etapas independientes del rediseño (quick wins ops, reparación de páginas viejas) la branch base puede ser `master`. El brief siempre lo dice explícito.
+- Worker commitea y pushea su branch. **Nunca** mergea a `master` ni a `rediseno-jugador`.
 - El chat maestro mergea tras revisar el reporte y los diffs.
+- **Hot-patches discovered en review**: si el maestro encuentra un bug pequeño en el reporte de un worker, NO lo arregla directamente. Genera un brief de hot-patch (corto pero formal) y lo manda a un nuevo worker chat. La conveniencia del maestro no justifica romper el modelo.
 
 ## Formato del reporte de regreso (obligatorio)
 
