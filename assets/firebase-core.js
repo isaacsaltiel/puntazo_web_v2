@@ -13,6 +13,17 @@
     measurementId: "G-1954JRGNL6"
   };
 
+  // Lista de emails con acceso de administrador (admin.html, vista admin de reacciones).
+  // Para agregar admin: añadir email en minúsculas a este array y hacer push a master.
+  const ADMIN_EMAILS = [
+    "isaacsaltiel@gmail.com"
+  ];
+
+  function isAdminEmail(email) {
+    if (!email) return false;
+    return ADMIN_EMAILS.includes(String(email).trim().toLowerCase());
+  }
+
   function assertFirebaseBase() {
     if (!window.firebase || typeof firebase.initializeApp !== "function") {
       throw new Error("Firebase base SDK no está cargado.");
@@ -49,6 +60,8 @@
 
   window.PuntazoFirebase = {
     config: FIREBASE_CONFIG,
+    ADMIN_EMAILS,
+    isAdminEmail,
     ensureApp,
     app,
     db,

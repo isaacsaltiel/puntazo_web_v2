@@ -1,0 +1,58 @@
+# ─── Secretos / credenciales ───────────────────────────────────
+.env
+.env.*
+*.key
+*.pem
+service-account*.json
+credentials*.json
+gha-credentials*.json
+*token*.json
+dropbox_token*
+google_oauth*.json
+
+# ─── Sistema operativo ────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ─── Editores / IDE ───────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*~
+
+# ─── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# ─── Node (por si en algún momento se agrega) ─────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+package-lock.json
+
+# ─── Artefactos locales de procesamiento de video ─────────────
+*.log
+logs/
+heartbeat.txt
+script.pid
+puntazo.lock
+*.tmp
+cleanup_last_run.txt
+
+# ─── Build / distribución ─────────────────────────────────────
+dist/
+build/
+*.zip
+
+# ─── Backups y temporales ─────────────────────────────────────
+*.bak
+*.backup
+*~

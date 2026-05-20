@@ -2,7 +2,6 @@
 // reactions.js — Puntazo · Reacciones + Comentarios
 // =============================================================
 
-const ADMIN_PASS = "puntazo2025";
 const MIN_REACTIONS_FOR_BEST = 3;
 
 const REACTIONS = [
@@ -21,7 +20,9 @@ const REACTIONS = [
 })();
 
 function isAdmin() {
-  return new URLSearchParams(window.location.search).get("admin") === ADMIN_PASS;
+  if (!window.PuntazoFirebase || typeof window.PuntazoFirebase.isAdminEmail !== "function") return false;
+  const email = window.PuntazoAuth && window.PuntazoAuth.currentUser && window.PuntazoAuth.currentUser.email;
+  return window.PuntazoFirebase.isAdminEmail(email);
 }
 function getDeviceId() {
   let id = localStorage.getItem("pz_device");
