@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<base href="/" />
+<title>Entrada · Puntazo</title>
+
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
+<meta name="theme-color" content="#050914" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="/assets/estilo.css" />
+
+<!-- Firebase compat SDK (misma versión que lado.html / admin.html) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<!-- Módulos Puntazo -->
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/matches.js"></script>
+
+<style>
+  .entrada-wrap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 80px 20px 40px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .entrada-header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .entrada-logo {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    display: block;
+  }
+
+  .entrada-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: rgba(234, 242, 255, 0.72);
+    margin-bottom: 6px;
+  }
+
+  .entrada-loc-name {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -0.6px;
+    line-height: 1.15;
+  }
+
+  .entrada-sub {
+    font-size: 0.92rem;
+    color: rgba(234, 242, 255, 0.55);
+    margin-top: 4px;
+  }
+
+  .entrada-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 22px;
+  }
+
+  .btn-primary {
+    width: 100%;
+    min-height: 56px;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 900;
+    font-size: 1.05rem;
+    color: #fff;
+    background: linear-gradient(135deg, var(--blue2), var(--blue));
+    border: 1px solid rgba(11, 124, 255, 0.55);
+    box-shadow: 0 0 22px rgba(0, 79, 200, 0.30), 0 8px 22px rgba(0, 0, 0, 0.30);
+    transition: all .2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(11,124,255,.40), 0 10px 26px rgba(0,0,0,.34); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary[disabled] { opacity: .65; cursor: wait; transform: none; }
+
+  .btn-google {
+    width: 100%;
+    min-height: 52px;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 0.98rem;
+    color: #09111f;
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .30);
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+
+  .btn-google:hover { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(0,0,0,.36); }
+  .btn-google svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  .btn-secondary {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+    color: rgba(234, 242, 255, 0.80);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: all .18s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.22);
+    color: #fff;
+  }
+
+  .entrada-footer {
+    margin-top: 26px;
+    text-align: center;
+    font-size: 0.82rem;
+    color: rgba(234, 242, 255, 0.50);
+  }
+
+  .entrada-footer .session-email { color: rgba(234, 242, 255, 0.78); font-weight: 700; }
+  .entrada-footer a {
+    color: rgba(11, 124, 255, 0.85);
+    text-decoration: none;
+    font-weight: 700;
+    margin-left: 4px;
+    cursor: pointer;
+  }
+  .entrada-footer a:hover { color: var(--blue3); text-decoration: underline; }
+
+  .entrada-msg {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    display: none;
+  }
+  .entrada-msg.is-visible { display: block; }
+  .entrada-msg.error {
+    background: rgba(255, 80, 80, .10);
+    border: 1px solid rgba(255, 80, 80, .25);
+    color: #ffd5d5;
+  }
+  .entrada-msg.info {
+    background: rgba(11, 124, 255, .10);
+    border: 1px solid rgba(11, 124, 255, .25);
+    color: #cfe2ff;
+  }
+
+  .entrada-error-card {
+    text-align: center;
+    padding: 30px 20px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 80, 80, 0.18);
+  }
+  .entrada-error-card .icon { font-size: 38px; margin-bottom: 12px; }
+  .entrada-error-card h2 { font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .entrada-error-card p { color: rgba(234, 242, 255, .65); margin-bottom: 18px; font-size: 0.92rem; }
+
+  .entrada-loading {
+    text-align: center;
+    color: rgba(234, 242, 255, 0.55);
+    font-size: 0.95rem;
+    padding: 30px 0;
+  }
+
+  @media (max-width: 480px) {
+    .entrada-wrap { padding-top: 50px; }
+    .entrada-loc-name { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-bg"></div>
+
+<main class="entrada-wrap">
+
+  <div id="entradaLoading" class="entrada-loading">⏳ Cargando…</div>
+
+  <div id="entradaError" style="display:none">
+    <div class="entrada-error-card">
+      <div class="icon">⚠️</div>
+      <h2>Faltan parámetros del QR</h2>
+      <p>Vuelve a escanear el código en la cancha. Si el problema persiste, contacta al club.</p>
+      <a href="/index.html" class="btn-secondary" style="text-decoration:none;">Ir al inicio</a>
+    </div>
+  </div>
+
+  <div id="entradaContent" style="display:none">
+    <div class="entrada-header">
+      <img class="entrada-logo" src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
+      <div class="entrada-title">Estás en</div>
+      <div id="locName" class="entrada-loc-name">…</div>
+      <div id="locSub" class="entrada-sub"></div>
+    </div>
+
+    <div id="actionsAuthed" class="entrada-actions" style="display:none">
+      <button id="btnIniciar" class="btn-primary" type="button">🎾 Iniciar partido en esta cancha</button>
+      <a id="lnkSoloClips" class="btn-secondary" href="#">Solo quiero ver los clips</a>
+    </div>
+
+    <div id="actionsGuest" class="entrada-actions" style="display:none">
+      <a id="lnkInvitado" class="btn-primary" href="#">Continuar como invitado</a>
+      <button id="btnLogin" class="btn-google" type="button">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.239 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+          <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 16.108 19.003 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4c-7.682 0-14.347 4.337-17.694 10.691z"/>
+          <path fill="#4CAF50" d="M24 44c5.169 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.144 35.091 26.688 36 24 36c-5.218 0-9.62-3.329-11.283-7.946l-6.522 5.025C9.5 39.556 16.227 44 24 44z"/>
+          <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.084 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+        </svg>
+        <span>Iniciar sesión / crear cuenta</span>
+      </button>
+    </div>
+
+    <div id="entradaMsg" class="entrada-msg"></div>
+
+    <div id="footerAuthed" class="entrada-footer" style="display:none">
+      Sesión: <span id="sessionEmail" class="session-email"></span>
+      · <a id="lnkSignOut" href="#">cerrar sesión</a>
+    </div>
+  </div>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- helpers ----------
+  function getQueryParams() {
+    const params = {};
+    window.location.search.substring(1).split("&").forEach(pair => {
+      const [k, v] = pair.split("=");
+      if (k) params[decodeURIComponent(k)] = decodeURIComponent(v || "");
+    });
+    return params;
+  }
+
+  const $loading = document.getElementById("entradaLoading");
+  const $errorBox = document.getElementById("entradaError");
+  const $content = document.getElementById("entradaContent");
+  const $locName = document.getElementById("locName");
+  const $locSub = document.getElementById("locSub");
+  const $authed = document.getElementById("actionsAuthed");
+  const $guest = document.getElementById("actionsGuest");
+  const $btnIniciar = document.getElementById("btnIniciar");
+  const $lnkSoloClips = document.getElementById("lnkSoloClips");
+  const $lnkInvitado = document.getElementById("lnkInvitado");
+  const $btnLogin = document.getElementById("btnLogin");
+  const $msg = document.getElementById("entradaMsg");
+  const $footerAuthed = document.getElementById("footerAuthed");
+  const $sessionEmail = document.getElementById("sessionEmail");
+  const $lnkSignOut = document.getElementById("lnkSignOut");
+
+  function showError() {
+    $loading.style.display = "none";
+    $errorBox.style.display = "block";
+  }
+
+  function showContent() {
+    $loading.style.display = "none";
+    $content.style.display = "block";
+  }
+
+  function showMsg(text, type) {
+    $msg.textContent = text || "";
+    $msg.className = "entrada-msg";
+    if (text) {
+      $msg.classList.add("is-visible");
+      $msg.classList.add(type || "info");
+    }
+  }
+
+  // ---------- query params ----------
+  const params = getQueryParams();
+  const loc = (params.loc || "").trim();
+  const can = (params.can || "").trim();
+  const lado = (params.lado || "").trim();
+
+  if (!loc || !can || !lado) {
+    showError();
+    return;
+  }
+
+  const ladoQuery = `?loc=${encodeURIComponent(loc)}&can=${encodeURIComponent(can)}&lado=${encodeURIComponent(lado)}`;
+  $lnkSoloClips.href = "/lado.html" + ladoQuery;
+  $lnkInvitado.href = "/lado.html" + ladoQuery;
+
+  // ---------- resolver nombres legibles ----------
+  let configCache = null;
+  async function loadConfig() {
+    if (configCache) return configCache;
+    try {
+      const res = await fetch("/data/config_locations.json?cb=" + Date.now(), { cache: "no-store" });
+      if (!res.ok) return null;
+      configCache = await res.json();
+      return configCache;
+    } catch (e) {
+      console.warn("[entrada] No se pudo cargar config_locations.json:", e);
+      return null;
+    }
+  }
+
+  async function resolveNames() {
+    const cfg = await loadConfig();
+    let locNombre = loc, canNombre = can, ladoNombre = lado;
+    if (cfg && Array.isArray(cfg.locaciones)) {
+      const L = cfg.locaciones.find(x => x.id === loc);
+      if (L) {
+        locNombre = L.nombre || loc;
+        if (Array.isArray(L.cancha)) {
+          const C = L.cancha.find(x => x.id === can);
+          if (C) {
+            canNombre = C.nombre || can;
+            if (Array.isArray(C.lados)) {
+              const Ld = C.lados.find(x => x.id === lado);
+              if (Ld) ladoNombre = Ld.nombre || lado;
+            }
+          }
+        }
+      }
+    }
+    $locName.textContent = locNombre;
+    $locSub.textContent = `${canNombre} · ${ladoNombre}`;
+  }
+
+  // ---------- render según sesión ----------
+  function renderForUser(user) {
+    showContent();
+    if (user) {
+      $authed.style.display = "flex";
+      $guest.style.display = "none";
+      $footerAuthed.style.display = "block";
+      $sessionEmail.textContent = user.email || "(sin email)";
+    } else {
+      $authed.style.display = "none";
+      $guest.style.display = "flex";
+      $footerAuthed.style.display = "none";
+    }
+  }
+
+  // ---------- handlers ----------
+  $btnIniciar.addEventListener("click", async function () {
+    if (!window.PuntazoMatches || typeof window.PuntazoMatches.create !== "function") {
+      showMsg("Módulo de partidos no disponible. Recarga la página.", "error");
+      return;
+    }
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) {
+      showMsg("Necesitas iniciar sesión primero.", "error");
+      return;
+    }
+    $btnIniciar.disabled = true;
+    $btnIniciar.textContent = "Creando partido…";
+    showMsg("", "info");
+    try {
+      const matchId = await window.PuntazoMatches.create({ loc, can, lado });
+      window.location.href = "/mi-partido.html?matchId=" + encodeURIComponent(matchId);
+    } catch (e) {
+      console.error("[entrada] create failed", e);
+      $btnIniciar.disabled = false;
+      $btnIniciar.textContent = "🎾 Iniciar partido en esta cancha";
+      showMsg("No se pudo crear el partido: " + (e && e.message ? e.message : "error desconocido"), "error");
+    }
+  });
+
+  $btnLogin.addEventListener("click", async function () {
+    if (!window.PuntazoAuth || typeof window.PuntazoAuth.signIn !== "function") {
+      showMsg("Módulo de auth no disponible.", "error");
+      return;
+    }
+    try {
+      await window.PuntazoAuth.signIn();
+      // El evento puntazo:auth-changed re-renderiza
+    } catch (e) {
+      console.error("[entrada] signIn failed", e);
+      showMsg("No se pudo iniciar sesión.", "error");
+    }
+  });
+
+  $lnkSignOut.addEventListener("click", async function (e) {
+    e.preventDefault();
+    if (!window.PuntazoAuth || typeof window.PuntazoAuth.signOut !== "function") return;
+    try {
+      await window.PuntazoAuth.signOut();
+      // auth-changed re-renderiza
+    } catch (err) {
+      console.error("[entrada] signOut failed", err);
+    }
+  });
+
+  // ---------- auth wiring ----------
+  let authReady = false;
+  function handleAuthState() {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    renderForUser(user || null);
+  }
+
+  window.addEventListener("puntazo:auth-ready", function () {
+    authReady = true;
+    handleAuthState();
+  });
+
+  window.addEventListener("puntazo:auth-changed", function () {
+    if (authReady) handleAuthState();
+  });
+
+  // Si auth ya estaba listo (carrera ganada por auth.js)
+  setTimeout(function () {
+    if (!authReady && window.PuntazoAuth) {
+      // PuntazoAuth.currentUser puede no estar populado todavía; esperamos al evento
+      // pero si pasó más de 3s y no se disparó nada, mostramos modo invitado como fallback
+      setTimeout(function () {
+        if (!authReady) {
+          authReady = true;
+          handleAuthState();
+        }
+      }, 3000);
+    }
+  }, 100);
+
+  // Cargar nombres en paralelo a la auth
+  resolveNames();
+})();
+</script>
+
+</body>
+</html>
