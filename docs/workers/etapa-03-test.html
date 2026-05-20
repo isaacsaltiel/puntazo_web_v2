@@ -207,7 +207,7 @@
       <button id="btn-cancel" class="danger">cancel</button>
     </div>
     <p class="note" style="margin:6px 0 0;">
-      <code>end</code> envía <code>{ sets: [[6,4],[3,6],[7,5]] }</code> como marcador.
+      <code>end</code> envía <code>{ sets: [{team1:6,team2:4},{team1:3,team2:6},{team1:7,team2:5}] }</code> como marcador. (Firestore prohíbe nested arrays — por eso objetos por set.)
     </p>
   </div>
 
@@ -406,7 +406,7 @@
   document.getElementById("btn-end").addEventListener("click", async function () {
     const id = targetId(); if (!id) return;
     try {
-      const marcador = { sets: [[6,4],[3,6],[7,5]] };
+      const marcador = { sets: [{team1:6,team2:4},{team1:3,team2:6},{team1:7,team2:5}] };
       log(`end("${id}", ${JSON.stringify({ marcador })})…`, "dim");
       await window.PuntazoMatches.end(id, { marcador });
       log("end OK (revisa Firebase Console)", "ok");
