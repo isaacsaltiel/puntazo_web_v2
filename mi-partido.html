@@ -219,6 +219,94 @@
   .mp-msg.error { background: rgba(255,80,80,.10); border: 1px solid rgba(255,80,80,.25); color: #ffd5d5; }
   .mp-msg.info { background: rgba(11,124,255,.10); border: 1px solid rgba(11,124,255,.25); color: #cfe2ff; }
 
+  /* ── Cronómetro vivo (partido activo) ── */
+  .mp-timer-box {
+    display: none;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    margin: 4px 0 14px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(34, 180, 100, 0.08);
+    border: 1px solid rgba(34, 180, 100, 0.22);
+  }
+  .mp-timer-box.is-active { display: flex; }
+  .mp-timer-label {
+    font-size: 0.72rem;
+    color: rgba(154, 242, 192, .85);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 800;
+  }
+  .mp-timer {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #9af2c0;
+    letter-spacing: -0.5px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .mp-clip-counter {
+    margin-top: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.92rem;
+    color: rgba(234, 242, 255, .85);
+    font-weight: 700;
+  }
+  .mp-clip-counter .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #9af2c0;
+    box-shadow: 0 0 8px rgba(154, 242, 192, .60);
+    animation: mpPulse 1.6s ease-in-out infinite;
+  }
+  .mp-clip-counter.is-polling .dot { animation-duration: 0.7s; }
+  .mp-clip-counter .hint {
+    font-size: 0.74rem;
+    color: rgba(234, 242, 255, .50);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .mp-clip-counter-wrap { display: flex; flex-direction: column; gap: 2px; }
+  @keyframes mpPulse {
+    0%, 100% { opacity: 0.45; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.10); }
+  }
+
+  /* ── Banner de éxito post-terminar ── */
+  .mp-success-banner {
+    display: none;
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(34, 180, 100, 0.14);
+    border: 1px solid rgba(34, 180, 100, 0.38);
+    color: #c8f7dc;
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+  .mp-success-banner.is-visible { display: block; }
+
+  /* ── Botón primario "Ver clips de tu partido" (azul) ── */
+  .mp-btn-clips {
+    width: 100%; min-height: 56px;
+    border: none; border-radius: 999px; cursor: pointer;
+    font-family: inherit; font-weight: 900; font-size: 1.05rem; color: #fff;
+    background: linear-gradient(135deg, rgba(0,79,200,0.85), rgba(11,124,255,0.65));
+    border: 1px solid rgba(11, 124, 255, 0.55);
+    box-shadow: 0 0 22px rgba(0, 79, 200, 0.30), 0 8px 22px rgba(0,0,0,.30);
+    transition: all .2s ease;
+    display: inline-flex; align-items: center; justify-content: center;
+    text-decoration: none;
+  }
+  .mp-btn-clips:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(0,79,200,.42), 0 10px 26px rgba(0,0,0,.34); }
+  .mp-btn-clips:active { transform: scale(0.98); }
+
   /* ── Estados meta ── */
   .mp-state-msg {
     text-align: center;
@@ -235,6 +323,7 @@
     .mp-wrap { padding-top: 75px; }
     .mp-loc-name { font-size: 1.25rem; }
     .mp-set-row { grid-template-columns: 60px 1fr 14px 1fr; }
+    .mp-timer { font-size: 1.8rem; }
   }
 </style>
 </head>
@@ -281,6 +370,21 @@
   </div>
 
   <div id="mpContent" style="display:none">
+
+    <div id="mpSuccessBanner" class="mp-success-banner">✅ Partido terminado. Marcador guardado.</div>
+
+    <div id="mpTimerBox" class="mp-timer-box">
+      <div class="mp-timer-label">⏱ En curso</div>
+      <div id="mpTimer" class="mp-timer">00:00:00</div>
+      <div class="mp-clip-counter-wrap">
+        <div id="mpClipCounter" class="mp-clip-counter">
+          <span class="dot" aria-hidden="true"></span>
+          <span>🎬 <span id="mpClipCount">—</span> clips capturados durante este partido</span>
+        </div>
+        <div class="hint">Se actualiza cada 20s. El video tarda hasta 60s en aparecer tras pulsar el botón.</div>
+      </div>
+    </div>
+
     <div class="mp-card">
       <div id="mpLocName" class="mp-loc-name">…</div>
       <div id="mpLocSub" class="mp-loc-sub"></div>
@@ -305,6 +409,7 @@
     </div>
 
     <div id="mpFinishedActions" class="mp-actions" style="display:none">
+      <a id="mpLnkClips" class="mp-btn-clips" href="#">📺 Ver clips de tu partido</a>
       <a id="mpLnkBack" class="mp-btn-back" href="#">Volver a clips de esta cancha</a>
     </div>
   </div>
@@ -462,12 +567,93 @@
   const $btnEnd = document.getElementById("mpBtnEnd");
   const $btnCancel = document.getElementById("mpBtnCancel");
   const $lnkBack = document.getElementById("mpLnkBack");
+  const $lnkClips = document.getElementById("mpLnkClips");
   const $modal = document.getElementById("mpModal");
   const $modalSave = document.getElementById("mpModalSave");
   const $modalCancel = document.getElementById("mpModalCancel");
   const $modalMsg = document.getElementById("mpModalMsg");
+  const $timerBox = document.getElementById("mpTimerBox");
+  const $timer = document.getElementById("mpTimer");
+  const $clipCounter = document.getElementById("mpClipCounter");
+  const $clipCount = document.getElementById("mpClipCount");
+  const $successBanner = document.getElementById("mpSuccessBanner");
 
   let currentMatch = null;
+
+  // ---------- live features (cronómetro + contador clips) ----------
+  let _timerId = null;
+  let _pollId = null;
+  let _pollInFlight = false;
+
+  function formatHMS(totalSec) {
+    const hh = pad2(Math.floor(totalSec / 3600));
+    const mm = pad2(Math.floor((totalSec % 3600) / 60));
+    const ss = pad2(totalSec % 60);
+    return `${hh}:${mm}:${ss}`;
+  }
+
+  function startTimer(startMs) {
+    stopTimer();
+    function tick() {
+      const elapsed = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+      if ($timer) $timer.textContent = formatHMS(elapsed);
+    }
+    tick();
+    _timerId = setInterval(tick, 1000);
+  }
+
+  function stopTimer() {
+    if (_timerId) { clearInterval(_timerId); _timerId = null; }
+  }
+
+  async function pollClipsOnce() {
+    if (_pollInFlight) return;
+    if (!currentMatch || currentMatch.status !== "active") return;
+    if (!window.PuntazoMatches || typeof window.PuntazoMatches.findClipsForMatch !== "function") {
+      if ($clipCount && $clipCount.textContent !== "—") $clipCount.textContent = "—";
+      return;
+    }
+    _pollInFlight = true;
+    if ($clipCounter) $clipCounter.classList.add("is-polling");
+    try {
+      const clips = await window.PuntazoMatches.findClipsForMatch(currentMatch);
+      if (currentMatch && currentMatch.status === "active" && $clipCount) {
+        $clipCount.textContent = String(clips.length);
+      }
+    } catch (e) {
+      console.warn("[mi-partido] poll clips failed", e);
+      if ($clipCount && $clipCount.textContent === "") $clipCount.textContent = "—";
+    } finally {
+      _pollInFlight = false;
+      if ($clipCounter) $clipCounter.classList.remove("is-polling");
+    }
+  }
+
+  function startClipPolling() {
+    stopClipPolling();
+    pollClipsOnce();
+    _pollId = setInterval(pollClipsOnce, 20000);
+  }
+
+  function stopClipPolling() {
+    if (_pollId) { clearInterval(_pollId); _pollId = null; }
+  }
+
+  function teardownLive() {
+    stopTimer();
+    stopClipPolling();
+    if ($timerBox) $timerBox.classList.remove("is-active");
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      stopClipPolling();
+    } else if (currentMatch && currentMatch.status === "active") {
+      startClipPolling();
+    }
+  });
+
+  window.addEventListener("pagehide", teardownLive);
 
   async function renderMatch(match) {
     currentMatch = match;
@@ -514,17 +700,31 @@
       $marcBox.style.display = "none";
     }
 
-    // Lnk back
+    // Links
     const backQS = `?loc=${encodeURIComponent(match.loc)}&can=${encodeURIComponent(match.can)}&lado=${encodeURIComponent(match.lado)}`;
     $lnkBack.href = "/lado.html" + backQS;
+    if ($lnkClips) {
+      $lnkClips.href = "/lado.html" + backQS + `&matchId=${encodeURIComponent(match.id)}`;
+    }
 
-    // Acciones según status
+    // Acciones según status + features vivas (Sub-tareas A + B)
     if (match.status === "active") {
       $activeActions.style.display = "flex";
       $finishedActions.style.display = "none";
+      if ($timerBox) $timerBox.classList.add("is-active");
+      const startMs = startDate ? startDate.getTime() : null;
+      if (startMs != null) {
+        startTimer(startMs);
+      } else {
+        stopTimer();
+        if ($timer) $timer.textContent = "—";
+      }
+      if ($clipCount && $clipCount.textContent === "") $clipCount.textContent = "—";
+      startClipPolling();
     } else {
       $activeActions.style.display = "none";
       $finishedActions.style.display = "flex";
+      teardownLive();
     }
 
     show("mpContent");
@@ -607,10 +807,39 @@
     try {
       const opts = {};
       if (built.marcador) opts.marcador = built.marcador;
-      await window.PuntazoMatches.end(currentMatch.id, opts);
-      // Redirect a lado.html con matchId (lado no lo usa todavía, pero Etapa 5 lo aprovechará)
-      const qs = `?loc=${encodeURIComponent(currentMatch.loc)}&can=${encodeURIComponent(currentMatch.can)}&lado=${encodeURIComponent(currentMatch.lado)}&matchId=${encodeURIComponent(currentMatch.id)}`;
-      window.location.href = "/lado.html" + qs;
+      const matchId = currentMatch.id;
+      const snapshotLoc = currentMatch.loc;
+      const snapshotCan = currentMatch.can;
+      const snapshotLado = currentMatch.lado;
+      await window.PuntazoMatches.end(matchId, opts);
+
+      // Sub-tarea C: sin redirect — cerrar modal, re-fetch con retry, re-render ended.
+      closeModal();
+      $modalSave.disabled = false;
+      $modalSave.textContent = "Guardar y terminar";
+
+      // Pausa features vivas inmediatamente (status va a cambiar).
+      teardownLive();
+
+      // Mitigar write-lag de Firestore: hasta 2 intentos con 400ms de gap.
+      let fresh = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try { fresh = await window.PuntazoMatches.get(matchId); } catch (err) { console.warn("[mi-partido] get after end failed", err); }
+        if (fresh && fresh.status === "ended") break;
+        if (attempt === 0) await new Promise(function (r) { setTimeout(r, 400); });
+      }
+      if (!fresh) {
+        // Fallback: usa el snapshot local marcado como ended para no dejar la UI rota.
+        fresh = Object.assign({}, currentMatch, {
+          status: "ended",
+          loc: snapshotLoc, can: snapshotCan, lado: snapshotLado,
+          marcador: built.marcador != null ? built.marcador : currentMatch.marcador,
+        });
+      }
+
+      await renderMatch(fresh);
+
+      if ($successBanner) $successBanner.classList.add("is-visible");
     } catch (e) {
       console.error("[mi-partido] end failed", e);
       $modalSave.disabled = false;
@@ -627,6 +856,7 @@
     $btnCancel.textContent = "Cancelando…";
     try {
       await window.PuntazoMatches.cancel(currentMatch.id);
+      teardownLive();
       const qs = `?loc=${encodeURIComponent(currentMatch.loc)}&can=${encodeURIComponent(currentMatch.can)}&lado=${encodeURIComponent(currentMatch.lado)}`;
       window.location.href = "/lado.html" + qs;
     } catch (e) {
@@ -720,6 +950,7 @@
         start();
       } else if (!user) {
         // Perdió sesión: regresar a need-auth
+        teardownLive();
         show("mpNeedAuth");
       }
     }
