@@ -565,19 +565,22 @@ video.video-preview {
       a.className = "pz-mb iniciar";
       a.href = "#";
       a.innerHTML = '<span class="pz-mb-text">🎾 Inicia un partido para guardar tus puntazos aquí</span><span class="pz-mb-cta">Iniciar partido</span>';
-      a.addEventListener("click", async function (ev) {
+      a.addEventListener("click", function (ev) {
         ev.preventDefault();
         try {
           if (a.classList.contains("is-busy")) return;
-          if (!window.PuntazoMatches || typeof window.PuntazoMatches.create !== "function") return;
           var user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
           if (!user) return;
           a.classList.add("is-busy");
-          a.querySelector(".pz-mb-cta").textContent = "Creando…";
-          var matchId = await window.PuntazoMatches.create({ loc: loc, can: can, lado: lado });
-          window.location.href = "/mi-partido.html?matchId=" + encodeURIComponent(matchId);
+          a.querySelector(".pz-mb-cta").textContent = "Abriendo…";
+          // La creación del match pasa a mi-partido.html (modo ?nueva=1),
+          // donde primero se captura el formulario opcional de jugadores.
+          var qs = "?nueva=1&loc=" + encodeURIComponent(loc) +
+                   "&can=" + encodeURIComponent(can) +
+                   "&lado=" + encodeURIComponent(lado);
+          window.location.href = "/mi-partido.html" + qs;
         } catch (err) {
-          console.warn("[pz-banner] create failed", err);
+          console.warn("[pz-banner] iniciar redirect failed", err);
           a.classList.remove("is-busy");
           a.querySelector(".pz-mb-cta").textContent = "Iniciar partido";
         }
