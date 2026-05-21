@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<base href="/" />
+<title>Mi partido · Puntazo</title>
+
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
+<meta name="theme-color" content="#050914" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="/assets/estilo.css" />
+
+<!-- Firebase compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<!-- Módulos Puntazo -->
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/matches.js"></script>
+
+<style>
+  .mp-wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 90px 16px 60px;
+  }
+
+  .mp-card {
+    background: rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 18px;
+    padding: 20px 18px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(12px);
+    margin-bottom: 16px;
+  }
+
+  .mp-loc-name { font-size: 1.45rem; font-weight: 900; color: #fff; line-height: 1.15; letter-spacing: -0.4px; }
+  .mp-loc-sub { font-size: 0.95rem; color: rgba(234,242,255,.62); margin-top: 4px; }
+  .mp-started { font-size: 0.86rem; color: rgba(234,242,255,.55); margin-top: 10px; }
+
+  .mp-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .mp-chip {
+    display: inline-flex; align-items: center;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(0, 79, 200, 0.18);
+    border: 1px solid rgba(11, 124, 255, 0.30);
+    color: #cfe2ff;
+    font-size: 0.80rem;
+    font-weight: 700;
+  }
+
+  .mp-status-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .mp-badge {
+    display: inline-flex; align-items: center;
+    padding: 5px 12px; border-radius: 999px;
+    font-size: 0.78rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .mp-badge.active { background: rgba(34, 180, 100, 0.18); border: 1px solid rgba(34, 180, 100, 0.40); color: #9af2c0; }
+  .mp-badge.ended { background: rgba(180, 180, 180, 0.14); border: 1px solid rgba(220, 220, 220, 0.22); color: #d2d6dd; }
+  .mp-badge.cancelled { background: rgba(255, 100, 80, 0.14); border: 1px solid rgba(255, 100, 80, 0.30); color: #ffb1a3; }
+
+  .mp-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+
+  .mp-btn-end {
+    width: 100%; min-height: 56px;
+    border: none; border-radius: 999px; cursor: pointer;
+    font-family: inherit; font-weight: 900; font-size: 1.05rem; color: #fff;
+    background: linear-gradient(135deg, #1f9d62, #16a34a);
+    border: 1px solid rgba(34, 180, 100, 0.55);
+    box-shadow: 0 0 22px rgba(34, 180, 100, 0.25), 0 8px 22px rgba(0,0,0,.30);
+    transition: all .2s ease;
+  }
+  .mp-btn-end:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(34,180,100,.35), 0 10px 26px rgba(0,0,0,.34); }
+  .mp-btn-end:active { transform: scale(0.98); }
+  .mp-btn-end[disabled] { opacity: .65; cursor: wait; transform: none; }
+
+  .mp-btn-cancel {
+    width: 100%; min-height: 48px;
+    border: 1px solid rgba(255, 100, 80, 0.30);
+    background: rgba(255, 100, 80, 0.08);
+    border-radius: 999px;
+    color: #ffb1a3;
+    font-family: inherit; font-weight: 700; font-size: 0.92rem;
+    cursor: pointer; transition: all .18s ease;
+  }
+  .mp-btn-cancel:hover { background: rgba(255, 100, 80, 0.14); color: #ffd0c5; }
+
+  .mp-placeholder {
+    margin-top: 6px;
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    color: rgba(234, 242, 255, 0.55);
+    font-size: 0.88rem;
+    text-align: center;
+    cursor: not-allowed;
+    opacity: 0.85;
+  }
+  .mp-placeholder strong { color: rgba(234, 242, 255, 0.78); }
+
+  .mp-btn-back {
+    width: 100%; min-height: 52px;
+    border: 1px solid rgba(11, 124, 255, 0.40);
+    background: rgba(0, 79, 200, 0.18);
+    border-radius: 999px;
+    color: #fff;
+    font-family: inherit; font-weight: 800; font-size: 1rem;
+    cursor: pointer; transition: all .18s ease;
+    display: inline-flex; align-items: center; justify-content: center;
+    text-decoration: none;
+  }
+  .mp-btn-back:hover { background: rgba(0, 79, 200, 0.28); border-color: rgba(11, 124, 255, 0.55); }
+
+  .mp-marcador {
+    margin-top: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(0, 79, 200, 0.10);
+    border: 1px solid rgba(11, 124, 255, 0.22);
+  }
+  .mp-marcador-label { font-size: 0.78rem; color: rgba(234, 242, 255, .55); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; font-weight: 700; }
+  .mp-marcador-val { font-size: 1.25rem; font-weight: 900; color: #fff; letter-spacing: -0.3px; }
+  .mp-marcador-winner { margin-top: 4px; font-size: 0.84rem; color: rgba(255, 215, 90, .85); font-weight: 700; }
+
+  /* ── Modal terminar ── */
+  .mp-modal-backdrop {
+    position: fixed; inset: 0; z-index: 9999;
+    display: none; align-items: center; justify-content: center;
+    padding: 20px;
+    background: rgba(2, 6, 14, 0.72);
+    backdrop-filter: blur(10px);
+  }
+  .mp-modal-backdrop.is-open { display: flex; }
+  .mp-modal {
+    width: min(100%, 460px);
+    background: rgba(15, 22, 38, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 22px 22px 20px;
+    color: #eaf2ff;
+    position: relative;
+    box-shadow: 0 24px 60px rgba(0,0,0,.50);
+  }
+  .mp-modal h3 { margin: 0 0 8px; font-size: 1.15rem; font-weight: 900; color: #fff; }
+  .mp-modal p.note { margin: 0 0 14px; color: rgba(234, 242, 255, .65); font-size: 0.88rem; line-height: 1.5; }
+
+  .mp-set-row {
+    display: grid;
+    grid-template-columns: 70px 1fr 18px 1fr;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .mp-set-label { font-weight: 800; color: rgba(234,242,255,.78); font-size: 0.92rem; }
+  .mp-set-input {
+    min-height: 44px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    border-radius: 10px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 800;
+    text-align: center;
+    -moz-appearance: textfield;
+  }
+  .mp-set-input::-webkit-outer-spin-button,
+  .mp-set-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .mp-set-input:focus { outline: none; border-color: rgba(11,124,255,.55); background: rgba(0,79,200,.12); }
+  .mp-set-sep { color: rgba(234, 242, 255, .45); text-align: center; font-weight: 700; }
+
+  .mp-ganador-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0 4px;
+    flex-wrap: wrap;
+  }
+  .mp-ganador-row label { font-size: 0.85rem; color: rgba(234, 242, 255, .65); font-weight: 700; }
+  .mp-ganador-row select {
+    flex: 1;
+    min-height: 40px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    background: rgba(255, 255, 255, .06);
+    border-radius: 10px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.92rem;
+    padding: 0 10px;
+  }
+
+  .mp-modal-actions {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-top: 16px;
+  }
+
+  .mp-msg {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 0.86rem;
+    line-height: 1.5;
+    display: none;
+  }
+  .mp-msg.is-visible { display: block; }
+  .mp-msg.error { background: rgba(255,80,80,.10); border: 1px solid rgba(255,80,80,.25); color: #ffd5d5; }
+  .mp-msg.info { background: rgba(11,124,255,.10); border: 1px solid rgba(11,124,255,.25); color: #cfe2ff; }
+
+  /* ── Estados meta ── */
+  .mp-state-msg {
+    text-align: center;
+    padding: 50px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 18px;
+  }
+  .mp-state-msg .icon { font-size: 38px; margin-bottom: 12px; }
+  .mp-state-msg h2 { font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .mp-state-msg p { color: rgba(234, 242, 255, .65); margin-bottom: 18px; font-size: 0.92rem; }
+
+  @media (max-width: 480px) {
+    .mp-wrap { padding-top: 75px; }
+    .mp-loc-name { font-size: 1.25rem; }
+    .mp-set-row { grid-template-columns: 60px 1fr 14px 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-bg"></div>
+
+<div id="nav-root" data-nav-variant="internal"></div>
+<script src="/assets/header.js"></script>
+
+<main class="mp-wrap">
+
+  <div id="mpLoading" class="mp-state-msg">
+    <div class="icon">⏳</div>
+    <h2>Cargando partido…</h2>
+  </div>
+
+  <div id="mpNeedAuth" class="mp-state-msg" style="display:none">
+    <div class="icon">🔐</div>
+    <h2>Necesitas iniciar sesión</h2>
+    <p>Inicia sesión para ver y operar tu partido.</p>
+    <button id="mpLoginBtn" class="mp-btn-back" type="button" style="max-width:280px;margin:0 auto;display:block;">Iniciar sesión</button>
+  </div>
+
+  <div id="mpNotFound" class="mp-state-msg" style="display:none">
+    <div class="icon">🔎</div>
+    <h2>Partido no encontrado</h2>
+    <p>El identificador no corresponde a un partido válido.</p>
+    <a href="/index.html" class="mp-btn-back" style="max-width:280px;margin:0 auto;">Ir al inicio</a>
+  </div>
+
+  <div id="mpForbidden" class="mp-state-msg" style="display:none">
+    <div class="icon">🚫</div>
+    <h2>Este partido no es tuyo</h2>
+    <p>Solo el dueño del partido puede verlo y operarlo.</p>
+    <a href="/index.html" class="mp-btn-back" style="max-width:280px;margin:0 auto;">Ir al inicio</a>
+  </div>
+
+  <div id="mpMissingId" class="mp-state-msg" style="display:none">
+    <div class="icon">⚠️</div>
+    <h2>Falta el identificador del partido</h2>
+    <p>Esta página necesita un <code>?matchId=...</code> en la URL.</p>
+    <a href="/index.html" class="mp-btn-back" style="max-width:280px;margin:0 auto;">Ir al inicio</a>
+  </div>
+
+  <div id="mpContent" style="display:none">
+    <div class="mp-card">
+      <div id="mpLocName" class="mp-loc-name">…</div>
+      <div id="mpLocSub" class="mp-loc-sub"></div>
+      <div id="mpStarted" class="mp-started"></div>
+      <div id="mpChips" class="mp-chips"></div>
+      <div class="mp-status-row">
+        <span id="mpBadge" class="mp-badge active">active</span>
+      </div>
+      <div id="mpMarcadorBox" class="mp-marcador" style="display:none">
+        <div class="mp-marcador-label">Marcador</div>
+        <div id="mpMarcadorVal" class="mp-marcador-val"></div>
+        <div id="mpMarcadorWinner" class="mp-marcador-winner" style="display:none"></div>
+      </div>
+    </div>
+
+    <div id="mpActiveActions" class="mp-actions" style="display:none">
+      <button id="mpBtnEnd" class="mp-btn-end" type="button">🏁 Terminar partido</button>
+      <div class="mp-placeholder">
+        🎯 <strong>Pedir clip ahora</strong> (próximamente — usa el botón físico de la cancha por ahora)
+      </div>
+      <button id="mpBtnCancel" class="mp-btn-cancel" type="button">Cancelar partido</button>
+    </div>
+
+    <div id="mpFinishedActions" class="mp-actions" style="display:none">
+      <a id="mpLnkBack" class="mp-btn-back" href="#">Volver a clips de esta cancha</a>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Modal terminar partido ── -->
+<div id="mpModal" class="mp-modal-backdrop">
+  <div class="mp-modal" role="dialog" aria-modal="true">
+    <h3>Terminar partido</h3>
+    <p class="note">Registra el marcador (opcional). Solo Set 1 es obligatorio si quieres guardar marcador.</p>
+
+    <div class="mp-set-row">
+      <span class="mp-set-label">Set 1</span>
+      <input type="number" class="mp-set-input" id="set1t1" min="0" max="99" inputmode="numeric" placeholder="Eq.1">
+      <span class="mp-set-sep">–</span>
+      <input type="number" class="mp-set-input" id="set1t2" min="0" max="99" inputmode="numeric" placeholder="Eq.2">
+    </div>
+    <div class="mp-set-row">
+      <span class="mp-set-label">Set 2</span>
+      <input type="number" class="mp-set-input" id="set2t1" min="0" max="99" inputmode="numeric" placeholder="Eq.1">
+      <span class="mp-set-sep">–</span>
+      <input type="number" class="mp-set-input" id="set2t2" min="0" max="99" inputmode="numeric" placeholder="Eq.2">
+    </div>
+    <div class="mp-set-row">
+      <span class="mp-set-label">Set 3</span>
+      <input type="number" class="mp-set-input" id="set3t1" min="0" max="99" inputmode="numeric" placeholder="Eq.1">
+      <span class="mp-set-sep">–</span>
+      <input type="number" class="mp-set-input" id="set3t2" min="0" max="99" inputmode="numeric" placeholder="Eq.2">
+    </div>
+
+    <div class="mp-ganador-row">
+      <label for="mpGanador">Ganador:</label>
+      <select id="mpGanador">
+        <option value="">No especificar</option>
+        <option value="team1">Equipo 1</option>
+        <option value="team2">Equipo 2</option>
+      </select>
+    </div>
+
+    <div id="mpModalMsg" class="mp-msg"></div>
+
+    <div class="mp-modal-actions">
+      <button id="mpModalSave" class="mp-btn-end" type="button">Guardar y terminar</button>
+      <button id="mpModalCancel" class="mp-btn-cancel" type="button">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- helpers ----------
+  function getQueryParams() {
+    const params = {};
+    window.location.search.substring(1).split("&").forEach(pair => {
+      const [k, v] = pair.split("=");
+      if (k) params[decodeURIComponent(k)] = decodeURIComponent(v || "");
+    });
+    return params;
+  }
+
+  function show(id) {
+    ["mpLoading","mpNeedAuth","mpNotFound","mpForbidden","mpMissingId","mpContent"].forEach(function (x) {
+      const el = document.getElementById(x);
+      if (el) el.style.display = (x === id) ? (x === "mpContent" ? "block" : "block") : "none";
+    });
+  }
+
+  function tsToDate(ts) {
+    if (!ts) return null;
+    if (ts instanceof Date) return ts;
+    if (typeof ts.toDate === "function") { try { return ts.toDate(); } catch { return null; } }
+    if (typeof ts.seconds === "number") return new Date(ts.seconds * 1000);
+    if (typeof ts === "number") return new Date(ts);
+    return null;
+  }
+
+  function pad2(n) { return String(n).padStart(2, "0"); }
+
+  function formatStarted(date) {
+    if (!date) return "";
+    const hh = pad2(date.getHours());
+    const mm = pad2(date.getMinutes());
+    const dd = pad2(date.getDate());
+    const mo = pad2(date.getMonth() + 1);
+    return `Iniciado a las ${hh}:${mm} del ${dd}/${mo}`;
+  }
+
+  function formatMarcador(m) {
+    if (!m || !Array.isArray(m.sets) || m.sets.length === 0) return "";
+    return m.sets
+      .filter(s => s && typeof s === "object" && Number.isFinite(s.team1) && Number.isFinite(s.team2))
+      .map(s => `${s.team1}-${s.team2}`)
+      .join(" · ");
+  }
+
+  // ---------- params ----------
+  const params = getQueryParams();
+  const matchIdInUrl = (params.matchId || "").trim();
+  const nuevaFlag = (params.nueva || "").trim();
+  const newLoc = (params.loc || "").trim();
+  const newCan = (params.can || "").trim();
+  const newLado = (params.lado || "").trim();
+
+  // ---------- config ----------
+  let configCache = null;
+  async function loadConfig() {
+    if (configCache) return configCache;
+    try {
+      const res = await fetch("/data/config_locations.json?cb=" + Date.now(), { cache: "no-store" });
+      if (!res.ok) return null;
+      configCache = await res.json();
+      return configCache;
+    } catch (e) {
+      console.warn("[mi-partido] No se pudo cargar config_locations.json:", e);
+      return null;
+    }
+  }
+
+  async function resolveNames(loc, can, lado) {
+    const cfg = await loadConfig();
+    let locNombre = loc, canNombre = can, ladoNombre = lado;
+    if (cfg && Array.isArray(cfg.locaciones)) {
+      const L = cfg.locaciones.find(x => x.id === loc);
+      if (L) {
+        locNombre = L.nombre || loc;
+        if (Array.isArray(L.cancha)) {
+          const C = L.cancha.find(x => x.id === can);
+          if (C) {
+            canNombre = C.nombre || can;
+            if (Array.isArray(C.lados)) {
+              const Ld = C.lados.find(x => x.id === lado);
+              if (Ld) ladoNombre = Ld.nombre || lado;
+            }
+          }
+        }
+      }
+    }
+    return { locNombre, canNombre, ladoNombre };
+  }
+
+  // ---------- DOM refs ----------
+  const $locName = document.getElementById("mpLocName");
+  const $locSub = document.getElementById("mpLocSub");
+  const $started = document.getElementById("mpStarted");
+  const $chips = document.getElementById("mpChips");
+  const $badge = document.getElementById("mpBadge");
+  const $marcBox = document.getElementById("mpMarcadorBox");
+  const $marcVal = document.getElementById("mpMarcadorVal");
+  const $marcWin = document.getElementById("mpMarcadorWinner");
+  const $activeActions = document.getElementById("mpActiveActions");
+  const $finishedActions = document.getElementById("mpFinishedActions");
+  const $btnEnd = document.getElementById("mpBtnEnd");
+  const $btnCancel = document.getElementById("mpBtnCancel");
+  const $lnkBack = document.getElementById("mpLnkBack");
+  const $modal = document.getElementById("mpModal");
+  const $modalSave = document.getElementById("mpModalSave");
+  const $modalCancel = document.getElementById("mpModalCancel");
+  const $modalMsg = document.getElementById("mpModalMsg");
+
+  let currentMatch = null;
+
+  async function renderMatch(match) {
+    currentMatch = match;
+    const { locNombre, canNombre, ladoNombre } = await resolveNames(match.loc, match.can, match.lado);
+    $locName.textContent = locNombre;
+    $locSub.textContent = `${canNombre} · ${ladoNombre}`;
+
+    const startDate = tsToDate(match.startedAt);
+    $started.textContent = formatStarted(startDate);
+
+    // Chips de jugadores
+    $chips.innerHTML = "";
+    if (Array.isArray(match.jugadores) && match.jugadores.length > 0) {
+      match.jugadores.forEach(function (j) {
+        if (!j || !j.nombre) return;
+        const c = document.createElement("span");
+        c.className = "mp-chip";
+        c.textContent = j.nombre;
+        $chips.appendChild(c);
+      });
+    }
+
+    // Badge
+    $badge.className = "mp-badge " + (match.status || "active");
+    $badge.textContent = match.status || "active";
+
+    // Marcador
+    const marcStr = formatMarcador(match.marcador);
+    if (marcStr) {
+      $marcBox.style.display = "block";
+      $marcVal.textContent = marcStr;
+      if (match.marcador && match.marcador.ganador) {
+        const winLabel = match.marcador.ganador === "team1" ? "Equipo 1" : (match.marcador.ganador === "team2" ? "Equipo 2" : "");
+        if (winLabel) {
+          $marcWin.style.display = "block";
+          $marcWin.textContent = "🏆 Ganó: " + winLabel;
+        } else {
+          $marcWin.style.display = "none";
+        }
+      } else {
+        $marcWin.style.display = "none";
+      }
+    } else {
+      $marcBox.style.display = "none";
+    }
+
+    // Lnk back
+    const backQS = `?loc=${encodeURIComponent(match.loc)}&can=${encodeURIComponent(match.can)}&lado=${encodeURIComponent(match.lado)}`;
+    $lnkBack.href = "/lado.html" + backQS;
+
+    // Acciones según status
+    if (match.status === "active") {
+      $activeActions.style.display = "flex";
+      $finishedActions.style.display = "none";
+    } else {
+      $activeActions.style.display = "none";
+      $finishedActions.style.display = "flex";
+    }
+
+    show("mpContent");
+  }
+
+  // ---------- modal terminar ----------
+  function openModal() {
+    document.getElementById("set1t1").value = "";
+    document.getElementById("set1t2").value = "";
+    document.getElementById("set2t1").value = "";
+    document.getElementById("set2t2").value = "";
+    document.getElementById("set3t1").value = "";
+    document.getElementById("set3t2").value = "";
+    document.getElementById("mpGanador").value = "";
+    $modalMsg.className = "mp-msg";
+    $modalMsg.textContent = "";
+    $modal.classList.add("is-open");
+  }
+
+  function closeModal() {
+    $modal.classList.remove("is-open");
+  }
+
+  function readSet(idx) {
+    const t1raw = document.getElementById(`set${idx}t1`).value;
+    const t2raw = document.getElementById(`set${idx}t2`).value;
+    const t1str = String(t1raw).trim();
+    const t2str = String(t2raw).trim();
+    if (t1str === "" && t2str === "") return null; // set vacío → omitir
+    if (t1str === "" || t2str === "") return { error: `Set ${idx}: completa ambos equipos o déjalo vacío.` };
+    const t1 = Number(t1str);
+    const t2 = Number(t2str);
+    if (!Number.isInteger(t1) || !Number.isInteger(t2) || t1 < 0 || t2 < 0) {
+      return { error: `Set ${idx}: los valores deben ser enteros >= 0.` };
+    }
+    return { team1: t1, team2: t2 };
+  }
+
+  function buildMarcador() {
+    const sets = [];
+    for (let i = 1; i <= 3; i++) {
+      const r = readSet(i);
+      if (!r) continue;
+      if (r.error) return { error: r.error };
+      sets.push({ team1: r.team1, team2: r.team2 });
+    }
+    const ganador = document.getElementById("mpGanador").value;
+    const marcador = {};
+    if (sets.length > 0) marcador.sets = sets;
+    if (ganador === "team1" || ganador === "team2") marcador.ganador = ganador;
+    if (sets.length === 0 && !marcador.ganador) return { empty: true };
+    if (sets.length === 0) marcador.sets = [];
+    return { marcador };
+  }
+
+  $btnEnd.addEventListener("click", function () {
+    openModal();
+  });
+
+  $modalCancel.addEventListener("click", function () {
+    closeModal();
+  });
+
+  $modal.addEventListener("click", function (e) {
+    if (e.target === $modal) closeModal();
+  });
+
+  $modalSave.addEventListener("click", async function () {
+    if (!currentMatch || !currentMatch.id) return;
+    const built = buildMarcador();
+    if (built.error) {
+      $modalMsg.className = "mp-msg is-visible error";
+      $modalMsg.textContent = built.error;
+      return;
+    }
+    $modalSave.disabled = true;
+    $modalSave.textContent = "Guardando…";
+    $modalMsg.className = "mp-msg";
+    $modalMsg.textContent = "";
+    try {
+      const opts = {};
+      if (built.marcador) opts.marcador = built.marcador;
+      await window.PuntazoMatches.end(currentMatch.id, opts);
+      // Redirect a lado.html con matchId (lado no lo usa todavía, pero Etapa 5 lo aprovechará)
+      const qs = `?loc=${encodeURIComponent(currentMatch.loc)}&can=${encodeURIComponent(currentMatch.can)}&lado=${encodeURIComponent(currentMatch.lado)}&matchId=${encodeURIComponent(currentMatch.id)}`;
+      window.location.href = "/lado.html" + qs;
+    } catch (e) {
+      console.error("[mi-partido] end failed", e);
+      $modalSave.disabled = false;
+      $modalSave.textContent = "Guardar y terminar";
+      $modalMsg.className = "mp-msg is-visible error";
+      $modalMsg.textContent = "No se pudo terminar el partido: " + (e && e.message ? e.message : "error desconocido");
+    }
+  });
+
+  $btnCancel.addEventListener("click", async function () {
+    if (!currentMatch || !currentMatch.id) return;
+    if (!window.confirm("¿Cancelar este partido?")) return;
+    $btnCancel.disabled = true;
+    $btnCancel.textContent = "Cancelando…";
+    try {
+      await window.PuntazoMatches.cancel(currentMatch.id);
+      const qs = `?loc=${encodeURIComponent(currentMatch.loc)}&can=${encodeURIComponent(currentMatch.can)}&lado=${encodeURIComponent(currentMatch.lado)}`;
+      window.location.href = "/lado.html" + qs;
+    } catch (e) {
+      console.error("[mi-partido] cancel failed", e);
+      $btnCancel.disabled = false;
+      $btnCancel.textContent = "Cancelar partido";
+      window.alert("No se pudo cancelar: " + (e && e.message ? e.message : "error desconocido"));
+    }
+  });
+
+  // ---------- login button ----------
+  document.getElementById("mpLoginBtn").addEventListener("click", async function () {
+    if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === "function") {
+      try { await window.PuntazoAuth.signIn(); } catch (e) { console.error(e); }
+    }
+  });
+
+  // ---------- bootstrap ----------
+  let authReady = false;
+  let started = false;
+
+  async function start() {
+    if (started) return;
+    started = true;
+
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) {
+      show("mpNeedAuth");
+      return;
+    }
+
+    if (!window.PuntazoMatches) {
+      show("mpNotFound");
+      return;
+    }
+
+    // Modo "creación inline"
+    if (nuevaFlag === "1") {
+      if (!newLoc || !newCan || !newLado) {
+        show("mpMissingId");
+        return;
+      }
+      try {
+        const newId = await window.PuntazoMatches.create({ loc: newLoc, can: newCan, lado: newLado });
+        // Reemplaza la URL para que F5 no recree
+        const newUrl = `${window.location.pathname}?matchId=${encodeURIComponent(newId)}`;
+        try { window.history.replaceState({}, "", newUrl); } catch {}
+        const match = await window.PuntazoMatches.get(newId);
+        if (!match) { show("mpNotFound"); return; }
+        renderMatch(match);
+        return;
+      } catch (e) {
+        console.error("[mi-partido] create inline failed", e);
+        show("mpMissingId");
+        return;
+      }
+    }
+
+    if (!matchIdInUrl) {
+      show("mpMissingId");
+      return;
+    }
+
+    try {
+      const match = await window.PuntazoMatches.get(matchIdInUrl);
+      if (!match) { show("mpNotFound"); return; }
+      // Ownership: solo el dueño puede verlo/operarlo
+      if (match.userId !== user.uid) {
+        show("mpForbidden");
+        return;
+      }
+      renderMatch(match);
+    } catch (e) {
+      console.error("[mi-partido] get failed", e);
+      show("mpNotFound");
+    }
+  }
+
+  window.addEventListener("puntazo:auth-ready", function () {
+    authReady = true;
+    start();
+  });
+
+  window.addEventListener("puntazo:auth-changed", function () {
+    if (authReady) {
+      const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      // Si estábamos en NeedAuth y ahora hay sesión, re-arrancar
+      const needAuthVisible = document.getElementById("mpNeedAuth").style.display !== "none";
+      if (user && needAuthVisible) {
+        started = false;
+        start();
+      } else if (!user) {
+        // Perdió sesión: regresar a need-auth
+        show("mpNeedAuth");
+      }
+    }
+  });
+
+  // Fallback si auth-ready nunca dispara
+  setTimeout(function () {
+    if (!authReady) {
+      authReady = true;
+      start();
+    }
+  }, 3500);
+})();
+</script>
+
+</body>
+</html>
