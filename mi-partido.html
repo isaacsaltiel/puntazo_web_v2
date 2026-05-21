@@ -421,7 +421,7 @@
     </div>
 
     <div id="mpFinishedActions" class="mp-actions" style="display:none">
-      <a id="mpLnkClips" class="mp-btn-clips" href="#">📺 Ver clips de tu partido</a>
+      <a id="mpLnkClips" class="mp-btn-clips" href="#">🎴 Ver resumen del partido</a>
       <a id="mpLnkBack" class="mp-btn-back" href="#">Volver a clips de esta cancha</a>
     </div>
   </div>
@@ -717,7 +717,7 @@
     const backQS = `?loc=${encodeURIComponent(match.loc)}&can=${encodeURIComponent(match.can)}&lado=${encodeURIComponent(match.lado)}`;
     $lnkBack.href = "/lado.html" + backQS;
     if ($lnkClips) {
-      $lnkClips.href = "/lado.html" + backQS + `&matchId=${encodeURIComponent(match.id)}`;
+      $lnkClips.href = "/resumen.html?matchId=" + encodeURIComponent(match.id);
     }
 
     // Acciones según status + features vivas (Sub-tareas A + B)
