@@ -159,6 +159,8 @@
   .mp-modal-backdrop.is-open { display: flex; }
   .mp-modal {
     width: min(100%, 460px);
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
     background: rgba(15, 22, 38, 0.96);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 20px;
@@ -231,6 +233,47 @@
   .mp-msg.is-visible { display: block; }
   .mp-msg.error { background: rgba(255,80,80,.10); border: 1px solid rgba(255,80,80,.25); color: #ffd5d5; }
   .mp-msg.info { background: rgba(11,124,255,.10); border: 1px solid rgba(11,124,255,.25); color: #cfe2ff; }
+
+  /* ── Jugadores: formulario nueva + sección del modal terminar ── */
+  .mp-jug-title { margin: 0 0 6px; font-size: 1.15rem; font-weight: 900; color: #fff; }
+  .mp-jug-opt { color: rgba(234,242,255,.55); font-weight: 700; font-size: 0.92rem; }
+  .mp-jug-note { margin: 0 0 14px; color: rgba(234,242,255,.65); font-size: 0.86rem; line-height: 1.5; }
+
+  .mp-modal-section-label {
+    font-size: 0.82rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .5px;
+    color: rgba(234,242,255,.55);
+    margin: 16px 0 8px;
+  }
+
+  .mp-jug-team {
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(0,79,200,.08);
+    border: 1px solid rgba(11,124,255,.18);
+  }
+  .mp-jug-team-label {
+    font-size: 0.76rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .5px;
+    color: rgba(207,226,255,.85);
+    margin-bottom: 8px;
+  }
+  .mp-jug-input {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    border-radius: 10px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0 12px;
+    margin-bottom: 8px;
+  }
+  .mp-jug-input:last-child { margin-bottom: 0; }
+  .mp-jug-input:focus { outline: none; border-color: rgba(11,124,255,.55); background: rgba(0,79,200,.12); }
 
   /* ── Cronómetro vivo (partido activo) ── */
   .mp-timer-box {
@@ -382,6 +425,29 @@
     <a href="/index.html" class="mp-btn-back" style="max-width:280px;margin:0 auto;">Ir al inicio</a>
   </div>
 
+  <div id="mpNuevaForm" class="mp-card" style="display:none">
+    <h3 class="mp-jug-title">¿Quiénes juegan? <span class="mp-jug-opt">(opcional)</span></h3>
+    <p class="mp-jug-note">Llena los 4 nombres o usa “Saltar”. Todo o nada: el orden de los campos define los equipos.</p>
+
+    <div class="mp-jug-team">
+      <div class="mp-jug-team-label">Equipo 1</div>
+      <input type="text" class="mp-jug-input" id="nuevaJ1" placeholder="Jugador 1" maxlength="80" autocomplete="off">
+      <input type="text" class="mp-jug-input" id="nuevaJ2" placeholder="Jugador 2" maxlength="80" autocomplete="off">
+    </div>
+    <div class="mp-jug-team">
+      <div class="mp-jug-team-label">Equipo 2</div>
+      <input type="text" class="mp-jug-input" id="nuevaJ3" placeholder="Jugador 3" maxlength="80" autocomplete="off">
+      <input type="text" class="mp-jug-input" id="nuevaJ4" placeholder="Jugador 4" maxlength="80" autocomplete="off">
+    </div>
+
+    <div id="mpNuevaMsg" class="mp-msg"></div>
+
+    <div class="mp-modal-actions">
+      <button id="mpNuevaStart" class="mp-btn-end" type="button">Iniciar partido</button>
+      <button id="mpNuevaSkip" class="mp-btn-cancel" type="button">Saltar</button>
+    </div>
+  </div>
+
   <div id="mpContent" style="display:none">
 
     <div id="mpSuccessBanner" class="mp-success-banner">✅ Partido terminado. Marcador guardado.</div>
@@ -432,8 +498,21 @@
 <div id="mpModal" class="mp-modal-backdrop">
   <div class="mp-modal" role="dialog" aria-modal="true">
     <h3>Terminar partido</h3>
-    <p class="note">Registra el marcador (opcional). Solo Set 1 es obligatorio si quieres guardar marcador.</p>
+    <p class="note">Registra los jugadores y el marcador (ambos opcionales). Solo Set 1 es obligatorio si quieres guardar marcador.</p>
 
+    <div class="mp-modal-section-label">Jugadores (opcional)</div>
+    <div class="mp-jug-team">
+      <div class="mp-jug-team-label">Equipo 1</div>
+      <input type="text" class="mp-jug-input" id="endJ1" placeholder="Jugador 1" maxlength="80" autocomplete="off">
+      <input type="text" class="mp-jug-input" id="endJ2" placeholder="Jugador 2" maxlength="80" autocomplete="off">
+    </div>
+    <div class="mp-jug-team">
+      <div class="mp-jug-team-label">Equipo 2</div>
+      <input type="text" class="mp-jug-input" id="endJ3" placeholder="Jugador 3" maxlength="80" autocomplete="off">
+      <input type="text" class="mp-jug-input" id="endJ4" placeholder="Jugador 4" maxlength="80" autocomplete="off">
+    </div>
+
+    <div class="mp-modal-section-label">Marcador</div>
     <div class="mp-set-row">
       <span class="mp-set-label">Set 1</span>
       <input type="number" class="mp-set-input" id="set1t1" min="0" max="99" inputmode="numeric" placeholder="Eq.1">
@@ -486,9 +565,9 @@
   }
 
   function show(id) {
-    ["mpLoading","mpNeedAuth","mpNotFound","mpForbidden","mpMissingId","mpContent"].forEach(function (x) {
+    ["mpLoading","mpNeedAuth","mpNotFound","mpForbidden","mpMissingId","mpNuevaForm","mpContent"].forEach(function (x) {
       const el = document.getElementById(x);
-      if (el) el.style.display = (x === id) ? (x === "mpContent" ? "block" : "block") : "none";
+      if (el) el.style.display = (x === id) ? "block" : "none";
     });
   }
 
@@ -589,8 +668,40 @@
   const $clipCounter = document.getElementById("mpClipCounter");
   const $clipCount = document.getElementById("mpClipCount");
   const $successBanner = document.getElementById("mpSuccessBanner");
+  const $nuevaForm = document.getElementById("mpNuevaForm");
+  const $nuevaStart = document.getElementById("mpNuevaStart");
+  const $nuevaSkip = document.getElementById("mpNuevaSkip");
+  const $nuevaMsg = document.getElementById("mpNuevaMsg");
 
   let currentMatch = null;
+
+  // ---------- jugadores: regla "todo o nada" ----------
+  // El mapeo de equipos en resumen.html depende del orden del array
+  // (jugadores[0,1]=Equipo 1, [2,3]=Equipo 2) y filtra nombres vacíos.
+  // Por eso NO se colapsan posiciones: o se llenan los 4 nombres, o
+  // ninguno. Devuelve { jugadores: [...] } | { jugadores: [] } | { error }.
+  const JUG_INCOMPLETO = "Llena los 4 nombres de jugadores o déjalos todos vacíos (el orden define los equipos).";
+
+  function readJugadores(ids) {
+    const names = ids.map(function (id) {
+      const el = document.getElementById(id);
+      return el ? String(el.value || "").trim() : "";
+    });
+    const filled = names.filter(function (n) { return n !== ""; });
+    if (filled.length === 0) return { jugadores: [] };
+    if (filled.length === 4) return { jugadores: names.map(function (n) { return { nombre: n }; }) };
+    return { error: JUG_INCOMPLETO };
+  }
+
+  function fillJugadorInputs(ids, jugadores) {
+    const arr = Array.isArray(jugadores) ? jugadores : [];
+    for (let i = 0; i < ids.length; i++) {
+      const el = document.getElementById(ids[i]);
+      if (!el) continue;
+      const j = arr[i];
+      el.value = (j && j.nombre) ? String(j.nombre) : "";
+    }
+  }
 
   // ---------- live features (cronómetro + contador clips) ----------
   let _timerId = null;
@@ -752,6 +863,8 @@
     document.getElementById("set3t1").value = "";
     document.getElementById("set3t2").value = "";
     document.getElementById("mpGanador").value = "";
+    // Prellena los 4 campos de jugadores con lo capturado al inicio (si lo hubo).
+    fillJugadorInputs(["endJ1","endJ2","endJ3","endJ4"], currentMatch && currentMatch.jugadores);
     $modalMsg.className = "mp-msg";
     $modalMsg.textContent = "";
     $modal.classList.add("is-open");
@@ -813,6 +926,14 @@
       $modalMsg.textContent = built.error;
       return;
     }
+    // Jugadores: regla "todo o nada". 4 → se envían; 0 → se omiten
+    // (se conserva lo que ya tuviera el match); 1-3 → se rechaza.
+    const jugRes = readJugadores(["endJ1","endJ2","endJ3","endJ4"]);
+    if (jugRes.error) {
+      $modalMsg.className = "mp-msg is-visible error";
+      $modalMsg.textContent = jugRes.error;
+      return;
+    }
     $modalSave.disabled = true;
     $modalSave.textContent = "Guardando…";
     $modalMsg.className = "mp-msg";
@@ -820,6 +941,7 @@
     try {
       const opts = {};
       if (built.marcador) opts.marcador = built.marcador;
+      if (jugRes.jugadores.length === 4) opts.jugadores = jugRes.jugadores;
       const matchId = currentMatch.id;
       const snapshotLoc = currentMatch.loc;
       const snapshotCan = currentMatch.can;
@@ -847,6 +969,7 @@
           status: "ended",
           loc: snapshotLoc, can: snapshotCan, lado: snapshotLado,
           marcador: built.marcador != null ? built.marcador : currentMatch.marcador,
+          jugadores: opts.jugadores != null ? opts.jugadores : currentMatch.jugadores,
         });
       }
 
@@ -980,6 +1103,60 @@
     });
   }
 
+  // ---------- formulario "nueva" (creación inline con jugadores) ----------
+  let nuevaBusy = false;
+
+  async function createNueva(jugadores) {
+    if (nuevaBusy) return;                 // guard anti doble-click
+    nuevaBusy = true;
+    if ($nuevaStart) $nuevaStart.disabled = true;
+    if ($nuevaSkip) $nuevaSkip.disabled = true;
+    const prevText = $nuevaStart ? $nuevaStart.textContent : "";
+    if ($nuevaStart) $nuevaStart.textContent = "Creando…";
+    try {
+      const opts = { loc: newLoc, can: newCan, lado: newLado };
+      if (Array.isArray(jugadores) && jugadores.length === 4) opts.jugadores = jugadores;
+      const newId = await window.PuntazoMatches.create(opts);
+      // Reemplaza la URL para que F5 no recree
+      const newUrl = `${window.location.pathname}?matchId=${encodeURIComponent(newId)}`;
+      try { window.history.replaceState({}, "", newUrl); } catch {}
+      const match = await window.PuntazoMatches.get(newId);
+      if (!match) { show("mpNotFound"); return; }
+      renderMatch(match);
+    } catch (e) {
+      console.error("[mi-partido] create nueva failed", e);
+      nuevaBusy = false;
+      if ($nuevaStart) { $nuevaStart.disabled = false; $nuevaStart.textContent = prevText; }
+      if ($nuevaSkip) $nuevaSkip.disabled = false;
+      if ($nuevaMsg) {
+        $nuevaMsg.className = "mp-msg is-visible error";
+        $nuevaMsg.textContent = "No se pudo crear el partido: " + (e && e.message ? e.message : "error desconocido");
+      }
+    }
+  }
+
+  if ($nuevaStart) {
+    $nuevaStart.addEventListener("click", function () {
+      const res = readJugadores(["nuevaJ1","nuevaJ2","nuevaJ3","nuevaJ4"]);
+      if (res.error) {
+        if ($nuevaMsg) {
+          $nuevaMsg.className = "mp-msg is-visible error";
+          $nuevaMsg.textContent = res.error;
+        }
+        return;
+      }
+      if ($nuevaMsg) { $nuevaMsg.className = "mp-msg"; $nuevaMsg.textContent = ""; }
+      createNueva(res.jugadores);
+    });
+  }
+
+  if ($nuevaSkip) {
+    $nuevaSkip.addEventListener("click", function () {
+      if ($nuevaMsg) { $nuevaMsg.className = "mp-msg"; $nuevaMsg.textContent = ""; }
+      createNueva([]);
+    });
+  }
+
   // ---------- login button ----------
   document.getElementById("mpLoginBtn").addEventListener("click", async function () {
     if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === "function") {
@@ -1006,26 +1183,16 @@
       return;
     }
 
-    // Modo "creación inline"
+    // Modo "creación inline": muestra el formulario de jugadores ANTES de
+    // crear. La creación la disparan los botones "Iniciar partido"/"Saltar"
+    // del formulario (ver createNueva).
     if (nuevaFlag === "1") {
       if (!newLoc || !newCan || !newLado) {
         show("mpMissingId");
         return;
       }
-      try {
-        const newId = await window.PuntazoMatches.create({ loc: newLoc, can: newCan, lado: newLado });
-        // Reemplaza la URL para que F5 no recree
-        const newUrl = `${window.location.pathname}?matchId=${encodeURIComponent(newId)}`;
-        try { window.history.replaceState({}, "", newUrl); } catch {}
-        const match = await window.PuntazoMatches.get(newId);
-        if (!match) { show("mpNotFound"); return; }
-        renderMatch(match);
-        return;
-      } catch (e) {
-        console.error("[mi-partido] create inline failed", e);
-        show("mpMissingId");
-        return;
-      }
+      show("mpNuevaForm");
+      return;
     }
 
     if (!matchIdInUrl) {

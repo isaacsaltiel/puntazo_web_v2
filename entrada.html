@@ -380,28 +380,20 @@
   }
 
   // ---------- handlers ----------
-  $btnIniciar.addEventListener("click", async function () {
-    if (!window.PuntazoMatches || typeof window.PuntazoMatches.create !== "function") {
-      showMsg("Módulo de partidos no disponible. Recarga la página.", "error");
-      return;
-    }
+  $btnIniciar.addEventListener("click", function () {
+    // La creación del match pasa a mi-partido.html (modo ?nueva=1), donde
+    // primero se captura el formulario opcional de jugadores. Aquí solo
+    // redirigimos — NO se crea el match todavía.
     const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     if (!user) {
       showMsg("Necesitas iniciar sesión primero.", "error");
       return;
     }
     $btnIniciar.disabled = true;
-    $btnIniciar.textContent = "Creando partido…";
+    $btnIniciar.textContent = "Abriendo…";
     showMsg("", "info");
-    try {
-      const matchId = await window.PuntazoMatches.create({ loc, can, lado });
-      window.location.href = "/mi-partido.html?matchId=" + encodeURIComponent(matchId);
-    } catch (e) {
-      console.error("[entrada] create failed", e);
-      $btnIniciar.disabled = false;
-      $btnIniciar.textContent = "🎾 Iniciar partido en esta cancha";
-      showMsg("No se pudo crear el partido: " + (e && e.message ? e.message : "error desconocido"), "error");
-    }
+    const qs = `?nueva=1&loc=${encodeURIComponent(loc)}&can=${encodeURIComponent(can)}&lado=${encodeURIComponent(lado)}`;
+    window.location.href = "/mi-partido.html" + qs;
   });
 
   $btnLogin.addEventListener("click", async function () {

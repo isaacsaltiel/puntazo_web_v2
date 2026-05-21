@@ -212,6 +212,9 @@
     if (o.marcador !== undefined) {
       update.marcador = validateMarcador(o.marcador);
     }
+    if (o.jugadores !== undefined) {
+      update.jugadores = sanitizeJugadores(o.jugadores);
+    }
     await ref.update(update);
 
     // Best-effort: re-count clips dentro de la ventana y actualizar clipCount.
