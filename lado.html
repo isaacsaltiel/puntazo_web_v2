@@ -285,32 +285,6 @@ video.video-preview {
 /* ── Paginador ── */
 #paginator-bottom { margin: 8px 0 4px; }
 
-/* ── Badge top-3 del mes dentro de cards ── */
-.video-card { position: relative; }
-
-.pz-top-month-badge {
-  position: absolute;
-  top: 12px; right: 12px;
-  z-index: 8;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.70rem;
-  font-weight: 900;
-  letter-spacing: 0.2px;
-  color: #fff;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 6px 20px rgba(0,0,0,.28);
-  border: 1px solid rgba(255,255,255,.14);
-  pointer-events: none;
-}
-
-.pz-top-month-badge.rank-1 { background: rgba(255,190,0,.20); border-color: rgba(255,190,0,.40); color: #ffe89a; }
-.pz-top-month-badge.rank-2 { background: rgba(180,180,180,.16); border-color: rgba(220,220,220,.26); color: #efefef; }
-.pz-top-month-badge.rank-3 { background: rgba(180,100,30,.22); border-color: rgba(220,140,60,.28); color: #ffd0a3; }
-
 /* ── Filtro hora (pills pequeñas) ── */
 .btn-filtro {
   padding: 5px 12px;
@@ -499,88 +473,6 @@ video.video-preview {
     }
     return origPlay.call(this);
   };
-})();
-</script>
-
-<!-- ── Badge Top 3 del mes ── -->
-<script>
-(function(){
-  function waitForDeps(fn, retries) {
-    if (window.PuntazoReactions && window.PuntazoReactions.db) return fn();
-    if ((retries || 0) <= 0) return;
-    setTimeout(function() { waitForDeps(fn, (retries || 40) - 1); }, 200);
-  }
-
-  function getCurrentMonthKey() {
-    var d = new Date(), y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0');
-    return y + '-' + m;
-  }
-
-  function normalizeUrl(raw) {
-    if (!raw) return '';
-    try { var u = new URL(raw, window.location.origin); return (u.origin + u.pathname).replace(/\/+$/, '').toLowerCase(); } catch(e) { return String(raw).split('?')[0].replace(/\/+$/, '').toLowerCase(); }
-  }
-
-  waitForDeps(function() {
-    var db = PuntazoReactions.db();
-    var MIN = PuntazoReactions.MIN_FOR_BEST || 3;
-    var monthKey = getCurrentMonthKey();
-    var topEntries = [];
-    var container = document.getElementById('videos-container');
-    if (!container) return;
-
-    function buildTop3() {
-      db.collection('reactions').where('total', '>=', MIN).orderBy('total', 'desc').limit(50).get().then(function(snapshot) {
-        var docs = [];
-        snapshot.forEach(function(doc) {
-          var d = doc.data() || {};
-          if (d.fecha && String(d.fecha).startsWith(monthKey)) docs.push(d);
-        });
-        if (!docs.length) snapshot.forEach(function(doc) { docs.push(doc.data() || {}); });
-        topEntries = docs.slice(0, 3).map(function(d, idx) {
-          return { rank: idx + 1, videoId: String(d.videoId || '').trim(), videoUrl: normalizeUrl(d.videoUrl || '') };
-        });
-        annotateAll();
-        new MutationObserver(function() { annotateAll(); }).observe(container, { childList: true, subtree: true });
-        setTimeout(annotateAll, 800); setTimeout(annotateAll, 2000);
-      }).catch(function() {});
-    }
-
-    function getRankForCard(card) {
-      if (!topEntries.length) return null;
-      var candidates = [];
-      var vids = card.querySelectorAll('video[src],source[src]');
-      vids.forEach(function(v) { var s = v.getAttribute('src'); if (s) candidates.push(normalizeUrl(s)); });
-      var vid = card.getAttribute('id') || card.dataset.videoId;
-      if (vid) candidates.push('id:' + String(vid).trim());
-
-      for (var i = 0; i < topEntries.length; i++) {
-        var t = topEntries[i];
-        var idToken = t.videoId ? 'id:' + t.videoId : '';
-        for (var j = 0; j < candidates.length; j++) {
-          var c = candidates[j];
-          if (idToken && c === idToken) return t;
-          if (t.videoUrl && c && (c === t.videoUrl || c.indexOf(t.videoUrl) !== -1)) return t;
-        }
-      }
-      return null;
-    }
-
-    function annotateAll() {
-      Array.from(container.children).forEach(function(card) {
-        if (card.querySelector('.pz-top-month-badge')) return;
-        var info = getRankForCard(card);
-        if (!info) return;
-        var badge = document.createElement('div');
-        var icons = ['🥇','🥈','🥉'];
-        badge.className = 'pz-top-month-badge rank-' + info.rank;
-        badge.innerHTML = '<span>' + icons[info.rank - 1] + '</span><small>Top ' +
-          /* NOTE WORKER#2 (Etapa 4): archivo truncado en producción; cierre mínimo
-             SIN invocar buildTop3() para preservar el comportamiento inerte previo. */
-          '';
-      });
-    }
-  });
 })();
 </script>
 
