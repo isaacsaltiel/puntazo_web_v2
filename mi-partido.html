@@ -97,19 +97,32 @@
   }
   .mp-btn-cancel:hover { background: rgba(255, 100, 80, 0.14); color: #ffd0c5; }
 
-  .mp-placeholder {
-    margin-top: 6px;
-    padding: 14px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px dashed rgba(255, 255, 255, 0.15);
-    color: rgba(234, 242, 255, 0.55);
-    font-size: 0.88rem;
-    text-align: center;
-    cursor: not-allowed;
-    opacity: 0.85;
+  .mp-btn-clip {
+    width: 100%; min-height: 56px;
+    border: none; border-radius: 999px; cursor: pointer;
+    font-family: inherit; font-weight: 900; font-size: 1.05rem; color: #fff;
+    background: linear-gradient(135deg, #ff9a3d, #ff5e1f);
+    border: 1px solid rgba(255, 138, 61, 0.55);
+    box-shadow: 0 0 22px rgba(255, 138, 61, 0.25), 0 8px 22px rgba(0,0,0,.30);
+    transition: all .2s ease;
   }
-  .mp-placeholder strong { color: rgba(234, 242, 255, 0.78); }
+  .mp-btn-clip:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 0 30px rgba(255,138,61,.38), 0 10px 26px rgba(0,0,0,.34); }
+  .mp-btn-clip:active:not(:disabled) { transform: scale(0.98); }
+  .mp-btn-clip:disabled { opacity: .60; cursor: not-allowed; transform: none; filter: saturate(.75); }
+
+  .mp-clip-feedback {
+    display: none;
+    margin-top: 2px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    text-align: center;
+  }
+  .mp-clip-feedback.is-visible { display: block; }
+  .mp-clip-feedback.ok { background: rgba(34,197,94,.10); border: 1px solid rgba(34,197,94,.30); color: #c8f7dc; }
+  .mp-clip-feedback.bad { background: rgba(255,80,80,.10); border: 1px solid rgba(255,80,80,.25); color: #ffd5d5; }
+  .mp-clip-feedback.info { background: rgba(11,124,255,.10); border: 1px solid rgba(11,124,255,.25); color: #cfe2ff; }
 
   .mp-btn-back {
     width: 100%; min-height: 52px;
@@ -402,9 +415,8 @@
 
     <div id="mpActiveActions" class="mp-actions" style="display:none">
       <button id="mpBtnEnd" class="mp-btn-end" type="button">🏁 Terminar partido</button>
-      <div class="mp-placeholder">
-        🎯 <strong>Pedir clip ahora</strong> (próximamente — usa el botón físico de la cancha por ahora)
-      </div>
+      <button id="mpBtnClip" class="mp-btn-clip" type="button">🎯 Pedir clip ahora</button>
+      <div id="mpClipFeedback" class="mp-clip-feedback"></div>
       <button id="mpBtnCancel" class="mp-btn-cancel" type="button">Cancelar partido</button>
     </div>
 
@@ -643,6 +655,7 @@
     stopTimer();
     stopClipPolling();
     if ($timerBox) $timerBox.classList.remove("is-active");
+    if (typeof teardownClipBtn === "function") teardownClipBtn();
   }
 
   document.addEventListener("visibilitychange", function () {
@@ -866,6 +879,106 @@
       window.alert("No se pudo cancelar: " + (e && e.message ? e.message : "error desconocido"));
     }
   });
+
+  // ---------- botón "Pedir clip ahora" (Etapa 8C) ----------
+  // Reusa el mecanismo digital de boton.html: fetch a Google Apps Script con
+  // ?action=save&club=<loc>&cancha=<can>. Asociación clip↔partido es por
+  // ventana temporal (Etapa 3): NO se manda matchId.
+  const APPS_URL = 'https://script.google.com/macros/s/AKfycbzBMGzSOTreHJeW7oCnoO_7qPJ6cBbgby9MMzHUPmBWKYw7Nn-EuWOCZ5vao2ainUN4cg/exec';
+  const CLIP_COOLDOWN_MS = 5000;
+
+  const $btnClip = document.getElementById("mpBtnClip");
+  const $clipFeedback = document.getElementById("mpClipFeedback");
+
+  let clipBusy = false;
+  let clipCooldownTimer = null;
+
+  function setClipFeedback(msg, cls) {
+    if (!$clipFeedback) return;
+    $clipFeedback.className = "mp-clip-feedback is-visible " + (cls || "");
+    $clipFeedback.textContent = msg || "";
+  }
+
+  function clearClipFeedback() {
+    if (!$clipFeedback) return;
+    $clipFeedback.className = "mp-clip-feedback";
+    $clipFeedback.textContent = "";
+  }
+
+  function resetClipBtn() {
+    if (!$btnClip) return;
+    $btnClip.disabled = false;
+    $btnClip.textContent = "🎯 Pedir clip ahora";
+  }
+
+  function startClipCooldown() {
+    if (clipCooldownTimer) { clearInterval(clipCooldownTimer); clipCooldownTimer = null; }
+    const start = Date.now();
+    if ($btnClip) $btnClip.disabled = true;
+    function tick() {
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, Math.ceil((CLIP_COOLDOWN_MS - elapsed) / 1000));
+      if (remaining > 0) {
+        if ($btnClip) $btnClip.textContent = `⏳ Espera ${remaining}s`;
+      } else {
+        clearInterval(clipCooldownTimer);
+        clipCooldownTimer = null;
+        clipBusy = false;
+        resetClipBtn();
+      }
+    }
+    tick();
+    clipCooldownTimer = setInterval(tick, 250);
+  }
+
+  function teardownClipBtn() {
+    if (clipCooldownTimer) { clearInterval(clipCooldownTimer); clipCooldownTimer = null; }
+    clipBusy = false;
+    resetClipBtn();
+    clearClipFeedback();
+  }
+
+  if ($btnClip) {
+    $btnClip.addEventListener("click", async function () {
+      if (clipBusy) return;
+      if (!currentMatch || currentMatch.status !== "active") return;
+      if (!currentMatch.loc || !currentMatch.can) {
+        setClipFeedback("Falta información del partido (loc/can).", "bad");
+        return;
+      }
+
+      clipBusy = true;
+      $btnClip.disabled = true;
+      $btnClip.textContent = "⏳ Guardando…";
+      setClipFeedback("Enviando puntazo…", "info");
+      try { if (navigator.vibrate) navigator.vibrate(40); } catch (_) {}
+
+      try {
+        const url = APPS_URL
+          + "?action=save"
+          + "&club=" + encodeURIComponent(currentMatch.loc)
+          + "&cancha=" + encodeURIComponent(currentMatch.can);
+        const res = await fetch(url, { redirect: "follow" });
+        const data = await res.json();
+
+        if (data && data.ok) {
+          setClipFeedback("✅ Puntazo guardado. Aparecerá en el contador en ~60 segundos.", "ok");
+          try { if (navigator.vibrate) navigator.vibrate([40, 60, 40]); } catch (_) {}
+          // Acelera el contador de Etapa 5 (best-effort, pollClipsOnce hace bail si ya no está active).
+          setTimeout(function () { try { pollClipsOnce(); } catch (_) {} }, 30000);
+          setTimeout(function () { try { pollClipsOnce(); } catch (_) {} }, 60000);
+          startClipCooldown();
+        } else {
+          throw new Error((data && data.error) || "Error desconocido");
+        }
+      } catch (err) {
+        console.error("[mi-partido] clip request failed", err);
+        setClipFeedback("No se pudo guardar el clip. Intenta de nuevo.", "bad");
+        clipBusy = false;
+        resetClipBtn();
+      }
+    });
+  }
 
   // ---------- login button ----------
   document.getElementById("mpLoginBtn").addEventListener("click", async function () {
