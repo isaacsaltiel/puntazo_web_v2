@@ -37,16 +37,16 @@
 
   function pad2(n) { return String(n).padStart(2, "0"); }
 
-  // Convierte un Date a ISO local naïve "YYYY-MM-DDTHH:MM:SS" (19 chars).
-  // El NUC publica ts_pulso con datetime.now().isoformat() en HORA LOCAL
-  // (mismo TZ que el reloj de la PC del club). Por eso usamos getHours()
-  // y NO toISOString() — toISOString daría UTC y romperia la comparación
-  // lexicográfica del filtro Firestore.
+  // Convierte un Date a "YYYY-MM-DD HH:MM:SS" local naïve (19 chars, separador ESPACIO).
+  // El NUC publica ts_pulso con formato "YYYY-MM-DD HH:MM:SS" (verificado en
+  // doc real 2026-05-23) en HORA LOCAL. Usamos getHours() y NO toISOString()
+  // (que daría UTC con T) para que la comparación lexicográfica del filtro
+  // Firestore matchee con los docs reales.
   function dateToLocalNaiveISO(d) {
     if (!d || isNaN(d.getTime())) return "";
     return d.getFullYear() + "-" +
       pad2(d.getMonth() + 1) + "-" +
-      pad2(d.getDate()) + "T" +
+      pad2(d.getDate()) + " " +
       pad2(d.getHours()) + ":" +
       pad2(d.getMinutes()) + ":" +
       pad2(d.getSeconds());
@@ -61,10 +61,12 @@
     return null;
   }
 
-  // Parse ts_pulso (string ISO naïve "YYYY-MM-DDTHH:MM:SS") → Date local.
+  // Parse ts_pulso (string naïve "YYYY-MM-DD HH:MM:SS" o "YYYY-MM-DDTHH:MM:SS") → Date local.
+  // El NUC publica con separador ESPACIO (verificado 2026-05-23); aceptamos
+  // T también por robustez futura.
   function tsPulsoToDate(tsStr) {
     if (typeof tsStr !== "string" || tsStr.length < 19) return null;
-    const m = tsStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+    const m = tsStr.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
     if (!m) return null;
     return new Date(
       Number(m[1]), Number(m[2]) - 1, Number(m[3]),
