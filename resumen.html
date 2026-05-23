@@ -29,6 +29,7 @@
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/auth.js"></script>
 <script src="/assets/matches.js"></script>
+<script src="/assets/clip-states.js"></script>
 
 <!-- html2canvas: captura el DOM de la tarjeta → canvas → PNG -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -387,6 +388,86 @@
   @media (max-width: 480px) {
     .rs-wrap { padding-top: 76px; }
   }
+
+  /* ── Estado de tus clips (Etapa 13 — R3.1) ── */
+  .rs-clip-states {
+    margin-top: 22px;
+    padding: 16px 16px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+  .rs-cs-summary {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+  .rs-cs-summary.ok    { background: rgba(34, 197, 94, .08); border: 1px solid rgba(34, 197, 94, .28); }
+  .rs-cs-summary.info  { background: rgba(11, 124, 255, .08); border: 1px solid rgba(11, 124, 255, .28); }
+  .rs-cs-summary.bad   { background: rgba(255, 80, 80, .08); border: 1px solid rgba(255, 80, 80, .28); }
+  .rs-cs-summary .icon { font-size: 22px; line-height: 1; flex-shrink: 0; }
+  .rs-cs-summary .body { flex: 1; min-width: 0; }
+  .rs-cs-summary .title { font-weight: 800; color: #fff; font-size: 0.96rem; margin-bottom: 4px; }
+  .rs-cs-summary .detail { color: rgba(234, 242, 255, .76); font-size: 0.88rem; line-height: 1.4; }
+  .rs-cs-summary .wa {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(37, 211, 102, 0.16);
+    border: 1px solid rgba(37, 211, 102, 0.40);
+    color: #b7f0c8;
+    text-decoration: none;
+    font-weight: 800; font-size: 0.84rem;
+  }
+  .rs-cs-summary .wa:hover { background: rgba(37, 211, 102, 0.26); color: #fff; }
+
+  .rs-cs-list { display: flex; flex-direction: column; gap: 8px; }
+  .rs-cs-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .rs-cs-row.cs-row-visible { background: rgba(34, 180, 100, 0.08); border-color: rgba(34, 180, 100, 0.22); }
+  .rs-cs-row.cs-row-error { background: rgba(255, 80, 80, 0.08); border-color: rgba(255, 80, 80, 0.22); }
+  .rs-cs-row.cs-row-pendiente_por_conexion { background: rgba(255, 170, 60, 0.08); border-color: rgba(255, 170, 60, 0.22); }
+
+  .rs-cs-num { font-size: 0.86rem; font-weight: 900; color: rgba(234, 242, 255, .70); text-align: center; font-variant-numeric: tabular-nums; }
+  .rs-cs-mid { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .rs-cs-time { font-size: 0.92rem; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+  .rs-cs-tag { font-size: 0.74rem; font-weight: 700; color: rgba(234, 242, 255, .70); }
+  .rs-cs-tag.visible { color: #9af2c0; }
+  .rs-cs-tag.error { color: #ffb1a3; }
+  .rs-cs-tag.pendiente_por_conexion { color: #ffd497; }
+  .rs-cs-tag.en_cola { color: #cfe2ff; }
+
+  .rs-cs-link {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 32px; padding: 0 12px;
+    border-radius: 999px;
+    background: rgba(11, 124, 255, 0.22);
+    border: 1px solid rgba(11, 124, 255, 0.40);
+    color: #cfe2ff;
+    font-size: 0.78rem; font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .rs-cs-link:hover { background: rgba(11, 124, 255, 0.32); color: #fff; }
+  .rs-cs-link.is-disabled { opacity: .55; pointer-events: none; }
+  .rs-cs-detail-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .14);
+    color: rgba(234, 242, 255, .65);
+    font-size: 0.74rem; font-weight: 800; cursor: help;
+  }
 </style>
 </head>
 <body>
@@ -494,6 +575,19 @@
     </div>
     <div id="rsFeedback" class="rs-feedback"></div>
 
+    <!-- Estado de tus clips (Etapa 13 — R3.1) -->
+    <div id="rsClipStates" class="rs-clip-states" style="display:none">
+      <div id="rsCsSummary" class="rs-cs-summary info">
+        <div class="icon">🎯</div>
+        <div class="body">
+          <div id="rsCsTitle" class="title">Estado de tus clips</div>
+          <div id="rsCsDetail" class="detail">Cargando…</div>
+          <a id="rsCsWa" class="wa" href="#" target="_blank" rel="noopener" style="display:none">📱 Reportar por WhatsApp</a>
+        </div>
+      </div>
+      <div id="rsCsList" class="rs-cs-list"></div>
+    </div>
+
     <!-- Lista de clips del partido -->
     <div class="rs-section-title">Clips del partido</div>
     <div id="rsClips"><!-- render por JS --></div>
@@ -587,6 +681,17 @@
   const $duracion    = document.getElementById("pzDuracion");
   const $clips       = document.getElementById("rsClips");
   const $logo        = document.getElementById("pzLogo");
+
+  // Clip states (Etapa 13)
+  const $csWrap    = document.getElementById("rsClipStates");
+  const $csSummary = document.getElementById("rsCsSummary");
+  const $csTitle   = document.getElementById("rsCsTitle");
+  const $csDetail  = document.getElementById("rsCsDetail");
+  const $csWa      = document.getElementById("rsCsWa");
+  const $csListEl  = document.getElementById("rsCsList");
+
+  // Número de soporte WhatsApp (formato wa.me sin '+'). Confirmado por Isaac 2026-05-23.
+  const WHATSAPP_SUPPORT_NUMBER = "5212206804856";
 
   const $btnShare    = document.getElementById("rsBtnShare");
   const $btnDownload = document.getElementById("rsBtnDownload");
@@ -937,6 +1042,152 @@
   });
 
   // ════════════════════════════════════════════════════════════
+  //  Clip states post-partido (Etapa 13 — R3.1)
+  // ════════════════════════════════════════════════════════════
+  function csStateLabel(state) {
+    if (state === "visible") return "✅ listo";
+    if (state === "en_cola") return "⏳ en cola";
+    if (state === "error") return "❌ error";
+    if (state === "pendiente_por_conexion") return "⚠️ pendiente conexión";
+    return state || "—";
+  }
+
+  function csFormatTime(tsPulso) {
+    const d = window.PuntazoClipStates && window.PuntazoClipStates._tsPulsoToDate
+      ? window.PuntazoClipStates._tsPulsoToDate(tsPulso)
+      : null;
+    if (!d || isNaN(d.getTime())) return "—";
+    return pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
+  }
+
+  function csRenderRows(docs, indexEntries) {
+    if (!$csListEl) return;
+    $csListEl.innerHTML = "";
+    for (let i = 0; i < docs.length; i++) {
+      const doc = docs[i];
+      const stateCls = String(doc.state || "").replace(/[^a-z_]/g, "");
+      const row = document.createElement("div");
+      row.className = "rs-cs-row cs-row-" + stateCls;
+
+      const num = document.createElement("span");
+      num.className = "rs-cs-num";
+      num.textContent = "#" + (i + 1);
+
+      const mid = document.createElement("div");
+      mid.className = "rs-cs-mid";
+      const t = document.createElement("span");
+      t.className = "rs-cs-time";
+      t.textContent = csFormatTime(doc.ts_pulso);
+      const tag = document.createElement("span");
+      tag.className = "rs-cs-tag " + stateCls;
+      tag.textContent = csStateLabel(doc.state);
+      mid.appendChild(t);
+      mid.appendChild(tag);
+
+      row.appendChild(num);
+      row.appendChild(mid);
+
+      if (doc.state === "visible") {
+        const resolved = window.PuntazoClipStates.resolveVideoUrl(doc, indexEntries);
+        const a = document.createElement("a");
+        a.className = "rs-cs-link" + (resolved ? "" : " is-disabled");
+        if (resolved && resolved.videoId) {
+          a.href = "/clip.html?videoId=" + encodeURIComponent(resolved.videoId);
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.textContent = "Ver clip ↗";
+        } else {
+          a.href = "#";
+          a.textContent = "Procesando…";
+          a.title = "El clip está marcado como visible pero aún no aparece en el índice. Refresca en unos segundos.";
+        }
+        row.appendChild(a);
+      } else if (doc.state === "error" || doc.state === "pendiente_por_conexion") {
+        const info = document.createElement("span");
+        info.className = "rs-cs-detail-btn";
+        info.textContent = "ⓘ";
+        info.title = String(doc.state_detail || "Sin detalle");
+        row.appendChild(info);
+      } else {
+        const ph = document.createElement("span");
+        ph.style.width = "0";
+        row.appendChild(ph);
+      }
+      $csListEl.appendChild(row);
+    }
+  }
+
+  function csRenderSummary(docs, hasError, allVisible, total, visibles) {
+    if (!$csSummary || !$csTitle || !$csDetail || !$csWa) return;
+
+    if (total === 0) {
+      $csSummary.className = "rs-cs-summary info";
+      $csTitle.textContent = "Sin pulsos registrados";
+      $csDetail.textContent = "Este partido no generó pulsos detectados por el sistema de estados.";
+      $csWa.style.display = "none";
+      return;
+    }
+
+    if (allVisible) {
+      $csSummary.className = "rs-cs-summary ok";
+      $csTitle.textContent = "Todos tus clips están listos";
+      $csDetail.textContent = "Los " + total + (total === 1 ? " clip está disponible." : " clips están disponibles.");
+      $csWa.style.display = "none";
+      return;
+    }
+
+    if (hasError) {
+      const errCount = docs.filter(function (d) { return d && d.state === "error"; }).length;
+      $csSummary.className = "rs-cs-summary bad";
+      $csTitle.textContent = errCount + " " + (errCount === 1 ? "clip tuvo un problema" : "clips tuvieron un problema");
+      $csDetail.textContent = "Si es importante para ti recuperar " + (errCount === 1 ? "ese clip" : "esos clips") + ", repórtanos por WhatsApp.";
+      $csWa.href = "https://wa.me/" + encodeURIComponent(WHATSAPP_SUPPORT_NUMBER) +
+                   "?text=" + encodeURIComponent("Hola, tuve " + errCount + " clip(s) con error en mi partido de Puntazo.");
+      $csWa.style.display = "inline-flex";
+      return;
+    }
+
+    // Resto: alguno en_cola o pendiente_por_conexion (no error)
+    $csSummary.className = "rs-cs-summary info";
+    $csTitle.textContent = "Algunos clips siguen procesándose";
+    $csDetail.textContent = visibles + " de " + total + " clip" + (total === 1 ? "" : "s") +
+      " está" + (visibles === 1 ? "" : "n") + " listo" + (visibles === 1 ? "" : "s") +
+      ". Refresca esta página en unos minutos o ve a tus clips cuando estén listos.";
+    $csWa.style.display = "none";
+  }
+
+  async function renderClipStates(match, indexEntries) {
+    if (!$csWrap) return;
+    if (!window.PuntazoClipStates || typeof window.PuntazoClipStates.getForMatch !== "function") {
+      console.warn("[resumen] PuntazoClipStates no disponible — sección omitida.");
+      return;
+    }
+    if (!match.startedAt) return;
+
+    let docs = [];
+    try {
+      docs = await window.PuntazoClipStates.getForMatch({
+        loc: match.loc, can: match.can, lado: match.lado,
+        startedAt: match.startedAt,
+        endedAt: match.endedAt || null,
+      });
+    } catch (e) {
+      console.warn("[resumen] clip-states getForMatch falló — sección omitida.", e);
+      return;
+    }
+    if (!Array.isArray(docs)) docs = [];
+
+    $csWrap.style.display = "block";
+    const total = docs.length;
+    const visibles = docs.filter(function (d) { return d && d.state === "visible"; }).length;
+    const hasError = docs.some(function (d) { return d && d.state === "error"; });
+    const allVisible = total > 0 && visibles === total;
+
+    csRenderSummary(docs, hasError, allVisible, total, visibles);
+    csRenderRows(docs, indexEntries || []);
+  }
+
+  // ════════════════════════════════════════════════════════════
   //  Render principal
   // ════════════════════════════════════════════════════════════
   async function renderResumen(match) {
@@ -979,6 +1230,15 @@
     $puntazos.textContent = String(clips.length);
     renderClips(clips);
     fitCard();
+
+    // Mini-sección "Estado de tus clips" (Etapa 13 — R3.1).
+    // Falla silenciosa: si Firestore no responde, el resto del resumen
+    // (marcador, duración, tarjeta compartible, clips del JSON) sigue intacto.
+    try {
+      await renderClipStates(match, clips);
+    } catch (e) {
+      console.warn("[resumen] renderClipStates falló (no bloqueante)", e);
+    }
   }
 
   // ════════════════════════════════════════════════════════════
