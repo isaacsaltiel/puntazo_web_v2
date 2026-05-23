@@ -26,6 +26,7 @@
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/auth.js"></script>
 <script src="/assets/matches.js"></script>
+<script src="/assets/clip-states.js"></script>
 
 <style>
   .mp-wrap {
@@ -381,6 +382,108 @@
     .mp-set-row { grid-template-columns: 60px 1fr 14px 1fr; }
     .mp-timer { font-size: 1.8rem; }
   }
+
+  /* ── Clip states (Etapa 13 — R3.1) ── */
+  .cs-card { padding: 16px 16px 14px; }
+  .cs-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .cs-title {
+    font-size: 0.92rem; font-weight: 800; color: #fff;
+    letter-spacing: 0.2px;
+  }
+  .cs-conn {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .cs-conn-ok { background: #9af2c0; box-shadow: 0 0 6px rgba(154, 242, 192, .55); }
+  .cs-conn-bad { background: #ff8a76; box-shadow: 0 0 6px rgba(255, 138, 118, .55); }
+  .cs-list { display: flex; flex-direction: column; gap: 8px; }
+  .cs-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .cs-row-visible { background: rgba(34, 180, 100, 0.08); border-color: rgba(34, 180, 100, 0.22); }
+  .cs-row-error { background: rgba(255, 80, 80, 0.08); border-color: rgba(255, 80, 80, 0.22); }
+  .cs-row-pendiente_por_conexion { background: rgba(255, 170, 60, 0.08); border-color: rgba(255, 170, 60, 0.22); }
+
+  .cs-num {
+    font-size: 0.86rem; font-weight: 900;
+    color: rgba(234, 242, 255, .70);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+  .cs-mid {
+    display: flex; flex-direction: column; gap: 2px;
+    min-width: 0;
+  }
+  .cs-time {
+    font-size: 0.92rem; font-weight: 800; color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .cs-state-tag {
+    font-size: 0.74rem; font-weight: 700;
+    color: rgba(234, 242, 255, .70);
+    letter-spacing: 0.2px;
+  }
+  .cs-tag-visible { color: #9af2c0; }
+  .cs-tag-error { color: #ffb1a3; }
+  .cs-tag-pendiente_por_conexion { color: #ffd497; }
+  .cs-tag-en_cola { color: #cfe2ff; }
+
+  .cs-link {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: rgba(11, 124, 255, 0.22);
+    border: 1px solid rgba(11, 124, 255, 0.40);
+    color: #cfe2ff;
+    font-size: 0.80rem; font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all .16s ease;
+  }
+  .cs-link:hover { background: rgba(11, 124, 255, 0.32); color: #fff; }
+  .cs-link-disabled {
+    opacity: .55; cursor: not-allowed; pointer-events: none;
+  }
+  .cs-detail-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .14);
+    color: rgba(234, 242, 255, .65);
+    font-size: 0.78rem; font-weight: 800;
+    cursor: help;
+  }
+
+  .cs-empty {
+    text-align: center;
+    padding: 22px 14px;
+    color: rgba(234, 242, 255, .58);
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  .cs-offline {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 170, 60, 0.10);
+    border: 1px solid rgba(255, 170, 60, 0.25);
+    color: #ffd497;
+    font-size: 0.84rem;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -477,6 +580,16 @@
         <div id="mpMarcadorVal" class="mp-marcador-val"></div>
         <div id="mpMarcadorWinner" class="mp-marcador-winner" style="display:none"></div>
       </div>
+    </div>
+
+    <div id="mpClipStates" class="mp-card cs-card" style="display:none">
+      <div class="cs-header">
+        <span class="cs-title">🎯 Pulsos de este partido</span>
+        <span id="csConnDot" class="cs-conn cs-conn-ok" title="Conectado al servicio de estados"></span>
+      </div>
+      <div id="csList" class="cs-list"></div>
+      <div id="csEmpty" class="cs-empty">Aún no hay pulsos registrados.</div>
+      <div id="csOffline" class="cs-offline" style="display:none">⚠️ Sin conexión con el servicio de estados. Reintentando…</div>
     </div>
 
     <div id="mpActiveActions" class="mp-actions" style="display:none">
@@ -672,6 +785,11 @@
   const $nuevaStart = document.getElementById("mpNuevaStart");
   const $nuevaSkip = document.getElementById("mpNuevaSkip");
   const $nuevaMsg = document.getElementById("mpNuevaMsg");
+  const $clipStatesCard = document.getElementById("mpClipStates");
+  const $csList = document.getElementById("csList");
+  const $csEmpty = document.getElementById("csEmpty");
+  const $csOffline = document.getElementById("csOffline");
+  const $csConnDot = document.getElementById("csConnDot");
 
   let currentMatch = null;
 
@@ -762,9 +880,195 @@
     if (_pollId) { clearInterval(_pollId); _pollId = null; }
   }
 
+  // ---------- estados vivos de clips (Etapa 13 — R3.1) ----------
+  let _csUnsub = null;
+  let _csRetryTimer = null;
+  let _csDocs = [];
+  let _csIndexEntries = [];
+  let _csIndexFetchInFlight = false;
+  let _csIndexLastFetchMs = 0;
+  const CS_INDEX_REFRESH_MS = 30000;
+  const CS_RETRY_MS = 30000;
+
+  function csStateLabel(state) {
+    if (state === "visible") return "✅ listo";
+    if (state === "en_cola") return "⏳ en cola";
+    if (state === "error") return "❌ error";
+    if (state === "pendiente_por_conexion") return "⚠️ pendiente conexión";
+    return state || "—";
+  }
+
+  function csFormatTime(tsPulso) {
+    const d = window.PuntazoClipStates && window.PuntazoClipStates._tsPulsoToDate
+      ? window.PuntazoClipStates._tsPulsoToDate(tsPulso)
+      : null;
+    if (!d || isNaN(d.getTime())) return "—";
+    return pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
+  }
+
+  function csEscape(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function csRenderRows() {
+    if (!$csList) return;
+    $csList.innerHTML = "";
+    if (!_csDocs.length) {
+      if ($csEmpty) $csEmpty.style.display = "block";
+      return;
+    }
+    if ($csEmpty) $csEmpty.style.display = "none";
+
+    for (let i = 0; i < _csDocs.length; i++) {
+      const doc = _csDocs[i];
+      const row = document.createElement("div");
+      const stateCls = String(doc.state || "").replace(/[^a-z_]/g, "");
+      row.className = "cs-row cs-row-" + stateCls;
+
+      const num = document.createElement("span");
+      num.className = "cs-num";
+      num.textContent = "#" + (i + 1);
+
+      const mid = document.createElement("div");
+      mid.className = "cs-mid";
+      const t = document.createElement("span");
+      t.className = "cs-time";
+      t.textContent = csFormatTime(doc.ts_pulso);
+      const tag = document.createElement("span");
+      tag.className = "cs-state-tag cs-tag-" + stateCls;
+      tag.textContent = csStateLabel(doc.state);
+      mid.appendChild(t);
+      mid.appendChild(tag);
+
+      row.appendChild(num);
+      row.appendChild(mid);
+
+      if (doc.state === "visible") {
+        const resolved = window.PuntazoClipStates.resolveVideoUrl(doc, _csIndexEntries);
+        const a = document.createElement("a");
+        a.className = "cs-link" + (resolved ? "" : " cs-link-disabled");
+        if (resolved && resolved.videoId) {
+          a.href = "/clip.html?videoId=" + encodeURIComponent(resolved.videoId);
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.textContent = "Ver clip ↗";
+        } else {
+          a.href = "#";
+          a.textContent = "Procesando…";
+          a.title = "El clip está publicado pero aún no aparece en el índice. Refresca en unos segundos.";
+        }
+        row.appendChild(a);
+      } else if (doc.state === "error" || doc.state === "pendiente_por_conexion") {
+        const info = document.createElement("span");
+        info.className = "cs-detail-btn";
+        info.textContent = "ⓘ";
+        info.title = csEscape(doc.state_detail || "Sin detalle");
+        row.appendChild(info);
+      } else {
+        const ph = document.createElement("span");
+        ph.style.width = "0";
+        row.appendChild(ph);
+      }
+
+      $csList.appendChild(row);
+    }
+  }
+
+  async function csRefreshIndex(force) {
+    if (!currentMatch || !window.PuntazoMatches || typeof window.PuntazoMatches.findClipsForMatch !== "function") return;
+    const now = Date.now();
+    if (!force && (now - _csIndexLastFetchMs) < CS_INDEX_REFRESH_MS) return;
+    if (_csIndexFetchInFlight) return;
+    _csIndexFetchInFlight = true;
+    try {
+      const clips = await window.PuntazoMatches.findClipsForMatch(currentMatch);
+      if (Array.isArray(clips)) {
+        _csIndexEntries = clips;
+        _csIndexLastFetchMs = Date.now();
+        csRenderRows();
+      }
+    } catch (e) {
+      console.warn("[mi-partido] csRefreshIndex failed", e);
+    } finally {
+      _csIndexFetchInFlight = false;
+    }
+  }
+
+  function csSetOnline(online) {
+    if ($csConnDot) {
+      $csConnDot.className = "cs-conn " + (online ? "cs-conn-ok" : "cs-conn-bad");
+      $csConnDot.title = online ? "Conectado al servicio de estados" : "Sin conexión con el servicio de estados";
+    }
+    if ($csOffline) $csOffline.style.display = online ? "none" : "block";
+  }
+
+  function startClipStates() {
+    if (!currentMatch || !currentMatch.loc || !currentMatch.can || !currentMatch.lado) return;
+    if (!window.PuntazoClipStates || typeof window.PuntazoClipStates.subscribeToMatch !== "function") {
+      console.warn("[mi-partido] PuntazoClipStates no disponible — sección omitida.");
+      return;
+    }
+    if (!currentMatch.startedAt) return;
+
+    stopClipStates();
+    if ($clipStatesCard) $clipStatesCard.style.display = "block";
+    _csDocs = [];
+    csRenderRows();
+    csSetOnline(true);
+
+    // Pre-carga del índice JSON (lazy refresh después por cada visible).
+    csRefreshIndex(true);
+
+    try {
+      _csUnsub = window.PuntazoClipStates.subscribeToMatch({
+        loc: currentMatch.loc,
+        can: currentMatch.can,
+        lado: currentMatch.lado,
+        startedAt: currentMatch.startedAt,
+        endedAt: null,
+        onUpdate: function (docs) {
+          _csDocs = docs || [];
+          csSetOnline(true);
+          csRenderRows();
+          // Si hay alguno visible y aún no está resuelto, refresca el índice.
+          const needsIndex = _csDocs.some(function (d) {
+            return d && d.state === "visible" &&
+              !window.PuntazoClipStates.resolveVideoUrl(d, _csIndexEntries);
+          });
+          if (needsIndex) csRefreshIndex(false);
+        },
+        onError: function (err) {
+          console.error("[mi-partido] clip-states onError", err);
+          csSetOnline(false);
+          if (_csRetryTimer) clearTimeout(_csRetryTimer);
+          _csRetryTimer = setTimeout(function () {
+            _csRetryTimer = null;
+            if (currentMatch && currentMatch.status === "active") {
+              startClipStates();
+            }
+          }, CS_RETRY_MS);
+        },
+      });
+    } catch (e) {
+      console.error("[mi-partido] subscribeToMatch failed", e);
+      csSetOnline(false);
+    }
+  }
+
+  function stopClipStates() {
+    if (_csUnsub) { try { _csUnsub(); } catch (_) {} _csUnsub = null; }
+    if (_csRetryTimer) { clearTimeout(_csRetryTimer); _csRetryTimer = null; }
+    if ($clipStatesCard) $clipStatesCard.style.display = "none";
+    _csDocs = [];
+    _csIndexEntries = [];
+    _csIndexLastFetchMs = 0;
+  }
+
   function teardownLive() {
     stopTimer();
     stopClipPolling();
+    stopClipStates();
     if ($timerBox) $timerBox.classList.remove("is-active");
     if (typeof teardownClipBtn === "function") teardownClipBtn();
   }
@@ -845,6 +1149,7 @@
       }
       if ($clipCount && $clipCount.textContent === "") $clipCount.textContent = "—";
       startClipPolling();
+      startClipStates();
     } else {
       $activeActions.style.display = "none";
       $finishedActions.style.display = "flex";
