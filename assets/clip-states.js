@@ -160,6 +160,22 @@
     });
   }
 
+  // Por default excluimos source="form" del flujo de partido: el form de
+  // recuperacion son pulsos viejos reprocesados, no son del momento del
+  // partido y suelen tener bugs de TZ (R2.3 en project memory). Callers
+  // pueden override pasando opts.excludeSources = [] o ["form","manual"], etc.
+  const DEFAULT_EXCLUDED_SOURCES = ["form"];
+
+  function clientSideSourceFilter(docs, excludedSources) {
+    const blocked = Array.isArray(excludedSources) ? excludedSources : DEFAULT_EXCLUDED_SOURCES;
+    if (!blocked.length) return docs;
+    const blockedSet = {};
+    blocked.forEach(function (s) { blockedSet[String(s)] = true; });
+    return docs.filter(function (d) {
+      return !blockedSet[String(d.source || "")];
+    });
+  }
+
   function snapToDocs(snapshot) {
     const docs = [];
     snapshot.forEach(function (doc) {
@@ -196,6 +212,7 @@
     const sdkUnsub = q.onSnapshot(function (snapshot) {
       let docs = snapToDocs(snapshot);
       docs = clientSideCeilFilter(docs, endedDate);
+      docs = clientSideSourceFilter(docs, opts.excludeSources);
       try { onUpdate(docs); } catch (e) { console.error("[ClipStates] onUpdate falló", e); }
     }, function (err) {
       console.error("[ClipStates] onSnapshot error", err);
@@ -223,6 +240,7 @@
     const snap = await buildQuery(loc, can, lado, startedDate).get();
     let docs = snapToDocs(snap);
     docs = clientSideCeilFilter(docs, endedDate);
+    docs = clientSideSourceFilter(docs, opts.excludeSources);
     return docs;
   }
 
