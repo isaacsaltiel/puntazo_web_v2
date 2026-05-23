@@ -127,12 +127,18 @@
 
   // ---------- query construction ----------------------------------------
 
+  // Tolerancia hacia atrás del lower bound: aceptamos pulsos hasta 1h
+  // ANTES del startedAt para cubrir casos donde el jugador inicia el
+  // partido en la app un rato después de empezar a jugar.
+  const STARTED_LOWER_BUFFER_MS = 60 * 60 * 1000;
+
   // Devuelve la query base filtrada por club/cancha/lado/ts_pulso (>=).
-  // El upper bound (endedAt) se aplica client-side para evitar la
+  // El upper bound (endedAt o now) se aplica client-side para evitar la
   // necesidad de un índice compuesto adicional. Para un partido de
   // 1.5h con 10 clips son ~10 docs leídos, costo despreciable.
   function buildQuery(loc, can, lado, startedDate) {
-    const tsFloor = dateToLocalNaiveISO(startedDate);
+    const floorDate = new Date(startedDate.getTime() - STARTED_LOWER_BUFFER_MS);
+    const tsFloor = dateToLocalNaiveISO(floorDate);
     return db().collection(COL)
       .where("club", "==", loc)
       .where("cancha", "==", can)
@@ -140,10 +146,15 @@
       .where("ts_pulso", ">=", tsFloor);
   }
 
+  // Filtra docs cuyo ts_pulso esté FUERA de la ventana del partido.
+  // - Durante partido activo (endedDate=null): ceil = NOW (descarta pulsos
+  //   del futuro, que aparecen ocasionalmente por bugs de TZ del canal form).
+  // - Post-partido: ceil = endedDate + 2s de tolerancia.
   function clientSideCeilFilter(docs, endedDate) {
-    if (!endedDate) return docs;
-    // +2s de tolerancia para tolerar clips registrados justo en endedAt.
-    const tsCeil = dateToLocalNaiveISO(new Date(endedDate.getTime() + 2000));
+    const effectiveCeilDate = endedDate
+      ? new Date(endedDate.getTime() + 2000)
+      : new Date();
+    const tsCeil = dateToLocalNaiveISO(effectiveCeilDate);
     return docs.filter(function (d) {
       return !(typeof d.ts_pulso === "string" && d.ts_pulso > tsCeil);
     });
