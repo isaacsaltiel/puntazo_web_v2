@@ -1657,6 +1657,89 @@
     .mp-live-btn-game { min-width: 50px; font-size: 0.72rem; padding: 0 6px; }
   }
 
+  /* ── Etapa 16.4 F2: botón "Pedir Puntazo" promovido al top + acordeones ── */
+  .mp-quick-actions {
+    margin: 14px auto 18px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .mp-btn-puntazo {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 18px 28px;
+    width: 100%;
+    max-width: 360px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #0b7cff 0%, #1d4ed8 100%);
+    color: #fff;
+    font-family: inherit;
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    box-shadow: 0 12px 32px rgba(11, 124, 255, 0.42), 0 2px 6px rgba(0, 0, 0, 0.25);
+    transition: transform 0.12s ease, box-shadow 0.14s ease, filter 0.14s ease;
+  }
+  .mp-btn-puntazo:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(11, 124, 255, 0.55), 0 4px 8px rgba(0, 0, 0, 0.28); }
+  .mp-btn-puntazo:active { transform: translateY(0); filter: brightness(0.92); }
+  .mp-btn-puntazo[disabled] { opacity: 0.55; cursor: not-allowed; filter: grayscale(0.4); }
+  .mp-btn-puntazo .pz-puntazo-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.16);
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    font-size: 1.55rem;
+    font-weight: 900;
+    font-style: italic;
+    line-height: 1;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .mp-btn-puntazo .pz-puntazo-label {
+    flex: 1;
+    text-align: left;
+  }
+  @media (max-width: 380px) {
+    .mp-btn-puntazo { padding: 16px 20px; font-size: 0.96rem; gap: 10px; }
+    .mp-btn-puntazo .pz-puntazo-mark { width: 38px; height: 38px; font-size: 1.30rem; }
+  }
+
+  /* Acordeones colapsables para mpMainCourtCard y mpClipStates */
+  .mp-section-toggle {
+    appearance: none;
+    border: 1px solid rgba(11, 124, 255, 0.28);
+    background: rgba(11, 80, 200, 0.10);
+    color: rgba(234, 242, 255, 0.92);
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: 700;
+    padding: 12px 16px;
+    width: 100%;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 10px 0;
+    transition: background 0.14s ease, border-color 0.14s ease;
+  }
+  .mp-section-toggle:hover { background: rgba(11, 124, 255, 0.18); border-color: rgba(11, 124, 255, 0.45); }
+  .mp-section-toggle .toggle-caret { transition: transform 0.18s ease; opacity: 0.7; }
+  .mp-section-toggle.is-open .toggle-caret { transform: rotate(180deg); }
+
   /* ── Etapa 16.3 — Marcador compacto + botonera por equipo ── */
   .mp-live-compact {
     margin: 4px 0 14px;
@@ -1981,8 +2064,8 @@
     <div id="mpNuevaMsg" class="mp-msg"></div>
 
     <div class="mp-modal-actions">
-      <button id="mpNuevaStart" class="mp-btn-end" type="button">Iniciar partido</button>
-      <button id="mpNuevaSkip" class="mp-btn-cancel" type="button">Saltar</button>
+      <button id="mpNuevaStart" class="mp-btn-end" type="button">🚀 Iniciar partido</button>
+      <button id="mpNuevaSkip" class="mp-btn-cancel" type="button">Iniciar sin jugadores</button>
     </div>
   </div>
 
@@ -2016,6 +2099,15 @@
       </div>
     </div>
 
+    <!-- Etapa 16.4 F2: botón "Pedir Puntazo" promovido al top (era última acción) -->
+    <div id="mpQuickActions" class="mp-quick-actions" style="display:none">
+      <button id="mpBtnClip" class="mp-btn-puntazo" type="button">
+        <span class="pz-puntazo-mark" aria-hidden="true">P</span>
+        <span class="pz-puntazo-label">PEDIR PUNTAZO</span>
+      </button>
+      <div id="mpClipFeedback" class="mp-clip-feedback"></div>
+    </div>
+
     <div id="mpGuestBanner" class="mp-guest-banner" style="display:none">
       Estás viendo el partido de <strong id="mpOwnerName">otro jugador</strong>.
       Puedes ver la cancha, el marcador y los pulsos. Para vincularte a un slot, inicia sesión.
@@ -2026,6 +2118,11 @@
       <button id="mpConflictResolve" type="button">Revisar conflictos</button>
     </div>
 
+    <!-- Etapa 16.4 F2: cancha visual en acordeón (opcional, baja prioridad) -->
+    <button id="mpConfigToggle" class="mp-section-toggle" type="button" style="display:none">
+      <span>⚙ Editar jugadores y cancha</span>
+      <span class="toggle-caret" aria-hidden="true">▼</span>
+    </button>
     <div id="mpMainCourtCard" class="mp-card mp-main-court-card" style="display:none">
       <div class="mp-main-court-title">🎾 Cancha</div>
       <div class="mp-court-wrap" style="position:relative">
@@ -2145,6 +2242,11 @@
       </div>
     </div>
 
+    <!-- Etapa 16.4 F2: pulsos en acordeón colapsable (info secundaria) -->
+    <button id="mpClipStatesToggle" class="mp-section-toggle" type="button" style="display:none">
+      <span>🎯 Pulsos del partido</span>
+      <span class="toggle-caret" aria-hidden="true">▼</span>
+    </button>
     <div id="mpClipStates" class="mp-card cs-card" style="display:none">
       <div class="cs-header">
         <span class="cs-title">🎯 Pulsos de este partido</span>
@@ -2155,11 +2257,8 @@
       <div id="csOffline" class="cs-offline" style="display:none">⚠️ Sin conexión con el servicio de estados. Reintentando…</div>
     </div>
 
-    <!-- ── Etapa 15.8 — Feature 3: nota del partido ── -->
     <div id="mpActiveActions" class="mp-actions" style="display:none">
       <button id="mpBtnEnd" class="mp-btn-end" type="button">🏁 Terminar partido</button>
-      <button id="mpBtnClip" class="mp-btn-clip" type="button">🎯 Pedir clip ahora</button>
-      <div id="mpClipFeedback" class="mp-clip-feedback"></div>
       <button id="mpBtnShareActive" class="mp-btn-share" type="button" style="display:none">📤 Compartir link del partido</button>
       <button id="mpBtnCancel" class="mp-btn-cancel" type="button">Cancelar partido</button>
     </div>
@@ -2906,7 +3005,8 @@
     if (!currentMatch.startedAt) return;
 
     stopClipStates();
-    if ($clipStatesCard) $clipStatesCard.style.display = "block";
+    // Etapa 16.4 F2: NO forzamos display:block — el toggle mpClipStatesToggle
+    // decide la visibilidad. Arranca colapsado para no saturar la pantalla.
     _csDocs = [];
     csRenderRows();
     csSetOnline(true);
@@ -3063,9 +3163,17 @@
 
     // Acciones según status + viewMode + features vivas
     const isActive = match.status === "active";
+    // Etapa 16.4 F2: nuevos toggles colapsables y botón Pedir Puntazo promovido
+    const $quickActions     = document.getElementById("mpQuickActions");
+    const $configToggle     = document.getElementById("mpConfigToggle");
+    const $clipStatesToggle = document.getElementById("mpClipStatesToggle");
+
     if (isActive && currentViewMode === "owner") {
       $activeActions.style.display = "flex";
       $finishedActions.style.display = "none";
+      if ($quickActions) $quickActions.style.display = "flex";
+      if ($configToggle) $configToggle.style.display = "flex";
+      if ($clipStatesToggle) $clipStatesToggle.style.display = "flex";
       if ($timerBox) $timerBox.classList.add("is-active");
       const startMs = startDate ? startDate.getTime() : null;
       if (startMs != null) {
@@ -3082,6 +3190,9 @@
       // cronómetro + clip states (read-only por las rules de Firestore).
       $activeActions.style.display = "none";
       $finishedActions.style.display = "none";
+      if ($quickActions) $quickActions.style.display = "none";
+      if ($configToggle) $configToggle.style.display = "flex";
+      if ($clipStatesToggle) $clipStatesToggle.style.display = "flex";
       if ($timerBox) $timerBox.classList.add("is-active");
       const startMs = startDate ? startDate.getTime() : null;
       if (startMs != null) startTimer(startMs); else stopTimer();
@@ -3093,6 +3204,9 @@
       // ended / cancelled — tanto dueño como invitado ven los enlaces.
       $activeActions.style.display = "none";
       $finishedActions.style.display = "flex";
+      if ($quickActions) $quickActions.style.display = "none";
+      if ($configToggle) $configToggle.style.display = "none";
+      if ($clipStatesToggle) $clipStatesToggle.style.display = "none";
       teardownLive();
     }
 
@@ -3845,7 +3959,8 @@
 
   function renderMainCourt() {
     if (!currentMatch || !$mainCourtCard || !$mainCourtGrid) return;
-    $mainCourtCard.style.display = "block";
+    // Etapa 16.4 F2: NO forzamos display:block — el toggle mpConfigToggle decide
+    // si está visible. Para partidos status="active" arranca colapsado.
 
     const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     const isOwner = currentViewMode === "owner";
@@ -5429,6 +5544,24 @@
     stopMatchSubscription();
     hideSaveDot();
   });
+
+  // ════════════════════════════════════════════════════════════
+  //  Etapa 16.4 F2 — Toggles de acordeones (Cancha config + Pulsos)
+  // ════════════════════════════════════════════════════════════
+  (function setupSectionToggles() {
+    function bindToggle(toggleId, targetId) {
+      const toggle = document.getElementById(toggleId);
+      const target = document.getElementById(targetId);
+      if (!toggle || !target) return;
+      toggle.addEventListener("click", function () {
+        const isHidden = target.style.display === "none" || !target.style.display;
+        target.style.display = isHidden ? "block" : "none";
+        toggle.classList.toggle("is-open", isHidden);
+      });
+    }
+    bindToggle("mpConfigToggle", "mpMainCourtCard");
+    bindToggle("mpClipStatesToggle", "mpClipStates");
+  })();
 })();
 </script>
 
