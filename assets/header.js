@@ -24,7 +24,7 @@
 
   const path    = (window.location.pathname || "").toLowerCase();
   const variant = root.dataset.navVariant || (
-    path.endsWith("/index.html") || path === "/" ? "landing" : "internal"
+    path.endsWith("/landing.html") || path === "/" ? "landing" : "internal"
   );
 
   injectHeaderStyles();
@@ -111,14 +111,14 @@
     if (variant === "landing") {
       root.innerHTML = `
         <nav>
-          <a href="index.html" class="nav-logo">
+          <a href="landing.html" class="nav-logo">
             <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
           </a>
           <ul class="nav-links" id="nav-menu">
-            <li><a href="index.html#producto"    onclick="closeMenu()">Producto</a></li>
-            <li><a href="index.html#vision"      onclick="closeMenu()">Visión</a></li>
-            <li><a href="index.html#clubs"       onclick="closeMenu()">Para clubs</a></li>
-            <li><a href="index.html#locaciones"  onclick="closeMenu()">Locaciones</a></li>
+            <li><a href="landing.html#producto"    onclick="closeMenu()">Producto</a></li>
+            <li><a href="landing.html#vision"      onclick="closeMenu()">Visión</a></li>
+            <li><a href="landing.html#clubs"       onclick="closeMenu()">Para clubs</a></li>
+            <li><a href="landing.html#locaciones"  onclick="closeMenu()">Locaciones</a></li>
           </ul>
           <div class="pz-nav-right">
             ${getPhoneButtonCTA()}
@@ -134,13 +134,13 @@
     // Internal
     root.innerHTML = `
       <header class="site-header">
-        <a href="index.html" class="logo-link">
+        <a href="landing.html" class="logo-link">
           <img src="assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
         </a>
         <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú">☰</button>
         <nav class="navbar" id="nav-menu">
-          <a href="index.html">Inicio</a>
-          <a href="index.html#clubs">Para clubs</a>
+          <a href="landing.html">Inicio</a>
+          <a href="landing.html#clubs">Para clubs</a>
         </nav>
         <div class="pz-nav-right pz-nav-right--internal">
           ${getPhoneButtonCTA()}

@@ -393,7 +393,6 @@
     const ladoTxt = (slotIdx != null) ? ladoLabel(slotIdx) : '';
     const subParts = [];
     if (canNombre) subParts.push(canNombre);
-    if (ladoNombre) subParts.push('Lado ' + ladoNombre);
     if (ladoTxt) subParts.push(ladoTxt);
     const subHtml = subParts.map(escapeHTML).join(' · ');
 

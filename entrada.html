@@ -45,10 +45,51 @@
   }
 
   .entrada-logo {
-    width: 56px;
-    height: 56px;
+    width: auto;
+    height: 64px;
+    max-width: 70%;
     margin: 0 auto 16px;
     display: block;
+    object-fit: contain;
+  }
+
+  .entrada-topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: linear-gradient(180deg, rgba(2,6,16,0.85), rgba(2,6,16,0));
+    pointer-events: none;
+  }
+  .entrada-topbar a, .entrada-topbar button {
+    pointer-events: auto;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: rgba(207,226,255,.75);
+    text-decoration: none;
+    background: rgba(11,80,200,0.18);
+    border: 1px solid rgba(11,124,255,.25);
+    border-radius: 999px;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: all .14s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    line-height: 1;
+  }
+  .entrada-topbar a:hover, .entrada-topbar button:hover {
+    color: #fff;
+    background: rgba(11,124,255,0.32);
+    border-color: rgba(11,124,255,.55);
+  }
+  .entrada-topbar .tb-right {
+    display: flex;
+    gap: 8px;
   }
 
   .entrada-title {
@@ -350,6 +391,13 @@
 
 <div class="page-bg"></div>
 
+<nav class="entrada-topbar" aria-label="Navegación general">
+  <a href="/landing.html" title="Conoce la plataforma Puntazo">ℹ Conoce Puntazo</a>
+  <div class="tb-right">
+    <a href="/perfil.html" title="Mi perfil">👤 Mi perfil</a>
+  </div>
+</nav>
+
 <main class="entrada-wrap">
 
   <div id="entradaLoading" class="entrada-loading">⏳ Cargando…</div>
@@ -590,18 +638,15 @@
         card.type = "button";
         card.className = "sel-card";
         card.innerHTML =
-          '<div class="emoji">🟦</div>' +
-          '<div class="name">' + escapeHtml(cancha.nombre) + '</div>' +
-          '<div class="meta">' + (cancha.lados || []).length + ' lado' + ((cancha.lados || []).length === 1 ? '' : 's') + '</div>';
+          '<div class="emoji">🎾</div>' +
+          '<div class="name">' + escapeHtml(cancha.nombre) + '</div>';
         card.addEventListener("click", function () {
           selectorState.selectedCancha = cancha;
-          // Si solo hay un lado, lo elegimos directo (no hace falta paso extra)
-          if ((cancha.lados || []).length === 1) {
-            commitSelection(club, cancha, cancha.lados[0]);
-            return;
-          }
-          selectorState.step = "lados";
-          renderSelector();
+          // Siempre elegimos el primer lado automáticamente (el concepto "lado" es
+          // interno; el usuario nunca lo ve). Si la cancha no tuviera lados (caso
+          // raro), caemos a un objeto mínimo con id LadoA como fallback.
+          const ld = (cancha.lados && cancha.lados[0]) || { id: "LadoA", nombre: "" };
+          commitSelection(club, cancha, ld);
         });
         $selGrid.appendChild(card);
       });
@@ -695,7 +740,7 @@
       console.warn("[entrada] No se pudieron resolver nombres legibles:", e);
     }
     $locName.textContent = locNombre;
-    $locSub.textContent = canNombre + " · " + ladoNombre;
+    $locSub.textContent = canNombre;
   }
 
   function renderForUser(user) {
