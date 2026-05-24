@@ -1,0 +1,88 @@
+// =============================================================
+// Firestore Security Rules — Puntazo · matches/ (Etapa 15 — DRAFT)
+// =============================================================
+//
+// Reemplaza el bloque `match /matches/{matchId}` actual con éste.
+// Cambios vs Etapa 3:
+//   - READ pasa a `if true`. matchId es UUID no enumerable; quien
+//     tiene el ID es porque alguien se lo compartió. Mismo modelo que
+//     `clip_states/`. Esto deja preparado el link compartible de
+//     Etapa 15.5 sin tener que volver a tocar las rules.
+//   - Campos inmutables: SOLO `userId, loc, can, lado, startedAt,
+//     createdAt`. `jugadores`, `marcador`, `modo`, `deporte` son
+//     editables por el dueño.
+//   - `endedAt` sigue siendo write-once.
+//   - DELETE sigue denegado.
+//
+// IMPORTANTE: el resto de las reglas (catch-all final, otras
+// colecciones) NO se tocan. Pegar este bloque dentro del
+// `match /databases/{database}/documents { ... }` existente,
+// ANTES del catch-all denegado.
+//
+// -----------------------------------------------------------------
+
+match /matches/{matchId} {
+
+  function statusValid(s) {
+    return s == "active" || s == "ended" || s == "cancelled";
+  }
+
+  function fieldUnchanged(name) {
+    return request.resource.data[name] == resource.data[name];
+  }
+
+  // READ — público para cualquiera con el matchId (UUID no enumerable).
+  // Mismo modelo que clip_states/. Habilita el resumen compartible y
+  // sienta base para el claim por link (Etapa 15.5).
+  allow read: if true;
+
+  // CREATE — usuario autenticado, no puede falsificar userId,
+  // status inicial debe ser "active", timestamps validados con request.time.
+  allow create: if request.auth != null
+                && request.resource.data.userId == request.auth.uid
+                && request.resource.data.status == "active"
+                && request.resource.data.startedAt == request.time
+                && request.resource.data.createdAt == request.time
+                && statusValid(request.resource.data.status);
+
+  // UPDATE — solo el dueño; campos inmutables protegidos; endedAt write-once.
+  // jugadores, marcador, modo, deporte son editables.
+  allow update: if request.auth != null
+                && request.auth.uid == resource.data.userId
+                && fieldUnchanged('userId')
+                && fieldUnchanged('loc')
+                && fieldUnchanged('can')
+                && fieldUnchanged('lado')
+                && fieldUnchanged('startedAt')
+                && fieldUnchanged('createdAt')
+                && statusValid(request.resource.data.status)
+                && (
+                     resource.data.endedAt == null
+                     || request.resource.data.endedAt == resource.data.endedAt
+                   );
+
+  // DELETE — denegado. Borrado lógico via status = "cancelled".
+  allow delete: if false;
+}
+
+// =============================================================
+// Notas:
+//
+// 1) Índices compuestos: los mismos de Etapa 3 (userId+startedAt;
+//    userId+status+startedAt). Sin cambios.
+//
+// 2) Validación de modo / deporte / jugadores / marcador: las rules
+//    NO validan la forma de estos campos. Se confía en el cliente
+//    (assets/matches.js). Si se quisiera endurecer:
+//      && (request.resource.data.modo in ['partido_3','partido_5','reta','libre'])
+//      && (request.resource.data.deporte in ['padel','tenis'])
+//      && (request.resource.data.jugadores is list)
+//      && (request.resource.data.jugadores.size() <= 4)
+//
+// 3) Lectura pública: tras esta Etapa cualquier persona con el matchId
+//    puede leer el doc. Esto incluye partidos `active` o `cancelled`,
+//    no solo `ended`. Es intencional: queremos que el link compartible
+//    de Etapa 15.5 funcione sobre partidos en curso (un amigo que se va
+//    a sumar al partido necesita leer el doc para claim un slot).
+//
+// =============================================================
