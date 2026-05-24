@@ -201,13 +201,53 @@
     background: rgba(5, 9, 20, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.12);
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.45rem; font-weight: 900; color: #fff;
+    font-size: 1.45rem; font-weight: 900;
+    color: rgba(234, 242, 255, 0.42);
+    font-variant-numeric: tabular-nums;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  /* Coloreado por set (Etapa 15): cada celda gana independiente. */
+  .pz-set-cell.win-set {
+    color: #3395FF;
+    border-color: rgba(51, 149, 255, 0.55);
+    background: rgba(51, 149, 255, 0.10);
+  }
+  .pz-set-cell.lose-set { color: rgba(234, 242, 255, 0.40); }
+  .pz-set-cell.tied-set { color: rgba(234, 242, 255, 0.75); }
+
+  /* Reta / libre: layout más compacto para modos sin sets. */
+  .pz-reta-summary {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 18px 12px;
+    text-align: center;
+  }
+  .pz-reta-summary .label {
+    font-size: 0.74rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 1.4px;
+    color: rgba(234, 242, 255, 0.58);
+  }
+  .pz-reta-summary .team {
+    font-size: 1.30rem; font-weight: 900; color: #fff; line-height: 1.2;
+  }
+  .pz-reta-summary .team.win { color: #3395FF; }
+  .pz-reta-summary .team.tie { color: #ffd76a; }
+  .pz-reta-summary .vs {
+    font-size: 0.84rem; font-weight: 700;
+    color: rgba(234, 242, 255, 0.45);
+    letter-spacing: 1.2px;
+  }
+  .pz-libre-tally {
+    display: flex; align-items: center; justify-content: space-around;
+    gap: 8px;
+    padding: 12px 6px;
     font-variant-numeric: tabular-nums;
   }
-  .pz-team-row.is-winner .pz-set-cell {
-    border-color: rgba(255, 215, 106, 0.42);
-    color: #ffe49a;
-  }
+  .pz-libre-tally .cell { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; flex: 1; }
+  .pz-libre-tally .cell .nm { font-size: 1rem; font-weight: 800; color: #fff; line-height: 1.15; text-align: center; word-break: break-word; }
+  .pz-libre-tally .cell.win .nm { color: #3395FF; }
+  .pz-libre-tally .cell .games { font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1; }
+  .pz-libre-tally .cell.win .games { color: #3395FF; }
+  .pz-libre-tally .sep { color: rgba(234, 242, 255, 0.32); font-size: 1.4rem; font-weight: 700; }
   .pz-score-empty {
     text-align: center;
     color: rgba(234, 242, 255, 0.62);
@@ -728,33 +768,97 @@
   // ════════════════════════════════════════════════════════════
   //  Render del marcador dentro de la tarjeta
   // ════════════════════════════════════════════════════════════
-  // Mapea jugadores[] a dos equipos. Reglas (ver brief Etapa 6):
-  //  0 jug → "Equipo 1" / "Equipo 2"
-  //  1 jug → jugador0 / "Equipo 2"
-  //  2 jug → 1v1: jugador0 / jugador1
-  //  3 jug → jugador0+1 / jugador2
-  //  4 jug → jugador0+1 / jugador2+3
+  // Mapea jugadores[] a dos equipos (Etapa 15).
+  // - Si los items tienen el campo `equipo` (schema nuevo), agrupa por
+  //   ese campo.
+  // - Fallback legacy: orden por posición (jugadores[0,1]→team1, [2,3]→team2),
+  //   filtrando nombres vacíos sólo en el fallback.
   function splitTeams(jugadores) {
-    const J = Array.isArray(jugadores)
-      ? jugadores.filter(function (j) { return j && j.nombre; }).map(function (j) { return String(j.nombre); })
-      : [];
-    let t1 = [], t2 = [];
-    if (J.length === 0)      { t1 = []; t2 = []; }
-    else if (J.length === 1) { t1 = [J[0]]; t2 = []; }
-    else if (J.length === 2) { t1 = [J[0]]; t2 = [J[1]]; }
-    else if (J.length === 3) { t1 = [J[0], J[1]]; t2 = [J[2]]; }
-    else                     { t1 = [J[0], J[1]]; t2 = [J[2], J[3]]; }
+    const J = Array.isArray(jugadores) ? jugadores : [];
+    let t1Names = [], t2Names = [];
+    const hasEquipo = J.some(function (j) { return j && (j.equipo === "team1" || j.equipo === "team2"); });
+    if (hasEquipo) {
+      J.forEach(function (j) {
+        if (!j || !j.nombre) return;
+        if (j.equipo === "team1") t1Names.push(String(j.nombre));
+        else if (j.equipo === "team2") t2Names.push(String(j.nombre));
+      });
+    } else {
+      const names = J.filter(function (j) { return j && j.nombre; }).map(function (j) { return String(j.nombre); });
+      if (names.length === 1) t1Names = [names[0]];
+      else if (names.length === 2) { t1Names = [names[0]]; t2Names = [names[1]]; }
+      else if (names.length === 3) { t1Names = [names[0], names[1]]; t2Names = [names[2]]; }
+      else if (names.length >= 4)  { t1Names = [names[0], names[1]]; t2Names = [names[2], names[3]]; }
+    }
     return {
-      t1: t1.length ? t1.join(" / ") : "Equipo 1",
-      t2: t2.length ? t2.join(" / ") : "Equipo 2",
+      t1: t1Names.length ? t1Names.join(" / ") : "Equipo 1",
+      t2: t2Names.length ? t2Names.join(" / ") : "Equipo 2",
     };
+  }
+
+  function setWinner(s) {
+    if (!s || !Number.isFinite(s.team1) || !Number.isFinite(s.team2)) return null;
+    if (s.team1 > s.team2) return "team1";
+    if (s.team2 > s.team1) return "team2";
+    return null;
   }
 
   function renderScore(match) {
     const teams = splitTeams(match.jugadores);
     const marc = match.marcador;
+    const modo = match.modo || "partido_3";
+    const ganador = (marc && (marc.ganador === "team1" || marc.ganador === "team2")) ? marc.ganador : null;
 
-    // Sets válidos: objetos con team1/team2 finitos
+    // ── Modo reta: solo ganador ──
+    if (modo === "reta") {
+      if (!ganador) {
+        $score.innerHTML =
+          '<div class="pz-score-empty">Reta sin ganador registrado' +
+          '<span class="pz-teams-line">' + escapeHTML(teams.t1) + '  vs  ' + escapeHTML(teams.t2) + '</span>' +
+          '</div>';
+        return;
+      }
+      const winName = ganador === "team1" ? teams.t1 : teams.t2;
+      const losName = ganador === "team1" ? teams.t2 : teams.t1;
+      $score.innerHTML =
+        '<div class="pz-reta-summary">' +
+          '<div class="label">🏆 Ganador de la reta</div>' +
+          '<div class="team win"><span class="pz-team-trophy">🏆</span> ' + escapeHTML(winName) + '</div>' +
+          '<div class="vs">vs</div>' +
+          '<div class="team">' + escapeHTML(losName) + '</div>' +
+        '</div>';
+      return;
+    }
+
+    // ── Modo libre: gamesTotal por equipo ──
+    if (modo === "libre") {
+      const gt = (marc && marc.gamesTotal) || null;
+      if (!gt || (!Number.isFinite(gt.team1) && !Number.isFinite(gt.team2))) {
+        $score.innerHTML =
+          '<div class="pz-score-empty">Partido libre sin games registrados' +
+          '<span class="pz-teams-line">' + escapeHTML(teams.t1) + '  vs  ' + escapeHTML(teams.t2) + '</span>' +
+          '</div>';
+        return;
+      }
+      const g1 = Number(gt.team1) || 0, g2 = Number(gt.team2) || 0;
+      const w1 = ganador === "team1" || (!ganador && g1 > g2);
+      const w2 = ganador === "team2" || (!ganador && g2 > g1);
+      $score.innerHTML =
+        '<div class="pz-libre-tally">' +
+          '<div class="cell ' + (w1 ? "win" : "") + '">' +
+            '<div class="nm">' + (w1 ? '🏆 ' : '') + escapeHTML(teams.t1) + '</div>' +
+            '<div class="games">' + g1 + '</div>' +
+          '</div>' +
+          '<div class="sep">—</div>' +
+          '<div class="cell ' + (w2 ? "win" : "") + '">' +
+            '<div class="nm">' + (w2 ? '🏆 ' : '') + escapeHTML(teams.t2) + '</div>' +
+            '<div class="games">' + g2 + '</div>' +
+          '</div>' +
+        '</div>';
+      return;
+    }
+
+    // ── Modos de sets (partido_3 / partido_5) ──
     let sets = [];
     if (marc && Array.isArray(marc.sets)) {
       sets = marc.sets.filter(function (s) {
@@ -763,7 +867,6 @@
       });
     }
 
-    // Caso sin marcador registrado → degradar con elegancia
     if (sets.length === 0) {
       $score.innerHTML =
         '<div class="pz-score-empty">Partido sin marcador registrado' +
@@ -772,12 +875,16 @@
       return;
     }
 
-    const ganador = (marc && (marc.ganador === "team1" || marc.ganador === "team2")) ? marc.ganador : null;
-
+    // Coloreado por set: cada celda gana independiente.
     function teamRow(name, key) {
       const isWin = ganador === key;
       const cells = sets.map(function (s) {
-        return '<div class="pz-set-cell">' + escapeHTML(s[key]) + '</div>';
+        const w = setWinner(s);
+        let cls = "pz-set-cell";
+        if (w === key) cls += " win-set";
+        else if (w === null) cls += " tied-set";
+        else cls += " lose-set";
+        return '<div class="' + cls + '">' + escapeHTML(s[key]) + '</div>';
       }).join("");
       return '<div class="pz-team-row' + (isWin ? ' is-winner' : '') + '">' +
                '<div class="pz-team-name">' +
