@@ -1667,6 +1667,231 @@
     .mp-live-btn-game { min-width: 50px; font-size: 0.72rem; padding: 0 6px; }
   }
 
+  /* ── Etapa 16.4 F13: Marcador expandido FULLSCREEN mobile-first ── */
+  .mp-fs-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10500;
+    background: #050914;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    color: #fff;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mp-fs-overlay.is-open { display: flex; }
+  .mp-fs-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-position: center;
+    background-size: cover;
+    filter: blur(34px) saturate(0.85);
+    transform: scale(1.10);
+    opacity: 0.55;
+  }
+  .mp-fs-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(2,6,16,0.35) 0%, rgba(2,6,16,0.78) 70%, rgba(2,6,16,0.94) 100%);
+  }
+  .mp-fs-shell {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 14px 12px 18px;
+    box-sizing: border-box;
+    gap: 10px;
+  }
+  .mp-fs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .mp-fs-timer {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: rgba(234, 242, 255, 0.85);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.5px;
+  }
+  .mp-fs-close {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    font-size: 1.30rem;
+    font-weight: 700;
+    cursor: pointer;
+    line-height: 1;
+    transition: background 0.14s ease, transform 0.10s ease;
+  }
+  .mp-fs-close:hover { background: rgba(255, 255, 255, 0.16); }
+  .mp-fs-close:active { transform: scale(0.94); }
+
+  .mp-fs-score {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 6px;
+    flex-shrink: 0;
+  }
+  .mp-fs-team {
+    text-align: center;
+    font-weight: 800;
+    line-height: 1.2;
+    word-break: break-word;
+  }
+  .mp-fs-team--left  { text-align: left; padding-left: 4px; }
+  .mp-fs-team--right { text-align: right; padding-right: 4px; }
+  .mp-fs-team-name {
+    font-size: 0.95rem;
+    color: rgba(234, 242, 255, 0.90);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .mp-fs-team[data-team="team1"] .mp-fs-team-name { color: #b4d5ff; }
+  .mp-fs-team[data-team="team2"] .mp-fs-team-name { color: #e2f29a; }
+
+  .mp-fs-numbers {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+    min-width: 0;
+  }
+  .mp-fs-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: baseline;
+    column-gap: 14px;
+  }
+  .mp-fs-num {
+    font-size: 2.0rem;
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .mp-fs-num--xl { font-size: 3.6rem; }
+  .mp-fs-num--team1 { color: #0b7cff; text-shadow: 0 0 14px rgba(11,124,255,0.55); }
+  .mp-fs-num--team2 { color: #c8e835; text-shadow: 0 0 14px rgba(200,232,53,0.55); }
+  .mp-fs-row-label {
+    font-size: 0.66rem;
+    font-weight: 800;
+    color: rgba(234, 242, 255, 0.55);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+  .mp-fs-row--big .mp-fs-row-label { font-size: 0.78rem; color: rgba(234, 242, 255, 0.75); }
+  .mp-fs-hint {
+    font-size: 0.78rem;
+    color: rgba(234, 242, 255, 0.65);
+    margin-top: 4px;
+  }
+
+  .mp-fs-teams {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: auto;
+    flex-shrink: 0;
+  }
+  .mp-fs-teams[data-owner="0"] { opacity: 0.55; pointer-events: none; }
+  .mp-fs-team-pad {
+    padding: 10px 8px 12px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .mp-fs-team-pad[data-team="team1"] { background: var(--team1-color-bg); border-color: rgba(11, 124, 255, 0.32); }
+  .mp-fs-team-pad[data-team="team2"] { background: var(--team2-color-bg); border-color: rgba(200, 232, 53, 0.32); }
+  .mp-fs-team-pad-label {
+    font-size: 0.74rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    text-align: center;
+    line-height: 1;
+  }
+  .mp-fs-team-pad[data-team="team1"] .mp-fs-team-pad-label { color: #cfe2ff; }
+  .mp-fs-team-pad[data-team="team2"] .mp-fs-team-pad-label { color: #e9f5a8; }
+  .mp-fs-team-pad-grid {
+    display: grid;
+    grid-template-columns: 7fr 3fr;
+    grid-auto-rows: minmax(54px, auto);
+    gap: 6px;
+  }
+  .mp-fs-team-pad .mp-live-pad-btn {
+    min-height: 54px;
+    font-size: 1.00rem;
+  }
+
+  @media (max-width: 380px) {
+    .mp-fs-num { font-size: 1.70rem; }
+    .mp-fs-num--xl { font-size: 2.90rem; }
+    .mp-fs-team-name { font-size: 0.84rem; }
+    .mp-fs-team-pad .mp-live-pad-btn { min-height: 48px; font-size: 0.92rem; }
+  }
+  @media (max-height: 600px) {
+    .mp-fs-num--xl { font-size: 2.80rem; }
+    .mp-fs-score { padding: 8px 6px; }
+  }
+
+  /* ── Etapa 16.4 F12: fondo dinámico con la imagen de la cancha ── */
+  .mp-court-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 0.45s ease, filter 0.45s ease;
+    filter: blur(28px) saturate(0.85);
+    transform: scale(1.08); /* expandir para que el blur no muestre bordes */
+  }
+  .mp-court-bg.is-active { opacity: 0.42; }
+  .mp-court-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    /* overlay oscuro radial para mantener legibilidad del contenido central */
+    background: radial-gradient(ellipse at center, rgba(2,6,16,0.40) 0%, rgba(2,6,16,0.78) 70%, rgba(2,6,16,0.92) 100%);
+  }
+
+  /* ── Etapa 16.4 F10+F11: form de "nueva" reordenado + cancha más chica ── */
+  .mp-nueva-form { padding: 18px 16px 14px; }
+  .mp-nueva-actions-top { margin-bottom: 16px; }
+  .mp-nueva-actions-top .mp-btn-end {
+    font-size: 1.05rem;
+    padding: 14px 18px;
+  }
+  .mp-nueva-court-wrap { padding: 12px 8px 4px; margin-top: 6px; }
+  .mp-nueva-court-wrap .mp-court-grid {
+    aspect-ratio: 4 / 3;
+    max-width: 200px;
+  }
+  .mp-nueva-court-wrap .mp-slot { min-height: 56px; }
+  @media (max-width: 380px) {
+    .mp-nueva-court-wrap .mp-court-grid {
+      max-width: 100%;
+    }
+    .mp-nueva-court-wrap .mp-slot { min-height: 52px; }
+  }
+
   /* ── Etapa 16.4 F2: botón "Pedir Puntazo" promovido al top + acordeones ── */
   .mp-quick-actions {
     margin: 14px auto 18px;
@@ -2019,6 +2244,10 @@
 
 <div class="page-bg"></div>
 
+<!-- Etapa 16.4 F12: fondo dinámico con el ícono de la cancha del partido. Se
+     activa cuando renderMatch resuelve match.can y se le asigna background-image. -->
+<div id="mpCourtBg" class="mp-court-bg" aria-hidden="true"></div>
+
 <div id="nav-root" data-nav-variant="internal"></div>
 <script src="/assets/header.js"></script>
 
@@ -2057,20 +2286,21 @@
     <a href="/index.html" class="mp-btn-back" style="max-width:280px;margin:0 auto;">Ir al inicio</a>
   </div>
 
-  <div id="mpNuevaForm" class="mp-card" style="display:none">
-    <h3 class="mp-jug-title">¿Quiénes juegan? <span class="mp-jug-opt">(opcional)</span></h3>
-    <p class="mp-jug-note">Toca un cuadrante para agregar jugadores. Puedes dejarlos vacíos y agregarlos durante el partido.</p>
+  <!-- Etapa 16.4 F10+F11: jerarquía Iniciar > Jugadores > Modo; cancha chica; sin "sugerencia" -->
+  <div id="mpNuevaForm" class="mp-card mp-nueva-form" style="display:none">
+    <h3 class="mp-jug-title">¿Listo para jugar?</h3>
 
-    <div class="mp-modal-section-label">Modo de partido</div>
-    <div class="mp-modo-row" id="nuevaModoRow" data-modo-target="nueva">
-      <button type="button" class="mp-modo-btn is-selected" data-modo="partido_3">Partido<span class="desc">Mejor de 3 sets</span></button>
-      <button type="button" class="mp-modo-btn" data-modo="partido_5">Partido largo<span class="desc">Mejor de 5 sets</span></button>
-      <button type="button" class="mp-modo-btn" data-modo="reta">Reta<span class="desc">Sin sets, solo ganador</span></button>
-      <button type="button" class="mp-modo-btn" data-modo="libre">Libre<span class="desc">Cuenta de games</span></button>
+    <!-- 1. PRIMARIO: Iniciar partido -->
+    <div class="mp-modal-actions mp-nueva-actions-top">
+      <button id="mpNuevaStart" class="mp-btn-end" type="button">🚀 Iniciar partido</button>
+      <button id="mpNuevaSkip" class="mp-btn-cancel" type="button">Iniciar sin jugadores</button>
     </div>
+    <div id="mpNuevaMsg" class="mp-msg"></div>
 
-    <div class="mp-modal-section-label">Jugadores</div>
-    <div class="mp-court-wrap">
+    <!-- 2. SECUNDARIO: Jugadores (opcional, cancha chica) -->
+    <div class="mp-modal-section-label">Jugadores <span class="mp-jug-opt">(opcional)</span></div>
+    <p class="mp-jug-note">Toca un cuadrante para agregar nombres. Puedes dejarlos vacíos.</p>
+    <div class="mp-court-wrap mp-nueva-court-wrap">
       <div class="mp-court-team-label" id="nuevaTeamTopLabel">Jugadores C · D</div>
       <div class="mp-court-grid" id="nuevaCourtGrid">
         <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
@@ -2079,14 +2309,15 @@
         <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
       </div>
       <div class="mp-court-team-label" id="nuevaTeamBotLabel">Jugadores A · B</div>
-      <div class="mp-court-hint" id="nuevaCourtHint">Sugerencia: pádel se juega 2 vs 2.</div>
     </div>
 
-    <div id="mpNuevaMsg" class="mp-msg"></div>
-
-    <div class="mp-modal-actions">
-      <button id="mpNuevaStart" class="mp-btn-end" type="button">🚀 Iniciar partido</button>
-      <button id="mpNuevaSkip" class="mp-btn-cancel" type="button">Iniciar sin jugadores</button>
+    <!-- 3. TERCIARIO: Modo de partido -->
+    <div class="mp-modal-section-label">Modo de partido</div>
+    <div class="mp-modo-row" id="nuevaModoRow" data-modo-target="nueva">
+      <button type="button" class="mp-modo-btn is-selected" data-modo="partido_3">Partido<span class="desc">Mejor de 3 sets</span></button>
+      <button type="button" class="mp-modo-btn" data-modo="partido_5">Partido largo<span class="desc">Mejor de 5 sets</span></button>
+      <button type="button" class="mp-modo-btn" data-modo="reta">Reta<span class="desc">Sin sets, solo ganador</span></button>
+      <button type="button" class="mp-modo-btn" data-modo="libre">Libre<span class="desc">Cuenta de games</span></button>
     </div>
   </div>
 
@@ -2105,20 +2336,9 @@
       </div>
     </div>
 
-    <div class="mp-card">
-      <div id="mpLocName" class="mp-loc-name">…</div>
-      <div id="mpLocSub" class="mp-loc-sub"></div>
-      <div id="mpStarted" class="mp-started"></div>
-      <div id="mpChips" class="mp-chips"></div>
-      <div class="mp-status-row">
-        <span id="mpBadge" class="mp-badge active">active</span>
-      </div>
-      <div id="mpMarcadorBox" class="mp-marcador" style="display:none">
-        <div class="mp-marcador-label">Marcador</div>
-        <div id="mpMarcadorVal" class="mp-marcador-val"></div>
-        <div id="mpMarcadorWinner" class="mp-marcador-winner" style="display:none"></div>
-      </div>
-    </div>
+    <!-- Etapa 16.4 F9: bloque mpCard de ubicación (loc/cancha/lado) eliminado.
+         El nombre del lugar se infiere internamente para asignar el fondo
+         de la cancha (F12), pero ya no se muestra al usuario. -->
 
     <!-- Etapa 16.4 F2: botón "Pedir Puntazo" promovido al top (era última acción) -->
     <div id="mpQuickActions" class="mp-quick-actions" style="display:none">
@@ -2139,32 +2359,7 @@
       <button id="mpConflictResolve" type="button">Revisar conflictos</button>
     </div>
 
-    <!-- Etapa 16.4 F2: cancha visual en acordeón (opcional, baja prioridad) -->
-    <button id="mpConfigToggle" class="mp-section-toggle" type="button" style="display:none">
-      <span>⚙ Editar jugadores y cancha</span>
-      <span class="toggle-caret" aria-hidden="true">▼</span>
-    </button>
-    <div id="mpMainCourtCard" class="mp-card mp-main-court-card" style="display:none">
-      <div class="mp-main-court-title">🎾 Cancha</div>
-      <div class="mp-court-wrap" style="position:relative">
-        <span id="mpCourtSaveDot" class="mp-court-save-dot" title="Guardando…" aria-hidden="true"></span>
-        <div class="mp-court-team-label">Jugadores C · D</div>
-        <div class="mp-court-grid" id="mpMainCourtGrid">
-          <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
-          <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
-          <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
-          <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
-        </div>
-        <div class="mp-court-team-label">Jugadores A · B</div>
-        <div class="mp-court-hint" id="mpMainCourtHint"></div>
-        <div class="mp-court-footer">
-          <button id="mpPasteBtn" type="button" class="mp-court-paste-btn" title="Pegar nombres en bulk">📋 Pegar jugadores</button>
-          <span id="mpCourtCount" class="mp-court-count">0/4 jugadores</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── Etapa 16.2 — Marcador inteligente en vivo (remaqueta 16.3) ── -->
+    <!-- Etapa 16.4 F8: Marcador en vivo PROMOVIDO arriba de la cancha de jugadores -->
     <div id="mpLiveCard" class="mp-card mp-live-card" style="display:none">
       <div class="mp-live-head">
         <span class="mp-live-title">🎾 Marcador en vivo</span>
@@ -2240,6 +2435,31 @@
       </div>
     </div>
 
+    <!-- Etapa 16.4 F8: cancha visual (acordeón) movida DESPUÉS del marcador -->
+    <button id="mpConfigToggle" class="mp-section-toggle" type="button" style="display:none">
+      <span>⚙ Editar jugadores y cancha</span>
+      <span class="toggle-caret" aria-hidden="true">▼</span>
+    </button>
+    <div id="mpMainCourtCard" class="mp-card mp-main-court-card" style="display:none">
+      <div class="mp-main-court-title">🎾 Cancha</div>
+      <div class="mp-court-wrap" style="position:relative">
+        <span id="mpCourtSaveDot" class="mp-court-save-dot" title="Guardando…" aria-hidden="true"></span>
+        <div class="mp-court-team-label">Jugadores C · D</div>
+        <div class="mp-court-grid" id="mpMainCourtGrid">
+          <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
+          <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
+          <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
+          <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
+        </div>
+        <div class="mp-court-team-label">Jugadores A · B</div>
+        <div class="mp-court-hint" id="mpMainCourtHint"></div>
+        <div class="mp-court-footer">
+          <button id="mpPasteBtn" type="button" class="mp-court-paste-btn" title="Pegar nombres en bulk">📋 Pegar jugadores</button>
+          <span id="mpCourtCount" class="mp-court-count">0/4 jugadores</span>
+        </div>
+      </div>
+    </div>
+
     <!-- ── 16.3 — Bottom sheet "Marcador completo" (tabla detallada) ── -->
     <div id="mpLiveDetailSheet" class="mp-sheet-backdrop" aria-hidden="true">
       <div class="mp-sheet" role="dialog" aria-modal="true">
@@ -2290,6 +2510,73 @@
   </div>
 
 </main>
+
+<!-- ════════════════════════════════════════════════════════════
+     Etapa 16.4 F13 — Marcador expandido FULLSCREEN in-app.
+     Se abre desde el botón "📋 Marcador completo" de mi-partido.
+     Fondo dinámico con la imagen de la cancha del partido.
+     ════════════════════════════════════════════════════════════ -->
+<div id="mpLiveFullscreen" class="mp-fs-overlay" style="display:none" aria-hidden="true">
+  <div id="mpFsCourtBg" class="mp-fs-bg" aria-hidden="true"></div>
+  <div class="mp-fs-shell">
+    <header class="mp-fs-header">
+      <div class="mp-fs-timer" id="mpFsTimer">⏱ 00:00:00</div>
+      <button id="mpFsClose" class="mp-fs-close" type="button" aria-label="Cerrar marcador expandido">✕</button>
+    </header>
+
+    <section class="mp-fs-score">
+      <div class="mp-fs-team mp-fs-team--left" data-team="team1">
+        <div class="mp-fs-team-name" id="mpFsT1Name">Equipo 1</div>
+      </div>
+      <div class="mp-fs-numbers">
+        <div class="mp-fs-row">
+          <div class="mp-fs-num mp-fs-num--team1" id="mpFsT1Sets">0</div>
+          <div class="mp-fs-row-label">SETS</div>
+          <div class="mp-fs-num mp-fs-num--team2" id="mpFsT2Sets">0</div>
+        </div>
+        <div class="mp-fs-row">
+          <div class="mp-fs-num mp-fs-num--team1" id="mpFsT1Games">0</div>
+          <div class="mp-fs-row-label">GAMES</div>
+          <div class="mp-fs-num mp-fs-num--team2" id="mpFsT2Games">0</div>
+        </div>
+        <div class="mp-fs-row mp-fs-row--big">
+          <div class="mp-fs-num mp-fs-num--team1 mp-fs-num--xl" id="mpFsT1Points">0</div>
+          <div class="mp-fs-row-label">PUNTOS</div>
+          <div class="mp-fs-num mp-fs-num--team2 mp-fs-num--xl" id="mpFsT2Points">0</div>
+        </div>
+        <div class="mp-fs-hint" id="mpFsHint">🟢 Saca <strong>Equipo 1</strong></div>
+      </div>
+      <div class="mp-fs-team mp-fs-team--right" data-team="team2">
+        <div class="mp-fs-team-name" id="mpFsT2Name">Equipo 2</div>
+      </div>
+    </section>
+
+    <section class="mp-fs-teams" data-owner="0">
+      <div class="mp-fs-team-pad" data-team="team1">
+        <div class="mp-fs-team-pad-label">Equipo 1</div>
+        <div class="mp-fs-team-pad-grid">
+          <button type="button" class="mp-live-pad-btn pad-pt"     data-live="addPoint"  data-team="team1">+ PUNTO</button>
+          <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoPoint" data-team="team1" aria-label="Quitar punto">−</button>
+          <button type="button" class="mp-live-pad-btn pad-game"   data-live="forceGame" data-team="team1">+ GAME</button>
+          <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoGame"  data-team="team1" aria-label="Quitar game">−</button>
+          <button type="button" class="mp-live-pad-btn pad-set"    data-live="forceSet"  data-team="team1">+ SET</button>
+          <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoSet"   data-team="team1" aria-label="Quitar set">−</button>
+        </div>
+      </div>
+      <div class="mp-fs-team-pad" data-team="team2">
+        <div class="mp-fs-team-pad-label">Equipo 2</div>
+        <div class="mp-fs-team-pad-grid">
+          <button type="button" class="mp-live-pad-btn pad-pt"     data-live="addPoint"  data-team="team2">+ PUNTO</button>
+          <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoPoint" data-team="team2" aria-label="Quitar punto">−</button>
+          <button type="button" class="mp-live-pad-btn pad-game"   data-live="forceGame" data-team="team2">+ GAME</button>
+          <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoGame"  data-team="team2" aria-label="Quitar game">−</button>
+          <button type="button" class="mp-live-pad-btn pad-set"    data-live="forceSet"  data-team="team2">+ SET</button>
+          <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoSet"   data-team="team2" aria-label="Quitar set">−</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
 
 <!-- ── Modal terminar partido (Etapa 15) ── -->
 <div id="mpModal" class="mp-modal-backdrop">
@@ -3116,52 +3403,85 @@
     return "otro jugador";
   }
 
+  // Etapa 16.4 F12: derivar el ícono hex de cancha (B1..B8) del nombre de
+  // la cancha del match (ej. "Cancha4" → B4). Si no se puede inferir, B1.
+  function inferCourtIconUrl(match) {
+    if (!match || !match.can) return null;
+    const m = String(match.can).match(/(\d+)/);
+    let n = m ? parseInt(m[1], 10) : 1;
+    if (!Number.isFinite(n) || n < 1) n = 1;
+    const idx = ((n - 1) % 8) + 1;
+    return "/assets/court-icons/B" + idx + ".png";
+  }
+
+  function applyCourtBackground(match) {
+    const bg = document.getElementById("mpCourtBg");
+    if (!bg) return;
+    const url = inferCourtIconUrl(match);
+    if (!url) {
+      bg.classList.remove("is-active");
+      return;
+    }
+    bg.style.backgroundImage = "url('" + url + "')";
+    bg.classList.add("is-active");
+  }
+
   async function renderMatch(match) {
     currentMatch = match;
     const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     currentViewMode = (user && match.userId === user.uid) ? "owner" : "guest";
 
+    // Etapa 16.4 F12: aplicar fondo dinámico con el ícono de la cancha
+    applyCourtBackground(match);
+
     const { locNombre, canNombre, ladoNombre } = await resolveNames(match.loc, match.can, match.lado);
-    $locName.textContent = locNombre;
-    $locSub.textContent = `${canNombre} · ${ladoNombre}`;
+    // Etapa 16.4 F9: bloque mpCard eliminado — guards para refs huérfanas.
+    if ($locName) $locName.textContent = locNombre;
+    if ($locSub) $locSub.textContent = `${canNombre} · ${ladoNombre}`;
 
     const startDate = tsToDate(match.startedAt);
-    $started.textContent = formatStarted(startDate);
+    if ($started) $started.textContent = formatStarted(startDate);
 
     // Chips de jugadores
-    $chips.innerHTML = "";
-    if (Array.isArray(match.jugadores) && match.jugadores.length > 0) {
-      match.jugadores.forEach(function (j) {
-        if (!j || !j.nombre) return;
-        const c = document.createElement("span");
-        c.className = "mp-chip";
-        c.textContent = j.nombre;
-        $chips.appendChild(c);
-      });
+    if ($chips) {
+      $chips.innerHTML = "";
+      if (Array.isArray(match.jugadores) && match.jugadores.length > 0) {
+        match.jugadores.forEach(function (j) {
+          if (!j || !j.nombre) return;
+          const c = document.createElement("span");
+          c.className = "mp-chip";
+          c.textContent = j.nombre;
+          $chips.appendChild(c);
+        });
+      }
     }
 
     // Badge
-    $badge.className = "mp-badge " + (match.status || "active");
-    $badge.textContent = match.status || "active";
+    if ($badge) {
+      $badge.className = "mp-badge " + (match.status || "active");
+      $badge.textContent = match.status || "active";
+    }
 
-    // Marcador
-    const marcStr = formatMarcador(match.marcador);
-    if (marcStr) {
-      $marcBox.style.display = "block";
-      $marcVal.textContent = marcStr;
-      if (match.marcador && match.marcador.ganador) {
-        const winLabel = match.marcador.ganador === "team1" ? "Equipo 1" : (match.marcador.ganador === "team2" ? "Equipo 2" : "");
-        if (winLabel) {
-          $marcWin.style.display = "block";
-          $marcWin.textContent = "🏆 Ganó: " + winLabel;
-        } else {
+    // Marcador (Etapa 16.4 F9: refs huérfanas si mpCard fue eliminado)
+    if ($marcBox) {
+      const marcStr = formatMarcador(match.marcador);
+      if (marcStr) {
+        $marcBox.style.display = "block";
+        if ($marcVal) $marcVal.textContent = marcStr;
+        if (match.marcador && match.marcador.ganador) {
+          const winLabel = match.marcador.ganador === "team1" ? "Equipo 1" : (match.marcador.ganador === "team2" ? "Equipo 2" : "");
+          if (winLabel && $marcWin) {
+            $marcWin.style.display = "block";
+            $marcWin.textContent = "🏆 Ganó: " + winLabel;
+          } else if ($marcWin) {
+            $marcWin.style.display = "none";
+          }
+        } else if ($marcWin) {
           $marcWin.style.display = "none";
         }
       } else {
-        $marcWin.style.display = "none";
+        $marcBox.style.display = "none";
       }
-    } else {
-      $marcBox.style.display = "none";
     }
 
     // Links
@@ -5462,22 +5782,181 @@
     $liveDetSheet.classList.remove("is-open");
     $liveDetSheet.setAttribute("aria-hidden", "true");
   }
-  // Etapa 16.4 F7: el botón "📋 Marcador completo" ahora abre tablero.html
-  // (vista grande con marcador en pantalla completa) en nueva pestaña.
-  // El sheet legacy queda como fallback si tablero.html no carga.
+  // Etapa 16.4 F13: el botón "📋 Marcador completo" abre el OVERLAY FULLSCREEN
+  // in-app (en lugar de salir a tablero.html en nueva pestaña como hacía F7).
+  // Mobile-first, fondo dinámico con la imagen de la cancha del partido.
+  const $fsOverlay  = document.getElementById("mpLiveFullscreen");
+  const $fsClose    = document.getElementById("mpFsClose");
+  const $fsCourtBg  = document.getElementById("mpFsCourtBg");
+  const $fsTimer    = document.getElementById("mpFsTimer");
+  const $fsT1Name   = document.getElementById("mpFsT1Name");
+  const $fsT2Name   = document.getElementById("mpFsT2Name");
+  const $fsT1Sets   = document.getElementById("mpFsT1Sets");
+  const $fsT2Sets   = document.getElementById("mpFsT2Sets");
+  const $fsT1Games  = document.getElementById("mpFsT1Games");
+  const $fsT2Games  = document.getElementById("mpFsT2Games");
+  const $fsT1Points = document.getElementById("mpFsT1Points");
+  const $fsT2Points = document.getElementById("mpFsT2Points");
+  const $fsHint     = document.getElementById("mpFsHint");
+  const $fsTeams    = $fsOverlay ? $fsOverlay.querySelector(".mp-fs-teams") : null;
+  let _fsTimerId = null;
+  let _fsOpen = false;
+
+  function fsApplyCourtBg() {
+    if (!$fsCourtBg || !currentMatch) return;
+    const url = inferCourtIconUrl(currentMatch);
+    if (url) $fsCourtBg.style.backgroundImage = "url('" + url + "')";
+  }
+
+  function fsSyncTimerFromMain() {
+    if (!$fsTimer) return;
+    const main = document.getElementById("mpTimer");
+    if (main && main.textContent) $fsTimer.textContent = "⏱ " + main.textContent;
+  }
+
+  function openFullscreenScoreboard() {
+    if (!$fsOverlay) return;
+    fsApplyCourtBg();
+    fsRenderBoard();
+    $fsOverlay.classList.add("is-open");
+    $fsOverlay.setAttribute("aria-hidden", "false");
+    _fsOpen = true;
+    document.body.style.overflow = "hidden";
+    if (_fsTimerId) { clearInterval(_fsTimerId); _fsTimerId = null; }
+    fsSyncTimerFromMain();
+    _fsTimerId = setInterval(fsSyncTimerFromMain, 1000);
+  }
+  function closeFullscreenScoreboard() {
+    if (!$fsOverlay) return;
+    $fsOverlay.classList.remove("is-open");
+    $fsOverlay.setAttribute("aria-hidden", "true");
+    _fsOpen = false;
+    document.body.style.overflow = "";
+    if (_fsTimerId) { clearInterval(_fsTimerId); _fsTimerId = null; }
+  }
+
+  function fsRenderBoard() {
+    if (!$fsOverlay || !currentMatch) return;
+    if (!liveSupportsBoard(currentMatch)) return;
+    const m = liveBuildSafeMarcador(currentMatch);
+    const board = window.PuntazoMatches.live.formatScoreboard(m);
+    const isOwner = liveCanEdit(currentMatch);
+    if ($fsTeams) $fsTeams.setAttribute("data-owner", isOwner ? "1" : "0");
+
+    const t1Label = liveTeamLabel(currentMatch, "team1");
+    const t2Label = liveTeamLabel(currentMatch, "team2");
+    if ($fsT1Name) $fsT1Name.textContent = t1Label;
+    if ($fsT2Name) $fsT2Name.textContent = t2Label;
+
+    if ($fsT1Sets)   $fsT1Sets.textContent   = board.t1Sets;
+    if ($fsT2Sets)   $fsT2Sets.textContent   = board.t2Sets;
+    if ($fsT1Games)  $fsT1Games.textContent  = board.t1Games;
+    if ($fsT2Games)  $fsT2Games.textContent  = board.t2Games;
+    if ($fsT1Points) $fsT1Points.textContent = board.t1Points;
+    if ($fsT2Points) $fsT2Points.textContent = board.t2Points;
+
+    if ($fsHint) {
+      if (board.ganador) {
+        $fsHint.innerHTML = "🏆 Ganador: <strong>" + escHtml(liveTeamLabel(currentMatch, board.ganador)) + "</strong>";
+      } else if (m.current && (m.current.servingTeam === "team1" || m.current.servingTeam === "team2")) {
+        $fsHint.innerHTML = "🟢 Saca <strong>" + escHtml(liveTeamLabel(currentMatch, m.current.servingTeam)) + "</strong>";
+      } else {
+        $fsHint.textContent = "";
+      }
+    }
+
+    // Actualizar labels de pads dentro del overlay
+    if ($fsTeams) {
+      const padT1Label = $fsTeams.querySelector('[data-team="team1"] .mp-fs-team-pad-label');
+      const padT2Label = $fsTeams.querySelector('[data-team="team2"] .mp-fs-team-pad-label');
+      if (padT1Label) padT1Label.textContent = t1Label;
+      if (padT2Label) padT2Label.textContent = t2Label;
+    }
+  }
+
   if ($liveOpenDetail) {
-    $liveOpenDetail.addEventListener("click", function () {
-      if (!currentMatch || !currentMatch.id) {
-        liveOpenDetailSheet();
+    $liveOpenDetail.addEventListener("click", openFullscreenScoreboard);
+  }
+  if ($fsClose) {
+    $fsClose.addEventListener("click", closeFullscreenScoreboard);
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && _fsOpen) closeFullscreenScoreboard();
+  });
+
+  // Pads del overlay FS comparten lógica con $liveTeams via data-live/data-team.
+  // Attachamos el MISMO handler delegado (extraído arriba). Cuando se aplica el
+  // marcador, fsRenderBoard() refresca también el overlay si está abierto.
+  if ($fsTeams) {
+    $fsTeams.addEventListener("click", function (e) {
+      // Reusa el handler del $liveTeams disparando un click sintético sobre
+      // el botón equivalente del card principal NO es viable porque los IDs
+      // son distintos; mejor disparar el mismo handler inline replicando la lógica.
+      const btn = e.target.closest("button[data-live]");
+      if (!btn || btn.disabled) return;
+      const action = btn.dataset.live;
+      const team = btn.dataset.team || null;
+      if (!currentMatch) return;
+      const m = liveBuildSafeMarcador(currentMatch);
+      let next = null;
+      try {
+        if (action === "addPoint" && (team === "team1" || team === "team2")) {
+          next = window.PuntazoMatches.live.nextPointWinner(m, team, { goldenPoint: !!m.goldenPoint, modo: m.modo });
+        } else if (action === "undoPoint") {
+          next = window.PuntazoMatches.live.undoLastPoint(m);
+        } else if (action === "forceGame" && (team === "team1" || team === "team2")) {
+          next = window.PuntazoMatches.live.forceGameWin(m, team);
+        } else if (action === "undoGame") {
+          next = window.PuntazoMatches.live.undoLastGame(m);
+        } else if (action === "forceSet" && (team === "team1" || team === "team2")) {
+          const cur = (m && m.current) || {};
+          const t1g = Number(cur.team1Games) || 0;
+          const t2g = Number(cur.team2Games) || 0;
+          const score = team === "team1"
+            ? { team1: 6, team2: Math.min(t2g, 4) }
+            : { team1: Math.min(t1g, 4), team2: 6 };
+          next = window.PuntazoMatches.live.forceSetWin(m, team, score);
+        } else if (action === "undoSet") {
+          const cloned = JSON.parse(JSON.stringify(m));
+          if (Array.isArray(cloned.sets) && cloned.sets.length > 0) {
+            cloned.sets.pop();
+            if (Array.isArray(cloned.tiebreak) && cloned.tiebreak.length > 0) cloned.tiebreak.pop();
+            cloned.ganador = null;
+            if (cloned.current) {
+              cloned.current.team1Games = 0; cloned.current.team2Games = 0;
+              cloned.current.team1Points = 0; cloned.current.team2Points = 0;
+              cloned.current.tiebreak = null;
+            }
+            cloned.history = [];
+            next = cloned;
+          }
+        }
+      } catch (err) {
+        console.error("[mi-partido 16.4 F13] FS pad action error", err);
         return;
       }
-      try {
-        window.open("/tablero.html?matchId=" + encodeURIComponent(currentMatch.id), "_blank", "noopener");
-      } catch (_) {
-        liveOpenDetailSheet();
-      }
+      if (!next) return;
+      const labelMap = {
+        addPoint: "punto", undoPoint: "deshacer punto",
+        forceGame: "game", undoGame: "deshacer game",
+        forceSet: "set", undoSet: "deshacer set",
+      };
+      liveWriteMarcador(next, labelMap[action] || "acción").then(function () {
+        fsRenderBoard();
+      });
+      try { if (navigator.vibrate) navigator.vibrate(20); } catch (_) {}
     });
   }
+
+  // Hook: cuando liveRenderBoard pinta el card, también refresca el overlay FS
+  // si está abierto.
+  (function hookFsBoardSync() {
+    const _orig = liveRenderBoard;
+    liveRenderBoard = function () {
+      _orig.apply(this, arguments);
+      if (_fsOpen) fsRenderBoard();
+    };
+  })();
   if ($liveCloseDet)   $liveCloseDet.addEventListener("click", liveCloseDetailSheet);
   if ($liveDetSheet) {
     $liveDetSheet.addEventListener("click", function (e) {
