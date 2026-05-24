@@ -26,6 +26,7 @@
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/auth.js"></script>
 <script src="/assets/matches.js"></script>
+<script src="/assets/clubs-catalog.js"></script>
 
 <style>
   .entrada-wrap {
@@ -203,9 +204,145 @@
     padding: 30px 0;
   }
 
+  /* ── Selector visual (QR genérico / sin params) ── */
+  .selector-wrap { display: block; }
+  .selector-header {
+    text-align: center;
+    margin-bottom: 22px;
+  }
+  .selector-title {
+    font-size: 1.45rem;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -0.4px;
+    line-height: 1.2;
+  }
+  .selector-sub {
+    font-size: 0.92rem;
+    color: rgba(234, 242, 255, 0.62);
+    margin-top: 6px;
+  }
+  .selector-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+    padding: 6px 12px 6px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    color: rgba(234, 242, 255, 0.78);
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .18s ease;
+  }
+  .selector-back:hover {
+    background: rgba(255, 255, 255, 0.10);
+    color: #fff;
+  }
+
+  .selector-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 360px) {
+    .selector-grid { grid-template-columns: 1fr; }
+  }
+  .selector-grid.one-col { grid-template-columns: 1fr; }
+
+  .sel-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 16px;
+    padding: 18px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .18s ease;
+    color: #fff;
+    font-family: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 110px;
+  }
+  .sel-card:hover {
+    border-color: rgba(11, 124, 255, 0.55);
+    background: rgba(0, 79, 200, 0.10);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(0, 79, 200, 0.18);
+  }
+  .sel-card:active { transform: scale(0.98); }
+  .sel-card .emoji {
+    font-size: 2rem;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .sel-card .name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .sel-card .meta {
+    font-size: 0.75rem;
+    color: rgba(234, 242, 255, 0.55);
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  .sel-card.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+  .sel-card.is-disabled:hover {
+    border-color: rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.04);
+    transform: none;
+    box-shadow: none;
+  }
+  .sel-card .badge-soon {
+    margin-top: 6px;
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.66rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    background: rgba(250, 204, 21, 0.12);
+    border: 1px solid rgba(250, 204, 21, 0.30);
+    color: #fde047;
+  }
+
+  .selector-msg {
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    background: rgba(250, 204, 21, .08);
+    border: 1px solid rgba(250, 204, 21, .25);
+    color: #fde68a;
+  }
+
+  .selector-empty {
+    text-align: center;
+    padding: 30px 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    color: rgba(234, 242, 255, 0.65);
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+
   @media (max-width: 480px) {
     .entrada-wrap { padding-top: 50px; }
     .entrada-loc-name { font-size: 1.5rem; }
+    .selector-title { font-size: 1.3rem; }
   }
 </style>
 </head>
@@ -217,15 +354,21 @@
 
   <div id="entradaLoading" class="entrada-loading">⏳ Cargando…</div>
 
-  <div id="entradaError" style="display:none">
-    <div class="entrada-error-card">
-      <div class="icon">⚠️</div>
-      <h2>Faltan parámetros del QR</h2>
-      <p>Vuelve a escanear el código en la cancha. Si el problema persiste, contacta al club.</p>
-      <a href="/index.html" class="btn-secondary" style="text-decoration:none;">Ir al inicio</a>
+  <!-- Selector visual (club → cancha → lado) -->
+  <div id="entradaSelector" class="selector-wrap" style="display:none">
+    <button id="selBack" class="selector-back" type="button" style="display:none">← Atrás</button>
+    <div id="selMsg" class="selector-msg" style="display:none"></div>
+
+    <div class="selector-header">
+      <img class="entrada-logo" src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
+      <div id="selTitle" class="selector-title">Elige tu club</div>
+      <div id="selSub" class="selector-sub">Para iniciar tu partido</div>
     </div>
+
+    <div id="selGrid" class="selector-grid"></div>
   </div>
 
+  <!-- Vista de entrada lista (con loc/can/lado ya resueltos) -->
   <div id="entradaContent" style="display:none">
     <div class="entrada-header">
       <img class="entrada-logo" src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
@@ -276,8 +419,21 @@
     return params;
   }
 
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // ---------- DOM refs ----------
   const $loading = document.getElementById("entradaLoading");
-  const $errorBox = document.getElementById("entradaError");
+  const $selector = document.getElementById("entradaSelector");
+  const $selBack = document.getElementById("selBack");
+  const $selMsg = document.getElementById("selMsg");
+  const $selTitle = document.getElementById("selTitle");
+  const $selSub = document.getElementById("selSub");
+  const $selGrid = document.getElementById("selGrid");
+
   const $content = document.getElementById("entradaContent");
   const $locName = document.getElementById("locName");
   const $locSub = document.getElementById("locSub");
@@ -292,15 +448,14 @@
   const $sessionEmail = document.getElementById("sessionEmail");
   const $lnkSignOut = document.getElementById("lnkSignOut");
 
-  function showError() {
+  function hideAll() {
     $loading.style.display = "none";
-    $errorBox.style.display = "block";
+    $selector.style.display = "none";
+    $content.style.display = "none";
   }
-
-  function showContent() {
-    $loading.style.display = "none";
-    $content.style.display = "block";
-  }
+  function showSelector() { hideAll(); $selector.style.display = "block"; }
+  function showContent()  { hideAll(); $content.style.display = "block"; }
+  function showLoading()  { hideAll(); $loading.style.display = "block"; }
 
   function showMsg(text, type) {
     $msg.textContent = text || "";
@@ -311,60 +466,238 @@
     }
   }
 
+  function setSelMsg(text) {
+    if (!text) {
+      $selMsg.style.display = "none";
+      $selMsg.textContent = "";
+    } else {
+      $selMsg.textContent = text;
+      $selMsg.style.display = "block";
+    }
+  }
+
   // ---------- query params ----------
   const params = getQueryParams();
   const loc = (params.loc || "").trim();
   const can = (params.can || "").trim();
   const lado = (params.lado || "").trim();
+  const qrCode = (params.qr || "").trim();
 
-  if (!loc || !can || !lado) {
-    showError();
-    return;
+  // Si el QR físico viejo apunta sin un lado pero con loc/can, tratamos como
+  // selector parcial. Más limpio para el caso real: si vienen los 3 → flow viejo.
+  const hasFullParams = loc && can && lado;
+
+  // ---------- SELECTOR FLOW ----------
+  //
+  // Estados del selector:
+  //   "clubs"   → lista de todos los clubs activos
+  //   "canchas" → lista de canchas del club elegido
+  //   "lados"   → lista de lados de la cancha elegida
+  //
+  // Cuando el usuario elige un lado, redirigimos a entrada.html?loc=X&can=Y&lado=Z
+  // para mantener una URL canónica (sirve si refresca la página o comparte).
+
+  const selectorState = {
+    step: "clubs",
+    catalog: null,         // { clubs: [...] }
+    selectedClub: null,    // club object
+    selectedCancha: null   // cancha object
+  };
+
+  async function loadCatalogSafe() {
+    if (selectorState.catalog) return selectorState.catalog;
+    if (!window.PuntazoClubs || typeof window.PuntazoClubs.getCatalog !== "function") {
+      console.error("[entrada] PuntazoClubs no disponible");
+      selectorState.catalog = { clubs: [] };
+      return selectorState.catalog;
+    }
+    try {
+      selectorState.catalog = await window.PuntazoClubs.getCatalog();
+    } catch (e) {
+      console.error("[entrada] error cargando catálogo", e);
+      selectorState.catalog = { clubs: [] };
+    }
+    return selectorState.catalog;
   }
 
-  const ladoQuery = `?loc=${encodeURIComponent(loc)}&can=${encodeURIComponent(can)}&lado=${encodeURIComponent(lado)}`;
-  $lnkSoloClips.href = "/lado.html" + ladoQuery;
-  $lnkInvitado.href = "/lado.html" + ladoQuery;
+  function renderSelector() {
+    showSelector();
+    $selGrid.innerHTML = "";
+    $selGrid.classList.remove("one-col");
 
-  // ---------- resolver nombres legibles ----------
-  let configCache = null;
-  async function loadConfig() {
-    if (configCache) return configCache;
-    try {
-      const res = await fetch("/data/config_locations.json?cb=" + Date.now(), { cache: "no-store" });
-      if (!res.ok) return null;
-      configCache = await res.json();
-      return configCache;
-    } catch (e) {
-      console.warn("[entrada] No se pudo cargar config_locations.json:", e);
-      return null;
+    if (selectorState.step === "clubs") {
+      $selBack.style.display = "none";
+      $selTitle.textContent = "Elige tu club";
+      $selSub.textContent = "Toca el club donde estás jugando";
+
+      const clubs = (selectorState.catalog && selectorState.catalog.clubs) || [];
+      if (clubs.length === 0) {
+        $selGrid.classList.add("one-col");
+        const empty = document.createElement("div");
+        empty.className = "selector-empty";
+        empty.innerHTML = "Todavía no hay clubs configurados.<br>Contacta a Puntazo.";
+        $selGrid.appendChild(empty);
+        return;
+      }
+
+      clubs.forEach(club => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "sel-card";
+        if (club.status === "soon") card.classList.add("is-disabled");
+        const inner = [
+          '<div class="emoji">' + escapeHtml(club.emoji || "🎾") + '</div>',
+          '<div class="name">' + escapeHtml(club.nombre) + '</div>'
+        ];
+        if (club.status === "soon") {
+          inner.push('<div class="badge-soon">Próximamente</div>');
+        } else {
+          const numCan = (club.canchas || []).length;
+          inner.push('<div class="meta">' + numCan + ' cancha' + (numCan === 1 ? '' : 's') + '</div>');
+        }
+        card.innerHTML = inner.join("");
+        if (club.status !== "soon") {
+          card.addEventListener("click", function () {
+            selectorState.selectedClub = club;
+            selectorState.step = "canchas";
+            setSelMsg("");
+            renderSelector();
+          });
+        }
+        $selGrid.appendChild(card);
+      });
+      return;
+    }
+
+    if (selectorState.step === "canchas") {
+      const club = selectorState.selectedClub;
+      $selBack.style.display = "inline-flex";
+      $selTitle.textContent = club.nombre;
+      $selSub.textContent = "Elige tu cancha";
+
+      const canchas = club.canchas || [];
+      if (canchas.length === 0) {
+        $selGrid.classList.add("one-col");
+        const empty = document.createElement("div");
+        empty.className = "selector-empty";
+        empty.innerHTML = "Este club todavía no tiene canchas configuradas.";
+        $selGrid.appendChild(empty);
+        return;
+      }
+
+      canchas.forEach(cancha => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "sel-card";
+        card.innerHTML =
+          '<div class="emoji">🟦</div>' +
+          '<div class="name">' + escapeHtml(cancha.nombre) + '</div>' +
+          '<div class="meta">' + (cancha.lados || []).length + ' lado' + ((cancha.lados || []).length === 1 ? '' : 's') + '</div>';
+        card.addEventListener("click", function () {
+          selectorState.selectedCancha = cancha;
+          // Si solo hay un lado, lo elegimos directo (no hace falta paso extra)
+          if ((cancha.lados || []).length === 1) {
+            commitSelection(club, cancha, cancha.lados[0]);
+            return;
+          }
+          selectorState.step = "lados";
+          renderSelector();
+        });
+        $selGrid.appendChild(card);
+      });
+      return;
+    }
+
+    if (selectorState.step === "lados") {
+      const club = selectorState.selectedClub;
+      const cancha = selectorState.selectedCancha;
+      $selBack.style.display = "inline-flex";
+      $selTitle.textContent = club.nombre + " · " + cancha.nombre;
+      $selSub.textContent = "Elige el lado de la cancha";
+
+      const lados = cancha.lados || [];
+      if (lados.length === 0) {
+        $selGrid.classList.add("one-col");
+        const empty = document.createElement("div");
+        empty.className = "selector-empty";
+        empty.innerHTML = "Esta cancha todavía no tiene lados configurados.";
+        $selGrid.appendChild(empty);
+        return;
+      }
+
+      lados.forEach(ld => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "sel-card";
+        card.innerHTML =
+          '<div class="emoji">🎯</div>' +
+          '<div class="name">' + escapeHtml(ld.nombre) + '</div>';
+        card.addEventListener("click", function () {
+          commitSelection(club, cancha, ld);
+        });
+        $selGrid.appendChild(card);
+      });
+      return;
     }
   }
 
+  function commitSelection(club, cancha, ld) {
+    // Redirige a entrada.html con URL canónica. Esto re-ejecuta el flow viejo
+    // y deja una URL compartible/refresheable.
+    const qs = "?loc=" + encodeURIComponent(club.id) +
+               "&can=" + encodeURIComponent(cancha.id) +
+               "&lado=" + encodeURIComponent(ld.id);
+    window.location.href = "/entrada.html" + qs;
+  }
+
+  $selBack.addEventListener("click", function () {
+    if (selectorState.step === "lados") {
+      selectorState.step = "canchas";
+      renderSelector();
+      return;
+    }
+    if (selectorState.step === "canchas") {
+      // Si vinimos de un QR de club, no podemos volver al selector de clubs;
+      // mejor mostramos otra vez el de canchas pero permitimos elegir club si
+      // el usuario no llegó vía QR.
+      if (qrCode) {
+        // Limpiamos qr y vamos a selector de clubs completo
+        selectorState.selectedClub = null;
+        selectorState.step = "clubs";
+        // Actualizamos URL sin recargar (quitamos ?qr=…) para coherencia
+        try { window.history.replaceState({}, "", "/entrada.html"); } catch (e) {}
+        renderSelector();
+        return;
+      }
+      selectorState.selectedClub = null;
+      selectorState.step = "clubs";
+      renderSelector();
+      return;
+    }
+  });
+
+  // ---------- READY FLOW (loc+can+lado en URL) ----------
   async function resolveNames() {
-    const cfg = await loadConfig();
     let locNombre = loc, canNombre = can, ladoNombre = lado;
-    if (cfg && Array.isArray(cfg.locaciones)) {
-      const L = cfg.locaciones.find(x => x.id === loc);
+    try {
+      const cat = await loadCatalogSafe();
+      const L = (cat.clubs || []).find(x => x.id === loc);
       if (L) {
         locNombre = L.nombre || loc;
-        if (Array.isArray(L.cancha)) {
-          const C = L.cancha.find(x => x.id === can);
-          if (C) {
-            canNombre = C.nombre || can;
-            if (Array.isArray(C.lados)) {
-              const Ld = C.lados.find(x => x.id === lado);
-              if (Ld) ladoNombre = Ld.nombre || lado;
-            }
-          }
+        const C = (L.canchas || []).find(x => x.id === can);
+        if (C) {
+          canNombre = C.nombre || can;
+          const Ld = (C.lados || []).find(x => x.id === lado);
+          if (Ld) ladoNombre = Ld.nombre || lado;
         }
       }
+    } catch (e) {
+      console.warn("[entrada] No se pudieron resolver nombres legibles:", e);
     }
     $locName.textContent = locNombre;
-    $locSub.textContent = `${canNombre} · ${ladoNombre}`;
+    $locSub.textContent = canNombre + " · " + ladoNombre;
   }
 
-  // ---------- render según sesión ----------
   function renderForUser(user) {
     showContent();
     if (user) {
@@ -379,11 +712,8 @@
     }
   }
 
-  // ---------- handlers ----------
+  // ---------- handlers de la vista ready ----------
   $btnIniciar.addEventListener("click", function () {
-    // La creación del match pasa a mi-partido.html (modo ?nueva=1), donde
-    // primero se captura el formulario opcional de jugadores. Aquí solo
-    // redirigimos — NO se crea el match todavía.
     const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     if (!user) {
       showMsg("Necesitas iniciar sesión primero.", "error");
@@ -392,7 +722,9 @@
     $btnIniciar.disabled = true;
     $btnIniciar.textContent = "Abriendo…";
     showMsg("", "info");
-    const qs = `?nueva=1&loc=${encodeURIComponent(loc)}&can=${encodeURIComponent(can)}&lado=${encodeURIComponent(lado)}`;
+    const qs = "?nueva=1&loc=" + encodeURIComponent(loc) +
+               "&can=" + encodeURIComponent(can) +
+               "&lado=" + encodeURIComponent(lado);
     window.location.href = "/mi-partido.html" + qs;
   });
 
@@ -403,7 +735,6 @@
     }
     try {
       await window.PuntazoAuth.signIn();
-      // El evento puntazo:auth-changed re-renderiza
     } catch (e) {
       console.error("[entrada] signIn failed", e);
       showMsg("No se pudo iniciar sesión.", "error");
@@ -415,44 +746,102 @@
     if (!window.PuntazoAuth || typeof window.PuntazoAuth.signOut !== "function") return;
     try {
       await window.PuntazoAuth.signOut();
-      // auth-changed re-renderiza
     } catch (err) {
       console.error("[entrada] signOut failed", err);
     }
   });
 
-  // ---------- auth wiring ----------
-  let authReady = false;
-  function handleAuthState() {
-    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
-    renderForUser(user || null);
+  // ---------- ROUTER ----------
+  async function startReadyFlow() {
+    // Flujo viejo intacto: loc+can+lado en URL
+    const ladoQuery = "?loc=" + encodeURIComponent(loc) +
+                      "&can=" + encodeURIComponent(can) +
+                      "&lado=" + encodeURIComponent(lado);
+    $lnkSoloClips.href = "/lado.html" + ladoQuery;
+    $lnkInvitado.href = "/lado.html" + ladoQuery;
+
+    // Esperar auth para renderForUser; mientras, resolver nombres en paralelo.
+    resolveNames();
+
+    let authReady = false;
+    function handleAuthState() {
+      const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      renderForUser(user || null);
+    }
+
+    window.addEventListener("puntazo:auth-ready", function () {
+      authReady = true;
+      handleAuthState();
+    });
+    window.addEventListener("puntazo:auth-changed", function () {
+      if (authReady) handleAuthState();
+    });
+
+    // Fallback: si auth no responde, mostramos modo invitado a los 3s.
+    setTimeout(function () {
+      if (!authReady && window.PuntazoAuth) {
+        setTimeout(function () {
+          if (!authReady) {
+            authReady = true;
+            handleAuthState();
+          }
+        }, 3000);
+      }
+    }, 100);
   }
 
-  window.addEventListener("puntazo:auth-ready", function () {
-    authReady = true;
-    handleAuthState();
-  });
+  async function startSelectorFlow(opts) {
+    opts = opts || {};
+    await loadCatalogSafe();
 
-  window.addEventListener("puntazo:auth-changed", function () {
-    if (authReady) handleAuthState();
-  });
+    // ¿Vino con ?qr=CODE?
+    if (opts.qrCode) {
+      const resolved = window.PuntazoClubs && window.PuntazoClubs.resolveQrCode
+        ? window.PuntazoClubs.resolveQrCode(opts.qrCode)
+        : null;
 
-  // Si auth ya estaba listo (carrera ganada por auth.js)
-  setTimeout(function () {
-    if (!authReady && window.PuntazoAuth) {
-      // PuntazoAuth.currentUser puede no estar populado todavía; esperamos al evento
-      // pero si pasó más de 3s y no se disparó nada, mostramos modo invitado como fallback
-      setTimeout(function () {
-        if (!authReady) {
-          authReady = true;
-          handleAuthState();
+      if (resolved) {
+        // Buscar el club en el catálogo
+        const cat = selectorState.catalog || { clubs: [] };
+        const club = cat.clubs.find(c => c.id === resolved.locId);
+        if (club && club.status !== "soon") {
+          selectorState.selectedClub = club;
+          selectorState.step = "canchas";
+          renderSelector();
+          return;
         }
-      }, 3000);
+        if (club && club.status === "soon") {
+          setSelMsg("Este club aún no está activo. Elige otro o contacta a Puntazo.");
+          selectorState.step = "clubs";
+          renderSelector();
+          return;
+        }
+        // QR válido pero club no está en catálogo cargado
+        setSelMsg("Club del QR no disponible. Selecciona manualmente.");
+        selectorState.step = "clubs";
+        renderSelector();
+        return;
+      }
+      // QR no reconocido
+      setSelMsg("QR no reconocido, selecciona manualmente.");
+      selectorState.step = "clubs";
+      renderSelector();
+      return;
     }
-  }, 100);
 
-  // Cargar nombres en paralelo a la auth
-  resolveNames();
+    // Sin params → selector completo
+    selectorState.step = "clubs";
+    renderSelector();
+  }
+
+  // ---------- ENTRYPOINT ----------
+  if (hasFullParams) {
+    startReadyFlow();
+  } else if (qrCode) {
+    startSelectorFlow({ qrCode: qrCode });
+  } else {
+    startSelectorFlow({});
+  }
 })();
 </script>
 
