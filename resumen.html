@@ -177,9 +177,27 @@
     align-items: center;
     gap: 12px;
     padding: 9px 0;
+    position: relative;
   }
   .pz-team-row + .pz-team-row {
     border-top: 1px solid rgba(255, 255, 255, 0.10);
+  }
+  /* Etapa 16.3 — dot por equipo a la izquierda del nombre */
+  .pz-team-row::before {
+    content: "";
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.25);
+  }
+  .pz-team-row[data-team="team1"]::before {
+    background: var(--team1-color, #0B7CFF);
+    box-shadow: 0 0 8px rgba(11, 124, 255, 0.45);
+  }
+  .pz-team-row[data-team="team2"]::before {
+    background: var(--team2-color, #c8e835);
+    box-shadow: 0 0 8px rgba(200, 232, 53, 0.45);
   }
   .pz-team-name {
     flex: 1;
@@ -1346,7 +1364,7 @@
         else cls += " lose-set";
         return '<div class="' + cls + '">' + escapeHTML(s[key]) + '</div>';
       }).join("");
-      return '<div class="pz-team-row' + (isWin ? ' is-winner' : '') + '">' +
+      return '<div class="pz-team-row' + (isWin ? ' is-winner' : '') + '" data-team="' + key + '">' +
                '<div class="pz-team-name">' +
                  (isWin ? '<span class="pz-team-trophy">🏆</span>' : '') +
                  '<span>' + escapeHTML(name) + '</span>' +

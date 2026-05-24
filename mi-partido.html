@@ -27,6 +27,7 @@
 <script src="/assets/auth.js"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/clip-states.js"></script>
+<script src="/assets/court-svg.js"></script>
 
 <style>
   .mp-wrap {
@@ -435,28 +436,28 @@
     grid-template-rows: 1fr 1fr;
     gap: 8px;
     position: relative;
-    background: rgba(11,124,255,.06);
-    border: 2px solid rgba(255,255,255,.28);
+    background: transparent;
+    border: none;
     border-radius: 12px;
     padding: 10px;
-    aspect-ratio: 2 / 3;
-    max-width: 320px;
+    /* Etapa 16.3 — aspect ratio real de cancha de pádel (1:2 portrait) para
+       que las líneas del SVG vectorial coincidan con la cuadrícula de slots. */
+    aspect-ratio: 1 / 2;
+    max-width: 260px;
     margin-left: auto;
     margin-right: auto;
   }
-  /* línea de la red (horizontal central) */
-  .mp-court-grid::before {
-    content: "";
+  /* SVG vectorial de la cancha como background absoluto (Etapa 16.3) */
+  .mp-court-svg-bg {
     position: absolute;
-    left: 8px; right: 8px;
-    top: 50%; transform: translateY(-50%);
-    height: 3px;
-    background: repeating-linear-gradient(90deg,
-      rgba(255,255,255,.55) 0 6px,
-      transparent 6px 12px);
-    z-index: 1;
+    inset: 0;
+    z-index: 0;
     pointer-events: none;
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
   }
+  .mp-court-svg-bg .pz-court-svg { width: 100%; height: 100%; display: block; }
   .mp-slot {
     position: relative;
     z-index: 2;
@@ -476,11 +477,41 @@
     transition: all .16s ease;
     font-family: inherit;
   }
-  .mp-slot:hover {
+  /* Slots por equipo: tinte sutil con color de equipo (Etapa 16.3) */
+  .mp-slot[data-equipo="team1"] {
+    background: var(--team1-color-bg);
+    border-color: rgba(11,124,255,0.28);
+  }
+  .mp-slot[data-equipo="team2"] {
+    background: var(--team2-color-bg);
+    border-color: rgba(200,232,53,0.32);
+  }
+  .mp-slot[data-equipo="team1"]:hover {
+    background: var(--team1-color-bg-strong);
+    border-color: var(--team1-color-border);
+  }
+  .mp-slot[data-equipo="team2"]:hover {
+    background: var(--team2-color-bg-strong);
+    border-color: var(--team2-color-border);
+  }
+  .mp-slot.is-filled[data-equipo="team1"] {
+    background: var(--team1-color-bg-strong);
+    border-style: solid;
+    border-color: var(--team1-color-border);
+    color: #fff;
+  }
+  .mp-slot.is-filled[data-equipo="team2"] {
+    background: var(--team2-color-bg-strong);
+    border-style: solid;
+    border-color: var(--team2-color-border);
+    color: #fff;
+  }
+  /* fallback histórico sin data-equipo */
+  .mp-slot:not([data-equipo]):hover {
     background: rgba(0,79,200,.14);
     border-color: rgba(11,124,255,.45);
   }
-  .mp-slot.is-filled {
+  .mp-slot.is-filled:not([data-equipo]) {
     background: rgba(0,79,200,.14);
     border-style: solid;
     border-color: rgba(11,124,255,.40);
@@ -496,6 +527,8 @@
     border: 2px solid rgba(11,124,255,.55);
     margin-bottom: 2px;
   }
+  .mp-slot[data-equipo="team1"] .slot-photo { border-color: var(--team1-color-border); }
+  .mp-slot[data-equipo="team2"] .slot-photo { border-color: var(--team2-color-border); }
   .mp-court-hint {
     margin-top: 8px;
     font-size: 0.78rem;
@@ -1689,6 +1722,258 @@
   .mp-notas-count.is-max {
     color: #ffb1a3;
   }
+  /* ── Etapa 16.3 — Marcador compacto + botonera por equipo ── */
+  .mp-live-compact {
+    margin: 4px 0 14px;
+    padding: 14px 12px 12px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(11, 80, 200, 0.12), rgba(11, 80, 200, 0.04));
+    border: 1px solid rgba(11, 124, 255, 0.20);
+  }
+  .mp-live-compact-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .mp-live-compact-row:last-child { margin-bottom: 0; }
+  .mp-live-compact-row--sets { margin-bottom: 8px; }
+  .mp-live-compact-team {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .mp-live-compact-team--right { justify-content: flex-end; flex-direction: row-reverse; }
+  .mp-live-compact-team-name {
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.15;
+    word-break: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .mp-live-compact-team[data-team="team1"] .mp-live-compact-team-name {
+    border-left: 3px solid var(--team1-color);
+    padding-left: 8px;
+  }
+  .mp-live-compact-team[data-team="team2"] .mp-live-compact-team-name {
+    border-right: 3px solid var(--team2-color);
+    padding-right: 8px;
+  }
+  .mp-live-compact-serve {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity .18s ease;
+  }
+  .mp-live-compact-serve.is-active {
+    opacity: 1;
+    background: #9af2c0;
+    box-shadow: 0 0 6px rgba(154, 242, 192, .60);
+    animation: mpPulse 1.4s ease-in-out infinite;
+  }
+  .mp-live-compact-score {
+    font-size: 1.85rem;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -0.4px;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    line-height: 1;
+  }
+  .mp-live-compact-score-sm {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: rgba(234, 242, 255, .80);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    line-height: 1;
+  }
+  .mp-live-compact-points {
+    font-size: 2.10rem;
+    font-weight: 900;
+    color: #ffe49a;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.5px;
+    text-align: center;
+    line-height: 1;
+  }
+  .mp-live-compact-points.is-tb { color: #ffd497; font-size: 1.5rem; }
+  .mp-live-compact-points.is-deuce { color: #ffe49a; }
+  .mp-live-compact-meta {
+    font-size: 0.66rem;
+    font-weight: 800;
+    color: rgba(207, 226, 255, .55);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1;
+  }
+  .mp-live-compact-row--games .mp-live-compact-meta:first-child { text-align: right; }
+  .mp-live-compact-row--games .mp-live-compact-meta:last-child  { text-align: left;  }
+  .mp-live-compact-row--points .mp-live-compact-meta:last-child { text-align: left;  }
+  .mp-live-compact-hint {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255, 255, 255, .08);
+    font-size: 0.82rem;
+    color: rgba(234, 242, 255, .70);
+    text-align: center;
+    font-weight: 700;
+  }
+  .mp-live-compact-hint strong { color: #fff; }
+
+  /* Botonera por equipo (touch target ≥56px) */
+  .mp-live-teams {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .mp-live-team-pad {
+    padding: 10px 10px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid rgba(255, 255, 255, .08);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .mp-live-team-pad[data-team="team1"] {
+    background: var(--team1-color-bg);
+    border-color: rgba(11, 124, 255, 0.28);
+  }
+  .mp-live-team-pad[data-team="team2"] {
+    background: var(--team2-color-bg);
+    border-color: rgba(200, 232, 53, 0.28);
+  }
+  .mp-live-team-pad-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    text-align: center;
+    line-height: 1;
+  }
+  .mp-live-team-pad[data-team="team1"] .mp-live-team-pad-label { color: #cfe2ff; }
+  .mp-live-team-pad[data-team="team2"] .mp-live-team-pad-label { color: #e9f5a8; }
+  .mp-live-team-pad-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    grid-template-areas:
+      "pt   game"
+      "undo undo";
+    gap: 6px;
+  }
+  .mp-live-pad-btn {
+    min-height: 56px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    font-family: inherit;
+    font-weight: 900;
+    font-size: 0.92rem;
+    color: #fff;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 8px;
+    transition: transform .12s ease, filter .12s ease, background .15s ease;
+    letter-spacing: 0.3px;
+  }
+  .mp-live-pad-btn:active:not([disabled]) { transform: scale(0.96); }
+  .mp-live-pad-btn[disabled] { opacity: .42; cursor: not-allowed; }
+  .mp-live-pad-btn.pad-pt { grid-area: pt; }
+  .mp-live-pad-btn.pad-game { grid-area: game; }
+  .mp-live-pad-btn.pad-undo {
+    grid-area: undo;
+    min-height: 42px;
+    font-size: 0.82rem;
+    background: rgba(255, 255, 255, .05);
+    border-color: rgba(255, 255, 255, .14);
+    color: rgba(234, 242, 255, .75);
+  }
+  .mp-live-pad-btn.pad-undo:hover:not([disabled]) { background: rgba(255, 255, 255, .10); }
+
+  /* Team1 (azul) */
+  .mp-live-team-pad[data-team="team1"] .mp-live-pad-btn.pad-pt {
+    background: linear-gradient(135deg, var(--team1-color), #004FC8);
+    border-color: var(--team1-color-border);
+    box-shadow: 0 0 14px rgba(11, 124, 255, .22);
+  }
+  .mp-live-team-pad[data-team="team1"] .mp-live-pad-btn.pad-game {
+    background: rgba(11, 124, 255, .22);
+    border-color: var(--team1-color-border);
+    color: #cfe2ff;
+  }
+  .mp-live-team-pad[data-team="team1"] .mp-live-pad-btn.pad-game:hover:not([disabled]) {
+    background: rgba(11, 124, 255, .32);
+    color: #fff;
+  }
+
+  /* Team2 (verde pelota) */
+  .mp-live-team-pad[data-team="team2"] .mp-live-pad-btn.pad-pt {
+    background: linear-gradient(135deg, var(--team2-color), #9ec628);
+    border-color: var(--team2-color-border);
+    box-shadow: 0 0 14px rgba(200, 232, 53, .28);
+    color: #0a1428;  /* texto oscuro: el verde pelota es brillante */
+  }
+  .mp-live-team-pad[data-team="team2"] .mp-live-pad-btn.pad-game {
+    background: rgba(200, 232, 53, .18);
+    border-color: var(--team2-color-border);
+    color: #e9f5a8;
+  }
+  .mp-live-team-pad[data-team="team2"] .mp-live-pad-btn.pad-game:hover:not([disabled]) {
+    background: rgba(200, 232, 53, .28);
+    color: #fff;
+  }
+
+  /* Botón "Marcador completo" */
+  .mp-live-detail-row {
+    margin-top: 4px;
+    text-align: center;
+  }
+  .mp-live-detail-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .12);
+    color: rgba(234, 242, 255, .80);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .mp-live-detail-btn:hover {
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+    border-color: rgba(255, 255, 255, .22);
+  }
+
+  @media (max-width: 480px) {
+    .mp-live-compact { padding: 12px 10px 10px; }
+    .mp-live-compact-score { font-size: 1.6rem; }
+    .mp-live-compact-points { font-size: 1.85rem; }
+    .mp-live-compact-team-name { font-size: 0.78rem; }
+    .mp-live-team-pad { padding: 8px 8px 10px; }
+    .mp-live-pad-btn { font-size: 0.84rem; min-height: 52px; }
+    .mp-live-pad-btn.pad-undo { min-height: 38px; font-size: 0.76rem; }
+  }
+
+  /* Read-only: si no eres dueño, ocultar la botonera (la tabla en sheet sigue visible) */
+  .mp-live-teams[data-owner="0"] { opacity: 0.5; pointer-events: none; }
+
   /* Display read-only (invitado): no input, sólo cita */
   .mp-notas-readonly {
     margin-top: 4px;
@@ -1848,7 +2133,7 @@
       </div>
     </div>
 
-    <!-- ── Etapa 16.2 — Marcador inteligente en vivo ── -->
+    <!-- ── Etapa 16.2 — Marcador inteligente en vivo (remaqueta 16.3) ── -->
     <div id="mpLiveCard" class="mp-card mp-live-card" style="display:none">
       <div class="mp-live-head">
         <span class="mp-live-title">🎾 Marcador en vivo</span>
@@ -1858,30 +2143,92 @@
           <input id="mpLiveGoldenInput" type="checkbox" />
         </label>
       </div>
-      <table class="mp-live-table">
-        <thead>
-          <tr>
-            <th class="team-col">Equipo</th>
-            <th>Sets</th>
-            <th>Games</th>
-            <th>Punto</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="mpLiveTbody"></tbody>
-      </table>
+
+      <!-- ── 16.3 — Vista compacta inline (siempre visible, escaneable a 1m) ── -->
+      <div id="mpLiveCompact" class="mp-live-compact" aria-live="polite">
+        <div class="mp-live-compact-row mp-live-compact-row--sets">
+          <div class="mp-live-compact-team" data-team="team1">
+            <span class="mp-live-compact-team-name" id="mpLcT1Name">Equipo 1</span>
+            <span class="mp-live-compact-serve" id="mpLcT1Serve" aria-hidden="true"></span>
+          </div>
+          <div class="mp-live-compact-score" id="mpLcSets">0 – 0</div>
+          <div class="mp-live-compact-team mp-live-compact-team--right" data-team="team2">
+            <span class="mp-live-compact-team-name" id="mpLcT2Name">Equipo 2</span>
+            <span class="mp-live-compact-serve" id="mpLcT2Serve" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="mp-live-compact-row mp-live-compact-row--games">
+          <div class="mp-live-compact-meta">Sets</div>
+          <div class="mp-live-compact-score-sm" id="mpLcGames">0 – 0</div>
+          <div class="mp-live-compact-meta">Games</div>
+        </div>
+        <div class="mp-live-compact-row mp-live-compact-row--points">
+          <div class="mp-live-compact-meta">&nbsp;</div>
+          <div class="mp-live-compact-points" id="mpLcPoints">0 – 0</div>
+          <div class="mp-live-compact-meta">Punto</div>
+        </div>
+        <div class="mp-live-compact-hint" id="mpLiveHint">🟢 Saca <strong>Equipo 1</strong></div>
+      </div>
+
+      <!-- ── 16.3 — Botonera reorganizada por equipo (touch ≥56px) ── -->
+      <div id="mpLiveTeamActions" class="mp-live-teams" data-owner="0">
+        <div class="mp-live-team-pad" data-team="team1">
+          <div class="mp-live-team-pad-label">Equipo 1</div>
+          <div class="mp-live-team-pad-grid">
+            <button type="button" class="mp-live-pad-btn pad-pt"   data-live="addPoint"   data-team="team1">+ PUNTO</button>
+            <button type="button" class="mp-live-pad-btn pad-game" data-live="forceGame"  data-team="team1">+ GAME</button>
+            <button type="button" class="mp-live-pad-btn pad-undo" data-live="undoPoint"  data-team="team1">− PUNTO</button>
+          </div>
+        </div>
+        <div class="mp-live-team-pad" data-team="team2">
+          <div class="mp-live-team-pad-label">Equipo 2</div>
+          <div class="mp-live-team-pad-grid">
+            <button type="button" class="mp-live-pad-btn pad-pt"   data-live="addPoint"   data-team="team2">+ PUNTO</button>
+            <button type="button" class="mp-live-pad-btn pad-game" data-live="forceGame"  data-team="team2">+ GAME</button>
+            <button type="button" class="mp-live-pad-btn pad-undo" data-live="undoPoint"  data-team="team2">− PUNTO</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Undo de game / set sigue siendo compartido -->
       <div class="mp-live-foot">
         <div class="mp-live-undo-row">
           <button id="mpLiveUndoGame" type="button" class="mp-live-btn mp-live-btn-undo-game" title="Deshacer último game">↶ game</button>
           <button id="mpLiveUndoSet" type="button" class="mp-live-btn mp-live-btn-undo-set" title="Corregir último set">↶ set</button>
         </div>
-        <div class="mp-live-hint" id="mpLiveHint">Saca <strong>Equipo 1</strong></div>
       </div>
+
+      <!-- Botón para abrir la tabla detallada (sheet) -->
+      <div class="mp-live-detail-row">
+        <button id="mpLiveOpenDetail" type="button" class="mp-live-detail-btn">📋 Marcador completo</button>
+      </div>
+
       <div id="mpLiveReadonlyNote" class="mp-live-readonly-note" style="display:none">
         Solo el dueño actualiza el marcador en vivo. Lo verás sincronizado en tiempo real.
       </div>
       <div class="mp-live-final-fallback">
         <button id="mpLiveOpenFinalForm" type="button">¿Solo registrar marcador final? Usar formulario clásico</button>
+      </div>
+    </div>
+
+    <!-- ── 16.3 — Bottom sheet "Marcador completo" (tabla detallada) ── -->
+    <div id="mpLiveDetailSheet" class="mp-sheet-backdrop" aria-hidden="true">
+      <div class="mp-sheet" role="dialog" aria-modal="true">
+        <h3 style="margin-bottom:14px;">📋 Marcador completo</h3>
+        <table class="mp-live-table">
+          <thead>
+            <tr>
+              <th class="team-col">Equipo</th>
+              <th>Sets</th>
+              <th>Games</th>
+              <th>Punto</th>
+            </tr>
+          </thead>
+          <tbody id="mpLiveTbody"></tbody>
+        </table>
+        <div class="mp-sheet-actions" style="margin-top:14px">
+          <button type="button" class="mp-sheet-btn secondary" id="mpLiveCloseDetail">Cerrar</button>
+        </div>
       </div>
     </div>
 
@@ -2068,6 +2415,33 @@
 <script>
 (function () {
   "use strict";
+
+  // ---------- Etapa 16.3 — inyectar SVG vectorial detrás de cada cancha ----------
+  function injectCourtSvgBackgrounds() {
+    if (!window.PuntazoCourtSVG) return;
+    const grids = document.querySelectorAll(".mp-court-grid");
+    grids.forEach(function (grid) {
+      if (grid.querySelector(":scope > .mp-court-svg-bg")) return; // ya inyectada
+      const wrap = document.createElement("div");
+      wrap.className = "mp-court-svg-bg";
+      wrap.setAttribute("aria-hidden", "true");
+      wrap.innerHTML = window.PuntazoCourtSVG.topDown({
+        width: 320,
+        height: 480,
+        team1Color: "#0B7CFF",
+        team2Color: "#c8e835",
+        showNet: true,
+        landscape: false,
+      });
+      // Insertarlo como primer hijo para que quede DEBAJO de los slots (z-index)
+      grid.insertBefore(wrap, grid.firstChild);
+    });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", injectCourtSvgBackgrounds);
+  } else {
+    injectCourtSvgBackgrounds();
+  }
 
   // ---------- helpers ----------
   function getQueryParams() {
@@ -4866,6 +5240,18 @@
   const $liveOvScore    = document.getElementById("mpLiveFinishedScore");
   const $liveOvClose    = document.getElementById("mpLiveFinishedClose");
   const $liveOvKeep     = document.getElementById("mpLiveFinishedKeep");
+  // Etapa 16.3 — compact view + team pads + detail sheet
+  const $lcT1Name       = document.getElementById("mpLcT1Name");
+  const $lcT2Name       = document.getElementById("mpLcT2Name");
+  const $lcT1Serve      = document.getElementById("mpLcT1Serve");
+  const $lcT2Serve      = document.getElementById("mpLcT2Serve");
+  const $lcSets         = document.getElementById("mpLcSets");
+  const $lcGames        = document.getElementById("mpLcGames");
+  const $lcPoints       = document.getElementById("mpLcPoints");
+  const $liveTeams      = document.getElementById("mpLiveTeamActions");
+  const $liveOpenDetail = document.getElementById("mpLiveOpenDetail");
+  const $liveDetSheet   = document.getElementById("mpLiveDetailSheet");
+  const $liveCloseDet   = document.getElementById("mpLiveCloseDetail");
 
   let _liveWriteInFlight = false;
   let _liveLastShownFinishedFor = null; // id del partido para el que ya mostramos overlay
@@ -5004,43 +5390,8 @@
         }
         tr.appendChild(tdPts);
 
-        // Acciones por equipo
-        const tdAct = document.createElement("td");
-        tdAct.className = "mp-live-actions-cell";
-        const row = document.createElement("div");
-        row.className = "row";
-
-        const btnMinus = document.createElement("button");
-        btnMinus.type = "button";
-        btnMinus.className = "mp-live-btn mp-live-btn-undo-pt";
-        btnMinus.textContent = "−";
-        btnMinus.title = "Deshacer último punto";
-        btnMinus.disabled = !isOwner;
-        btnMinus.dataset.live = "undoPoint";
-
-        const btnPlus = document.createElement("button");
-        btnPlus.type = "button";
-        btnPlus.className = "mp-live-btn mp-live-btn-pt";
-        btnPlus.textContent = "+";
-        btnPlus.title = "Sumar punto a " + liveTeamLabel(currentMatch, teamKey);
-        btnPlus.disabled = !isOwner;
-        btnPlus.dataset.live = "addPoint";
-        btnPlus.dataset.team = teamKey;
-
-        const btnGame = document.createElement("button");
-        btnGame.type = "button";
-        btnGame.className = "mp-live-btn mp-live-btn-game";
-        btnGame.textContent = "🏆 game";
-        btnGame.title = "Forzar game ganado para " + liveTeamLabel(currentMatch, teamKey);
-        btnGame.disabled = !isOwner;
-        btnGame.dataset.live = "forceGame";
-        btnGame.dataset.team = teamKey;
-
-        row.appendChild(btnMinus);
-        row.appendChild(btnPlus);
-        row.appendChild(btnGame);
-        tdAct.appendChild(row);
-        tr.appendChild(tdAct);
+        // Etapa 16.3 — la columna "Acciones" se eliminó del modal detalle.
+        // Las acciones viven ahora en los team-pads fuera de la tabla.
 
         $liveTbody.appendChild(tr);
       });
@@ -5057,6 +5408,54 @@
         $liveHint.innerHTML = "🟢 Saca <strong>" + escHtml(servingTeamLabel) + "</strong>" +
           (m.goldenPoint ? " · Punto de oro ON" : "");
       }
+    }
+
+    // ── 16.3 — Render vista compacta (sets/games/points grandes) ──
+    try {
+      const t1Label = liveTeamLabel(currentMatch, "team1");
+      const t2Label = liveTeamLabel(currentMatch, "team2");
+      if ($lcT1Name) $lcT1Name.textContent = t1Label;
+      if ($lcT2Name) $lcT2Name.textContent = t2Label;
+
+      const t1Sets = board.setsWon.t1;
+      const t2Sets = board.setsWon.t2;
+      if ($lcSets) $lcSets.textContent = t1Sets + "  –  " + t2Sets;
+
+      // Games del set actual
+      const curG1 = (m.current && Number.isFinite(m.current.team1Games)) ? m.current.team1Games : 0;
+      const curG2 = (m.current && Number.isFinite(m.current.team2Games)) ? m.current.team2Games : 0;
+      if ($lcGames) $lcGames.textContent = curG1 + "  –  " + curG2;
+
+      // Puntos del juego actual (o tiebreak)
+      if ($lcPoints) {
+        $lcPoints.classList.remove("is-tb", "is-deuce");
+        if (m.current && m.current.tiebreak) {
+          $lcPoints.classList.add("is-tb");
+          $lcPoints.textContent = "TB " + (m.current.tiebreak.team1 || 0) + " – " + (m.current.tiebreak.team2 || 0);
+        } else {
+          const p1 = window.PuntazoMatches.live.pointsLabel(m.current ? m.current.team1Points : 0);
+          const p2 = window.PuntazoMatches.live.pointsLabel(m.current ? m.current.team2Points : 0);
+          $lcPoints.textContent = p1 + "  –  " + p2;
+          if (p1 === "AD" || p2 === "AD" || (p1 === "40" && p2 === "40")) {
+            $lcPoints.classList.add("is-deuce");
+          }
+        }
+      }
+
+      // Indicador de servicio en la fila compacta
+      const serving = m.current && m.current.servingTeam;
+      if ($lcT1Serve) $lcT1Serve.classList.toggle("is-active", serving === "team1");
+      if ($lcT2Serve) $lcT2Serve.classList.toggle("is-active", serving === "team2");
+
+      // Habilitar/deshabilitar team pads + marcar atributo owner
+      if ($liveTeams) {
+        $liveTeams.dataset.owner = isOwner ? "1" : "0";
+        $liveTeams.querySelectorAll("button.mp-live-pad-btn").forEach(function (btn) {
+          btn.disabled = !isOwner;
+        });
+      }
+    } catch (e) {
+      console.warn("[mi-partido 16.3] compact render error", e);
     }
 
     // Mostrar overlay de partido terminado (solo una vez por matchId, y solo
@@ -5146,6 +5545,57 @@
       const labelMap = { addPoint: "punto", undoPoint: "deshacer punto", forceGame: "game" };
       await liveWriteMarcador(next, labelMap[action] || "acción");
       try { if (navigator.vibrate) navigator.vibrate(20); } catch (_) {}
+    });
+  }
+
+  // ── 16.3 — handlers de la botonera por equipo (reutilizan la misma lógica
+  //          que el tbody legacy: el click delega al data-live/data-team) ──
+  if ($liveTeams) {
+    $liveTeams.addEventListener("click", async function (e) {
+      const btn = e.target.closest("button[data-live]");
+      if (!btn) return;
+      if (btn.disabled) return;
+      const action = btn.dataset.live;
+      const team = btn.dataset.team || null;
+      if (!currentMatch) return;
+      const m = liveBuildSafeMarcador(currentMatch);
+      let next = null;
+      try {
+        if (action === "addPoint" && (team === "team1" || team === "team2")) {
+          next = window.PuntazoMatches.live.nextPointWinner(m, team, { goldenPoint: !!m.goldenPoint, modo: m.modo });
+        } else if (action === "undoPoint") {
+          next = window.PuntazoMatches.live.undoLastPoint(m);
+        } else if (action === "forceGame" && (team === "team1" || team === "team2")) {
+          next = window.PuntazoMatches.live.forceGameWin(m, team);
+        }
+      } catch (err) {
+        console.error("[mi-partido 16.3] team pad action error", err);
+        showToast("Error al aplicar acción: " + (err && err.message ? err.message : "desconocido"), "bad", 2600);
+        return;
+      }
+      if (!next) return;
+      const labelMap = { addPoint: "punto", undoPoint: "deshacer punto", forceGame: "game" };
+      await liveWriteMarcador(next, labelMap[action] || "acción");
+      try { if (navigator.vibrate) navigator.vibrate(20); } catch (_) {}
+    });
+  }
+
+  // ── 16.3 — Sheet "Marcador completo" ──
+  function liveOpenDetailSheet() {
+    if (!$liveDetSheet) return;
+    $liveDetSheet.classList.add("is-open");
+    $liveDetSheet.setAttribute("aria-hidden", "false");
+  }
+  function liveCloseDetailSheet() {
+    if (!$liveDetSheet) return;
+    $liveDetSheet.classList.remove("is-open");
+    $liveDetSheet.setAttribute("aria-hidden", "true");
+  }
+  if ($liveOpenDetail) $liveOpenDetail.addEventListener("click", liveOpenDetailSheet);
+  if ($liveCloseDet)   $liveCloseDet.addEventListener("click", liveCloseDetailSheet);
+  if ($liveDetSheet) {
+    $liveDetSheet.addEventListener("click", function (e) {
+      if (e.target === $liveDetSheet) liveCloseDetailSheet();
     });
   }
 
