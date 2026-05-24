@@ -20,10 +20,10 @@
   // status: "active" → seleccionable
   //         "soon"   → se muestra pero deshabilitado ("Próximamente")
   const CLUB_DISPLAY = {
-    "Interpadel":            { emoji: "🎾", status: "active",   nombre: "Interpadel" },
-    "BreakPoint":            { emoji: "⚡", status: "active",   nombre: "BreakPoint" },
-    "Scorpion":              { emoji: "🦂", status: "active",   nombre: "Scorpion" },
-    "WellStreet-Pickleball": { emoji: "🏓", status: "soon",     nombre: "WellStreet" }
+    "Interpadel":            { emoji: "🎾", logoUrl: "/assets/logos/interpadel.png", status: "active", nombre: "Interpadel" },
+    "BreakPoint":            { emoji: "⚡", logoUrl: "/assets/logos/breakpoint.png", status: "active", nombre: "BreakPoint" },
+    "Scorpion":              { emoji: "🦂", status: "active", nombre: "Scorpion" },
+    "WellStreet-Pickleball": { emoji: "🏓", logoUrl: "/assets/logos/wellstreet.png", status: "active", nombre: "WellStreet" }
   };
 
   // ── Mapping de códigos QR físicos → loc id en config ──
@@ -65,6 +65,7 @@
           id: L.id,
           nombre: display.nombre || L.nombre || L.id,
           emoji: display.emoji || "🎾",
+          logoUrl: display.logoUrl || null,
           status: display.status || "active",
           canchas: Array.isArray(L.cancha) ? L.cancha.map(c => ({
             id: c.id,

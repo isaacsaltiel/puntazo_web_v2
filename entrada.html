@@ -330,6 +330,16 @@
     line-height: 1;
     margin-bottom: 8px;
   }
+  /* Etapa 16.4 F4 — logo real de club (mismo footprint visual que .emoji) */
+  .sel-card .logo {
+    width: auto;
+    height: 48px;
+    max-width: 90%;
+    object-fit: contain;
+    margin: 0 auto 8px;
+    display: block;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
+  }
   .sel-card .name {
     font-size: 1rem;
     font-weight: 800;
@@ -601,8 +611,12 @@
         card.type = "button";
         card.className = "sel-card";
         if (club.status === "soon") card.classList.add("is-disabled");
+        // Etapa 16.4 F4: logo real si está disponible, fallback al emoji
+        const visual = club.logoUrl
+          ? '<img class="logo" src="' + escapeHtml(club.logoUrl) + '" alt="' + escapeHtml(club.nombre) + '" onerror="this.outerHTML=\'<div class=&quot;emoji&quot;>' + escapeHtml(club.emoji || "🎾") + '</div>\'">'
+          : '<div class="emoji">' + escapeHtml(club.emoji || "🎾") + '</div>';
         const inner = [
-          '<div class="emoji">' + escapeHtml(club.emoji || "🎾") + '</div>',
+          visual,
           '<div class="name">' + escapeHtml(club.nombre) + '</div>'
         ];
         if (club.status === "soon") {
