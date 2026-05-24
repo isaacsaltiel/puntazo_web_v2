@@ -454,25 +454,36 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
     position: relative;
     background: transparent;
     border: none;
     border-radius: 12px;
-    padding: 10px;
-    /* Etapa 16.3 — aspect ratio real de cancha de pádel (1:2 portrait) para
-       que las líneas del SVG vectorial coincidan con la cuadrícula de slots. */
-    aspect-ratio: 1 / 2;
-    max-width: 260px;
+    padding: 8px;
+    /* Etapa 16.4 F6: aspect-ratio más compacto (3:4 portrait suave) y max-width
+       reducido para que la cancha de selección no domine la pantalla. */
+    aspect-ratio: 3 / 4;
+    max-width: 220px;
     margin-left: auto;
     margin-right: auto;
+  }
+  /* En mobile chico (<380px) layout horizontal 4×1 para no comerse alto */
+  @media (max-width: 380px) {
+    .mp-court-grid {
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: 1fr;
+      aspect-ratio: auto;
+      max-width: 100%;
+      gap: 5px;
+    }
+    .mp-court-grid .mp-slot { min-height: 64px; }
   }
   .mp-slot {
     position: relative;
     z-index: 2;
-    min-height: 84px;
-    border: 1px dashed rgba(255,255,255,.22);
-    background: rgba(255,255,255,.04);
+    min-height: 70px;
+    border: 1px dashed rgba(255,255,255,.18);
+    background: rgba(255,255,255,.03);
     border-radius: 10px;
     color: rgba(234,242,255,.65);
     cursor: pointer;
@@ -503,16 +514,15 @@
     background: var(--team2-color-bg-strong);
     border-color: var(--team2-color-border);
   }
+  /* Etapa 16.4 F6: recuadros menos pesados (alpha bajo + borde 1.5px no solid) */
   .mp-slot.is-filled[data-equipo="team1"] {
-    background: var(--team1-color-bg-strong);
-    border-style: solid;
-    border-color: var(--team1-color-border);
+    background: var(--team1-color-bg);
+    border: 1.5px solid var(--team1-color-border);
     color: #fff;
   }
   .mp-slot.is-filled[data-equipo="team2"] {
-    background: var(--team2-color-bg-strong);
-    border-style: solid;
-    border-color: var(--team2-color-border);
+    background: var(--team2-color-bg);
+    border: 1.5px solid var(--team2-color-border);
     color: #fff;
   }
   /* fallback histórico sin data-equipo */
@@ -2055,14 +2065,14 @@
 
     <div class="mp-modal-section-label">Jugadores</div>
     <div class="mp-court-wrap">
-      <div class="mp-court-team-label" id="nuevaTeamTopLabel">Equipo 2</div>
+      <div class="mp-court-team-label" id="nuevaTeamTopLabel">Jugadores C · D</div>
       <div class="mp-court-grid" id="nuevaCourtGrid">
         <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
         <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
         <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
         <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
       </div>
-      <div class="mp-court-team-label" id="nuevaTeamBotLabel">Equipo 1</div>
+      <div class="mp-court-team-label" id="nuevaTeamBotLabel">Jugadores A · B</div>
       <div class="mp-court-hint" id="nuevaCourtHint">Sugerencia: pádel se juega 2 vs 2.</div>
     </div>
 
@@ -2132,14 +2142,14 @@
       <div class="mp-main-court-title">🎾 Cancha</div>
       <div class="mp-court-wrap" style="position:relative">
         <span id="mpCourtSaveDot" class="mp-court-save-dot" title="Guardando…" aria-hidden="true"></span>
-        <div class="mp-court-team-label">Equipo 2</div>
+        <div class="mp-court-team-label">Jugadores C · D</div>
         <div class="mp-court-grid" id="mpMainCourtGrid">
           <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
           <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
           <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
           <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
         </div>
-        <div class="mp-court-team-label">Equipo 1</div>
+        <div class="mp-court-team-label">Jugadores A · B</div>
         <div class="mp-court-hint" id="mpMainCourtHint"></div>
         <div class="mp-court-footer">
           <button id="mpPasteBtn" type="button" class="mp-court-paste-btn" title="Pegar nombres en bulk">📋 Pegar jugadores</button>
@@ -2291,14 +2301,14 @@
 
     <div class="mp-modal-section-label">Jugadores</div>
     <div class="mp-court-wrap">
-      <div class="mp-court-team-label">Equipo 2</div>
+      <div class="mp-court-team-label">Jugadores C · D</div>
       <div class="mp-court-grid" id="endCourtGrid">
         <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
         <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
         <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
         <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
       </div>
-      <div class="mp-court-team-label">Equipo 1</div>
+      <div class="mp-court-team-label">Jugadores A · B</div>
     </div>
 
     <div class="mp-modal-section-label" id="endScoreLabel">Marcador</div>
@@ -2622,7 +2632,8 @@
       plus.textContent = "+";
       const hint = document.createElement("span");
       hint.className = "slot-hint";
-      hint.textContent = (j && j.equipo === "team2") ? "Equipo 2" : "Equipo 1";
+      // Etapa 16.4 F6: labels Jugador A/B/C/D en lugar de "Equipo X"
+      hint.textContent = "Jugador " + ["A", "B", "C", "D"][idx];
       btn.appendChild(plus);
       btn.appendChild(hint);
       return;
@@ -4016,7 +4027,8 @@
         btn.appendChild(plus);
         const hint = document.createElement("span");
         hint.className = "slot-hint";
-        hint.textContent = (eq === "team2") ? "Equipo 2" : "Equipo 1";
+        // Etapa 16.4 F6: labels Jugador A/B/C/D
+        hint.textContent = "Jugador " + ["A", "B", "C", "D"][idx];
         btn.appendChild(hint);
         if (!isOwner) {
           const a = document.createElement("span");
@@ -5444,7 +5456,22 @@
     $liveDetSheet.classList.remove("is-open");
     $liveDetSheet.setAttribute("aria-hidden", "true");
   }
-  if ($liveOpenDetail) $liveOpenDetail.addEventListener("click", liveOpenDetailSheet);
+  // Etapa 16.4 F7: el botón "📋 Marcador completo" ahora abre tablero.html
+  // (vista grande con marcador en pantalla completa) en nueva pestaña.
+  // El sheet legacy queda como fallback si tablero.html no carga.
+  if ($liveOpenDetail) {
+    $liveOpenDetail.addEventListener("click", function () {
+      if (!currentMatch || !currentMatch.id) {
+        liveOpenDetailSheet();
+        return;
+      }
+      try {
+        window.open("/tablero.html?matchId=" + encodeURIComponent(currentMatch.id), "_blank", "noopener");
+      } catch (_) {
+        liveOpenDetailSheet();
+      }
+    });
+  }
   if ($liveCloseDet)   $liveCloseDet.addEventListener("click", liveCloseDetailSheet);
   if ($liveDetSheet) {
     $liveDetSheet.addEventListener("click", function (e) {
