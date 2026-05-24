@@ -69,9 +69,6 @@
       .pz-nav-right{display:flex;align-items:center;gap:.6rem;}
       .site-header{position:relative;}
 
-      .top-month-nav-btn{display:inline-flex;align-items:center;justify-content:center;padding:.56rem .95rem;border-radius:999px;text-decoration:none;font-weight:800;font-size:.84rem;color:#fff;background:linear-gradient(135deg,rgba(255,190,0,.14),rgba(0,79,200,.20));border:1px solid rgba(255,190,0,.22);transition:all .18s ease;white-space:nowrap;}
-      .top-month-nav-btn:hover{transform:translateY(-1px);border-color:rgba(255,190,0,.38);}
-
       @media(max-width:860px){
         .pz-nav-right--internal{right:52px;}
         .pz-auth-login-btn{padding:0.55rem 0.85rem;font-size:0.76rem;}
@@ -122,7 +119,6 @@
             <li><a href="index.html#vision"      onclick="closeMenu()">Visión</a></li>
             <li><a href="index.html#clubs"       onclick="closeMenu()">Para clubs</a></li>
             <li><a href="index.html#locaciones"  onclick="closeMenu()">Locaciones</a></li>
-            <li><a href="mejores.html"            onclick="closeMenu()">Puntazos del mes</a></li>
           </ul>
           <div class="pz-nav-right">
             ${getPhoneButtonCTA()}
@@ -145,7 +141,6 @@
         <nav class="navbar" id="nav-menu">
           <a href="index.html">Inicio</a>
           <a href="index.html#clubs">Para clubs</a>
-          <a href="mejores.html" class="top-month-nav-btn">🏆 Puntazos del mes</a>
         </nav>
         <div class="pz-nav-right pz-nav-right--internal">
           ${getPhoneButtonCTA()}

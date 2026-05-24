@@ -39,19 +39,6 @@ function trackEvent(name, params = {}) {
   try { if (typeof window.gtag === "function") window.gtag("event", name, params); } catch(e) {}
 }
 
-async function updateBusinessMetrics(videoId, increments = {}, setFields = {}) {
-  try {
-    const db = getFirestoreDb();
-    if (!db || !videoId) return;
-    const doc = db.collection("reactions").doc(String(videoId));
-    const payload = {};
-    Object.keys(increments || {}).forEach(k => { payload[k] = firebase.firestore.FieldValue.increment(Number(increments[k]) || 0); });
-    Object.keys(setFields || {}).forEach(k => { payload[k] = setFields[k]; });
-    if (Object.keys(payload).length === 0) return;
-    await doc.set(payload, { merge: true });
-  } catch(e) { console.warn("[metrics]", e); }
-}
-
 function gaCtx(extra = {}) {
   const p = getQueryParams();
   return { loc: p.loc || "", can: p.can || "", lado: p.lado || "", filtro: p.filtro || "", pg: p.pg || "", ...extra };
@@ -564,9 +551,9 @@ function crearSharePill(entry) {
     const link = `${location.origin}/clip.html?videoId=${encodeURIComponent(entry.nombre)}`;
     trackEvent("click_share", gaCtx({ video_name: entry.nombre }));
     try {
-      if (navigator.share) { await navigator.share({ title: "Puntazo", text: "¡Mira este puntazo! 🎾 Vota para que gane el premio del mes 🏆", url: link }); try { updateBusinessMetrics(entry.nombre, { shares: 1 }); } catch {} toast("Compartido"); return; }
+      if (navigator.share) { await navigator.share({ title: "Puntazo", text: "¡Mira este puntazo! 🎾", url: link }); toast("Compartido"); return; }
     } catch {}
-    try { await navigator.clipboard.writeText(link); btn.textContent = "✓"; setTimeout(() => { btn.textContent = "🔗"; }, 1500); try { updateBusinessMetrics(entry.nombre, { shares: 1 }); } catch {} toast("Enlace copiado"); }
+    try { await navigator.clipboard.writeText(link); btn.textContent = "✓"; setTimeout(() => { btn.textContent = "🔗"; }, 1500); toast("Enlace copiado"); }
     catch { window.open(link, "_blank"); }
   });
   return btn;
@@ -599,7 +586,6 @@ function crearSavePill(entry, loc, can, lado) {
       } else {
         await saveVideoForCurrentUser(meta); trackEvent("save_video", gaCtx({ video_name: entry.nombre }));
         btn.classList.add("is-saved"); btn.dataset.saved = "1"; toast("Guardado en tu perfil");
-        try { const user = getAuthUser(); await updateBusinessMetrics(meta.videoId, { saves: 1 }, { saved_by_user: true, immortal: true, immortal_reasons: { saved_by_user: { uid: user?.uid||null, at: getFirestoreTimestamp() } }, immortal_markedAt: getFirestoreTimestamp() }); } catch {}
       }
     } catch(err) { console.warn("[guardados]", err); }
     btn.disabled = false; btn.dataset.loading = "0";
@@ -703,26 +689,22 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     const card = document.createElement("div");
     card.className = "video-card"; card.id = entry.nombre;
 
-    // 1. Header: hora + emoji preview
+    // 1. Header: hora
     const cardTop = document.createElement("div"); cardTop.className = "card-top";
     const timeEl = document.createElement("span"); timeEl.className = "card-time"; timeEl.textContent = displayTime;
-    const rxnPreview = document.createElement("div"); rxnPreview.className = "card-rxn-preview"; rxnPreview.setAttribute("data-rxn-preview","");
-    cardTop.appendChild(timeEl); cardTop.appendChild(rxnPreview); card.appendChild(cardTop);
+    cardTop.appendChild(timeEl); card.appendChild(cardTop);
 
     // 2. Video
     const wrap = document.createElement("div"); wrap.className = "video-wrap";
     const real = document.createElement("video");
     real.className = "real"; real.controls = true; real.playsInline = true; real.preload = "metadata"; real.src = entry.url;
     real.style.display = "none"; real.style.width = "100%"; real.style.borderRadius = "8px";
-    real.addEventListener("play", () => { trackEvent("play_video", gaCtx({ video_name: entry.nombre })); try { updateBusinessMetrics(entry.nombre, { views: 1 }); } catch {} }, { once: true });
+    real.addEventListener("play", () => { trackEvent("play_video", gaCtx({ video_name: entry.nombre })); }, { once: true });
     const preview = createPreviewOverlay(entry.url, entry.duracion || 60, card);
     preview.style.width = "100%"; preview.style.borderRadius = "8px";
     wrap.appendChild(real); wrap.appendChild(preview); card.appendChild(wrap);
 
-    // 3. Participantes slot
-    const participantsSlot = document.createElement("div"); participantsSlot.setAttribute("data-participants-slot",""); card.appendChild(participantsSlot);
-
-    // 4. Botones pill
+    // 3. Botones pill
     const actionPills = document.createElement("div"); actionPills.className = "action-pills";
     actionPills.appendChild(crearSharePill(entry));
     actionPills.appendChild(crearSavePill(entry, loc, can, lado));
@@ -737,19 +719,6 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
         promoButtons.forEach(b => pc.appendChild(b)); card.appendChild(pc);
       }
     } catch {}
-
-    // 5. Reacciones slot
-    const rxnSlot = document.createElement("div"); rxnSlot.setAttribute("data-rxn-slot",""); card.appendChild(rxnSlot);
-    // 6. Comentarios slot
-    const commentsSlot = document.createElement("div"); commentsSlot.setAttribute("data-comments-slot",""); card.appendChild(commentsSlot);
-    // 7. Claim slot
-    const claimSlot = document.createElement("div"); claimSlot.setAttribute("data-claim-slot",""); card.appendChild(claimSlot);
-
-    // Reacciones attach
-    if (window.PuntazoReactions) {
-      const fecha = entry._meta ? `${entry._meta.Y}-${entry._meta.M}-${entry._meta.D}` : "";
-      PuntazoReactions.attach(card, { videoId: entry.nombre, videoUrl: entry.url, club: loc, cancha: can, lado, fecha });
-    }
 
     // Otro ángulo (async)
     (async () => {
