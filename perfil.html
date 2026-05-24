@@ -48,6 +48,102 @@
   @media(max-width:480px) {
     .perfil-header { flex-direction:column; text-align:center; align-items:center; }
   }
+
+  /* ── Etapa 15.7 — Mis partidos ── */
+  .pz-section-title {
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    margin:8px 0 14px;
+  }
+  .pz-section-title h3 {
+    font-size:1.05rem; font-weight:900; color:#eaf2ff; letter-spacing:-0.2px; margin:0;
+  }
+  .pz-section-title .pz-section-count {
+    font-size:0.80rem; font-weight:700; color:rgba(234,242,255,.55);
+  }
+
+  .pz-matches-list { display:flex; flex-direction:column; gap:12px; margin-bottom:32px; }
+
+  .pz-match-card {
+    background:rgba(255,255,255,0.055);
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:16px;
+    padding:16px 16px 14px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.18);
+    backdrop-filter:blur(10px);
+    transition:border-color .18s ease, transform .18s ease;
+  }
+  .pz-match-card:hover { border-color:rgba(11,124,255,0.30); }
+
+  .pz-match-head {
+    display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    margin-bottom:8px;
+  }
+  .pz-match-date {
+    font-size:0.80rem; font-weight:700; color:rgba(234,242,255,.58);
+    letter-spacing:.2px;
+  }
+  .pz-match-badge {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:3px 9px; border-radius:999px;
+    font-size:0.70rem; font-weight:800;
+    text-transform:uppercase; letter-spacing:.5px;
+    flex-shrink:0;
+  }
+  .pz-match-badge.is-active { background:rgba(34,180,100,.18); border:1px solid rgba(34,180,100,.40); color:#9af2c0; }
+  .pz-match-badge.is-ended  { background:rgba(180,180,180,.14); border:1px solid rgba(220,220,220,.22); color:#d2d6dd; }
+  .pz-match-badge.is-cancelled { background:rgba(255,100,80,.14); border:1px solid rgba(255,100,80,.30); color:#ffb1a3; }
+  .pz-match-badge .live-dot {
+    width:7px; height:7px; border-radius:50%; background:#22b464;
+    box-shadow:0 0 6px rgba(34,180,100,.85);
+    animation: pz-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pz-pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
+
+  .pz-match-loc {
+    font-size:1.05rem; font-weight:900; color:#fff; line-height:1.2;
+    letter-spacing:-0.3px; margin-bottom:2px;
+  }
+  .pz-match-sub {
+    font-size:0.84rem; color:rgba(234,242,255,.62); margin-bottom:10px;
+  }
+
+  .pz-match-score {
+    font-size:0.90rem; font-weight:800; color:#cfe2ff;
+    letter-spacing:.3px; margin-bottom:10px;
+  }
+  .pz-match-score .pz-score-sep { color:rgba(207,226,255,.45); margin:0 6px; }
+  .pz-match-score-empty {
+    font-size:0.82rem; color:rgba(234,242,255,.45); font-style:italic; margin-bottom:10px;
+  }
+
+  .pz-match-foot {
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-top:4px;
+  }
+  .pz-match-link {
+    display:inline-flex; align-items:center; gap:6px;
+    color:var(--blue3); text-decoration:none;
+    font-size:0.88rem; font-weight:800;
+    transition:color .15s ease;
+  }
+  .pz-match-link:hover { color:#eaf2ff; }
+  .pz-match-link.is-disabled { color:rgba(234,242,255,.40); pointer-events:none; cursor:default; }
+
+  .pz-matches-loading,
+  .pz-matches-empty,
+  .pz-matches-error {
+    text-align:center;
+    padding:36px 20px;
+    background:rgba(255,255,255,0.035);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px;
+    margin-bottom:32px;
+  }
+  .pz-matches-empty .icon { font-size:34px; margin-bottom:10px; }
+  .pz-matches-empty p { color:rgba(234,242,255,.62); font-size:0.92rem; line-height:1.5; margin:0; }
+  .pz-matches-empty a { color:var(--blue3); text-decoration:none; font-weight:700; }
+  .pz-matches-empty a:hover { color:#eaf2ff; }
+  .pz-matches-error { color:#ffb1a3; font-size:0.88rem; }
 </style>
 </head>
 <body>
@@ -77,6 +173,34 @@
         <div class="perfil-info">
           <div id="perfilName" class="perfil-name">Mi perfil</div>
         </div>
+      </div>
+
+      <!-- ── Etapa 15.7 — Mis partidos ── -->
+      <div class="pz-section-title">
+        <h3>Mis partidos</h3>
+        <span id="matchesCount" class="pz-section-count" style="display:none"></span>
+      </div>
+
+      <div id="matchesLoading" class="pz-matches-loading">
+        <div class="empty-icon">⏳</div>
+        <p>Buscando tus partidos…</p>
+      </div>
+
+      <div id="matchesList" class="pz-matches-list" style="display:none"></div>
+
+      <div id="matchesEmpty" class="pz-matches-empty" style="display:none">
+        <div class="icon">🎾</div>
+        <p>Aún no tienes partidos vinculados.<br>
+           Inicia uno desde <a href="/entrada.html">entrada</a> o reclama tu slot cuando alguien comparta el link de un partido en curso.</p>
+      </div>
+
+      <div id="matchesError" class="pz-matches-error" style="display:none">
+        No pudimos cargar tus partidos. Intenta recargar la página.
+      </div>
+
+      <!-- ── Guardados ── -->
+      <div class="pz-section-title">
+        <h3>Videos guardados</h3>
       </div>
 
       <div id="savedGrid" class="cards-grid"></div>
@@ -109,6 +233,9 @@
 
   let _user = null;
   let _videoIndex = {};
+  let _configCache = null;
+  let _matchesUnsub = null;
+  const _matchCache = new Map(); // matchId → match doc (para no re-fetchear)
 
   const $loading       = document.getElementById('perfilLoading');
   const $loginReq      = document.getElementById('loginRequired');
@@ -119,6 +246,11 @@
   const $savedGrid     = document.getElementById('savedGrid');
   const $savedEmpty    = document.getElementById('savedEmpty');
   const $savedLoading  = document.getElementById('savedLoading');
+  const $matchesLoading = document.getElementById('matchesLoading');
+  const $matchesList    = document.getElementById('matchesList');
+  const $matchesEmpty   = document.getElementById('matchesEmpty');
+  const $matchesError   = document.getElementById('matchesError');
+  const $matchesCount   = document.getElementById('matchesCount');
 
   fetch('/data/videos_index.json?cb='+Date.now(), { cache:'no-store' })
     .then(r=>r.ok?r.json():null).then(idx=>{ if(idx) _videoIndex=idx.videos||{}; }).catch(()=>{});
@@ -140,7 +272,248 @@
       $perfilAvatar.textContent = (user.displayName||user.email||'P').charAt(0).toUpperCase();
     }
     $perfilName.textContent = user.displayName || user.email || 'Mi perfil';
+    loadMyMatches(user);
     loadSaved(user);
+  }
+
+  // ============================================================
+  // Etapa 15.7 — "Mis partidos" (collectionGroup query sobre claims)
+  // ============================================================
+
+  async function loadConfig() {
+    if (_configCache) return _configCache;
+    try {
+      const res = await fetch('/data/config_locations.json?cb=' + Date.now(), { cache:'no-store' });
+      if (!res.ok) return null;
+      _configCache = await res.json();
+      return _configCache;
+    } catch (e) {
+      console.warn('[perfil mis-partidos] config_locations.json no disponible:', e);
+      return null;
+    }
+  }
+
+  function resolveNamesSync(cfg, loc, can, lado) {
+    let locNombre = loc || '', canNombre = can || '', ladoNombre = lado || '';
+    if (cfg && Array.isArray(cfg.locaciones)) {
+      const L = cfg.locaciones.find(x => x.id === loc);
+      if (L) {
+        locNombre = L.nombre || loc;
+        if (Array.isArray(L.cancha)) {
+          const C = L.cancha.find(x => x.id === can);
+          if (C) {
+            canNombre = C.nombre || can;
+            if (Array.isArray(C.lados)) {
+              const Ld = C.lados.find(x => x.id === lado);
+              if (Ld) ladoNombre = Ld.nombre || lado;
+            }
+          }
+        }
+      }
+    }
+    return { locNombre, canNombre, ladoNombre };
+  }
+
+  function tsToDate(ts) {
+    if (!ts) return null;
+    if (ts instanceof Date) return ts;
+    if (typeof ts.toDate === 'function') { try { return ts.toDate(); } catch { return null; } }
+    if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000 + Math.floor((ts.nanoseconds||0)/1e6));
+    if (typeof ts === 'number') return new Date(ts);
+    return null;
+  }
+
+  const MESES_CORTOS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function formatDateShort(d) {
+    if (!d) return '';
+    const dd = d.getDate();
+    const mes = MESES_CORTOS[d.getMonth()] || '';
+    const y = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2,'0');
+    const mm = String(d.getMinutes()).padStart(2,'0');
+    return `${dd} ${mes} ${y}, ${hh}:${mm}`;
+  }
+
+  function formatScore(match) {
+    const m = match && match.marcador;
+    if (!m || !Array.isArray(m.sets) || m.sets.length === 0) return '';
+    const cells = m.sets
+      .filter(s => s && typeof s === 'object' && Number.isFinite(s.team1) && Number.isFinite(s.team2))
+      .map(s => `${s.team1}-${s.team2}`);
+    if (!cells.length) return '';
+    return cells.join('<span class="pz-score-sep">·</span>');
+  }
+
+  function findMySlot(match, myUid, claim) {
+    // 1) Si el doc tiene jugadores[i].uid === myUid, usar ese (puesto por dueño).
+    // 2) Si no, usar el slot del claim (Etapa 15.5+).
+    if (match && Array.isArray(match.jugadores)) {
+      for (let i = 0; i < match.jugadores.length; i++) {
+        const j = match.jugadores[i];
+        if (j && (j.uid === myUid || j.claimedByUid === myUid)) return i;
+      }
+    }
+    return (claim && Number.isInteger(claim.slot)) ? claim.slot : null;
+  }
+
+  function ladoLabel(slotIdx) {
+    // Slots 0,1 = Equipo 1 ; 2,3 = Equipo 2 (convención LEGACY_INDEX_TO_TEAM).
+    if (slotIdx === 0 || slotIdx === 1) return 'Equipo 1';
+    if (slotIdx === 2 || slotIdx === 3) return 'Equipo 2';
+    return '';
+  }
+
+  function buildMatchCard(match, claim, cfg, myUid) {
+    const { locNombre, canNombre, ladoNombre } = resolveNamesSync(cfg, match.loc, match.can, match.lado);
+    const startedDate = tsToDate(match.startedAt);
+    const dateStr = startedDate ? formatDateShort(startedDate) : '';
+    const status = match.status || 'active';
+
+    let badgeHtml = '';
+    if (status === 'active') {
+      badgeHtml = '<span class="pz-match-badge is-active"><span class="live-dot"></span>En vivo</span>';
+    } else if (status === 'ended') {
+      badgeHtml = '<span class="pz-match-badge is-ended">Finalizado</span>';
+    } else if (status === 'cancelled') {
+      badgeHtml = '<span class="pz-match-badge is-cancelled">Cancelado</span>';
+    }
+
+    let scoreHtml = '';
+    if (status === 'ended') {
+      const s = formatScore(match);
+      scoreHtml = s
+        ? `<div class="pz-match-score">${s}</div>`
+        : `<div class="pz-match-score-empty">Sin marcador registrado</div>`;
+    } else if (status === 'active') {
+      const s = formatScore(match);
+      if (s) scoreHtml = `<div class="pz-match-score">${s}</div>`;
+    }
+
+    const slotIdx = findMySlot(match, myUid, claim);
+    const ladoTxt = (slotIdx != null) ? ladoLabel(slotIdx) : '';
+    const subParts = [];
+    if (canNombre) subParts.push(canNombre);
+    if (ladoNombre) subParts.push('Lado ' + ladoNombre);
+    if (ladoTxt) subParts.push(ladoTxt);
+    const subHtml = subParts.map(escapeHTML).join(' · ');
+
+    let footHtml = '';
+    if (status === 'active') {
+      footHtml = `<a class="pz-match-link" href="/mi-partido.html?matchId=${encodeURIComponent(match.id)}">Volver al partido →</a>`;
+    } else if (status === 'ended') {
+      footHtml = `<a class="pz-match-link" href="/resumen.html?matchId=${encodeURIComponent(match.id)}">Ver resumen →</a>`;
+    } else {
+      footHtml = `<span class="pz-match-link is-disabled">Partido cancelado</span>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'pz-match-card';
+    card.innerHTML = `
+      <div class="pz-match-head">
+        <div class="pz-match-date">${escapeHTML(dateStr)}</div>
+        ${badgeHtml}
+      </div>
+      <div class="pz-match-loc">${escapeHTML(locNombre || '—')}</div>
+      ${subHtml ? `<div class="pz-match-sub">${subHtml}</div>` : ''}
+      ${scoreHtml}
+      <div class="pz-match-foot">${footHtml}</div>
+    `;
+    return card;
+  }
+
+  async function fetchMatchById(db, matchId) {
+    if (_matchCache.has(matchId)) return _matchCache.get(matchId);
+    try {
+      const snap = await db.collection('matches').doc(matchId).get();
+      if (!snap.exists) { _matchCache.set(matchId, null); return null; }
+      const data = { id: snap.id, ...snap.data() };
+      _matchCache.set(matchId, data);
+      return data;
+    } catch (e) {
+      console.warn('[perfil mis-partidos] no se pudo leer match', matchId, e);
+      return null;
+    }
+  }
+
+  function showMatchesState(which) {
+    $matchesLoading.style.display = (which === 'loading') ? 'block' : 'none';
+    $matchesList.style.display    = (which === 'list')    ? 'flex'  : 'none';
+    $matchesEmpty.style.display   = (which === 'empty')   ? 'block' : 'none';
+    $matchesError.style.display   = (which === 'error')   ? 'block' : 'none';
+    if (which !== 'list') $matchesCount.style.display = 'none';
+  }
+
+  function loadMyMatches(user) {
+    if (_matchesUnsub) { try { _matchesUnsub(); } catch (_) {} _matchesUnsub = null; }
+
+    const db = (window.PuntazoFirebase && window.PuntazoFirebase.db) ? window.PuntazoFirebase.db() : null;
+    if (!db) { showMatchesState('error'); return; }
+
+    showMatchesState('loading');
+
+    const cfgP = loadConfig();
+    const myUid = user.uid;
+
+    try {
+      _matchesUnsub = db.collectionGroup('claims')
+        .where('uid', '==', myUid)
+        .orderBy('claimedAt', 'desc')
+        .limit(20)
+        .onSnapshot(async function (snap) {
+          try {
+            const claims = [];
+            snap.forEach(function (d) {
+              const data = d.data() || {};
+              const parent = d.ref.parent && d.ref.parent.parent;
+              const matchId = parent ? parent.id : null;
+              if (!matchId) return;
+              claims.push({
+                matchId: matchId,
+                uid: data.uid || d.id,
+                slot: Number.isInteger(data.slot) ? data.slot : Number(data.slot),
+                claimedAt: data.claimedAt || null,
+                displayName: typeof data.displayName === 'string' ? data.displayName : '',
+              });
+            });
+
+            if (!claims.length) { showMatchesState('empty'); return; }
+
+            const cfg = await cfgP;
+            const matches = await Promise.all(claims.map(c => fetchMatchById(db, c.matchId)));
+
+            $matchesList.innerHTML = '';
+            let rendered = 0;
+            for (let i = 0; i < claims.length; i++) {
+              const m = matches[i];
+              if (!m) continue;
+              const card = buildMatchCard(m, claims[i], cfg, myUid);
+              $matchesList.appendChild(card);
+              rendered++;
+            }
+
+            if (!rendered) { showMatchesState('empty'); return; }
+
+            showMatchesState('list');
+            $matchesCount.textContent = rendered === 1
+              ? '1 partido vinculado'
+              : `${rendered} partidos vinculados`;
+            $matchesCount.style.display = 'inline';
+          } catch (err) {
+            console.error('[perfil mis-partidos] render error', err);
+            showMatchesState('error');
+          }
+        }, function (err) {
+          console.error('[perfil mis-partidos] onSnapshot error', err);
+          // Si Firestore pide índice compuesto, el mensaje incluye un link.
+          if (err && err.code === 'failed-precondition') {
+            console.warn('[perfil mis-partidos] Firestore índice compuesto requerido. Sigue el link del console.error de arriba.');
+          }
+          showMatchesState('error');
+        });
+    } catch (e) {
+      console.error('[perfil mis-partidos] query setup error', e);
+      showMatchesState('error');
+    }
   }
 
   function buildSavedCard(entry, onUnsave) {
