@@ -855,6 +855,186 @@
     font-size: 0.84rem;
     text-align: center;
   }
+
+  /* ── Etapa 15.5: banners + cancha principal + claims + modales ── */
+  .mp-guest-banner {
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(11, 124, 255, 0.10);
+    border: 1px solid rgba(11, 124, 255, 0.30);
+    color: #cfe2ff;
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.45;
+  }
+  .mp-guest-banner strong { color: #fff; }
+
+  .mp-conflict-banner {
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255, 170, 60, 0.12);
+    border: 1px solid rgba(255, 170, 60, 0.35);
+    color: #ffd497;
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.45;
+  }
+  .mp-conflict-banner button {
+    margin-top: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 170, 60, 0.50);
+    background: rgba(255, 170, 60, 0.16);
+    color: #fff5dc;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 0.86rem;
+    cursor: pointer;
+  }
+  .mp-conflict-banner button:hover { background: rgba(255, 170, 60, 0.26); }
+
+  /* Cancha principal — overlay sobre el slot existente */
+  .mp-main-court-card { padding: 16px 16px 14px; }
+  .mp-main-court-title {
+    font-size: 0.92rem; font-weight: 800; color: #fff;
+    letter-spacing: 0.2px;
+    margin-bottom: 10px;
+  }
+
+  .mp-slot-claim-tag {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: rgba(207, 226, 255, .82);
+    background: rgba(11, 124, 255, 0.20);
+    border: 1px solid rgba(11, 124, 255, 0.35);
+    padding: 2px 8px;
+    border-radius: 999px;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+  .mp-slot-claim-tag.is-mine {
+    color: #9af2c0;
+    background: rgba(34, 180, 100, 0.16);
+    border-color: rgba(34, 180, 100, 0.40);
+  }
+  .mp-slot-claim-tag.is-conflict {
+    color: #ffd497;
+    background: rgba(255, 170, 60, 0.16);
+    border-color: rgba(255, 170, 60, 0.40);
+  }
+  .mp-slot-action {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.70rem;
+    font-weight: 800;
+    color: #cfe2ff;
+    text-transform: none;
+    letter-spacing: 0.2px;
+  }
+
+  /* Modal Compartir */
+  .mp-share-row {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+  }
+  .mp-share-url {
+    flex: 1; min-width: 0;
+    background: transparent;
+    border: none;
+    color: #eaf2ff;
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 600;
+    outline: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mp-share-copy {
+    flex-shrink: 0;
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(11, 124, 255, 0.40);
+    background: rgba(0, 79, 200, 0.22);
+    color: #fff;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 0.84rem;
+    cursor: pointer;
+  }
+  .mp-share-copy:hover { background: rgba(0, 79, 200, 0.34); }
+  .mp-share-copy.is-done { background: rgba(34, 180, 100, 0.18); border-color: rgba(34, 180, 100, 0.45); color: #c8f7dc; }
+
+  .mp-share-actions {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .mp-share-btn {
+    width: 100%; min-height: 48px;
+    border: none; border-radius: 999px; cursor: pointer;
+    font-family: inherit; font-weight: 800; font-size: 0.95rem;
+    color: #fff;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .mp-share-btn.primary {
+    background: linear-gradient(135deg, #0B7CFF, #004FC8);
+    border: 1px solid rgba(11, 124, 255, 0.55);
+  }
+  .mp-share-btn.whatsapp {
+    background: rgba(37, 211, 102, 0.22);
+    border: 1px solid rgba(37, 211, 102, 0.50);
+    color: #c8f7d6;
+    text-decoration: none;
+  }
+  .mp-share-btn.whatsapp:hover { background: rgba(37, 211, 102, 0.32); color: #fff; }
+
+  .mp-btn-share {
+    width: 100%; min-height: 50px;
+    border: 1px solid rgba(11, 124, 255, 0.40);
+    background: rgba(0, 79, 200, 0.16);
+    border-radius: 999px;
+    color: #fff;
+    font-family: inherit; font-weight: 800; font-size: 0.95rem;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all .18s ease;
+  }
+  .mp-btn-share:hover {
+    background: rgba(0, 79, 200, 0.26);
+    border-color: rgba(11, 124, 255, 0.55);
+  }
+
+  /* Modal de conflicto */
+  .mp-conflict-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .mp-conflict-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .12);
+  }
+  .mp-conflict-row .nm { font-weight: 700; color: #fff; font-size: 0.92rem; min-width: 0; }
+  .mp-conflict-row .nm small { display:block; color: rgba(234,242,255,.55); font-weight: 500; font-size: 0.78rem; }
+  .mp-conflict-row button {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 80, 80, 0.40);
+    background: rgba(255, 80, 80, 0.12);
+    color: #ffd5d5;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+  .mp-conflict-row button:hover { background: rgba(255, 80, 80, 0.22); }
 </style>
 </head>
 <body>
@@ -963,6 +1143,31 @@
       </div>
     </div>
 
+    <div id="mpGuestBanner" class="mp-guest-banner" style="display:none">
+      Estás viendo el partido de <strong id="mpOwnerName">otro jugador</strong>.
+      Puedes ver la cancha, el marcador y los pulsos. Para vincularte a un slot, inicia sesión.
+    </div>
+
+    <div id="mpConflictBanner" class="mp-conflict-banner" style="display:none">
+      <span id="mpConflictText">Hay slots con más de un reclamo.</span>
+      <button id="mpConflictResolve" type="button">Revisar conflictos</button>
+    </div>
+
+    <div id="mpMainCourtCard" class="mp-card mp-main-court-card" style="display:none">
+      <div class="mp-main-court-title">🎾 Cancha</div>
+      <div class="mp-court-wrap">
+        <div class="mp-court-team-label">Equipo 2</div>
+        <div class="mp-court-grid" id="mpMainCourtGrid">
+          <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
+          <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
+          <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
+          <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
+        </div>
+        <div class="mp-court-team-label">Equipo 1</div>
+        <div class="mp-court-hint" id="mpMainCourtHint"></div>
+      </div>
+    </div>
+
     <div id="mpClipStates" class="mp-card cs-card" style="display:none">
       <div class="cs-header">
         <span class="cs-title">🎯 Pulsos de este partido</span>
@@ -977,11 +1182,13 @@
       <button id="mpBtnEnd" class="mp-btn-end" type="button">🏁 Terminar partido</button>
       <button id="mpBtnClip" class="mp-btn-clip" type="button">🎯 Pedir clip ahora</button>
       <div id="mpClipFeedback" class="mp-clip-feedback"></div>
+      <button id="mpBtnShareActive" class="mp-btn-share" type="button" style="display:none">📤 Compartir link del partido</button>
       <button id="mpBtnCancel" class="mp-btn-cancel" type="button">Cancelar partido</button>
     </div>
 
     <div id="mpFinishedActions" class="mp-actions" style="display:none">
       <a id="mpLnkClips" class="mp-btn-clips" href="#">🎴 Ver resumen del partido</a>
+      <button id="mpBtnShareFinished" class="mp-btn-share" type="button" style="display:none">📤 Compartir link del partido</button>
       <a id="mpLnkBack" class="mp-btn-back" href="#">Volver a clips de esta cancha</a>
     </div>
   </div>
@@ -1037,6 +1244,54 @@
       <button type="button" id="mpSheetMe" class="mp-sheet-btn secondary" style="display:none">Soy yo</button>
       <button type="button" id="mpSheetRemove" class="mp-sheet-btn danger" style="display:none">Quitar</button>
       <button type="button" id="mpSheetCancel" class="mp-sheet-btn secondary">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal Compartir (Etapa 15.5) ── -->
+<div id="mpShareModal" class="mp-modal-backdrop">
+  <div class="mp-modal" role="dialog" aria-modal="true">
+    <h3>📤 Compartir partido</h3>
+    <p class="note">Cualquiera con este link puede ver el partido y vincularse a un slot.</p>
+    <div class="mp-share-row">
+      <input id="mpShareUrl" class="mp-share-url" type="text" readonly />
+      <button id="mpShareCopy" type="button" class="mp-share-copy">Copiar</button>
+    </div>
+    <div class="mp-share-actions">
+      <button id="mpShareNative" type="button" class="mp-share-btn primary" style="display:none">📲 Compartir…</button>
+      <a id="mpShareWhatsapp" class="mp-share-btn whatsapp" href="#" target="_blank" rel="noopener">💬 Compartir por WhatsApp</a>
+    </div>
+    <div id="mpShareMsg" class="mp-msg" style="margin-top:12px"></div>
+    <div class="mp-modal-actions">
+      <button id="mpShareClose" type="button" class="mp-btn-cancel">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal Claim (Etapa 15.5) ── -->
+<div id="mpClaimModal" class="mp-modal-backdrop">
+  <div class="mp-modal" role="dialog" aria-modal="true">
+    <h3 id="mpClaimTitle">¿Eres tú?</h3>
+    <p class="note" id="mpClaimNote">Confirma tu nombre para reclamar este slot.</p>
+    <span class="mp-sheet-team-tag" id="mpClaimTeamTag">Equipo 1</span>
+    <input type="text" id="mpClaimInput" class="mp-sheet-input" placeholder="Tu nombre" maxlength="80" autocomplete="off" />
+    <div id="mpClaimMsg" class="mp-msg"></div>
+    <div class="mp-modal-actions">
+      <button id="mpClaimSave" type="button" class="mp-btn-end">Reclamar slot</button>
+      <button id="mpClaimCancel" type="button" class="mp-btn-cancel">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal Conflicto (dueño, Etapa 15.5) ── -->
+<div id="mpConflictModal" class="mp-modal-backdrop">
+  <div class="mp-modal" role="dialog" aria-modal="true">
+    <h3>Resolver conflictos de slot</h3>
+    <p class="note">Hay slots con más de un reclamo. Borra los que no correspondan; el resto queda como está.</p>
+    <div id="mpConflictBody" class="mp-conflict-list"></div>
+    <div id="mpConflictMsg" class="mp-msg"></div>
+    <div class="mp-modal-actions">
+      <button id="mpConflictClose" type="button" class="mp-btn-cancel">Cerrar</button>
     </div>
   </div>
 </div>
@@ -1169,7 +1424,44 @@
   const $csOffline = document.getElementById("csOffline");
   const $csConnDot = document.getElementById("csConnDot");
 
+  // Etapa 15.5 — refs nuevos
+  const $guestBanner = document.getElementById("mpGuestBanner");
+  const $ownerName = document.getElementById("mpOwnerName");
+  const $conflictBanner = document.getElementById("mpConflictBanner");
+  const $conflictText = document.getElementById("mpConflictText");
+  const $conflictResolveBtn = document.getElementById("mpConflictResolve");
+  const $mainCourtCard = document.getElementById("mpMainCourtCard");
+  const $mainCourtGrid = document.getElementById("mpMainCourtGrid");
+  const $mainCourtHint = document.getElementById("mpMainCourtHint");
+  const $btnShareActive = document.getElementById("mpBtnShareActive");
+  const $btnShareFinished = document.getElementById("mpBtnShareFinished");
+  const $shareModal = document.getElementById("mpShareModal");
+  const $shareUrl = document.getElementById("mpShareUrl");
+  const $shareCopy = document.getElementById("mpShareCopy");
+  const $shareNative = document.getElementById("mpShareNative");
+  const $shareWhatsapp = document.getElementById("mpShareWhatsapp");
+  const $shareClose = document.getElementById("mpShareClose");
+  const $shareMsg = document.getElementById("mpShareMsg");
+  const $claimModal = document.getElementById("mpClaimModal");
+  const $claimTitle = document.getElementById("mpClaimTitle");
+  const $claimNote = document.getElementById("mpClaimNote");
+  const $claimTeamTag = document.getElementById("mpClaimTeamTag");
+  const $claimInput = document.getElementById("mpClaimInput");
+  const $claimSave = document.getElementById("mpClaimSave");
+  const $claimCancel = document.getElementById("mpClaimCancel");
+  const $claimMsg = document.getElementById("mpClaimMsg");
+  const $conflictModal = document.getElementById("mpConflictModal");
+  const $conflictBody = document.getElementById("mpConflictBody");
+  const $conflictModalMsg = document.getElementById("mpConflictMsg");
+  const $conflictClose = document.getElementById("mpConflictClose");
+
   let currentMatch = null;
+  let currentViewMode = "guest"; // 'owner' | 'guest'
+  let currentClaims = []; // Array<{ uid, slot, claimedAt, displayName }>
+  let _claimsUnsub = null;
+  let _claimsRetryTimer = null;
+  const CLAIMS_RETRY_MS = 30000;
+  let _claimTargetIdx = -1;
 
   // ---------- jugadores: cancha visual 0-4 slots (Etapa 15) ----------
   // El estado vive en `playerState[context]`: un array de 4 objetos
@@ -1662,6 +1954,12 @@
     if (typeof teardownClipBtn === "function") teardownClipBtn();
   }
 
+  function teardownClaims() {
+    if (_claimsUnsub) { try { _claimsUnsub(); } catch (_) {} _claimsUnsub = null; }
+    if (_claimsRetryTimer) { clearTimeout(_claimsRetryTimer); _claimsRetryTimer = null; }
+    currentClaims = [];
+  }
+
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) {
       stopClipPolling();
@@ -1670,10 +1968,26 @@
     }
   });
 
-  window.addEventListener("pagehide", teardownLive);
+  window.addEventListener("pagehide", function () {
+    teardownLive();
+    teardownClaims();
+  });
+
+  // -------- Etapa 15.5: nombre del dueño (best-effort) --------
+  function getOwnerNameFromMatch(match) {
+    // El doc no guarda displayName del owner. Lo derivamos del jugador con
+    // uid === match.userId si existe; si no, fallback genérico.
+    if (!match || !Array.isArray(match.jugadores)) return "otro jugador";
+    const me = match.jugadores.find(function (j) { return j && j.uid === match.userId && j.nombre; });
+    if (me && me.nombre) return me.nombre;
+    return "otro jugador";
+  }
 
   async function renderMatch(match) {
     currentMatch = match;
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    currentViewMode = (user && match.userId === user.uid) ? "owner" : "guest";
+
     const { locNombre, canNombre, ladoNombre } = await resolveNames(match.loc, match.can, match.lado);
     $locName.textContent = locNombre;
     $locSub.textContent = `${canNombre} · ${ladoNombre}`;
@@ -1724,8 +2038,19 @@
       $lnkClips.href = "/resumen.html?matchId=" + encodeURIComponent(match.id);
     }
 
-    // Acciones según status + features vivas (Sub-tareas A + B)
-    if (match.status === "active") {
+    // Etapa 15.5 — banner invitado + botón Compartir (solo dueño)
+    if (currentViewMode === "guest") {
+      if ($guestBanner) $guestBanner.style.display = "block";
+      if ($ownerName) $ownerName.textContent = getOwnerNameFromMatch(match);
+    } else {
+      if ($guestBanner) $guestBanner.style.display = "none";
+    }
+    if ($btnShareActive) $btnShareActive.style.display = (currentViewMode === "owner") ? "inline-flex" : "none";
+    if ($btnShareFinished) $btnShareFinished.style.display = (currentViewMode === "owner") ? "inline-flex" : "none";
+
+    // Acciones según status + viewMode + features vivas
+    const isActive = match.status === "active";
+    if (isActive && currentViewMode === "owner") {
       $activeActions.style.display = "flex";
       $finishedActions.style.display = "none";
       if ($timerBox) $timerBox.classList.add("is-active");
@@ -1739,11 +2064,28 @@
       if ($clipCount && $clipCount.textContent === "") $clipCount.textContent = "—";
       startClipPolling();
       startClipStates();
+    } else if (isActive && currentViewMode === "guest") {
+      // Invitado en partido activo: ocultar acciones-de-dueño; mantener
+      // cronómetro + clip states (read-only por las rules de Firestore).
+      $activeActions.style.display = "none";
+      $finishedActions.style.display = "none";
+      if ($timerBox) $timerBox.classList.add("is-active");
+      const startMs = startDate ? startDate.getTime() : null;
+      if (startMs != null) startTimer(startMs); else stopTimer();
+      // contador de clips polling: ok, no escribe nada — vamos a habilitarlo
+      // sólo si el polling no genera errores; mantener silencioso.
+      startClipPolling();
+      startClipStates();
     } else {
+      // ended / cancelled — tanto dueño como invitado ven los enlaces.
       $activeActions.style.display = "none";
       $finishedActions.style.display = "flex";
       teardownLive();
     }
+
+    // Etapa 15.5 — cancha principal SIEMPRE visible + claims sub
+    renderMainCourt();
+    startClaims();
 
     show("mpContent");
   }
@@ -2370,21 +2712,17 @@
     if (started) return;
     started = true;
 
-    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
-    if (!user) {
-      show("mpNeedAuth");
-      return;
-    }
-
     if (!window.PuntazoMatches) {
       show("mpNotFound");
       return;
     }
 
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+
     // Modo "creación inline": muestra el formulario de jugadores ANTES de
-    // crear. La creación la disparan los botones "Iniciar partido"/"Saltar"
-    // del formulario (ver createNueva).
+    // crear. SIGUE exigiendo login (no se puede crear partido anónimo).
     if (nuevaFlag === "1") {
+      if (!user) { show("mpNeedAuth"); return; }
       if (!newLoc || !newCan || !newLado) {
         show("mpMissingId");
         return;
@@ -2394,18 +2732,17 @@
     }
 
     if (!matchIdInUrl) {
+      // Sin matchId: si está autenticado, pediremos ID; si no, también.
       show("mpMissingId");
       return;
     }
 
+    // Vista por matchId — Etapa 15.5 abre lectura pública.
+    // - Si hay user y es dueño: viewMode = 'owner' (UI editable de etapa 15).
+    // - Si no hay user O no es dueño: viewMode = 'guest' (lectura + claim).
     try {
       const match = await window.PuntazoMatches.get(matchIdInUrl);
       if (!match) { show("mpNotFound"); return; }
-      // Ownership: solo el dueño puede verlo/operarlo
-      if (match.userId !== user.uid) {
-        show("mpForbidden");
-        return;
-      }
       renderMatch(match);
     } catch (e) {
       console.error("[mi-partido] get failed", e);
@@ -2419,18 +2756,26 @@
   });
 
   window.addEventListener("puntazo:auth-changed", function () {
-    if (authReady) {
-      const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
-      // Si estábamos en NeedAuth y ahora hay sesión, re-arrancar
-      const needAuthVisible = document.getElementById("mpNeedAuth").style.display !== "none";
-      if (user && needAuthVisible) {
-        started = false;
-        start();
-      } else if (!user) {
-        // Perdió sesión: regresar a need-auth
-        teardownLive();
-        show("mpNeedAuth");
-      }
+    if (!authReady) return;
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    // Si estábamos en NeedAuth (flujo nueva=1) y ahora hay sesión, re-arrancar.
+    const needAuthVisible = document.getElementById("mpNeedAuth").style.display !== "none";
+    if (user && needAuthVisible) {
+      started = false;
+      start();
+      return;
+    }
+    // En flujo de matchId, si hay match cargado, re-renderear: el viewMode
+    // puede haber cambiado (login → owner) y la cancha principal debe
+    // re-pintar acciones de claim.
+    if (currentMatch) {
+      teardownClaims();
+      renderMatch(currentMatch);
+    } else if (!user && needAuthVisible === false && nuevaFlag === "1") {
+      // Perdió sesión durante flujo nueva
+      teardownLive();
+      teardownClaims();
+      show("mpNeedAuth");
     }
   });
 
@@ -2441,6 +2786,417 @@
       start();
     }
   }, 3500);
+
+  // =================================================================
+  // ETAPA 15.5 — claims, cancha principal, share, conflict, claim flow
+  // =================================================================
+
+  function startClaims() {
+    if (!currentMatch || !currentMatch.id) return;
+    if (!window.PuntazoMatches || typeof window.PuntazoMatches.subscribeToClaims !== "function") return;
+    teardownClaims();
+    try {
+      _claimsUnsub = window.PuntazoMatches.subscribeToClaims(currentMatch.id, function (claims) {
+        currentClaims = claims || [];
+        renderMainCourt();
+      }, function (err) {
+        console.error("[mi-partido] claims onError", err);
+        currentClaims = [];
+        renderMainCourt();
+        if (_claimsRetryTimer) clearTimeout(_claimsRetryTimer);
+        _claimsRetryTimer = setTimeout(function () {
+          _claimsRetryTimer = null;
+          if (currentMatch) startClaims();
+        }, CLAIMS_RETRY_MS);
+      });
+    } catch (e) {
+      console.error("[mi-partido] subscribeToClaims failed", e);
+    }
+  }
+
+  // Indexa claims por slot. Devuelve { 0:[claims], 1:[claims], ... }.
+  function claimsBySlot() {
+    const idx = { 0: [], 1: [], 2: [], 3: [] };
+    currentClaims.forEach(function (c) {
+      if (c && Number.isInteger(c.slot) && c.slot >= 0 && c.slot <= 3) idx[c.slot].push(c);
+    });
+    return idx;
+  }
+
+  // Devuelve "winning claim" (más reciente) por slot (los claims vienen
+  // ordenados ascendente; tomamos el último).
+  function winningClaim(slotIdx) {
+    const arr = claimsBySlot()[slotIdx];
+    return arr && arr.length ? arr[arr.length - 1] : null;
+  }
+
+  function renderMainCourt() {
+    if (!currentMatch || !$mainCourtCard || !$mainCourtGrid) return;
+    $mainCourtCard.style.display = "block";
+
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    const isOwner = currentViewMode === "owner";
+    const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+    const byslot = claimsBySlot();
+    let hasConflict = false;
+
+    [0, 1, 2, 3].forEach(function (idx) {
+      const btn = $mainCourtGrid.querySelector('[data-slot="' + idx + '"]');
+      if (!btn) return;
+      btn.innerHTML = "";
+      const j = jugadores[idx] || { nombre: "", equipo: SLOT_EQUIPO[idx] };
+      const eq = (j.equipo === "team1" || j.equipo === "team2") ? j.equipo : SLOT_EQUIPO[idx];
+      const slotClaims = byslot[idx] || [];
+      if (slotClaims.length > 1) hasConflict = true;
+
+      const win = slotClaims.length ? slotClaims[slotClaims.length - 1] : null;
+      const ownedByDueno = !!(j && j.uid); // uid puesto por dueño en Etapa 15
+      const hasName = !!(j && j.nombre);
+      const slotFilled = ownedByDueno || hasName || !!win;
+
+      if (slotFilled) {
+        btn.classList.add("is-filled");
+      } else {
+        btn.classList.remove("is-filled");
+      }
+
+      if (!slotFilled) {
+        // Vacío
+        const plus = document.createElement("span");
+        plus.className = "slot-plus";
+        plus.textContent = "+";
+        btn.appendChild(plus);
+        const hint = document.createElement("span");
+        hint.className = "slot-hint";
+        hint.textContent = (eq === "team2") ? "Equipo 2" : "Equipo 1";
+        btn.appendChild(hint);
+        if (!isOwner) {
+          const a = document.createElement("span");
+          a.className = "mp-slot-action";
+          a.textContent = "👆 Tomar este slot";
+          btn.appendChild(a);
+        }
+      } else {
+        // Lleno (por dueño o por claim)
+        const name = document.createElement("span");
+        name.className = "slot-name";
+        const displayName = hasName ? j.nombre : (win && win.displayName ? win.displayName : "Sin nombre");
+        name.textContent = displayName;
+        btn.appendChild(name);
+
+        if (win) {
+          const isMine = !!(user && user.uid === win.uid);
+          const inConflict = slotClaims.length > 1;
+          const tag = document.createElement("span");
+          tag.className = "mp-slot-claim-tag" +
+            (isMine ? " is-mine" : "") +
+            (inConflict ? " is-conflict" : "");
+          if (isMine) {
+            tag.textContent = "Tú reclamaste · " + slotClaims.length + (slotClaims.length > 1 ? " conflicto" : "");
+          } else if (inConflict) {
+            tag.textContent = "Reclamado por " + (win.displayName || "alguien") +
+              " (+" + (slotClaims.length - 1) + " conflicto)";
+          } else {
+            tag.textContent = "Reclamado por " + (win.displayName || "alguien");
+          }
+          btn.appendChild(tag);
+        }
+
+        if (!isOwner) {
+          const a = document.createElement("span");
+          a.className = "mp-slot-action";
+          if (win && user && user.uid === win.uid) {
+            a.textContent = "Cancelar mi claim";
+          } else if (ownedByDueno) {
+            a.textContent = "—"; // no se puede claim sobre slot que ya tiene uid del dueño
+          } else if (win) {
+            a.textContent = "Reemplazar reclamo";
+          } else {
+            a.textContent = hasName ? "Soy yo (tomar este slot)" : "Tomar este slot";
+          }
+          btn.appendChild(a);
+        }
+      }
+    });
+
+    if ($mainCourtHint) {
+      if (isOwner) {
+        $mainCourtHint.textContent = currentClaims.length
+          ? (currentClaims.length + " reclamo" + (currentClaims.length === 1 ? "" : "s") + " activo" + (currentClaims.length === 1 ? "" : "s") + ".")
+          : "Comparte el link para que tus amigos se vinculen a un slot.";
+      } else {
+        $mainCourtHint.textContent = "Toca un slot para vincularte. Necesitas iniciar sesión para reclamar.";
+      }
+    }
+
+    // Banner de conflicto (sólo dueño)
+    if ($conflictBanner) {
+      if (isOwner && hasConflict) {
+        $conflictBanner.style.display = "block";
+        if ($conflictText) {
+          const conflictSlots = [0, 1, 2, 3].filter(function (i) { return (byslot[i] || []).length > 1; });
+          $conflictText.textContent = "Hay " + conflictSlots.length +
+            " slot" + (conflictSlots.length === 1 ? "" : "s") +
+            " con más de un reclamo.";
+        }
+      } else {
+        $conflictBanner.style.display = "none";
+      }
+    }
+  }
+
+  // ---- click slot vista principal: dispara claim flow (invitado) o el
+  // sheet de edición del dueño (mismo bottom sheet del modal terminar
+  // no aplica directo a la vista principal; al dueño le mostramos un
+  // alerta breve sugiriendo abrir "Terminar partido" para editar).
+  if ($mainCourtGrid) {
+    $mainCourtGrid.addEventListener("click", function (e) {
+      const slot = e.target.closest(".mp-slot");
+      if (!slot) return;
+      const idx = Number(slot.getAttribute("data-slot"));
+      if (!Number.isInteger(idx) || idx < 0 || idx > 3) return;
+      if (currentViewMode === "owner") {
+        // El dueño edita jugadores desde el flujo de creación/terminar.
+        // En vista principal sólo mostramos info; click es no-op.
+        return;
+      }
+      claimSlotFlow(idx);
+    });
+  }
+
+  // ---- claim flow (invitado) ----
+  function claimSlotFlow(idx) {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) {
+      _claimTargetIdx = idx;
+      window.PuntazoAuth.requireAuth(function () {
+        // Tras login, el handler `puntazo:auth-changed` re-rendereará el
+        // match. Abrimos directamente el claim modal.
+        openClaimModal(idx);
+      });
+      return;
+    }
+    // Si ya tiene claim en este mismo slot → unclaim.
+    const myClaim = currentClaims.find(function (c) { return c.uid === user.uid; });
+    if (myClaim && myClaim.slot === idx) {
+      doUnclaim();
+      return;
+    }
+    openClaimModal(idx);
+  }
+
+  function openClaimModal(idx) {
+    if (!$claimModal) return;
+    _claimTargetIdx = idx;
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    const jugadores = currentMatch && Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+    const slotName = (jugadores[idx] && jugadores[idx].nombre) ? jugadores[idx].nombre : "";
+    const eq = (jugadores[idx] && (jugadores[idx].equipo === "team1" || jugadores[idx].equipo === "team2"))
+      ? jugadores[idx].equipo
+      : SLOT_EQUIPO[idx];
+    if ($claimTeamTag) $claimTeamTag.textContent = (eq === "team2") ? "Equipo 2" : "Equipo 1";
+    if ($claimTitle) {
+      $claimTitle.textContent = slotName ? "¿Eres " + slotName + "?" : "Vincularte a este slot";
+    }
+    if ($claimNote) {
+      $claimNote.textContent = slotName
+        ? "Confirma o edita el nombre. Tu cuenta quedará vinculada a este slot."
+        : "Pon tu nombre para que el dueño te identifique en el partido.";
+    }
+    if ($claimInput) {
+      const defaultName = slotName || (user && user.displayName ? user.displayName : "");
+      $claimInput.value = String(defaultName || "").slice(0, 80);
+    }
+    if ($claimMsg) { $claimMsg.className = "mp-msg"; $claimMsg.textContent = ""; }
+    $claimModal.classList.add("is-open");
+    setTimeout(function () { try { $claimInput.focus(); $claimInput.select(); } catch (_) {} }, 50);
+  }
+
+  function closeClaimModal() {
+    if ($claimModal) $claimModal.classList.remove("is-open");
+    _claimTargetIdx = -1;
+  }
+
+  if ($claimCancel) $claimCancel.addEventListener("click", closeClaimModal);
+  if ($claimModal) {
+    $claimModal.addEventListener("click", function (e) {
+      if (e.target === $claimModal) closeClaimModal();
+    });
+  }
+  if ($claimSave) {
+    $claimSave.addEventListener("click", async function () {
+      if (!currentMatch || !currentMatch.id) return;
+      if (_claimTargetIdx < 0) return;
+      const nm = String($claimInput.value || "").trim().slice(0, 80);
+      $claimSave.disabled = true;
+      $claimSave.textContent = "Guardando…";
+      try {
+        await window.PuntazoMatches.claimSlot(currentMatch.id, _claimTargetIdx, nm);
+        closeClaimModal();
+      } catch (e) {
+        console.error("[mi-partido] claimSlot failed", e);
+        if ($claimMsg) {
+          $claimMsg.className = "mp-msg is-visible error";
+          $claimMsg.textContent = "No se pudo reclamar: " + (e && e.message ? e.message : "error desconocido");
+        }
+      } finally {
+        $claimSave.disabled = false;
+        $claimSave.textContent = "Reclamar slot";
+      }
+    });
+  }
+
+  async function doUnclaim() {
+    if (!currentMatch || !currentMatch.id) return;
+    try {
+      await window.PuntazoMatches.unclaimSlot(currentMatch.id);
+    } catch (e) {
+      console.error("[mi-partido] unclaimSlot failed", e);
+      window.alert("No se pudo cancelar el claim: " + (e && e.message ? e.message : "error"));
+    }
+  }
+
+  // ---- modal conflicto (dueño) ----
+  function openConflictModal() {
+    if (!$conflictModal || !$conflictBody) return;
+    $conflictBody.innerHTML = "";
+    if ($conflictModalMsg) { $conflictModalMsg.className = "mp-msg"; $conflictModalMsg.textContent = ""; }
+    const byslot = claimsBySlot();
+    [0, 1, 2, 3].forEach(function (idx) {
+      const arr = byslot[idx] || [];
+      if (arr.length <= 1) return;
+      const head = document.createElement("div");
+      head.className = "mp-modal-section-label";
+      head.textContent = "Slot " + (idx + 1) + " — " +
+        (SLOT_EQUIPO[idx] === "team2" ? "Equipo 2" : "Equipo 1") + " (" + arr.length + " reclamos)";
+      $conflictBody.appendChild(head);
+      arr.forEach(function (c) {
+        const row = document.createElement("div");
+        row.className = "mp-conflict-row";
+        const nm = document.createElement("div");
+        nm.className = "nm";
+        nm.innerHTML = escHtml(c.displayName || "Sin nombre") +
+          "<small>uid: " + escHtml(c.uid).slice(0, 12) + "…</small>";
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "Borrar este claim";
+        btn.addEventListener("click", async function () {
+          btn.disabled = true;
+          btn.textContent = "Borrando…";
+          try {
+            await window.PuntazoMatches.unclaimSlotAsOwner(currentMatch.id, c.uid);
+            row.remove();
+            // El onSnapshot rehidrata y la cancha se re-pinta sola.
+          } catch (e) {
+            console.error("[mi-partido] unclaimSlotAsOwner failed", e);
+            btn.disabled = false;
+            btn.textContent = "Reintentar borrar";
+            if ($conflictModalMsg) {
+              $conflictModalMsg.className = "mp-msg is-visible error";
+              $conflictModalMsg.textContent = "No se pudo borrar: " + (e && e.message ? e.message : "error");
+            }
+          }
+        });
+        row.appendChild(nm);
+        row.appendChild(btn);
+        $conflictBody.appendChild(row);
+      });
+    });
+    $conflictModal.classList.add("is-open");
+  }
+
+  function closeConflictModal() {
+    if ($conflictModal) $conflictModal.classList.remove("is-open");
+  }
+
+  if ($conflictClose) $conflictClose.addEventListener("click", closeConflictModal);
+  if ($conflictModal) {
+    $conflictModal.addEventListener("click", function (e) {
+      if (e.target === $conflictModal) closeConflictModal();
+    });
+  }
+  if ($conflictResolveBtn) {
+    $conflictResolveBtn.addEventListener("click", openConflictModal);
+  }
+
+  // ---- share modal ----
+  function buildShareUrl() {
+    if (!currentMatch || !currentMatch.id) return "";
+    return window.location.origin + "/mi-partido.html?matchId=" + encodeURIComponent(currentMatch.id);
+  }
+
+  function openShareModal() {
+    if (!$shareModal) return;
+    const url = buildShareUrl();
+    if ($shareUrl) $shareUrl.value = url;
+    if ($shareCopy) { $shareCopy.textContent = "Copiar"; $shareCopy.classList.remove("is-done"); }
+    if ($shareMsg) { $shareMsg.className = "mp-msg"; $shareMsg.textContent = ""; }
+    if ($shareWhatsapp) {
+      const text = "Mira mi partido en Puntazo 🎾 " + url;
+      $shareWhatsapp.href = "https://wa.me/?text=" + encodeURIComponent(text);
+    }
+    if ($shareNative) {
+      $shareNative.style.display = (navigator.share ? "inline-flex" : "none");
+    }
+    $shareModal.classList.add("is-open");
+  }
+
+  function closeShareModal() {
+    if ($shareModal) $shareModal.classList.remove("is-open");
+  }
+
+  if ($btnShareActive) $btnShareActive.addEventListener("click", openShareModal);
+  if ($btnShareFinished) $btnShareFinished.addEventListener("click", openShareModal);
+  if ($shareClose) $shareClose.addEventListener("click", closeShareModal);
+  if ($shareModal) {
+    $shareModal.addEventListener("click", function (e) {
+      if (e.target === $shareModal) closeShareModal();
+    });
+  }
+  if ($shareCopy) {
+    $shareCopy.addEventListener("click", async function () {
+      const url = $shareUrl ? $shareUrl.value : buildShareUrl();
+      let ok = false;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url);
+          ok = true;
+        }
+      } catch (e) { /* fallback abajo */ }
+      if (!ok && $shareUrl) {
+        try {
+          $shareUrl.removeAttribute("readonly");
+          $shareUrl.select();
+          document.execCommand("copy");
+          $shareUrl.setAttribute("readonly", "readonly");
+          ok = true;
+        } catch (_) {}
+      }
+      if (ok) {
+        $shareCopy.textContent = "✓ Copiado";
+        $shareCopy.classList.add("is-done");
+        if ($shareMsg) { $shareMsg.className = "mp-msg is-visible info"; $shareMsg.textContent = "Link copiado al portapapeles."; }
+      } else {
+        if ($shareMsg) { $shareMsg.className = "mp-msg is-visible error"; $shareMsg.textContent = "No se pudo copiar. Selecciona y copia a mano."; }
+      }
+    });
+  }
+  if ($shareNative) {
+    $shareNative.addEventListener("click", async function () {
+      const url = buildShareUrl();
+      if (!navigator.share) return;
+      try {
+        await navigator.share({
+          title: "Mi partido en Puntazo",
+          text: "Mira mi partido en Puntazo 🎾",
+          url: url,
+        });
+      } catch (e) {
+        if (e && e.name === "AbortError") return;
+        console.warn("[mi-partido] navigator.share failed", e);
+      }
+    });
+  }
 })();
 </script>
 
