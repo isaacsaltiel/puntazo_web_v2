@@ -406,6 +406,234 @@
     font-size: 0.93rem;
   }
 
+  /* ── Etapa 15.8 — Feature 2: highlight reel ── */
+  .rs-clips-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .rs-btn-reel {
+    flex-shrink: 0;
+    min-height: 42px;
+    padding: 0 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(11, 124, 255, 0.55);
+    background: linear-gradient(135deg, rgba(0,79,200,0.85), rgba(11,124,255,0.65));
+    color: #fff;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 0.92rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all .18s ease;
+    box-shadow: 0 0 18px rgba(0, 79, 200, 0.25), 0 6px 16px rgba(0,0,0,.28);
+  }
+  .rs-btn-reel:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 26px rgba(11,124,255,.40), 0 8px 20px rgba(0,0,0,.34);
+  }
+  .rs-btn-reel:active { transform: scale(0.98); }
+
+  /* Overlay del reel */
+  .rs-reel-overlay {
+    position: fixed; inset: 0;
+    z-index: 10500;
+    display: none;
+    background: rgba(2, 6, 14, 0.96);
+    backdrop-filter: blur(10px);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+  }
+  .rs-reel-overlay.is-open { display: flex; }
+
+  .rs-reel-stage {
+    width: 100%;
+    max-width: min(80vw, 1200px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+  }
+
+  .rs-reel-video {
+    width: 100%;
+    max-height: 78vh;
+    background: #000;
+    border-radius: 14px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    outline: none;
+    transition: opacity .25s ease;
+  }
+  .rs-reel-video.is-fading { opacity: 0.15; }
+
+  .rs-reel-label {
+    color: #cfe2ff;
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-align: center;
+    min-height: 22px;
+  }
+  .rs-reel-label .num {
+    color: #fff;
+    font-weight: 900;
+    margin-right: 6px;
+  }
+  .rs-reel-label .meta {
+    color: rgba(234, 242, 255, 0.55);
+    margin-left: 6px;
+    font-weight: 600;
+  }
+
+  .rs-reel-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(15, 22, 38, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    padding: 8px 14px;
+  }
+  .rs-reel-ctrl {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+    color: #eaf2ff;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background .15s ease, transform .12s ease;
+  }
+  .rs-reel-ctrl:hover { background: rgba(11, 124, 255, 0.25); }
+  .rs-reel-ctrl:active { transform: scale(0.92); }
+  .rs-reel-ctrl[disabled] { opacity: 0.4; cursor: not-allowed; }
+  .rs-reel-ctrl.is-primary {
+    width: 54px; height: 54px;
+    background: linear-gradient(135deg, #0B7CFF, #004FC8);
+    border: 1px solid rgba(11, 124, 255, 0.55);
+    font-size: 1.25rem;
+  }
+  .rs-reel-ctrl.is-primary:hover { background: linear-gradient(135deg, #1f88ff, #0a5ddb); }
+
+  .rs-reel-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(15, 22, 38, 0.85);
+    color: #eaf2ff;
+    font-family: inherit;
+    font-size: 1.4rem;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background .15s ease, transform .12s ease;
+    z-index: 2;
+  }
+  .rs-reel-close:hover { background: rgba(255, 80, 80, 0.30); border-color: rgba(255, 80, 80, 0.55); }
+  .rs-reel-close:active { transform: scale(0.92); }
+
+  /* Mensaje "Fin del partido" sobre el video */
+  .rs-reel-end {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .rs-reel-end.is-visible { display: flex; }
+  .rs-reel-end-card {
+    padding: 26px 30px;
+    border-radius: 20px;
+    background: rgba(15, 22, 38, 0.92);
+    border: 1px solid rgba(255, 215, 90, 0.40);
+    text-align: center;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  }
+  .rs-reel-end-card .icon { font-size: 2.4rem; line-height: 1; margin-bottom: 8px; }
+  .rs-reel-end-card .title {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: #ffd76a;
+    letter-spacing: 0.3px;
+  }
+  .rs-reel-end-card .sub {
+    margin-top: 6px;
+    color: rgba(234, 242, 255, 0.65);
+    font-size: 0.86rem;
+  }
+
+  @media (max-width: 480px) {
+    .rs-reel-stage { max-width: 100%; }
+    .rs-reel-video { max-height: 60vh; }
+    .rs-reel-close { top: 10px; right: 10px; width: 38px; height: 38px; font-size: 1.2rem; }
+    .rs-reel-ctrl { width: 40px; height: 40px; }
+    .rs-reel-ctrl.is-primary { width: 50px; height: 50px; }
+  }
+
+  /* ── Etapa 15.8 — Feature 3: nota del partido ── */
+  .rs-notas-quote {
+    margin: 22px 0 12px;
+    padding: 14px 16px 14px 18px;
+    border-left: 4px solid rgba(11, 124, 255, 0.65);
+    background: rgba(11, 124, 255, 0.08);
+    border-radius: 0 12px 12px 0;
+    color: #eaf2ff;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5;
+    font-style: italic;
+    word-break: break-word;
+  }
+  .rs-notas-quote::before {
+    content: "“";
+    font-size: 1.6rem;
+    color: rgba(207, 226, 255, 0.55);
+    margin-right: 4px;
+    line-height: 0;
+    vertical-align: -0.3em;
+    font-style: normal;
+  }
+  .rs-notas-quote::after {
+    content: "”";
+    font-size: 1.6rem;
+    color: rgba(207, 226, 255, 0.55);
+    margin-left: 4px;
+    line-height: 0;
+    vertical-align: -0.3em;
+    font-style: normal;
+  }
+
+  /* Subtitle de nota dentro de la tarjeta Strava */
+  .pz-card-notes {
+    margin-top: 8px;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.32);
+    border-left: 3px solid rgba(255, 215, 90, 0.65);
+    border-radius: 0 10px 10px 0;
+    color: #f3f7ff;
+    font-size: 0.88rem;
+    font-weight: 600;
+    font-style: italic;
+    line-height: 1.4;
+    text-align: left;
+  }
+
   /* ── Overlay "Generando imagen…" ── */
   .rs-capture-overlay {
     position: fixed; inset: 0; z-index: 9999;
@@ -749,6 +977,10 @@
             <!-- Placeholder análisis de visión (números reales: Etapa 8) -->
             <div class="pz-analysis-note">📊 Análisis detallado del juego — disponible pronto</div>
 
+            <!-- Nota del partido (Etapa 15.8 — Feature 3). Solo se renderiza
+                 si match.notas existe; se inyecta por JS. -->
+            <div id="pzCardNotes" class="pz-card-notes" style="display:none"></div>
+
             <div class="pz-flex-grow"></div>
 
             <!-- Footer de la tarjeta -->
@@ -783,8 +1015,17 @@
       <div id="rsCsList" class="rs-cs-list"></div>
     </div>
 
+    <!-- Nota del partido (Etapa 15.8 — Feature 3) -->
+    <div id="rsNotasBlock" class="rs-notas-quote" style="display:none"></div>
+
     <!-- Lista de clips del partido -->
     <div class="rs-section-title">Clips del partido</div>
+    <div class="rs-clips-header">
+      <div style="flex:1; min-width:0;"></div>
+      <button id="rsBtnReel" class="rs-btn-reel" type="button" style="display:none">
+        ▶ Reproducir todos en cadena
+      </button>
+    </div>
     <div id="rsClips"><!-- render por JS --></div>
 
     <!-- Reclamados (Etapa 15.5) -->
@@ -804,6 +1045,29 @@
   <div class="rs-capture-box">
     <div class="rs-capture-spinner"></div>
     <div>Generando imagen…</div>
+  </div>
+</div>
+
+<!-- ── Etapa 15.8 — Feature 2: highlight reel overlay ── -->
+<div id="rsReelOverlay" class="rs-reel-overlay" role="dialog" aria-modal="true" aria-label="Reproductor de clips en cadena">
+  <button id="rsReelClose" class="rs-reel-close" type="button" aria-label="Cerrar">✕</button>
+  <div class="rs-reel-stage">
+    <video id="rsReelVideo" class="rs-reel-video" playsinline controls preload="auto"></video>
+    <div id="rsReelEnd" class="rs-reel-end">
+      <div class="rs-reel-end-card">
+        <div class="icon">🏆</div>
+        <div class="title">Fin del partido</div>
+        <div class="sub">Todos los puntazos reproducidos.</div>
+      </div>
+    </div>
+    <div id="rsReelLabel" class="rs-reel-label">
+      <span class="num">Clip 1 de 1</span><span class="meta"></span>
+    </div>
+    <div class="rs-reel-controls">
+      <button id="rsReelPrev" class="rs-reel-ctrl" type="button" aria-label="Anterior" title="Anterior (←)">⏮</button>
+      <button id="rsReelPlayPause" class="rs-reel-ctrl is-primary" type="button" aria-label="Pausar / reproducir" title="Pausa/Play (espacio)">⏸</button>
+      <button id="rsReelNext" class="rs-reel-ctrl" type="button" aria-label="Siguiente" title="Siguiente (→)">⏭</button>
+    </div>
   </div>
 </div>
 
@@ -922,6 +1186,24 @@
 
   let currentMatch = null;
   let pngDateTag = "partido"; // sufijo del nombre de archivo
+
+  // Etapa 15.8 — Feature 2: estado del highlight reel
+  let _currentClips = [];          // clips con videoUrl listos para reel
+  let _reelIdx = 0;                // índice actual dentro del reel
+  let _reelOpen = false;
+  const $btnReel       = document.getElementById("rsBtnReel");
+  const $reelOverlay   = document.getElementById("rsReelOverlay");
+  const $reelVideo     = document.getElementById("rsReelVideo");
+  const $reelLabel     = document.getElementById("rsReelLabel");
+  const $reelEnd       = document.getElementById("rsReelEnd");
+  const $reelClose     = document.getElementById("rsReelClose");
+  const $reelPrev      = document.getElementById("rsReelPrev");
+  const $reelNext      = document.getElementById("rsReelNext");
+  const $reelPlayPause = document.getElementById("rsReelPlayPause");
+
+  // Etapa 15.8 — Feature 3: nodos para nota
+  const $notasBlock    = document.getElementById("rsNotasBlock");
+  const $cardNotes     = document.getElementById("pzCardNotes");
 
   // ════════════════════════════════════════════════════════════
   //  Escalado responsivo de la tarjeta
@@ -1516,6 +1798,22 @@
     renderClips(clips);
     fitCard();
 
+    // Etapa 15.8 — Feature 2: habilitar reel sólo si hay clips disponibles
+    // (con videoUrl real, no sólo timestamps). Guardamos para uso del reel.
+    _currentClips = clips.filter(function (c) { return c && c.videoUrl; });
+    if ($btnReel) {
+      $btnReel.style.display = (_currentClips.length > 0) ? "inline-flex" : "none";
+      if (_currentClips.length === 1) {
+        $btnReel.textContent = "▶ Reproducir el clip";
+      } else if (_currentClips.length > 1) {
+        $btnReel.textContent = "▶ Reproducir todos en cadena (" + _currentClips.length + ")";
+      }
+    }
+
+    // Etapa 15.8 — Feature 3: nota del partido (afuera y dentro de la tarjeta)
+    renderNotas(match);
+    fitCard();
+
     // Mini-sección "Estado de tus clips" (Etapa 13 — R3.1).
     // Falla silenciosa: si Firestore no responde, el resto del resumen
     // (marcador, duración, tarjeta compartible, clips del JSON) sigue intacto.
@@ -1532,6 +1830,181 @@
       console.warn("[resumen] renderClaimsSection falló (no bloqueante)", e);
     }
   }
+
+  // ════════════════════════════════════════════════════════════
+  //  Etapa 15.8 — Feature 3: render de la nota del partido
+  // ════════════════════════════════════════════════════════════
+  function renderNotas(match) {
+    const notas = (match && typeof match.notas === "string") ? match.notas.trim() : "";
+    // Bloque fuera de la tarjeta
+    if ($notasBlock) {
+      if (notas) {
+        $notasBlock.textContent = notas;
+        $notasBlock.style.display = "block";
+      } else {
+        $notasBlock.textContent = "";
+        $notasBlock.style.display = "none";
+      }
+    }
+    // Subtitle dentro de la tarjeta Strava
+    if ($cardNotes) {
+      if (notas) {
+        $cardNotes.textContent = notas;
+        $cardNotes.style.display = "block";
+      } else {
+        $cardNotes.textContent = "";
+        $cardNotes.style.display = "none";
+      }
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  Etapa 15.8 — Feature 2: highlight reel (autoplay encadenado)
+  // ════════════════════════════════════════════════════════════
+  function reelFormatLabel(idx, clip) {
+    const total = _currentClips.length;
+    const d = new Date(clip && clip.timestamp);
+    let metaStr = "";
+    if (!isNaN(d.getTime())) {
+      const months = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+      metaStr = " · " + pad2(d.getDate()) + " " + months[d.getMonth()] + " " +
+                d.getFullYear() + " · " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+    }
+    return '<span class="num">Clip ' + (idx + 1) + ' de ' + total + '</span>' +
+           '<span class="meta">' + escapeHTML(metaStr) + '</span>';
+  }
+
+  function reelLoad(idx, autoplay) {
+    if (!_reelOpen) return;
+    if (!_currentClips.length) return;
+    if (idx < 0) idx = 0;
+    if (idx > _currentClips.length - 1) idx = _currentClips.length - 1;
+    _reelIdx = idx;
+    const clip = _currentClips[idx];
+    if (!clip || !clip.videoUrl) return;
+    if ($reelEnd) $reelEnd.classList.remove("is-visible");
+    if ($reelLabel) $reelLabel.innerHTML = reelFormatLabel(idx, clip);
+    // Transición suave: fade out, swap src, fade in
+    if ($reelVideo) {
+      $reelVideo.classList.add("is-fading");
+      // Pequeño timeout para dejar que el fade ocurra antes del swap
+      setTimeout(function () {
+        $reelVideo.src = clip.videoUrl;
+        $reelVideo.classList.remove("is-fading");
+        if (autoplay) {
+          // play() puede rechazar por políticas autoplay; mostramos pausado.
+          const p = $reelVideo.play();
+          if (p && typeof p.then === "function") {
+            p.catch(function () { reelUpdatePlayPauseBtn(); });
+          }
+        }
+        reelUpdateButtons();
+      }, 90);
+    }
+  }
+
+  function reelUpdateButtons() {
+    if (!$reelPrev || !$reelNext) return;
+    $reelPrev.disabled = (_reelIdx <= 0);
+    $reelNext.disabled = (_reelIdx >= _currentClips.length - 1);
+    reelUpdatePlayPauseBtn();
+  }
+
+  function reelUpdatePlayPauseBtn() {
+    if (!$reelPlayPause || !$reelVideo) return;
+    if ($reelVideo.paused) {
+      $reelPlayPause.textContent = "▶";
+      $reelPlayPause.setAttribute("aria-label", "Reproducir");
+    } else {
+      $reelPlayPause.textContent = "⏸";
+      $reelPlayPause.setAttribute("aria-label", "Pausar");
+    }
+  }
+
+  function reelOpen() {
+    if (!_currentClips.length || !$reelOverlay) return;
+    _reelOpen = true;
+    $reelOverlay.classList.add("is-open");
+    document.body.style.overflow = "hidden";
+    reelLoad(0, true);
+    // Focus en el botón close para accesibilidad de keyboard
+    setTimeout(function () { try { $reelClose.focus(); } catch (_) {} }, 50);
+  }
+
+  function reelClose() {
+    if (!_reelOpen || !$reelOverlay) return;
+    _reelOpen = false;
+    $reelOverlay.classList.remove("is-open");
+    document.body.style.overflow = "";
+    if ($reelVideo) {
+      try { $reelVideo.pause(); } catch (_) {}
+      // Limpiar src para liberar memoria de buffer
+      try { $reelVideo.removeAttribute("src"); $reelVideo.load(); } catch (_) {}
+    }
+    if ($reelEnd) $reelEnd.classList.remove("is-visible");
+  }
+
+  function reelNext(auto) {
+    if (_reelIdx >= _currentClips.length - 1) {
+      // último → mostrar "Fin del partido" y cerrar a los 2.5s
+      if ($reelEnd) $reelEnd.classList.add("is-visible");
+      if (auto) {
+        setTimeout(function () { reelClose(); }, 2500);
+      }
+      return;
+    }
+    reelLoad(_reelIdx + 1, true);
+  }
+
+  function reelPrev() {
+    if (_reelIdx <= 0) return;
+    reelLoad(_reelIdx - 1, true);
+  }
+
+  function reelTogglePlay() {
+    if (!$reelVideo) return;
+    if ($reelVideo.paused) {
+      const p = $reelVideo.play();
+      if (p && typeof p.then === "function") p.catch(function () {});
+    } else {
+      $reelVideo.pause();
+    }
+    reelUpdatePlayPauseBtn();
+  }
+
+  // Wiring
+  if ($btnReel) $btnReel.addEventListener("click", reelOpen);
+  if ($reelClose) $reelClose.addEventListener("click", reelClose);
+  if ($reelPrev) $reelPrev.addEventListener("click", reelPrev);
+  if ($reelNext) $reelNext.addEventListener("click", function () { reelNext(false); });
+  if ($reelPlayPause) $reelPlayPause.addEventListener("click", reelTogglePlay);
+
+  if ($reelVideo) {
+    $reelVideo.addEventListener("ended", function () { reelNext(true); });
+    $reelVideo.addEventListener("play", reelUpdatePlayPauseBtn);
+    $reelVideo.addEventListener("pause", reelUpdatePlayPauseBtn);
+    $reelVideo.addEventListener("error", function () {
+      // Si un clip falla cargar, saltamos al siguiente.
+      console.warn("[resumen reel] error cargando clip idx", _reelIdx);
+      reelNext(true);
+    });
+  }
+
+  // Cerrar al hacer click en el backdrop (no en el video/controles)
+  if ($reelOverlay) {
+    $reelOverlay.addEventListener("click", function (e) {
+      if (e.target === $reelOverlay) reelClose();
+    });
+  }
+
+  // Atajos de teclado: ESC cierra, ←/→ nav, espacio play/pause
+  document.addEventListener("keydown", function (e) {
+    if (!_reelOpen) return;
+    if (e.key === "Escape") { e.preventDefault(); reelClose(); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); reelNext(false); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); reelPrev(); }
+    else if (e.key === " " || e.code === "Space") { e.preventDefault(); reelTogglePlay(); }
+  });
 
   // ════════════════════════════════════════════════════════════
   //  Etapa 15.5 — sección de claims en el resumen
