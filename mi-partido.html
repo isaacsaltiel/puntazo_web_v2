@@ -467,17 +467,6 @@
     margin-left: auto;
     margin-right: auto;
   }
-  /* SVG vectorial de la cancha como background absoluto (Etapa 16.3) */
-  .mp-court-svg-bg {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    display: flex;
-    align-items: stretch;
-    justify-content: stretch;
-  }
-  .mp-court-svg-bg .pz-court-svg { width: 100%; height: 100%; display: block; }
   .mp-slot {
     position: relative;
     z-index: 2;
@@ -1668,80 +1657,6 @@
     .mp-live-btn-game { min-width: 50px; font-size: 0.72rem; padding: 0 6px; }
   }
 
-  /* ── Etapa 15.8 — Feature 3: nota del partido ── */
-  .mp-notas-card { padding: 14px 16px 12px; }
-  .mp-notas-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-  .mp-notas-title {
-    font-size: 0.86rem;
-    font-weight: 800;
-    color: #fff;
-    letter-spacing: 0.2px;
-  }
-  .mp-notas-status {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: rgba(234, 242, 255, .50);
-    transition: color .18s ease, opacity .18s ease;
-    opacity: 0;
-  }
-  .mp-notas-status.is-visible { opacity: 1; }
-  .mp-notas-status.is-saving { color: rgba(255, 170, 60, .85); }
-  .mp-notas-status.is-saved  { color: #9af2c0; }
-  .mp-notas-status.is-error  { color: #ffb1a3; }
-  .mp-notas-textarea {
-    width: 100%;
-    min-height: 60px;
-    max-height: 160px;
-    resize: vertical;
-    border: 1px solid rgba(255, 255, 255, .12);
-    background: rgba(255, 255, 255, .04);
-    border-radius: 10px;
-    color: #fff;
-    font-family: inherit;
-    font-size: 0.92rem;
-    font-weight: 500;
-    line-height: 1.45;
-    padding: 10px 12px;
-    transition: border-color .15s ease, background .15s ease;
-  }
-  .mp-notas-textarea:focus {
-    outline: none;
-    border-color: rgba(11, 124, 255, .55);
-    background: rgba(0, 79, 200, .10);
-  }
-  .mp-notas-textarea::placeholder {
-    color: rgba(234, 242, 255, .35);
-    font-style: italic;
-  }
-  .mp-notas-textarea[disabled] {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-  .mp-notas-meta {
-    margin-top: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 0.72rem;
-    color: rgba(234, 242, 255, .45);
-    font-weight: 600;
-  }
-  .mp-notas-count {
-    font-variant-numeric: tabular-nums;
-  }
-  .mp-notas-count.is-near {
-    color: rgba(255, 170, 60, .85);
-  }
-  .mp-notas-count.is-max {
-    color: #ffb1a3;
-  }
   /* ── Etapa 16.3 — Marcador compacto + botonera por equipo ── */
   .mp-live-compact {
     margin: 4px 0 14px;
@@ -1994,27 +1909,6 @@
   /* Read-only: si no eres dueño, ocultar la botonera (la tabla en sheet sigue visible) */
   .mp-live-teams[data-owner="0"] { opacity: 0.5; pointer-events: none; }
 
-  /* Display read-only (invitado): no input, sólo cita */
-  .mp-notas-readonly {
-    margin-top: 4px;
-    padding: 10px 12px 10px 14px;
-    border-left: 3px solid rgba(11, 124, 255, .55);
-    background: rgba(11, 124, 255, .05);
-    border-radius: 0 10px 10px 0;
-    color: #eaf2ff;
-    font-size: 0.92rem;
-    font-weight: 500;
-    line-height: 1.45;
-    font-style: italic;
-    word-break: break-word;
-  }
-  .mp-notas-empty {
-    color: rgba(234, 242, 255, .45);
-    font-size: 0.84rem;
-    font-style: italic;
-    text-align: center;
-    padding: 6px 4px;
-  }
 </style>
 </head>
 <body>
@@ -2102,9 +1996,8 @@
       <div class="mp-clip-counter-wrap">
         <div id="mpClipCounter" class="mp-clip-counter">
           <span class="dot" aria-hidden="true"></span>
-          <span>🎬 <span id="mpClipCount">—</span> clips capturados durante este partido</span>
+          <span>🎬 <span id="mpClipCount">—</span> Puntazos capturados</span>
         </div>
-        <div class="hint">Se actualiza cada 20s. El video tarda hasta 60s en aparecer tras pulsar el botón.</div>
       </div>
     </div>
 
@@ -2263,22 +2156,6 @@
     </div>
 
     <!-- ── Etapa 15.8 — Feature 3: nota del partido ── -->
-    <div id="mpNotasCard" class="mp-card mp-notas-card" style="display:none">
-      <div class="mp-notas-head">
-        <span class="mp-notas-title">💬 Nota del partido <span style="font-weight:600; color:rgba(234,242,255,.50)">(opcional)</span></span>
-        <span id="mpNotasStatus" class="mp-notas-status"></span>
-      </div>
-      <div id="mpNotasEditor">
-        <textarea id="mpNotasTextarea" class="mp-notas-textarea" maxlength="280" placeholder="Apunta algo memorable del partido (visible en el resumen y en la tarjeta compartible)…"></textarea>
-        <div class="mp-notas-meta">
-          <span>Se guarda al salir del campo · max 280</span>
-          <span id="mpNotasCount" class="mp-notas-count">0 / 280</span>
-        </div>
-      </div>
-      <div id="mpNotasReadonly" class="mp-notas-readonly" style="display:none"></div>
-      <div id="mpNotasEmpty" class="mp-notas-empty" style="display:none">Sin nota.</div>
-    </div>
-
     <div id="mpActiveActions" class="mp-actions" style="display:none">
       <button id="mpBtnEnd" class="mp-btn-end" type="button">🏁 Terminar partido</button>
       <button id="mpBtnClip" class="mp-btn-clip" type="button">🎯 Pedir clip ahora</button>
@@ -2435,33 +2312,6 @@
 <script>
 (function () {
   "use strict";
-
-  // ---------- Etapa 16.3 — inyectar SVG vectorial detrás de cada cancha ----------
-  function injectCourtSvgBackgrounds() {
-    if (!window.PuntazoCourtSVG) return;
-    const grids = document.querySelectorAll(".mp-court-grid");
-    grids.forEach(function (grid) {
-      if (grid.querySelector(":scope > .mp-court-svg-bg")) return; // ya inyectada
-      const wrap = document.createElement("div");
-      wrap.className = "mp-court-svg-bg";
-      wrap.setAttribute("aria-hidden", "true");
-      wrap.innerHTML = window.PuntazoCourtSVG.topDown({
-        width: 320,
-        height: 480,
-        team1Color: "#0B7CFF",
-        team2Color: "#c8e835",
-        showNet: true,
-        landscape: false,
-      });
-      // Insertarlo como primer hijo para que quede DEBAJO de los slots (z-index)
-      grid.insertBefore(wrap, grid.firstChild);
-    });
-  }
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", injectCourtSvgBackgrounds);
-  } else {
-    injectCourtSvgBackgrounds();
-  }
 
   // ---------- helpers ----------
   function getQueryParams() {
@@ -3249,9 +3099,6 @@
     // Etapa 15.5 — cancha principal SIEMPRE visible + claims sub
     renderMainCourt();
     startClaims();
-
-    // Etapa 15.8 — Feature 3: nota del partido
-    renderNotasUI(match);
 
     show("mpContent");
   }
@@ -4530,10 +4377,6 @@
           if (sig === _pendingSignature) hideSaveDot();
         }
         renderMainCourt();
-        // Etapa 15.8 — Feature 3: sync de la nota desde otros jugadores.
-        // No sobreescribimos si el usuario está editando ahora mismo (focus
-        // en el textarea) o si tenemos una escritura pendiente sin confirmar.
-        try { syncNotasFromSnapshot(currentMatch); } catch (_) {}
       }, function (err) {
         console.warn("[mi-partido 15.6] match onSnapshot error", err);
       });
@@ -4544,173 +4387,6 @@
 
   function stopMatchSubscription() {
     if (_matchUnsub) { try { _matchUnsub(); } catch (_) {} _matchUnsub = null; }
-  }
-
-  // ════════════════════════════════════════════════════════════
-  //  Etapa 15.8 — Feature 3: nota del partido
-  // ════════════════════════════════════════════════════════════
-  const $notasCard     = document.getElementById("mpNotasCard");
-  const $notasEditor   = document.getElementById("mpNotasEditor");
-  const $notasReadonly = document.getElementById("mpNotasReadonly");
-  const $notasEmpty    = document.getElementById("mpNotasEmpty");
-  const $notasText     = document.getElementById("mpNotasTextarea");
-  const $notasStatus   = document.getElementById("mpNotasStatus");
-  const $notasCount    = document.getElementById("mpNotasCount");
-  const NOTAS_MAX_LEN  = 280;
-  const NOTAS_DEBOUNCE_MS = 900;
-
-  let _notasDebounceTimer = null;
-  let _notasSaving = false;
-  let _notasLastSavedValue = "";   // último valor confirmado por el server
-  let _notasPendingValue = null;   // valor en cola de save
-
-  function setNotasStatus(kind, msg) {
-    if (!$notasStatus) return;
-    $notasStatus.className = "mp-notas-status";
-    if (!kind) { $notasStatus.textContent = ""; return; }
-    $notasStatus.classList.add("is-visible", "is-" + kind);
-    $notasStatus.textContent = msg || "";
-  }
-
-  function updateNotasCount() {
-    if (!$notasText || !$notasCount) return;
-    const n = ($notasText.value || "").length;
-    $notasCount.textContent = n + " / " + NOTAS_MAX_LEN;
-    $notasCount.classList.remove("is-near", "is-max");
-    if (n >= NOTAS_MAX_LEN) $notasCount.classList.add("is-max");
-    else if (n >= NOTAS_MAX_LEN - 30) $notasCount.classList.add("is-near");
-  }
-
-  // canEditNotas: cualquiera autenticado puede intentar editar. Si las rules
-  // permiten (owner o invitado autorizado), funciona; si rechazan, mostramos
-  // error y dejamos el textarea en estado read-only via flag local.
-  function canEditNotas(match) {
-    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
-    if (!user) return false;
-    if (!match) return false;
-    if (match.status === "cancelled") return false;
-    return true;
-  }
-
-  function renderNotasUI(match) {
-    if (!$notasCard) return;
-    if (!match || match.status === "cancelled") {
-      $notasCard.style.display = "none";
-      return;
-    }
-    $notasCard.style.display = "block";
-
-    const value = (match && typeof match.notas === "string") ? match.notas : "";
-    _notasLastSavedValue = value;
-
-    if (canEditNotas(match)) {
-      // Modo edición
-      $notasEditor.style.display = "block";
-      $notasReadonly.style.display = "none";
-      $notasEmpty.style.display = "none";
-      // No sobreescribimos si el usuario está editando ahora mismo
-      const isFocused = (document.activeElement === $notasText);
-      if (!isFocused) {
-        $notasText.value = value;
-      }
-      $notasText.disabled = false;
-      $notasText.placeholder = "Apunta algo memorable del partido (visible en el resumen y en la tarjeta compartible)…";
-      updateNotasCount();
-    } else {
-      // Modo solo lectura (visitante sin sesión, o partido cancelado)
-      $notasEditor.style.display = "none";
-      if (value) {
-        $notasReadonly.style.display = "block";
-        $notasReadonly.textContent = value;
-        $notasEmpty.style.display = "none";
-      } else {
-        $notasReadonly.style.display = "none";
-        $notasEmpty.style.display = "block";
-        $notasEmpty.textContent = "Aún no hay nota. Inicia sesión para agregar una.";
-      }
-    }
-  }
-
-  // syncNotasFromSnapshot: aplica cambios remotos del campo notas cuando
-  // el textarea NO está focuseado y no hay una escritura pendiente. Si
-  // estamos editando, ignoramos para no pisar lo que el usuario escribe.
-  function syncNotasFromSnapshot(match) {
-    if (!$notasCard || !match) return;
-    if (match.status === "cancelled") { $notasCard.style.display = "none"; return; }
-    const value = (typeof match.notas === "string") ? match.notas : "";
-    _notasLastSavedValue = value;
-
-    if (!canEditNotas(match)) {
-      renderNotasUI(match);
-      return;
-    }
-    const isFocused = (document.activeElement === $notasText);
-    if (isFocused || _notasPendingValue != null) {
-      // Usuario está editando — sólo refrescamos contador, no el value.
-      return;
-    }
-    $notasText.value = value;
-    updateNotasCount();
-  }
-
-  async function persistNotas(value) {
-    if (!currentMatch || !currentMatch.id) return false;
-    if (!window.PuntazoMatches || typeof window.PuntazoMatches.update !== "function") return false;
-    _notasSaving = true;
-    setNotasStatus("saving", "Guardando…");
-    try {
-      await window.PuntazoMatches.update(currentMatch.id, { notas: value });
-      _notasLastSavedValue = value;
-      _notasSaving = false;
-      _notasPendingValue = null;
-      setNotasStatus("saved", "Guardado ✓");
-      // Limpiar el indicador tras 2s
-      setTimeout(function () {
-        if (!_notasSaving) setNotasStatus("");
-      }, 2000);
-      return true;
-    } catch (e) {
-      console.error("[mi-partido notas] update failed", e);
-      _notasSaving = false;
-      const isPerm = !!(e && (e.code === "permission-denied" || /permission/i.test(String(e.message || ""))));
-      const msg = isPerm
-        ? "Solo dueño o jugadores pueden editar la nota."
-        : "No se pudo guardar la nota.";
-      setNotasStatus("error", msg);
-      if (typeof showToast === "function") showToast(msg, "bad", 2800);
-      return false;
-    }
-  }
-
-  function scheduleNotasSave() {
-    if (_notasDebounceTimer) { clearTimeout(_notasDebounceTimer); _notasDebounceTimer = null; }
-    _notasDebounceTimer = setTimeout(function () {
-      _notasDebounceTimer = null;
-      const value = ($notasText.value || "").slice(0, NOTAS_MAX_LEN);
-      if (value === _notasLastSavedValue) return;
-      _notasPendingValue = value;
-      persistNotas(value);
-    }, NOTAS_DEBOUNCE_MS);
-  }
-
-  if ($notasText) {
-    $notasText.addEventListener("input", function () {
-      updateNotasCount();
-      setNotasStatus("");  // limpia el "Guardado" cuando hay edición nueva
-      scheduleNotasSave();
-    });
-    $notasText.addEventListener("blur", function () {
-      // Save inmediato al perder foco (cancelando el debounce pendiente)
-      if (_notasDebounceTimer) { clearTimeout(_notasDebounceTimer); _notasDebounceTimer = null; }
-      const value = ($notasText.value || "").slice(0, NOTAS_MAX_LEN);
-      if (value === _notasLastSavedValue) {
-        // nada que guardar — limpiar status si era "guardando"
-        if (!_notasSaving) setNotasStatus("");
-        return;
-      }
-      _notasPendingValue = value;
-      persistNotas(value);
-    });
   }
 
   // Arrancar la subscripción tras la primera renderMatch. Se conecta vía

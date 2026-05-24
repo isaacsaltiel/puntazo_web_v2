@@ -995,10 +995,6 @@
             <!-- Placeholder análisis de visión (números reales: Etapa 8) -->
             <div class="pz-analysis-note">📊 Análisis detallado del juego — disponible pronto</div>
 
-            <!-- Nota del partido (Etapa 15.8 — Feature 3). Solo se renderiza
-                 si match.notas existe; se inyecta por JS. -->
-            <div id="pzCardNotes" class="pz-card-notes" style="display:none"></div>
-
             <div class="pz-flex-grow"></div>
 
             <!-- Footer de la tarjeta -->
@@ -1032,9 +1028,6 @@
       </div>
       <div id="rsCsList" class="rs-cs-list"></div>
     </div>
-
-    <!-- Nota del partido (Etapa 15.8 — Feature 3) -->
-    <div id="rsNotasBlock" class="rs-notas-quote" style="display:none"></div>
 
     <!-- Lista de clips del partido -->
     <div class="rs-section-title">Clips del partido</div>
@@ -1220,8 +1213,6 @@
   const $reelPlayPause = document.getElementById("rsReelPlayPause");
 
   // Etapa 15.8 — Feature 3: nodos para nota
-  const $notasBlock    = document.getElementById("rsNotasBlock");
-  const $cardNotes     = document.getElementById("pzCardNotes");
 
   // ════════════════════════════════════════════════════════════
   //  Escalado responsivo de la tarjeta
@@ -1828,8 +1819,6 @@
       }
     }
 
-    // Etapa 15.8 — Feature 3: nota del partido (afuera y dentro de la tarjeta)
-    renderNotas(match);
     fitCard();
 
     // Mini-sección "Estado de tus clips" (Etapa 13 — R3.1).
@@ -1849,32 +1838,6 @@
     }
   }
 
-  // ════════════════════════════════════════════════════════════
-  //  Etapa 15.8 — Feature 3: render de la nota del partido
-  // ════════════════════════════════════════════════════════════
-  function renderNotas(match) {
-    const notas = (match && typeof match.notas === "string") ? match.notas.trim() : "";
-    // Bloque fuera de la tarjeta
-    if ($notasBlock) {
-      if (notas) {
-        $notasBlock.textContent = notas;
-        $notasBlock.style.display = "block";
-      } else {
-        $notasBlock.textContent = "";
-        $notasBlock.style.display = "none";
-      }
-    }
-    // Subtitle dentro de la tarjeta Strava
-    if ($cardNotes) {
-      if (notas) {
-        $cardNotes.textContent = notas;
-        $cardNotes.style.display = "block";
-      } else {
-        $cardNotes.textContent = "";
-        $cardNotes.style.display = "none";
-      }
-    }
-  }
 
   // ════════════════════════════════════════════════════════════
   //  Etapa 15.8 — Feature 2: highlight reel (autoplay encadenado)

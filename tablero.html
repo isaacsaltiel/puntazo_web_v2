@@ -188,38 +188,7 @@
     min-height: 0;
     position: relative;
   }
-  /* Etapa 16.3 — cancha SVG decorativa detrás del marcador (landscape) */
-  .tb-court-bg {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.30;
-  }
-  .tb-court-bg .pz-court-svg {
-    width: min(70vw, 760px);
-    max-height: 70%;
-    height: auto;
-  }
   .tb-team, .tb-score { position: relative; z-index: 1; }
-  /* Glow del equipo que sirve: el lado correspondiente del fondo "respira" */
-  .tb-court-bg.is-serving-team1 .pz-court-svg { filter: drop-shadow(0 0 18px rgba(11, 124, 255, 0.65)); animation: tbCourtPulse1 2.4s ease-in-out infinite; }
-  .tb-court-bg.is-serving-team2 .pz-court-svg { filter: drop-shadow(0 0 18px rgba(200, 232, 53, 0.65)); animation: tbCourtPulse2 2.4s ease-in-out infinite; }
-  @keyframes tbCourtPulse1 {
-    0%, 100% { filter: drop-shadow(0 0 12px rgba(11, 124, 255, 0.35)); }
-    50%      { filter: drop-shadow(0 0 28px rgba(11, 124, 255, 0.75)); }
-  }
-  @keyframes tbCourtPulse2 {
-    0%, 100% { filter: drop-shadow(0 0 12px rgba(200, 232, 53, 0.35)); }
-    50%      { filter: drop-shadow(0 0 28px rgba(200, 232, 53, 0.75)); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .tb-court-bg.is-serving-team1 .pz-court-svg,
-    .tb-court-bg.is-serving-team2 .pz-court-svg { animation: none; }
-  }
 
   .tb-team {
     display: flex; flex-direction: column;
@@ -573,7 +542,6 @@
   <div id="tbCancelledBanner" class="tb-banner-cancelled" style="display:none">Partido cancelado</div>
 
   <main class="tb-body" id="tbBody">
-    <div id="tbCourtBg" class="tb-court-bg" aria-hidden="true"></div>
     <div class="tb-team team-left" id="tbTeam1">
       <div class="tb-team-label" id="tbTeam1Label">Equipo 1</div>
       <div class="tb-player" id="tbTeam1Player1">—</div>
@@ -688,19 +656,6 @@
   var $status     = document.getElementById("tbStatus");
   var $footEnd    = document.getElementById("tbFootEnd");
   var $cancelledBanner = document.getElementById("tbCancelledBanner");
-  var $courtBg     = document.getElementById("tbCourtBg");
-
-  // Etapa 16.3 — inyectar SVG decorativo de cancha (landscape) detrás del marcador
-  if ($courtBg && window.PuntazoCourtSVG) {
-    $courtBg.innerHTML = window.PuntazoCourtSVG.topDown({
-      width: 760,
-      height: 380,
-      team1Color: "#0B7CFF",
-      team2Color: "#c8e835",
-      showNet: true,
-      landscape: true,
-    });
-  }
 
   // ════════════════════════════════════════════════════════════
   //  Config (locaciones) — para mostrar nombres legibles
@@ -1018,18 +973,6 @@
 
     // Score
     renderScore(match);
-
-    // Etapa 16.3 — glow del lado que sirve (sólo si el partido está activo y
-    // existe info de saque en el marcador en vivo)
-    if ($courtBg) {
-      $courtBg.classList.remove("is-serving-team1", "is-serving-team2");
-      var marc = match && match.marcador;
-      var serving = (marc && marc.current && (marc.current.servingTeam === "team1" || marc.current.servingTeam === "team2"))
-        ? marc.current.servingTeam : null;
-      if (match.status === "active" && serving) {
-        $courtBg.classList.add("is-serving-" + serving);
-      }
-    }
 
     // Status + timer + footer end
     var startDate = tsToDate(match.startedAt);
