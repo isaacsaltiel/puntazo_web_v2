@@ -2046,7 +2046,10 @@
     if (!currentMatch || !$rsClaimsWrap) return;
     const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     const isOwner = !!(user && user.uid === currentMatch.userId);
-    const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+    const jugadoresRaw = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+    const jugadores = (window.PuntazoMatches && window.PuntazoMatches.jugadoresBySlot)
+      ? window.PuntazoMatches.jugadoresBySlot(jugadoresRaw)
+      : jugadoresRaw;
     const byslot = rsClaimsBySlot(_rsCurrentClaims);
 
     // -------- lista de reclamados (todos) + botones de gestión --------
@@ -2143,7 +2146,10 @@
       return;
     }
     _rsClaimTargetIdx = idx;
-    const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+    const jugadoresRaw = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+    const jugadores = (window.PuntazoMatches && window.PuntazoMatches.jugadoresBySlot)
+      ? window.PuntazoMatches.jugadoresBySlot(jugadoresRaw)
+      : jugadoresRaw;
     const j = jugadores[idx] || {};
     const slotName = j.nombre || "";
     const eq = (j.equipo === "team1" || j.equipo === "team2") ? j.equipo : SLOT_EQUIPO_RS[idx];

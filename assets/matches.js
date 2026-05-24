@@ -114,6 +114,36 @@
     return t.slice(0, NOTAS_MAX);
   }
 
+  // jugadoresBySlot: devuelve un array length 4 con jugadores distribuidos
+  // en los 4 slots UI (slots 0,1 = team1 ; slots 2,3 = team2).
+  //
+  // Razón: los renders que muestran "4 slots fijos" (cancha visual de
+  // mi-partido y panel de claims de resumen) iteran [0..3] y necesitan
+  // saber qué jugador va en cada slot. Si el array `jugadores` tiene
+  // length < 4 (caso permitido: el usuario puede registrar 0, 1, 2, 3
+  // ó 4 jugadores), mapear por índice colapsa team2 dentro de slots de
+  // team1 (bug histórico).
+  //
+  // Reglas:
+  // - Si jugadores.length === 4: preserva orden (caller ya posicionó).
+  // - Si jugadores.length < 4: agrupa por j.equipo, pone team1 en
+  //   slots [0,1] y team2 en slots [2,3], rellena vacíos con defaults.
+  // - Jugadores sin campo equipo se tratan como team1 (compat legacy).
+  function jugadoresBySlot(input) {
+    const J = Array.isArray(input) ? input.filter(Boolean) : [];
+    if (J.length === 4) return J.slice();
+    const t1 = J.filter(j => j && (j.equipo !== "team2"));
+    const t2 = J.filter(j => j && j.equipo === "team2");
+    const emptyT1 = { nombre: "", equipo: "team1" };
+    const emptyT2 = { nombre: "", equipo: "team2" };
+    return [
+      t1[0] || emptyT1,
+      t1[1] || emptyT1,
+      t2[0] || emptyT2,
+      t2[1] || emptyT2,
+    ];
+  }
+
   // Firestore prohíbe arrays anidados a cualquier profundidad.
   // Shape canónico de marcador.sets: array de objetos { team1, team2 },
   // NO array de arrays. Ver docs/matches-schema.md §2.
@@ -1159,6 +1189,7 @@
     unclaimSlot,
     unclaimSlotAsOwner,
     mergeMatchWithClaims,
+    jugadoresBySlot,
     score: {
       validateSet,
       validateTiebreak,

@@ -3608,7 +3608,13 @@
 
     const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     const isOwner = currentViewMode === "owner";
-    const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+    const jugadoresRaw = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+    // Distribuye jugadores en los 4 slots UI respetando j.equipo (clave para
+    // length < 4: si solo hay 1 t1 + 1 t2, queda Pedro en slot 0 y Maria en
+    // slot 2; NO ambos en slots 0,1 como pasaba antes — bug histórico).
+    const jugadores = (window.PuntazoMatches && window.PuntazoMatches.jugadoresBySlot)
+      ? window.PuntazoMatches.jugadoresBySlot(jugadoresRaw)
+      : jugadoresRaw;
     const byslot = claimsBySlot();
     let hasConflict = false;
     let filledCount = 0;
