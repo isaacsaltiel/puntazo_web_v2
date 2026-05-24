@@ -967,9 +967,15 @@
     var teams = splitTeams(match.jugadores);
     renderTeamPlayers(teams.t1, $team1P1, $team1P2, "Equipo 1");
     renderTeamPlayers(teams.t2, $team2P1, $team2P2, "Equipo 2");
-    // Reset labels visibles
-    $team1Label.textContent = teams.t1.length ? "Equipo 1" : "Equipo 1";
-    $team2Label.textContent = teams.t2.length ? "Equipo 2" : "Equipo 2";
+    // Etapa 16.4 F3 — label dinámico: si hay nombres reales, muéstralos
+    // ("Pedro / Carlos"), sino fallback a "Equipo 1/2".
+    if (window.PuntazoMatches && typeof window.PuntazoMatches.teamLabel === "function") {
+      $team1Label.textContent = window.PuntazoMatches.teamLabel(match.jugadores, "team1");
+      $team2Label.textContent = window.PuntazoMatches.teamLabel(match.jugadores, "team2");
+    } else {
+      $team1Label.textContent = "Equipo 1";
+      $team2Label.textContent = "Equipo 2";
+    }
 
     // Score
     renderScore(match);

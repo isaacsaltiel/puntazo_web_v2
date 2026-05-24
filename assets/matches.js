@@ -114,6 +114,27 @@
     return t.slice(0, NOTAS_MAX);
   }
 
+  // teamLabel (Etapa 16.4 F3 — Item 17): nombre legible del equipo según
+  // jugadores reales. Reglas:
+  //   - 0 jugadores en el equipo  → "Equipo 1" / "Equipo 2" (fallback)
+  //   - 1 jugador con nombre      → su nombre
+  //   - 2 jugadores con nombre    → "Nombre 1 / Nombre 2"
+  // El parámetro `teamId` debe ser "team1" o "team2".
+  function teamLabel(jugadores, teamId) {
+    const J = Array.isArray(jugadores) ? jugadores : [];
+    const filtered = J.filter(j => j && typeof j === "object" && j.equipo === teamId
+      && j.nombre && String(j.nombre).trim().length > 0);
+    if (filtered.length === 0) {
+      return teamId === "team2" ? "Equipo 2" : "Equipo 1";
+    }
+    if (filtered.length === 1) {
+      return String(filtered[0].nombre).trim();
+    }
+    return filtered.slice(0, 2)
+      .map(j => String(j.nombre).trim())
+      .join(" / ");
+  }
+
   // jugadoresBySlot: devuelve un array length 4 con jugadores distribuidos
   // en los 4 slots UI (slots 0,1 = team1 ; slots 2,3 = team2).
   //
@@ -1190,6 +1211,7 @@
     unclaimSlotAsOwner,
     mergeMatchWithClaims,
     jugadoresBySlot,
+    teamLabel,
     score: {
       validateSet,
       validateTiebreak,

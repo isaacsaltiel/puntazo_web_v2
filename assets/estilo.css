@@ -33,6 +33,12 @@
   --team2-color-bg-strong: rgba(200, 232, 53, 0.24);
   --team2-color-border: rgba(200, 232, 53, 0.60);
   --team2-color-glow: rgba(200, 232, 53, 0.45);
+
+  /* Etapa 16.4 F3 — color de advertencia para botones de restar/corregir */
+  --undo-color: #f06845;
+  --undo-color-rgb: 240, 104, 69;
+  --undo-color-bg: rgba(240, 104, 69, 0.18);
+  --undo-color-border: rgba(240, 104, 69, 0.55);
 }
 html{scroll-behavior:smooth;}
 body{

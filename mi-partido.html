@@ -1882,17 +1882,15 @@
   }
   .mp-live-team-pad[data-team="team1"] .mp-live-team-pad-label { color: #cfe2ff; }
   .mp-live-team-pad[data-team="team2"] .mp-live-team-pad-label { color: #e9f5a8; }
+  /* ── 16.4 F3 — Grid 3 filas × 2 columnas (70/30 plus/minus) ── */
   .mp-live-team-pad-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    grid-template-areas:
-      "pt   game"
-      "undo undo";
+    grid-template-columns: 7fr 3fr;
+    grid-auto-rows: minmax(48px, auto);
     gap: 6px;
   }
   .mp-live-pad-btn {
-    min-height: 56px;
+    min-height: 48px;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, .14);
     font-family: inherit;
@@ -1901,55 +1899,62 @@
     color: #fff;
     cursor: pointer;
     line-height: 1;
-    padding: 0 8px;
-    transition: transform .12s ease, filter .12s ease, background .15s ease;
+    padding: 0 10px;
+    transition: transform .10s ease, filter .12s ease, background .15s ease;
     letter-spacing: 0.3px;
   }
   .mp-live-pad-btn:active:not([disabled]) { transform: scale(0.96); }
   .mp-live-pad-btn[disabled] { opacity: .42; cursor: not-allowed; }
-  .mp-live-pad-btn.pad-pt { grid-area: pt; }
-  .mp-live-pad-btn.pad-game { grid-area: game; }
-  .mp-live-pad-btn.pad-undo {
-    grid-area: undo;
-    min-height: 42px;
-    font-size: 0.82rem;
-    background: rgba(255, 255, 255, .05);
-    border-color: rgba(255, 255, 255, .14);
-    color: rgba(234, 242, 255, .75);
+  /* Botón minus (restar, 30%): naranja/rojo de advertencia */
+  .mp-live-pad-btn.pad-minus {
+    background: rgba(var(--undo-color-rgb, 240, 104, 69), .18);
+    border-color: rgba(var(--undo-color-rgb, 240, 104, 69), .55);
+    color: var(--undo-color, #f06845);
+    font-size: 1.20rem;
+    font-weight: 900;
   }
-  .mp-live-pad-btn.pad-undo:hover:not([disabled]) { background: rgba(255, 255, 255, .10); }
+  .mp-live-pad-btn.pad-minus:hover:not([disabled]) {
+    background: rgba(var(--undo-color-rgb, 240, 104, 69), .30);
+    color: #fff;
+  }
 
-  /* Team1 (azul) */
+  /* ── Team1 (azul) ── */
+  /* + Punto: gris (acción frecuente, neutral) */
   .mp-live-team-pad[data-team="team1"] .mp-live-pad-btn.pad-pt {
-    background: linear-gradient(135deg, var(--team1-color), #004FC8);
-    border-color: var(--team1-color-border);
-    box-shadow: 0 0 14px rgba(11, 124, 255, .22);
+    background: rgba(120, 130, 145, .26);
+    border-color: rgba(160, 170, 185, .42);
+    color: #fff;
   }
+  /* + Game: azul fuerte (acción más importante visualmente) */
   .mp-live-team-pad[data-team="team1"] .mp-live-pad-btn.pad-game {
-    background: rgba(11, 124, 255, .22);
-    border-color: var(--team1-color-border);
+    background: linear-gradient(135deg, var(--team1-color, #0b7cff), #004FC8);
+    border-color: var(--team1-color-border, rgba(11,124,255,.55));
+    box-shadow: 0 0 14px rgba(11, 124, 255, .25);
+    color: #fff;
+  }
+  /* + Set: azul claro (acción menos frecuente) */
+  .mp-live-team-pad[data-team="team1"] .mp-live-pad-btn.pad-set {
+    background: rgba(11, 124, 255, .26);
+    border-color: var(--team1-color-border, rgba(11,124,255,.55));
     color: #cfe2ff;
   }
-  .mp-live-team-pad[data-team="team1"] .mp-live-pad-btn.pad-game:hover:not([disabled]) {
-    background: rgba(11, 124, 255, .32);
-    color: #fff;
-  }
 
-  /* Team2 (verde pelota) */
+  /* ── Team2 (verde pelota) ── */
   .mp-live-team-pad[data-team="team2"] .mp-live-pad-btn.pad-pt {
-    background: linear-gradient(135deg, var(--team2-color), #9ec628);
-    border-color: var(--team2-color-border);
-    box-shadow: 0 0 14px rgba(200, 232, 53, .28);
-    color: #0a1428;  /* texto oscuro: el verde pelota es brillante */
+    background: rgba(120, 130, 145, .26);
+    border-color: rgba(160, 170, 185, .42);
+    color: #fff;
   }
   .mp-live-team-pad[data-team="team2"] .mp-live-pad-btn.pad-game {
-    background: rgba(200, 232, 53, .18);
-    border-color: var(--team2-color-border);
-    color: #e9f5a8;
+    background: linear-gradient(135deg, var(--team2-color, #c8e835), #9ec628);
+    border-color: var(--team2-color-border, rgba(200,232,53,.60));
+    box-shadow: 0 0 14px rgba(200, 232, 53, .28);
+    color: #0a1428;
   }
-  .mp-live-team-pad[data-team="team2"] .mp-live-pad-btn.pad-game:hover:not([disabled]) {
-    background: rgba(200, 232, 53, .28);
-    color: #fff;
+  .mp-live-team-pad[data-team="team2"] .mp-live-pad-btn.pad-set {
+    background: rgba(200, 232, 53, .26);
+    border-color: var(--team2-color-border, rgba(200,232,53,.60));
+    color: #e9f5a8;
   }
 
   /* Botón "Marcador completo" */
@@ -2180,31 +2185,29 @@
         <div class="mp-live-compact-hint" id="mpLiveHint">🟢 Saca <strong>Equipo 1</strong></div>
       </div>
 
-      <!-- ── 16.3 — Botonera reorganizada por equipo (touch ≥56px) ── -->
+      <!-- ── 16.4 F3 — Botonera 3 filas por equipo: Punto/Game/Set (70/30) ── -->
       <div id="mpLiveTeamActions" class="mp-live-teams" data-owner="0">
         <div class="mp-live-team-pad" data-team="team1">
-          <div class="mp-live-team-pad-label">Equipo 1</div>
+          <div class="mp-live-team-pad-label" id="mpLiveTeam1Label">Equipo 1</div>
           <div class="mp-live-team-pad-grid">
-            <button type="button" class="mp-live-pad-btn pad-pt"   data-live="addPoint"   data-team="team1">+ PUNTO</button>
-            <button type="button" class="mp-live-pad-btn pad-game" data-live="forceGame"  data-team="team1">+ GAME</button>
-            <button type="button" class="mp-live-pad-btn pad-undo" data-live="undoPoint"  data-team="team1">− PUNTO</button>
+            <button type="button" class="mp-live-pad-btn pad-pt"     data-live="addPoint" data-team="team1">+ PUNTO</button>
+            <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoPoint" data-team="team1" aria-label="Quitar punto">−</button>
+            <button type="button" class="mp-live-pad-btn pad-game"   data-live="forceGame" data-team="team1">+ GAME</button>
+            <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoGame" data-team="team1" aria-label="Quitar game">−</button>
+            <button type="button" class="mp-live-pad-btn pad-set"    data-live="forceSet" data-team="team1">+ SET</button>
+            <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoSet" data-team="team1" aria-label="Quitar set">−</button>
           </div>
         </div>
         <div class="mp-live-team-pad" data-team="team2">
-          <div class="mp-live-team-pad-label">Equipo 2</div>
+          <div class="mp-live-team-pad-label" id="mpLiveTeam2Label">Equipo 2</div>
           <div class="mp-live-team-pad-grid">
-            <button type="button" class="mp-live-pad-btn pad-pt"   data-live="addPoint"   data-team="team2">+ PUNTO</button>
-            <button type="button" class="mp-live-pad-btn pad-game" data-live="forceGame"  data-team="team2">+ GAME</button>
-            <button type="button" class="mp-live-pad-btn pad-undo" data-live="undoPoint"  data-team="team2">− PUNTO</button>
+            <button type="button" class="mp-live-pad-btn pad-pt"     data-live="addPoint" data-team="team2">+ PUNTO</button>
+            <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoPoint" data-team="team2" aria-label="Quitar punto">−</button>
+            <button type="button" class="mp-live-pad-btn pad-game"   data-live="forceGame" data-team="team2">+ GAME</button>
+            <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoGame" data-team="team2" aria-label="Quitar game">−</button>
+            <button type="button" class="mp-live-pad-btn pad-set"    data-live="forceSet" data-team="team2">+ SET</button>
+            <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoSet" data-team="team2" aria-label="Quitar set">−</button>
           </div>
-        </div>
-      </div>
-
-      <!-- Undo de game / set sigue siendo compartido -->
-      <div class="mp-live-foot">
-        <div class="mp-live-undo-row">
-          <button id="mpLiveUndoGame" type="button" class="mp-live-btn mp-live-btn-undo-game" title="Deshacer último game">↶ game</button>
-          <button id="mpLiveUndoSet" type="button" class="mp-live-btn mp-live-btn-undo-set" title="Corregir último set">↶ set</button>
         </div>
       </div>
 
@@ -5074,15 +5077,13 @@
     return currentViewMode === "owner";
   }
 
+  // Etapa 16.4 F3 — usa helper global window.PuntazoMatches.teamLabel
+  // (separador "/" en lugar de "&", para alinear con el dictado).
   function liveTeamLabel(match, teamKey) {
-    if (!match || !Array.isArray(match.jugadores)) {
-      return teamKey === "team1" ? "Equipo 1" : "Equipo 2";
+    if (window.PuntazoMatches && typeof window.PuntazoMatches.teamLabel === "function") {
+      return window.PuntazoMatches.teamLabel(match && match.jugadores, teamKey);
     }
-    const names = match.jugadores
-      .filter(function (j) { return j && j.nombre && j.equipo === teamKey; })
-      .map(function (j) { return j.nombre; });
-    if (names.length === 0) return teamKey === "team1" ? "Equipo 1" : "Equipo 2";
-    return names.join(" & ");
+    return teamKey === "team1" ? "Equipo 1" : "Equipo 2";
   }
 
   // liveSupportsBoard: el marcador en vivo solo aplica a partidos con sets
@@ -5227,6 +5228,11 @@
       const t2Label = liveTeamLabel(currentMatch, "team2");
       if ($lcT1Name) $lcT1Name.textContent = t1Label;
       if ($lcT2Name) $lcT2Name.textContent = t2Label;
+      // Etapa 16.4 F3 — propagar también a los pad labels (Equipo 1/2 o nombres reales)
+      const _padT1 = document.getElementById("mpLiveTeam1Label");
+      const _padT2 = document.getElementById("mpLiveTeam2Label");
+      if (_padT1) _padT1.textContent = t1Label;
+      if (_padT2) _padT2.textContent = t2Label;
 
       const t1Sets = board.setsWon.t1;
       const t2Sets = board.setsWon.t2;
@@ -5359,8 +5365,8 @@
     });
   }
 
-  // ── 16.3 — handlers de la botonera por equipo (reutilizan la misma lógica
-  //          que el tbody legacy: el click delega al data-live/data-team) ──
+  // ── 16.4 F3 — handlers de la botonera por equipo. Acepta:
+  //   addPoint / undoPoint / forceGame / undoGame / forceSet / undoSet
   if ($liveTeams) {
     $liveTeams.addEventListener("click", async function (e) {
       const btn = e.target.closest("button[data-live]");
@@ -5378,14 +5384,50 @@
           next = window.PuntazoMatches.live.undoLastPoint(m);
         } else if (action === "forceGame" && (team === "team1" || team === "team2")) {
           next = window.PuntazoMatches.live.forceGameWin(m, team);
+        } else if (action === "undoGame") {
+          next = window.PuntazoMatches.live.undoLastGame(m);
+        } else if (action === "forceSet" && (team === "team1" || team === "team2")) {
+          // Asignar score 6-N donde N = games del otro equipo en el set actual,
+          // capeado a 4 (sino sería 7-5 que requiere lógica de games extra).
+          const cur = (m && m.current) || {};
+          const t1g = Number(cur.team1Games) || 0;
+          const t2g = Number(cur.team2Games) || 0;
+          const score = team === "team1"
+            ? { team1: 6, team2: Math.min(t2g, 4) }
+            : { team1: Math.min(t1g, 4), team2: 6 };
+          next = window.PuntazoMatches.live.forceSetWin(m, team, score);
+        } else if (action === "undoSet") {
+          // No hay undoLastSet directo: simulamos quitando el último elemento de
+          // marcador.sets si existe, y reseteando current.
+          const cloned = JSON.parse(JSON.stringify(m));
+          if (Array.isArray(cloned.sets) && cloned.sets.length > 0) {
+            cloned.sets.pop();
+            if (Array.isArray(cloned.tiebreak) && cloned.tiebreak.length > 0) {
+              cloned.tiebreak.pop();
+            }
+            cloned.ganador = null;
+            if (cloned.current) {
+              cloned.current.team1Games = 0;
+              cloned.current.team2Games = 0;
+              cloned.current.team1Points = 0;
+              cloned.current.team2Points = 0;
+              cloned.current.tiebreak = null;
+            }
+            cloned.history = []; // pila se invalida tras edit destructivo
+            next = cloned;
+          }
         }
       } catch (err) {
-        console.error("[mi-partido 16.3] team pad action error", err);
+        console.error("[mi-partido 16.4 F3] team pad action error", err);
         showToast("Error al aplicar acción: " + (err && err.message ? err.message : "desconocido"), "bad", 2600);
         return;
       }
       if (!next) return;
-      const labelMap = { addPoint: "punto", undoPoint: "deshacer punto", forceGame: "game" };
+      const labelMap = {
+        addPoint: "punto", undoPoint: "deshacer punto",
+        forceGame: "game", undoGame: "deshacer game",
+        forceSet: "set", undoSet: "deshacer set",
+      };
       await liveWriteMarcador(next, labelMap[action] || "acción");
       try { if (navigator.vibrate) navigator.vibrate(20); } catch (_) {}
     });
