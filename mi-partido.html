@@ -1300,6 +1300,321 @@
     padding: 6px 10px 2px;
   }
 
+  /* ── Etapa 16.2 — Marcador inteligente en vivo ── */
+  .mp-live-card { padding: 14px 14px 12px; }
+  .mp-live-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .mp-live-title {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.2px;
+  }
+  .mp-live-gp {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: rgba(234, 242, 255, .70);
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .12);
+    transition: all .15s ease;
+  }
+  .mp-live-gp:hover { background: rgba(255, 255, 255, .08); }
+  .mp-live-gp.is-on {
+    background: rgba(255, 215, 90, .14);
+    border-color: rgba(255, 215, 90, .42);
+    color: #ffe49a;
+  }
+  .mp-live-gp input { display: none; }
+  .mp-live-gp .pip {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .mp-live-gp.is-on .pip::after {
+    content: "";
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .mp-live-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .mp-live-table thead th {
+    font-size: 0.66rem;
+    font-weight: 800;
+    color: rgba(207, 226, 255, .65);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 4px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+  }
+  .mp-live-table thead th.team-col { text-align: left; padding-left: 8px; }
+  .mp-live-row {
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    transition: background .18s ease;
+  }
+  .mp-live-row.is-serving {
+    background: rgba(34, 180, 100, .08);
+  }
+  .mp-live-row td {
+    padding: 10px 4px;
+    vertical-align: middle;
+    text-align: center;
+  }
+  .mp-live-team-cell {
+    text-align: left !important;
+    padding-left: 8px !important;
+  }
+  .mp-live-team-name {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    word-break: break-word;
+  }
+  .mp-live-serve {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #9af2c0;
+    letter-spacing: 0.3px;
+  }
+  .mp-live-serve .pip-serve {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #9af2c0;
+    box-shadow: 0 0 6px rgba(154, 242, 192, .60);
+  }
+  .mp-live-sets-won {
+    font-size: 1.30rem;
+    font-weight: 900;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .mp-live-games-cell {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: rgba(234, 242, 255, .80);
+    font-variant-numeric: tabular-nums;
+  }
+  .mp-live-games-cell .gm {
+    display: inline-block;
+    min-width: 18px;
+    padding: 0 2px;
+  }
+  .mp-live-games-cell .gm.is-current {
+    color: #ffe49a;
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 215, 90, .55);
+    text-underline-offset: 3px;
+  }
+  .mp-live-points-cell {
+    font-size: 1.45rem;
+    font-weight: 900;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.3px;
+  }
+  .mp-live-points-cell.is-ad { color: #ffe49a; }
+  .mp-live-points-cell.is-tb {
+    font-size: 1.10rem;
+    color: #ffd497;
+  }
+
+  .mp-live-actions-cell {
+    padding: 8px 6px !important;
+  }
+  .mp-live-actions-cell .row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .mp-live-btn {
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 800;
+    color: #fff;
+    transition: all .12s ease;
+    line-height: 1;
+    padding: 0;
+  }
+  .mp-live-btn:active { transform: scale(0.94); }
+  .mp-live-btn[disabled] { opacity: .45; cursor: not-allowed; transform: none; }
+  .mp-live-btn-pt {
+    min-width: 44px; min-height: 44px;
+    font-size: 1.30rem;
+    background: linear-gradient(135deg, #1f9d62, #16a34a);
+    border: 1px solid rgba(34, 180, 100, 0.55);
+    box-shadow: 0 0 12px rgba(34, 180, 100, .22);
+  }
+  .mp-live-btn-undo-pt {
+    min-width: 44px; min-height: 44px;
+    font-size: 1.10rem;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .14);
+    color: rgba(234, 242, 255, .80);
+  }
+  .mp-live-btn-game {
+    min-width: 56px; min-height: 44px;
+    font-size: 0.78rem;
+    background: linear-gradient(135deg, #0B7CFF, #004FC8);
+    border: 1px solid rgba(11, 124, 255, 0.55);
+    box-shadow: 0 0 10px rgba(11, 124, 255, .22);
+    padding: 0 8px;
+    letter-spacing: 0.3px;
+  }
+  .mp-live-btn-undo-game {
+    min-height: 32px;
+    min-width: 88px;
+    font-size: 0.72rem;
+    background: rgba(255, 170, 60, .08);
+    border: 1px solid rgba(255, 170, 60, .30);
+    color: #ffd497;
+    padding: 0 10px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+  }
+  .mp-live-btn-undo-set {
+    min-height: 32px;
+    min-width: 88px;
+    font-size: 0.72rem;
+    background: rgba(255, 80, 80, .06);
+    border: 1px solid rgba(255, 80, 80, .26);
+    color: #ffd5d5;
+    padding: 0 10px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+  }
+
+  .mp-live-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .mp-live-undo-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .mp-live-hint {
+    font-size: 0.72rem;
+    color: rgba(234, 242, 255, .50);
+    line-height: 1.4;
+  }
+
+  .mp-live-readonly-note {
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: rgba(234, 242, 255, .55);
+    font-style: italic;
+    text-align: center;
+  }
+
+  .mp-live-final-fallback {
+    margin-top: 12px;
+    text-align: center;
+  }
+  .mp-live-final-fallback button {
+    border: none;
+    background: transparent;
+    color: rgba(207, 226, 255, .65);
+    font-family: inherit;
+    font-size: 0.80rem;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    padding: 6px 8px;
+  }
+  .mp-live-final-fallback button:hover { color: #fff; }
+
+  /* Overlay de partido terminado */
+  .mp-live-finished-overlay {
+    position: fixed; inset: 0; z-index: 10500;
+    display: none; align-items: center; justify-content: center;
+    padding: 20px;
+    background: rgba(2, 6, 14, 0.78);
+    backdrop-filter: blur(10px);
+  }
+  .mp-live-finished-overlay.is-open { display: flex; }
+  .mp-live-finished-card {
+    width: min(100%, 420px);
+    background: linear-gradient(180deg, rgba(15, 22, 38, 0.98), rgba(15, 22, 38, 0.92));
+    border: 1px solid rgba(255, 215, 90, .42);
+    border-radius: 20px;
+    padding: 28px 22px 22px;
+    color: #fff;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .60), 0 0 28px rgba(255, 215, 90, .18);
+  }
+  .mp-live-finished-card .trophy {
+    font-size: 48px;
+    margin-bottom: 8px;
+  }
+  .mp-live-finished-card h3 {
+    margin: 0 0 4px;
+    font-size: 1.20rem;
+    font-weight: 900;
+    color: #fff;
+  }
+  .mp-live-finished-card .winner-line {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #ffe49a;
+    margin-bottom: 8px;
+  }
+  .mp-live-finished-card .score-line {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: rgba(234, 242, 255, .85);
+    margin-bottom: 18px;
+    font-variant-numeric: tabular-nums;
+  }
+  .mp-live-finished-card .actions {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+
+  @media (max-width: 480px) {
+    .mp-live-table thead th { font-size: 0.60rem; padding: 5px 2px; }
+    .mp-live-row td { padding: 8px 2px; }
+    .mp-live-points-cell { font-size: 1.25rem; }
+    .mp-live-sets-won { font-size: 1.15rem; }
+    .mp-live-games-cell { font-size: 0.95rem; }
+    .mp-live-btn-pt { min-width: 40px; min-height: 40px; font-size: 1.20rem; }
+    .mp-live-btn-undo-pt { min-width: 40px; min-height: 40px; }
+    .mp-live-btn-game { min-width: 50px; font-size: 0.72rem; padding: 0 6px; }
+  }
+
   /* ── Etapa 15.8 — Feature 3: nota del partido ── */
   .mp-notas-card { padding: 14px 16px 12px; }
   .mp-notas-head {
@@ -1533,6 +1848,43 @@
       </div>
     </div>
 
+    <!-- ── Etapa 16.2 — Marcador inteligente en vivo ── -->
+    <div id="mpLiveCard" class="mp-card mp-live-card" style="display:none">
+      <div class="mp-live-head">
+        <span class="mp-live-title">🎾 Marcador en vivo</span>
+        <label id="mpLiveGoldenToggle" class="mp-live-gp" title="Punto de oro: en deuce, el siguiente punto define game">
+          <span class="pip" aria-hidden="true"></span>
+          <span>Punto de oro</span>
+          <input id="mpLiveGoldenInput" type="checkbox" />
+        </label>
+      </div>
+      <table class="mp-live-table">
+        <thead>
+          <tr>
+            <th class="team-col">Equipo</th>
+            <th>Sets</th>
+            <th>Games</th>
+            <th>Punto</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="mpLiveTbody"></tbody>
+      </table>
+      <div class="mp-live-foot">
+        <div class="mp-live-undo-row">
+          <button id="mpLiveUndoGame" type="button" class="mp-live-btn mp-live-btn-undo-game" title="Deshacer último game">↶ game</button>
+          <button id="mpLiveUndoSet" type="button" class="mp-live-btn mp-live-btn-undo-set" title="Corregir último set">↶ set</button>
+        </div>
+        <div class="mp-live-hint" id="mpLiveHint">Saca <strong>Equipo 1</strong></div>
+      </div>
+      <div id="mpLiveReadonlyNote" class="mp-live-readonly-note" style="display:none">
+        Solo el dueño actualiza el marcador en vivo. Lo verás sincronizado en tiempo real.
+      </div>
+      <div class="mp-live-final-fallback">
+        <button id="mpLiveOpenFinalForm" type="button">¿Solo registrar marcador final? Usar formulario clásico</button>
+      </div>
+    </div>
+
     <div id="mpClipStates" class="mp-card cs-card" style="display:none">
       <div class="cs-header">
         <span class="cs-title">🎯 Pulsos de este partido</span>
@@ -1685,6 +2037,20 @@
 
 <!-- ── Contenedor de toasts (Etapa 15.6) ── -->
 <div id="mpToastContainer" class="mp-toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ── Etapa 16.2 — Overlay "Partido terminado" ── -->
+<div id="mpLiveFinishedOverlay" class="mp-live-finished-overlay" role="dialog" aria-modal="true">
+  <div class="mp-live-finished-card">
+    <div class="trophy">🏆</div>
+    <h3>¡Partido terminado!</h3>
+    <div id="mpLiveFinishedWinner" class="winner-line">Ganó Equipo 1</div>
+    <div id="mpLiveFinishedScore" class="score-line"></div>
+    <div class="actions">
+      <button id="mpLiveFinishedClose" type="button" class="mp-btn-end">Cerrar partido</button>
+      <button id="mpLiveFinishedKeep" type="button" class="mp-btn-cancel">Seguir jugando</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Modal Conflicto (dueño, Etapa 15.5) ── -->
 <div id="mpConflictModal" class="mp-modal-backdrop">
@@ -4476,6 +4842,435 @@
       }
     }, { passive: false });
   }
+
+  // ════════════════════════════════════════════════════════════
+  //  Etapa 16.2 — Marcador inteligente en vivo
+  // ════════════════════════════════════════════════════════════
+  const $liveCard       = document.getElementById("mpLiveCard");
+  const $liveTbody      = document.getElementById("mpLiveTbody");
+  const $liveGoldenLbl  = document.getElementById("mpLiveGoldenToggle");
+  const $liveGoldenInp  = document.getElementById("mpLiveGoldenInput");
+  const $liveUndoGame   = document.getElementById("mpLiveUndoGame");
+  const $liveUndoSet    = document.getElementById("mpLiveUndoSet");
+  const $liveHint       = document.getElementById("mpLiveHint");
+  const $liveReadNote   = document.getElementById("mpLiveReadonlyNote");
+  const $liveOpenFinal  = document.getElementById("mpLiveOpenFinalForm");
+  const $liveOverlay    = document.getElementById("mpLiveFinishedOverlay");
+  const $liveOvWinner   = document.getElementById("mpLiveFinishedWinner");
+  const $liveOvScore    = document.getElementById("mpLiveFinishedScore");
+  const $liveOvClose    = document.getElementById("mpLiveFinishedClose");
+  const $liveOvKeep     = document.getElementById("mpLiveFinishedKeep");
+
+  let _liveWriteInFlight = false;
+  let _liveLastShownFinishedFor = null; // id del partido para el que ya mostramos overlay
+  let _liveOverlayDismissed = false;
+
+  function liveCanEdit(match) {
+    if (!match) return false;
+    if (match.status !== "active") return false;
+    return currentViewMode === "owner";
+  }
+
+  function liveTeamLabel(match, teamKey) {
+    if (!match || !Array.isArray(match.jugadores)) {
+      return teamKey === "team1" ? "Equipo 1" : "Equipo 2";
+    }
+    const names = match.jugadores
+      .filter(function (j) { return j && j.nombre && j.equipo === teamKey; })
+      .map(function (j) { return j.nombre; });
+    if (names.length === 0) return teamKey === "team1" ? "Equipo 1" : "Equipo 2";
+    return names.join(" & ");
+  }
+
+  // liveSupportsBoard: el marcador en vivo solo aplica a partidos con sets
+  // (partido_3 / partido_5). Para reta/libre, el modal final clásico sigue
+  // siendo la mejor opción.
+  function liveSupportsBoard(match) {
+    if (!match) return false;
+    const m = match.modo || "partido_3";
+    return m === "partido_3" || m === "partido_5";
+  }
+
+  function liveBuildSafeMarcador(match) {
+    // Devuelve un marcador con `current` poblado, copiando lo que ya exista
+    // en el doc y respetando el `modo` del partido.
+    const base = match && match.marcador && typeof match.marcador === "object"
+      ? match.marcador
+      : {};
+    const m = window.PuntazoMatches.live.ensureCurrent(base);
+    m.modo = match && match.modo ? match.modo : (m.modo || "partido_3");
+    if (typeof m.goldenPoint !== "boolean") m.goldenPoint = false;
+    return m;
+  }
+
+  function liveRenderBoard() {
+    if (!$liveCard || !currentMatch) return;
+    if (!liveSupportsBoard(currentMatch)) {
+      $liveCard.style.display = "none";
+      return;
+    }
+    if (currentMatch.status !== "active") {
+      $liveCard.style.display = "none";
+      return;
+    }
+    $liveCard.style.display = "block";
+
+    const m = liveBuildSafeMarcador(currentMatch);
+    const board = window.PuntazoMatches.live.formatScoreboard(m);
+    const isOwner = liveCanEdit(currentMatch);
+
+    // Golden point toggle
+    if ($liveGoldenInp) $liveGoldenInp.checked = !!m.goldenPoint;
+    if ($liveGoldenLbl) $liveGoldenLbl.classList.toggle("is-on", !!m.goldenPoint);
+    if ($liveGoldenInp) $liveGoldenInp.disabled = !isOwner;
+    if ($liveGoldenLbl) $liveGoldenLbl.style.opacity = isOwner ? "1" : "0.6";
+
+    // Read-only note + acciones
+    if ($liveReadNote) $liveReadNote.style.display = isOwner ? "none" : "block";
+    if ($liveUndoGame) $liveUndoGame.disabled = !isOwner;
+    if ($liveUndoSet) $liveUndoSet.disabled = !isOwner;
+
+    // Construir filas (siempre 2 filas: team1, team2)
+    if ($liveTbody) {
+      $liveTbody.innerHTML = "";
+      const sets = Array.isArray(m.sets) ? m.sets : [];
+      const maxSetsShow = (m.modo === "partido_5") ? 5 : 3;
+      const currentSetIdx = sets.length; // índice del set en curso (0-based)
+
+      ["team1", "team2"].forEach(function (teamKey) {
+        const tr = document.createElement("tr");
+        tr.className = "mp-live-row" + (m.current && m.current.servingTeam === teamKey ? " is-serving" : "");
+
+        // Equipo
+        const tdTeam = document.createElement("td");
+        tdTeam.className = "mp-live-team-cell";
+        const nm = document.createElement("div");
+        nm.className = "mp-live-team-name";
+        nm.textContent = liveTeamLabel(currentMatch, teamKey);
+        tdTeam.appendChild(nm);
+        if (m.current && m.current.servingTeam === teamKey) {
+          const sv = document.createElement("div");
+          sv.className = "mp-live-serve";
+          sv.innerHTML = '<span class="pip-serve"></span>SIRVE';
+          tdTeam.appendChild(sv);
+        }
+        tr.appendChild(tdTeam);
+
+        // Sets ganados
+        const tdSets = document.createElement("td");
+        tdSets.className = "mp-live-sets-won";
+        const setsWon = teamKey === "team1" ? board.setsWon.t1 : board.setsWon.t2;
+        tdSets.textContent = String(setsWon);
+        tr.appendChild(tdSets);
+
+        // Games por set (hasta 3 o 5 columnas, mostramos set 1, 2, 3 o set 1..5)
+        const tdGames = document.createElement("td");
+        tdGames.className = "mp-live-games-cell";
+        const gmParts = [];
+        for (let i = 0; i < maxSetsShow; i++) {
+          const setObj = sets[i];
+          if (setObj) {
+            const val = teamKey === "team1" ? setObj.team1 : setObj.team2;
+            gmParts.push('<span class="gm">' + Number(val || 0) + '</span>');
+          } else if (i === currentSetIdx) {
+            // Set en curso: muestra games actuales subrayados
+            const curG = teamKey === "team1" ? m.current.team1Games : m.current.team2Games;
+            gmParts.push('<span class="gm is-current">' + Number(curG || 0) + '</span>');
+          } else if (i === currentSetIdx + 1 || (i > currentSetIdx + 1 && i < maxSetsShow)) {
+            gmParts.push('<span class="gm" style="opacity:.35">–</span>');
+          }
+        }
+        tdGames.innerHTML = gmParts.join("");
+        tr.appendChild(tdGames);
+
+        // Punto actual
+        const tdPts = document.createElement("td");
+        const pointsVal = teamKey === "team1" ? m.current.team1Points : m.current.team2Points;
+        const tbActive = !!m.current.tiebreak;
+        if (tbActive) {
+          tdPts.className = "mp-live-points-cell is-tb";
+          const tbVal = teamKey === "team1" ? m.current.tiebreak.team1 : m.current.tiebreak.team2;
+          tdPts.textContent = "TB " + Number(tbVal || 0);
+        } else {
+          const label = window.PuntazoMatches.live.pointsLabel(pointsVal);
+          tdPts.className = "mp-live-points-cell" + (label === "AD" ? " is-ad" : "");
+          tdPts.textContent = label;
+        }
+        tr.appendChild(tdPts);
+
+        // Acciones por equipo
+        const tdAct = document.createElement("td");
+        tdAct.className = "mp-live-actions-cell";
+        const row = document.createElement("div");
+        row.className = "row";
+
+        const btnMinus = document.createElement("button");
+        btnMinus.type = "button";
+        btnMinus.className = "mp-live-btn mp-live-btn-undo-pt";
+        btnMinus.textContent = "−";
+        btnMinus.title = "Deshacer último punto";
+        btnMinus.disabled = !isOwner;
+        btnMinus.dataset.live = "undoPoint";
+
+        const btnPlus = document.createElement("button");
+        btnPlus.type = "button";
+        btnPlus.className = "mp-live-btn mp-live-btn-pt";
+        btnPlus.textContent = "+";
+        btnPlus.title = "Sumar punto a " + liveTeamLabel(currentMatch, teamKey);
+        btnPlus.disabled = !isOwner;
+        btnPlus.dataset.live = "addPoint";
+        btnPlus.dataset.team = teamKey;
+
+        const btnGame = document.createElement("button");
+        btnGame.type = "button";
+        btnGame.className = "mp-live-btn mp-live-btn-game";
+        btnGame.textContent = "🏆 game";
+        btnGame.title = "Forzar game ganado para " + liveTeamLabel(currentMatch, teamKey);
+        btnGame.disabled = !isOwner;
+        btnGame.dataset.live = "forceGame";
+        btnGame.dataset.team = teamKey;
+
+        row.appendChild(btnMinus);
+        row.appendChild(btnPlus);
+        row.appendChild(btnGame);
+        tdAct.appendChild(row);
+        tr.appendChild(tdAct);
+
+        $liveTbody.appendChild(tr);
+      });
+    }
+
+    // Hint
+    if ($liveHint) {
+      const servingTeamLabel = liveTeamLabel(currentMatch, m.current.servingTeam || "team1");
+      if (board.ganador) {
+        $liveHint.innerHTML = "🏆 Ganador: <strong>" + escHtml(liveTeamLabel(currentMatch, board.ganador)) + "</strong>";
+      } else if (m.current.tiebreak) {
+        $liveHint.innerHTML = "🟠 Tiebreak en curso · Saca <strong>" + escHtml(servingTeamLabel) + "</strong>";
+      } else {
+        $liveHint.innerHTML = "🟢 Saca <strong>" + escHtml(servingTeamLabel) + "</strong>" +
+          (m.goldenPoint ? " · Punto de oro ON" : "");
+      }
+    }
+
+    // Mostrar overlay de partido terminado (solo una vez por matchId, y solo
+    // al dueño — los invitados ven el resultado pero no la acción "cerrar").
+    if (board.ganador && currentMatch.id !== _liveLastShownFinishedFor && isOwner && !_liveOverlayDismissed) {
+      _liveLastShownFinishedFor = currentMatch.id;
+      liveOpenFinishedOverlay(board);
+    }
+  }
+
+  function liveOpenFinishedOverlay(board) {
+    if (!$liveOverlay) return;
+    const winLabel = liveTeamLabel(currentMatch, board.ganador);
+    if ($liveOvWinner) $liveOvWinner.textContent = "Ganó " + winLabel;
+    if ($liveOvScore) {
+      const scoreStr = (board.sets || []).map(function (s) { return s.team1 + "-" + s.team2; }).join(" · ");
+      $liveOvScore.textContent = scoreStr ? "Marcador: " + scoreStr + "  (sets " + board.setsWon.t1 + "-" + board.setsWon.t2 + ")" : "";
+    }
+    $liveOverlay.classList.add("is-open");
+  }
+
+  function liveCloseFinishedOverlay() {
+    if ($liveOverlay) $liveOverlay.classList.remove("is-open");
+  }
+
+  // liveWriteMarcador: persiste cambios. Bloquea writes paralelos para evitar
+  // race conditions (cada click espera al anterior). Hace optimistic update
+  // local y revierte si falla.
+  async function liveWriteMarcador(newMarcador, opLabel) {
+    if (!currentMatch || !currentMatch.id) return false;
+    if (_liveWriteInFlight) {
+      // Encolar perdería el efecto compuesto; mejor descartar con aviso.
+      showToast("Espera un momento — guardando…", "info", 1200);
+      return false;
+    }
+    if (!liveCanEdit(currentMatch)) {
+      showToast("Solo el dueño del partido edita el marcador en vivo.", "warn", 2400);
+      return false;
+    }
+    _liveWriteInFlight = true;
+    const prevMarcador = currentMatch.marcador ? Object.assign({}, currentMatch.marcador) : null;
+    currentMatch = Object.assign({}, currentMatch, { marcador: newMarcador });
+    liveRenderBoard();
+    try {
+      await window.PuntazoMatches.update(currentMatch.id, { marcador: newMarcador });
+      _liveWriteInFlight = false;
+      return true;
+    } catch (e) {
+      console.error("[mi-partido 16.2] live write failed", e);
+      _liveWriteInFlight = false;
+      currentMatch = Object.assign({}, currentMatch, { marcador: prevMarcador });
+      liveRenderBoard();
+      const isPerm = !!(e && (e.code === "permission-denied" || /permission/i.test(String(e.message || ""))));
+      const msg = isPerm
+        ? "Solo el dueño puede editar el marcador en vivo."
+        : "No se pudo guardar: " + (opLabel || "acción");
+      showToast(msg, "bad", 2600);
+      return false;
+    }
+  }
+
+  // Handlers de acciones
+  if ($liveTbody) {
+    $liveTbody.addEventListener("click", async function (e) {
+      const btn = e.target.closest("button[data-live]");
+      if (!btn) return;
+      if (btn.disabled) return;
+      const action = btn.dataset.live;
+      const team = btn.dataset.team || null;
+      if (!currentMatch) return;
+      const m = liveBuildSafeMarcador(currentMatch);
+      let next = null;
+      try {
+        if (action === "addPoint" && (team === "team1" || team === "team2")) {
+          next = window.PuntazoMatches.live.nextPointWinner(m, team, { goldenPoint: !!m.goldenPoint, modo: m.modo });
+        } else if (action === "undoPoint") {
+          next = window.PuntazoMatches.live.undoLastPoint(m);
+        } else if (action === "forceGame" && (team === "team1" || team === "team2")) {
+          next = window.PuntazoMatches.live.forceGameWin(m, team);
+        }
+      } catch (err) {
+        console.error("[mi-partido 16.2] live action error", err);
+        showToast("Error al aplicar acción: " + (err && err.message ? err.message : "desconocido"), "bad", 2600);
+        return;
+      }
+      if (!next) return;
+      const labelMap = { addPoint: "punto", undoPoint: "deshacer punto", forceGame: "game" };
+      await liveWriteMarcador(next, labelMap[action] || "acción");
+      try { if (navigator.vibrate) navigator.vibrate(20); } catch (_) {}
+    });
+  }
+
+  if ($liveUndoGame) {
+    $liveUndoGame.addEventListener("click", async function () {
+      if (!currentMatch) return;
+      const m = liveBuildSafeMarcador(currentMatch);
+      const next = window.PuntazoMatches.live.undoLastGame(m);
+      await liveWriteMarcador(next, "deshacer game");
+    });
+  }
+  if ($liveUndoSet) {
+    $liveUndoSet.addEventListener("click", async function () {
+      if (!currentMatch) return;
+      const m = liveBuildSafeMarcador(currentMatch);
+      // "Corregir último set": deshacer el último set cerrado, recuperando el
+      // estado anterior al close. Implementamos esto pop'eando del array sets
+      // y reseteando current. NO usa history (porque puede ser un set viejo).
+      if (!Array.isArray(m.sets) || m.sets.length === 0) {
+        showToast("No hay sets cerrados para corregir.", "info", 1800);
+        return;
+      }
+      const next = Object.assign({}, m);
+      next.sets = m.sets.slice(0, -1);
+      if (Array.isArray(m.tiebreak) && m.tiebreak.length > next.sets.length) {
+        next.tiebreak = m.tiebreak.slice(0, next.sets.length);
+      }
+      // Reset current al estado base; el set "perdido" se reinicia desde 0-0.
+      next.current = {
+        team1Games: 0, team2Games: 0,
+        team1Points: 0, team2Points: 0,
+        servingTeam: (m.current && m.current.servingTeam) || "team1",
+        tiebreak: null,
+      };
+      if (next.ganador) delete next.ganador;
+      // Limpiar history (no es trivial deshacer múltiples ops mixtas a este nivel)
+      next.history = [];
+      _liveOverlayDismissed = false;
+      _liveLastShownFinishedFor = null;
+      liveCloseFinishedOverlay();
+      await liveWriteMarcador(next, "corregir set");
+    });
+  }
+  if ($liveGoldenInp) {
+    $liveGoldenInp.addEventListener("change", async function () {
+      if (!currentMatch) return;
+      const m = liveBuildSafeMarcador(currentMatch);
+      m.goldenPoint = !!$liveGoldenInp.checked;
+      await liveWriteMarcador(m, "punto de oro");
+    });
+  }
+  if ($liveOvClose) {
+    $liveOvClose.addEventListener("click", async function () {
+      if (!currentMatch || !currentMatch.id) return;
+      $liveOvClose.disabled = true;
+      $liveOvClose.textContent = "Cerrando…";
+      try {
+        const m = liveBuildSafeMarcador(currentMatch);
+        // Construir marcador final compatible con el modal "terminar":
+        const finalMarcador = {
+          sets: Array.isArray(m.sets) ? m.sets.slice() : [],
+          ganador: m.ganador,
+        };
+        if (Array.isArray(m.tiebreak) && m.tiebreak.some(function (t) { return t != null; })) {
+          finalMarcador.tiebreak = m.tiebreak.map(function (t) { return t || { team1: 0, team2: 0 }; });
+        }
+        await window.PuntazoMatches.end(currentMatch.id, {
+          marcador: finalMarcador,
+          modo: currentMatch.modo,
+        });
+        liveCloseFinishedOverlay();
+        // Refrescar match
+        const fresh = await window.PuntazoMatches.get(currentMatch.id);
+        if (fresh) await renderMatch(fresh);
+        if ($successBanner) $successBanner.classList.add("is-visible");
+      } catch (e) {
+        console.error("[mi-partido 16.2] end via live overlay failed", e);
+        showToast("No se pudo cerrar el partido: " + (e && e.message ? e.message : "error"), "bad", 2800);
+      } finally {
+        $liveOvClose.disabled = false;
+        $liveOvClose.textContent = "Cerrar partido";
+      }
+    });
+  }
+  if ($liveOvKeep) {
+    $liveOvKeep.addEventListener("click", function () {
+      _liveOverlayDismissed = true;
+      liveCloseFinishedOverlay();
+    });
+  }
+  if ($liveOverlay) {
+    $liveOverlay.addEventListener("click", function (e) {
+      if (e.target === $liveOverlay) {
+        _liveOverlayDismissed = true;
+        liveCloseFinishedOverlay();
+      }
+    });
+  }
+  if ($liveOpenFinal) {
+    $liveOpenFinal.addEventListener("click", function () {
+      // Reusar el modal clásico de "terminar partido".
+      try { openModal(); } catch (e) { console.warn(e); }
+    });
+  }
+
+  // Hook: integrar render del live board en cada renderMatch + en cada snapshot.
+  // El hook ya existente para `_origRenderMatch` arriba arranca subscription;
+  // aquí extendemos para que también re-pinte el board cada vez.
+  (function hookLiveBoardRender() {
+    const _orig = renderMatch;
+    renderMatch = async function (match) {
+      _liveOverlayDismissed = false; // re-permitir overlay al cargar match nuevo
+      const r = await _orig(match);
+      try { liveRenderBoard(); } catch (e) { console.warn("[mi-partido 16.2] liveRenderBoard error", e); }
+      return r;
+    };
+  })();
+
+  // También re-pintar cuando llega snapshot del match doc (otros disp. editan).
+  (function hookLiveSnapshotRerender() {
+    const obs = new MutationObserver(function () { /* no-op */ });
+    // No podemos hookear directamente al onSnapshot ya creado, pero el
+    // currentMatch se actualiza dentro de él y luego se llama renderMainCourt.
+    // Inyectamos un wrapper a renderMainCourt para refrescar el board también.
+    const _origRMC = renderMainCourt;
+    renderMainCourt = function () {
+      _origRMC.apply(this, arguments);
+      try { liveRenderBoard(); } catch (e) { /* silent */ }
+    };
+    obs; // referencia para evitar GC warning
+  })();
 
   // -------- teardown extendido --------
   window.addEventListener("pagehide", function () {
