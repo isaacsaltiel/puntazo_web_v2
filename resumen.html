@@ -508,6 +508,161 @@
     color: rgba(234, 242, 255, .65);
     font-size: 0.74rem; font-weight: 800; cursor: help;
   }
+
+  /* ── Etapa 15.5: claims (lista de reclamados + acciones) ── */
+  .rs-claims-wrap {
+    margin-top: 22px;
+    padding: 16px 16px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+  .rs-claims-title {
+    font-size: 0.92rem; font-weight: 800; color: #fff;
+    letter-spacing: 0.2px;
+    margin-bottom: 12px;
+  }
+  .rs-claims-list {
+    display: flex; flex-direction: column; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .rs-claim-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .rs-claim-row.is-mine { background: rgba(34, 180, 100, .08); border-color: rgba(34, 180, 100, .28); }
+  .rs-claim-row.is-conflict { background: rgba(255, 170, 60, .08); border-color: rgba(255, 170, 60, .35); }
+  .rs-claim-team {
+    flex-shrink: 0;
+    font-size: 0.68rem; font-weight: 800;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    color: rgba(207, 226, 255, .85);
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(11, 124, 255, .15);
+    border: 1px solid rgba(11, 124, 255, .30);
+  }
+  .rs-claim-name { flex: 1; min-width: 0; color: #fff; font-weight: 700; font-size: 0.92rem; word-break: break-word; }
+  .rs-claim-name small { display: block; color: rgba(234, 242, 255, .55); font-weight: 500; font-size: 0.78rem; margin-top: 2px; }
+  .rs-claim-btn {
+    flex-shrink: 0;
+    padding: 6px 12px; min-height: 32px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 80, 80, 0.40);
+    background: rgba(255, 80, 80, 0.10);
+    color: #ffd5d5;
+    font-family: inherit; font-weight: 800; font-size: 0.78rem;
+    cursor: pointer;
+  }
+  .rs-claim-btn:hover { background: rgba(255, 80, 80, 0.20); }
+
+  .rs-claim-slots {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .rs-claim-slot-btn {
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px dashed rgba(11, 124, 255, .35);
+    background: rgba(0, 79, 200, .08);
+    color: #cfe2ff;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.84rem;
+    cursor: pointer;
+    text-align: left;
+    line-height: 1.3;
+  }
+  .rs-claim-slot-btn:hover {
+    background: rgba(0, 79, 200, .18);
+    border-color: rgba(11, 124, 255, .55);
+  }
+  .rs-claim-slot-btn small {
+    display: block;
+    margin-top: 2px;
+    color: rgba(234, 242, 255, .55);
+    font-weight: 500;
+    font-size: 0.74rem;
+  }
+
+  .rs-claim-msg {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    line-height: 1.4;
+    display: none;
+  }
+  .rs-claim-msg.is-visible { display: block; }
+  .rs-claim-msg.error { background: rgba(255,80,80,.10); border: 1px solid rgba(255,80,80,.25); color: #ffd5d5; }
+  .rs-claim-msg.info { background: rgba(11,124,255,.10); border: 1px solid rgba(11,124,255,.25); color: #cfe2ff; }
+  .rs-claim-msg.ok { background: rgba(34,197,94,.10); border: 1px solid rgba(34,197,94,.30); color: #c8f7dc; }
+
+  /* Modal claim para resumen.html */
+  .rs-modal-backdrop {
+    position: fixed; inset: 0; z-index: 10000;
+    display: none; align-items: center; justify-content: center;
+    padding: 20px;
+    background: rgba(2, 6, 14, 0.72);
+    backdrop-filter: blur(10px);
+  }
+  .rs-modal-backdrop.is-open { display: flex; }
+  .rs-modal {
+    width: min(100%, 460px);
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    background: rgba(15, 22, 38, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 22px 22px 20px;
+    color: #eaf2ff;
+  }
+  .rs-modal h3 { margin: 0 0 8px; font-size: 1.15rem; font-weight: 900; color: #fff; }
+  .rs-modal p.note { margin: 0 0 14px; color: rgba(234,242,255,.65); font-size: 0.88rem; line-height: 1.5; }
+  .rs-modal-input {
+    width: 100%; min-height: 46px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    border-radius: 10px;
+    color: #fff;
+    font-family: inherit; font-size: 1rem; font-weight: 600;
+    padding: 0 12px;
+    margin-bottom: 12px;
+  }
+  .rs-modal-input:focus { outline: none; border-color: rgba(11,124,255,.55); background: rgba(0,79,200,.12); }
+  .rs-modal-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  .rs-modal-btn {
+    width: 100%; min-height: 48px;
+    border: none; border-radius: 999px; cursor: pointer;
+    font-family: inherit; font-weight: 800; font-size: 0.95rem;
+    color: #fff;
+  }
+  .rs-modal-btn.primary {
+    background: linear-gradient(135deg, #0B7CFF, #004FC8);
+    border: 1px solid rgba(11, 124, 255, 0.55);
+  }
+  .rs-modal-btn.secondary {
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .16);
+  }
+  .rs-team-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    background: rgba(11,124,255,.22);
+    border: 1px solid rgba(11,124,255,.40);
+    color: #cfe2ff;
+    margin-bottom: 12px;
+  }
 </style>
 </head>
 <body>
@@ -632,6 +787,14 @@
     <div class="rs-section-title">Clips del partido</div>
     <div id="rsClips"><!-- render por JS --></div>
 
+    <!-- Reclamados (Etapa 15.5) -->
+    <div id="rsClaimsWrap" class="rs-claims-wrap" style="display:none">
+      <div class="rs-claims-title">🙋 Reclamados</div>
+      <div id="rsClaimsList" class="rs-claims-list"></div>
+      <div id="rsClaimSlots" class="rs-claim-slots"></div>
+      <div id="rsClaimMsg" class="rs-claim-msg"></div>
+    </div>
+
   </div>
 
 </main>
@@ -641,6 +804,21 @@
   <div class="rs-capture-box">
     <div class="rs-capture-spinner"></div>
     <div>Generando imagen…</div>
+  </div>
+</div>
+
+<!-- Modal claim (Etapa 15.5) -->
+<div id="rsClaimModal" class="rs-modal-backdrop">
+  <div class="rs-modal" role="dialog" aria-modal="true">
+    <h3 id="rsClaimModalTitle">Vincularte a este slot</h3>
+    <p class="note" id="rsClaimModalNote">Confirma tu nombre para reclamar el slot.</p>
+    <span class="rs-team-tag" id="rsClaimModalTeamTag">Equipo 1</span>
+    <input id="rsClaimModalInput" type="text" class="rs-modal-input" maxlength="80" placeholder="Tu nombre" autocomplete="off" />
+    <div id="rsClaimModalMsg" class="rs-claim-msg"></div>
+    <div class="rs-modal-actions">
+      <button id="rsClaimModalSave" type="button" class="rs-modal-btn primary">Reclamar slot</button>
+      <button id="rsClaimModalCancel" type="button" class="rs-modal-btn secondary">Cancelar</button>
+    </div>
   </div>
 </div>
 
@@ -1346,7 +1524,253 @@
     } catch (e) {
       console.warn("[resumen] renderClipStates falló (no bloqueante)", e);
     }
+
+    // Sección "Reclamados" (Etapa 15.5). Falla silenciosa también.
+    try {
+      await renderClaimsSection(match);
+    } catch (e) {
+      console.warn("[resumen] renderClaimsSection falló (no bloqueante)", e);
+    }
   }
+
+  // ════════════════════════════════════════════════════════════
+  //  Etapa 15.5 — sección de claims en el resumen
+  // ════════════════════════════════════════════════════════════
+  const SLOT_EQUIPO_RS = ["team1", "team1", "team2", "team2"];
+  let _rsClaimsUnsub = null;
+  let _rsCurrentClaims = [];
+  let _rsClaimTargetIdx = -1;
+
+  const $rsClaimsWrap  = document.getElementById("rsClaimsWrap");
+  const $rsClaimsList  = document.getElementById("rsClaimsList");
+  const $rsClaimSlots  = document.getElementById("rsClaimSlots");
+  const $rsClaimMsg    = document.getElementById("rsClaimMsg");
+  const $rsClaimModal  = document.getElementById("rsClaimModal");
+  const $rsClaimModalTitle = document.getElementById("rsClaimModalTitle");
+  const $rsClaimModalNote  = document.getElementById("rsClaimModalNote");
+  const $rsClaimModalTag   = document.getElementById("rsClaimModalTeamTag");
+  const $rsClaimModalInput = document.getElementById("rsClaimModalInput");
+  const $rsClaimModalSave  = document.getElementById("rsClaimModalSave");
+  const $rsClaimModalCancel= document.getElementById("rsClaimModalCancel");
+  const $rsClaimModalMsg   = document.getElementById("rsClaimModalMsg");
+
+  function rsClaimsBySlot(arr) {
+    const idx = { 0: [], 1: [], 2: [], 3: [] };
+    (arr || []).forEach(function (c) {
+      if (c && Number.isInteger(c.slot) && c.slot >= 0 && c.slot <= 3) idx[c.slot].push(c);
+    });
+    return idx;
+  }
+
+  function setRsClaimFeedback(msg, cls) {
+    if (!$rsClaimMsg) return;
+    if (!msg) { $rsClaimMsg.className = "rs-claim-msg"; $rsClaimMsg.textContent = ""; return; }
+    $rsClaimMsg.className = "rs-claim-msg is-visible " + (cls || "info");
+    $rsClaimMsg.textContent = msg;
+  }
+
+  function renderClaimsUI() {
+    if (!currentMatch || !$rsClaimsWrap) return;
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    const isOwner = !!(user && user.uid === currentMatch.userId);
+    const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+    const byslot = rsClaimsBySlot(_rsCurrentClaims);
+
+    // -------- lista de reclamados (todos) + botones de gestión --------
+    $rsClaimsList.innerHTML = "";
+    const rows = [];
+    [0, 1, 2, 3].forEach(function (idx) {
+      const arr = byslot[idx] || [];
+      arr.forEach(function (c) {
+        const row = document.createElement("div");
+        const isMine = !!(user && user.uid === c.uid);
+        const inConflict = arr.length > 1;
+        row.className = "rs-claim-row" + (isMine ? " is-mine" : "") + (inConflict ? " is-conflict" : "");
+        const tag = document.createElement("span");
+        tag.className = "rs-claim-team";
+        tag.textContent = "Slot " + (idx + 1) + " · " + (SLOT_EQUIPO_RS[idx] === "team2" ? "Eq.2" : "Eq.1");
+        const nm = document.createElement("div");
+        nm.className = "rs-claim-name";
+        const slotName = (jugadores[idx] && jugadores[idx].nombre) ? jugadores[idx].nombre : "";
+        const dispName = c.displayName || slotName || "Sin nombre";
+        nm.innerHTML = escapeHTML(dispName) +
+          "<small>" +
+            (isMine ? "Tú reclamaste" : (inConflict ? "En conflicto" : "Reclamado")) +
+          "</small>";
+        row.appendChild(tag);
+        row.appendChild(nm);
+        if (isMine) {
+          const btn = document.createElement("button");
+          btn.type = "button"; btn.className = "rs-claim-btn";
+          btn.textContent = "Cancelar mi claim";
+          btn.addEventListener("click", function () { rsDoUnclaim(); });
+          row.appendChild(btn);
+        } else if (isOwner) {
+          const btn = document.createElement("button");
+          btn.type = "button"; btn.className = "rs-claim-btn";
+          btn.textContent = "Borrar este claim";
+          btn.addEventListener("click", function () { rsDoOwnerUnclaim(c.uid); });
+          row.appendChild(btn);
+        }
+        rows.push(row);
+      });
+    });
+    rows.forEach(function (r) { $rsClaimsList.appendChild(r); });
+    if (rows.length === 0) {
+      const empty = document.createElement("div");
+      empty.style.color = "rgba(234,242,255,.55)";
+      empty.style.fontSize = "0.88rem";
+      empty.style.lineHeight = "1.4";
+      empty.textContent = "Aún nadie se vinculó a un slot.";
+      $rsClaimsList.appendChild(empty);
+    }
+
+    // -------- botones de claim (invitados) --------
+    // Mostramos botones para slots: vacíos O con nombre (sin uid). NO mostramos
+    // botón "claim" para slots con `uid` puesto por el dueño (Etapa 15).
+    $rsClaimSlots.innerHTML = "";
+    if (!isOwner) {
+      [0, 1, 2, 3].forEach(function (idx) {
+        const j = jugadores[idx] || { nombre: "", equipo: SLOT_EQUIPO_RS[idx] };
+        const arr = byslot[idx] || [];
+        const ownedByDueno = !!(j.uid);
+        const myClaim = arr.find(function (c) { return user && c.uid === user.uid; });
+        const someone = arr.length ? arr[arr.length - 1] : null;
+        if (ownedByDueno) return;
+        if (myClaim && myClaim.slot === idx) return; // ya está reflejado en la lista
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "rs-claim-slot-btn";
+        const eqLabel = (j.equipo === "team2" || SLOT_EQUIPO_RS[idx] === "team2") ? "Equipo 2" : "Equipo 1";
+        let label;
+        if (j.nombre) {
+          label = "👤 Soy yo (" + escapeHTML(j.nombre) + ")";
+        } else if (someone) {
+          label = "🔁 Reemplazar reclamo de " + escapeHTML(someone.displayName || "alguien");
+        } else {
+          label = "🙋 Tomar este slot";
+        }
+        btn.innerHTML = label + "<small>Slot " + (idx + 1) + " · " + escapeHTML(eqLabel) + "</small>";
+        btn.addEventListener("click", function () { rsOpenClaimModal(idx); });
+        $rsClaimSlots.appendChild(btn);
+      });
+    }
+
+    $rsClaimsWrap.style.display = "block";
+  }
+
+  function rsOpenClaimModal(idx) {
+    if (!$rsClaimModal) return;
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) {
+      _rsClaimTargetIdx = idx;
+      if (window.PuntazoAuth && typeof window.PuntazoAuth.requireAuth === "function") {
+        window.PuntazoAuth.requireAuth(function () { rsOpenClaimModal(idx); });
+      }
+      return;
+    }
+    _rsClaimTargetIdx = idx;
+    const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+    const j = jugadores[idx] || {};
+    const slotName = j.nombre || "";
+    const eq = (j.equipo === "team1" || j.equipo === "team2") ? j.equipo : SLOT_EQUIPO_RS[idx];
+    if ($rsClaimModalTag) $rsClaimModalTag.textContent = (eq === "team2") ? "Equipo 2" : "Equipo 1";
+    if ($rsClaimModalTitle) $rsClaimModalTitle.textContent = slotName ? "¿Eres " + slotName + "?" : "Vincularte a este slot";
+    if ($rsClaimModalNote) $rsClaimModalNote.textContent = slotName
+      ? "Confirma o edita el nombre. Tu cuenta quedará vinculada al slot."
+      : "Pon tu nombre para que el dueño te identifique.";
+    if ($rsClaimModalInput) {
+      const def = slotName || (user.displayName || "");
+      $rsClaimModalInput.value = String(def || "").slice(0, 80);
+    }
+    if ($rsClaimModalMsg) { $rsClaimModalMsg.className = "rs-claim-msg"; $rsClaimModalMsg.textContent = ""; }
+    $rsClaimModal.classList.add("is-open");
+    setTimeout(function () { try { $rsClaimModalInput.focus(); $rsClaimModalInput.select(); } catch (_) {} }, 50);
+  }
+
+  function rsCloseClaimModal() {
+    if ($rsClaimModal) $rsClaimModal.classList.remove("is-open");
+    _rsClaimTargetIdx = -1;
+  }
+
+  if ($rsClaimModalCancel) $rsClaimModalCancel.addEventListener("click", rsCloseClaimModal);
+  if ($rsClaimModal) {
+    $rsClaimModal.addEventListener("click", function (e) {
+      if (e.target === $rsClaimModal) rsCloseClaimModal();
+    });
+  }
+  if ($rsClaimModalSave) {
+    $rsClaimModalSave.addEventListener("click", async function () {
+      if (!currentMatch || !currentMatch.id) return;
+      if (_rsClaimTargetIdx < 0) return;
+      const nm = String($rsClaimModalInput.value || "").trim().slice(0, 80);
+      $rsClaimModalSave.disabled = true;
+      $rsClaimModalSave.textContent = "Guardando…";
+      try {
+        await window.PuntazoMatches.claimSlot(currentMatch.id, _rsClaimTargetIdx, nm);
+        rsCloseClaimModal();
+        setRsClaimFeedback("Slot reclamado ✅", "ok");
+        setTimeout(function () { setRsClaimFeedback(""); }, 4000);
+      } catch (e) {
+        console.error("[resumen] claimSlot failed", e);
+        if ($rsClaimModalMsg) {
+          $rsClaimModalMsg.className = "rs-claim-msg is-visible error";
+          $rsClaimModalMsg.textContent = "No se pudo reclamar: " + (e && e.message ? e.message : "error desconocido");
+        }
+      } finally {
+        $rsClaimModalSave.disabled = false;
+        $rsClaimModalSave.textContent = "Reclamar slot";
+      }
+    });
+  }
+
+  async function rsDoUnclaim() {
+    if (!currentMatch || !currentMatch.id) return;
+    try {
+      await window.PuntazoMatches.unclaimSlot(currentMatch.id);
+      setRsClaimFeedback("Claim cancelado", "info");
+      setTimeout(function () { setRsClaimFeedback(""); }, 3000);
+    } catch (e) {
+      console.error("[resumen] unclaimSlot failed", e);
+      setRsClaimFeedback("No se pudo cancelar: " + (e && e.message ? e.message : "error"), "error");
+    }
+  }
+
+  async function rsDoOwnerUnclaim(uid) {
+    if (!currentMatch || !currentMatch.id) return;
+    try {
+      await window.PuntazoMatches.unclaimSlotAsOwner(currentMatch.id, uid);
+      setRsClaimFeedback("Claim borrado", "info");
+      setTimeout(function () { setRsClaimFeedback(""); }, 3000);
+    } catch (e) {
+      console.error("[resumen] unclaimSlotAsOwner failed", e);
+      setRsClaimFeedback("No se pudo borrar el claim: " + (e && e.message ? e.message : "error"), "error");
+    }
+  }
+
+  async function renderClaimsSection(match) {
+    if (!match || !match.id || !$rsClaimsWrap) return;
+    if (!window.PuntazoMatches || typeof window.PuntazoMatches.subscribeToClaims !== "function") return;
+
+    // Teardown anterior si lo hubiera (defensa: renderResumen sólo se llama una vez).
+    if (_rsClaimsUnsub) { try { _rsClaimsUnsub(); } catch (_) {} _rsClaimsUnsub = null; }
+
+    _rsClaimsUnsub = window.PuntazoMatches.subscribeToClaims(match.id, function (claims) {
+      _rsCurrentClaims = claims || [];
+      renderClaimsUI();
+    }, function (err) {
+      console.warn("[resumen] subscribeToClaims onError", err);
+      _rsCurrentClaims = [];
+      renderClaimsUI();
+    });
+
+    // Re-render al cambiar auth (login post-claim attempt o logout)
+    window.addEventListener("puntazo:auth-changed", renderClaimsUI);
+  }
+
+  window.addEventListener("pagehide", function () {
+    if (_rsClaimsUnsub) { try { _rsClaimsUnsub(); } catch (_) {} _rsClaimsUnsub = null; }
+  });
 
   // ════════════════════════════════════════════════════════════
   //  Bootstrap — NO exige login (matches ended son públicos)

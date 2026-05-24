@@ -475,6 +475,139 @@
     return out;
   }
 
+  // =================================================================
+  // Claims (Etapa 15.5) — subcollection matches/{matchId}/claims/{uid}
+  // =================================================================
+  // Modelo: cada invitado autenticado puede reclamar UN slot (0..3) del
+  // partido. El doc id es el `auth.uid`, así garantiza un claim por user.
+  // Schema: { slot, claimedAt, displayName? }
+  //
+  // NOTA importante sobre la rule de CREATE:
+  //   request.resource.data.claimedAt == request.time
+  // Firestore materializa el sentinel serverTimestamp() a request.time
+  // ANTES de evaluar las reglas, así que enviar FV().serverTimestamp() en
+  // `claimedAt` satisface el chequeo. La rule de UPDATE NO lo exige.
+
+  const CLAIMS_SUB = "claims";
+
+  function _claimsCol(matchId) {
+    const id = nonEmptyString(matchId, "matchId");
+    return db().collection(COL).doc(id).collection(CLAIMS_SUB);
+  }
+
+  function _claimDocToObj(d) {
+    const data = d.data() || {};
+    return {
+      uid: d.id,
+      slot: Number.isInteger(data.slot) ? data.slot : Number(data.slot),
+      claimedAt: data.claimedAt || null,
+      displayName: typeof data.displayName === "string" ? data.displayName : "",
+    };
+  }
+
+  // subscribeToClaims: onSnapshot a la subcollection. Devuelve unsubscribe.
+  // onUpdate recibe Array<{ uid, slot, claimedAt, displayName }>, ordenado
+  // por claimedAt ascendente (más antiguo primero) — útil para resolución
+  // visual de conflictos (el más reciente es el último del array).
+  function subscribeToClaims(matchId, onUpdate, onError) {
+    const col = _claimsCol(matchId);
+    return col.onSnapshot(function (snap) {
+      const arr = [];
+      snap.forEach(function (d) { arr.push(_claimDocToObj(d)); });
+      arr.sort(function (a, b) {
+        const am = toMillis(a.claimedAt) || 0;
+        const bm = toMillis(b.claimedAt) || 0;
+        return am - bm;
+      });
+      if (typeof onUpdate === "function") onUpdate(arr);
+    }, function (err) {
+      if (typeof onError === "function") onError(err);
+    });
+  }
+
+  // claimSlot: crea o actualiza el claim del usuario actual.
+  // - slotIndex debe estar en 0..3.
+  // - displayName es opcional; si se omite, se usa user.displayName.
+  // - Usa set() (sin merge) para que el doc quede con shape canónico.
+  async function claimSlot(matchId, slotIndex, displayName) {
+    const user = requireUser();
+    const slot = Number(slotIndex);
+    if (!Number.isInteger(slot) || slot < 0 || slot > 3) {
+      throw new Error("[Matches] slot inválido (debe ser 0..3).");
+    }
+    const id = nonEmptyString(matchId, "matchId");
+    const nm = (typeof displayName === "string" && displayName.trim())
+      ? displayName.trim().slice(0, 80)
+      : (user.displayName ? String(user.displayName).slice(0, 80) : "");
+    const ref = db().collection(COL).doc(id).collection(CLAIMS_SUB).doc(user.uid);
+    await ref.set({
+      slot: slot,
+      claimedAt: FV().serverTimestamp(),
+      displayName: nm,
+    });
+  }
+
+  // unclaimSlot: borra el claim del usuario actual.
+  async function unclaimSlot(matchId) {
+    const user = requireUser();
+    const id = nonEmptyString(matchId, "matchId");
+    await db().collection(COL).doc(id).collection(CLAIMS_SUB).doc(user.uid).delete();
+  }
+
+  // unclaimSlotAsOwner: el dueño del partido borra el claim de OTRO usuario.
+  // La rule de delete lo permite por get(matches/$matchId).data.userId ==
+  // request.auth.uid. Si el caller no es el dueño, Firestore devuelve
+  // permission-denied.
+  async function unclaimSlotAsOwner(matchId, claimUid) {
+    requireUser();
+    const id = nonEmptyString(matchId, "matchId");
+    const cu = nonEmptyString(claimUid, "claimUid");
+    await db().collection(COL).doc(id).collection(CLAIMS_SUB).doc(cu).delete();
+  }
+
+  // mergeMatchWithClaims: devuelve copia del match con jugadores[]
+  // enriquecido por los claims. NO muta el doc original.
+  // Reglas de merge:
+  //   - Para cada claim, slot ∈ 0..3:
+  //     · Si jugadores[slot] tiene `uid` ya ≠ del claim → conflicto: NO
+  //       se sobreescribe (gana el `uid` del schema, que fue puesto a
+  //       conciencia por el dueño en Etapa 15). El claim queda visible
+  //       como "pendiente" — lo decide la UI.
+  //     · Si jugadores[slot] está vacío o sin uid → se pone uid del claim
+  //       y, si nombre estaba vacío, también displayName.
+  //   - Si hay 2 claims al mismo slot, gana el más reciente (claims viene
+  //     ordenado ascendente; iteramos en orden, último escribe).
+  function mergeMatchWithClaims(match, claims) {
+    if (!match || typeof match !== "object") return match;
+    const out = Object.assign({}, match);
+    const base = Array.isArray(match.jugadores) ? match.jugadores : [];
+    // Asegurar 4 slots con equipo por defecto.
+    const slots = [0, 1, 2, 3].map(function (i) {
+      const defaultEquipo = LEGACY_INDEX_TO_TEAM[i] || "team1";
+      const src = base[i] || {};
+      const o = {
+        nombre: String(src.nombre || ""),
+        equipo: (src.equipo === "team1" || src.equipo === "team2") ? src.equipo : defaultEquipo,
+      };
+      if (src.uid) o.uid = src.uid;
+      if (src.claimedByUid) o.claimedByUid = src.claimedByUid;
+      return o;
+    });
+    if (Array.isArray(claims)) {
+      claims.forEach(function (c) {
+        if (!c || !Number.isInteger(c.slot) || c.slot < 0 || c.slot > 3) return;
+        const cur = slots[c.slot];
+        // Conflicto con uid ya asignado por el dueño (Etapa 15): respetar
+        // el del schema. La UI puede mostrar el claim como pendiente.
+        if (cur.uid && cur.uid !== c.uid) return;
+        cur.claimedByUid = c.uid;
+        if (!cur.nombre && c.displayName) cur.nombre = String(c.displayName).slice(0, 80);
+      });
+    }
+    out.jugadores = slots;
+    return out;
+  }
+
   window.PuntazoMatches = {
     create,
     update: updateMatch,
@@ -484,6 +617,11 @@
     listByUser,
     getActiveForUser,
     findClipsForMatch,
+    subscribeToClaims,
+    claimSlot,
+    unclaimSlot,
+    unclaimSlotAsOwner,
+    mergeMatchWithClaims,
     score: {
       validateSet,
       validateTiebreak,
