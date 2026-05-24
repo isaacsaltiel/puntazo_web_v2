@@ -1,0 +1,92 @@
+// =============================================================
+// Firestore Security Rules — Puntazo · claims/ (Etapa 15.5 — DRAFT)
+// =============================================================
+//
+// Subcollection NUEVA: matches/{matchId}/claims/{claimUid}
+// Modelo "link compartible + claim de slot": cualquier persona con
+// el matchId puede leer; usuarios autenticados pueden crear/actualizar
+// su propio claim; el dueño del partido puede borrar claims ajenos
+// (para resolver conflictos), cada usuario puede borrar el suyo.
+//
+// INSTRUCCIONES DE PEGADO:
+// -----------------------------------------------------------------
+// Pegar el bloque `match /matches/{matchId}/claims/{claimUid} { ... }`
+// dentro del `match /databases/{database}/documents { ... }` activo,
+// ANTES del catch-all denegado.
+//
+// PRESERVAR todos los bloques existentes EXACTAMENTE como están hoy.
+// Específicamente:
+//   - `match /matches/{matchId}` de Etapa 15 (read público, create,
+//     update con inmutables, delete denegado) NO se toca.
+//   - Bloques `reactions/`, `usuarios/`, `clip_states/` y el
+//     `match /{document=**} { allow read, write: if false; }` final
+//     NO se tocan.
+//
+// La rule usa get(/databases/$(database)/documents/matches/$(matchId))
+// para validar ownership en delete. Esto cuenta como 1 read adicional
+// por cada delete, lo cual es aceptable (los deletes son raros y solo
+// los hace el dueño o el propio reclamante).
+//
+// -----------------------------------------------------------------
+// BLOQUE A AGREGAR DENTRO DE `match /databases/{database}/documents`:
+// -----------------------------------------------------------------
+
+match /matches/{matchId}/claims/{claimUid} {
+
+  // READ — público (mismo modelo que el match parent: quien tiene el
+  // matchId puede leer todo el subárbol, incluidos los claims).
+  allow read: if true;
+
+  // CREATE — sólo usuario autenticado, sólo su propio claim,
+  // slot ∈ [0..3], claimedAt obligatorio == request.time
+  // (satisfecho por firebase.firestore.FieldValue.serverTimestamp()).
+  allow create: if request.auth != null
+                && request.auth.uid == claimUid
+                && request.resource.data.slot in [0, 1, 2, 3]
+                && request.resource.data.claimedAt == request.time;
+
+  // UPDATE — sólo el propio claim, slot debe seguir siendo válido.
+  // claimedAt NO se exige inmutable (un re-claim del mismo user al
+  // mismo o distinto slot puede refrescar el timestamp).
+  allow update: if request.auth != null
+                && request.auth.uid == claimUid
+                && request.resource.data.slot in [0, 1, 2, 3];
+
+  // DELETE — el propio reclamante O el dueño del partido (vía get()).
+  // El get() consume 1 read por delete; volumen esperado muy bajo.
+  allow delete: if request.auth != null
+                && (
+                     request.auth.uid == claimUid
+                     || request.auth.uid ==
+                        get(/databases/$(database)/documents/matches/$(matchId)).data.userId
+                   );
+}
+
+// =============================================================
+// Notas:
+//
+// 1) Schema esperado del doc:
+//    {
+//      slot: 0 | 1 | 2 | 3,                 // posición en jugadores[]
+//      claimedAt: Timestamp (serverTs),
+//      displayName: string (opcional, ≤80 chars)
+//    }
+//
+// 2) Endurecimiento opcional (NO incluido por simplicidad):
+//      && request.resource.data.displayName is string
+//      && request.resource.data.displayName.size() <= 80
+//      && request.resource.data.keys().hasOnly(['slot','claimedAt','displayName'])
+//
+// 3) Sin índices compuestos: el subscribeToClaims es una colección
+//    pequeña (≤ ~10 claims por partido) y se ordena client-side por
+//    claimedAt. Firestore no requiere índice para esto.
+//
+// 4) Doc id = auth.uid garantiza unicidad: un usuario sólo puede tener
+//    UN claim por partido, lo cual es la regla de negocio.
+//
+// 5) Si en el futuro se quiere endurecer "no se puede claim en partido
+//    cancelled", la rule de create puede consultar:
+//      && get(/databases/$(database)/documents/matches/$(matchId)).data.status != "cancelled"
+//    A cambio de 1 read extra por create. No incluido por simplicidad.
+//
+// =============================================================
