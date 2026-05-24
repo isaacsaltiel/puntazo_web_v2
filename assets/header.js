@@ -107,6 +107,18 @@
   }
 
   // ── Render ───────────────────────────────────────────────────
+  // Toggle del burger: definido como global ANTES de renderizar, así el
+  // onclick="window.toggleNavMenu()" del botón burger funciona desde el
+  // primer click sin esperar listeners attachados async.
+  window.toggleNavMenu = function (ev) {
+    if (ev && typeof ev.stopPropagation === "function") ev.stopPropagation();
+    const nav = document.getElementById("nav-menu")
+              || document.querySelector(".nav-links")
+              || document.querySelector(".navbar");
+    if (!nav) return;
+    nav.classList.toggle("show");
+  };
+
   function renderHeader() {
     if (variant === "landing") {
       root.innerHTML = `
@@ -124,7 +136,7 @@
             ${getPhoneButtonCTA()}
             ${getClipsCTA()}
             <div class="pz-auth-slot pz-auth-slot--landing" data-auth-slot></div>
-            <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú">☰</button>
+            <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Abrir menú" onclick="window.toggleNavMenu(event)">☰</button>
           </div>
         </nav>`;
       try { window.dispatchEvent(new CustomEvent("puntazo:header-rendered")); } catch {}
@@ -137,7 +149,7 @@
         <a href="landing.html" class="logo-link">
           <img src="assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
         </a>
-        <button id="menu-toggle" class="menu-toggle" aria-label="Abrir menú">☰</button>
+        <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Abrir menú" onclick="window.toggleNavMenu(event)">☰</button>
         <nav class="navbar" id="nav-menu">
           <a href="landing.html">Inicio</a>
           <a href="landing.html#clubs">Para clubs</a>
@@ -155,27 +167,31 @@
     window.closeMenu = function () {
       document.getElementById("nav-menu")?.classList.remove("show");
       document.querySelector(".navbar")?.classList.remove("show");
+      document.querySelector(".nav-links")?.classList.remove("show");
     };
   }
 
+  // Defensa adicional: cerrar el nav si el usuario hace click fuera o hace scroll.
+  // El toggle principal está en onclick inline del botón (window.toggleNavMenu).
   function setupMenuToggle() {
-    let attempts = 0;
-    function tryAttach() {
-      attempts++;
-      const btn = document.querySelector(".menu-toggle") || document.getElementById("menu-toggle");
-      const nav = document.querySelector(".navbar") || document.getElementById("nav-menu");
-      if (!btn || !nav) { if (attempts < 10) setTimeout(tryAttach, 100); return; }
-      if (btn.__pz_menu_attached) return;
-      btn.__pz_menu_attached = true;
-      btn.addEventListener("click", function (e) { e.stopPropagation(); nav.classList.toggle("show"); });
-      document.addEventListener("click", function (e) {
-        try { if (nav.classList.contains("show") && !nav.contains(e.target) && e.target !== btn) nav.classList.remove("show"); } catch {}
-      });
-      window.addEventListener("scroll", function () {
-        try { if (nav.classList.contains("show")) nav.classList.remove("show"); } catch {}
-      }, { passive: true });
-    }
-    tryAttach();
+    const getNav = () => document.getElementById("nav-menu")
+                       || document.querySelector(".nav-links")
+                       || document.querySelector(".navbar");
+    const getBtn = () => document.getElementById("menu-toggle")
+                       || document.querySelector(".menu-toggle");
+
+    document.addEventListener("click", function (e) {
+      const nav = getNav(); const btn = getBtn();
+      if (!nav || !btn) return;
+      if (!nav.classList.contains("show")) return;
+      if (nav.contains(e.target)) return;
+      if (btn === e.target || btn.contains(e.target)) return;
+      nav.classList.remove("show");
+    });
+    window.addEventListener("scroll", function () {
+      const nav = getNav();
+      if (nav && nav.classList.contains("show")) nav.classList.remove("show");
+    }, { passive: true });
   }
 
   function setupDropdownOutsideClose() {
