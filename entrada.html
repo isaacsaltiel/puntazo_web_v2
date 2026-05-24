@@ -27,6 +27,7 @@
 <script src="/assets/auth.js"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/clubs-catalog.js"></script>
+<script src="/assets/court-svg.js"></script>
 
 <style>
   .entrada-wrap {
@@ -42,15 +43,53 @@
   .entrada-header {
     text-align: center;
     margin-bottom: 28px;
+    position: relative;
   }
+  /* Etapa 16.3 — cancha SVG decorativa detrás del logo */
+  .entrada-court-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.22;
+  }
+  .entrada-court-bg .pz-court-svg {
+    width: 280px;
+    max-width: 90%;
+    height: auto;
+  }
+  .entrada-header > .entrada-logo,
+  .entrada-header > .entrada-title,
+  .entrada-header > .entrada-loc-name,
+  .entrada-header > .entrada-sub,
+  .selector-header > .entrada-court-bg ~ * {
+    position: relative;
+    z-index: 1;
+  }
+  .selector-header { position: relative; }
+  .selector-header > .entrada-logo,
+  .selector-header > .selector-title,
+  .selector-header > .selector-sub,
+  .selector-header > * { position: relative; z-index: 1; }
+  .selector-header > .entrada-court-bg { z-index: 0; }
 
   .entrada-logo {
-    width: auto;
-    height: 64px;
-    max-width: 70%;
-    margin: 0 auto 16px;
+    /* El PNG real es horizontal (~1.82:1). Dejamos que el aspect ratio
+       mande: damos un ancho objetivo y altura auto, con tope de alto
+       para que no se vuelva enorme en pantallas chicas. */
+    width: 220px;
+    max-width: 75%;
+    height: auto;
+    max-height: 110px;
+    margin: 0 auto 18px;
     display: block;
     object-fit: contain;
+  }
+  @media (max-width: 480px) {
+    .entrada-logo { width: 200px; max-height: 96px; }
   }
 
   .entrada-topbar {
@@ -408,6 +447,7 @@
     <div id="selMsg" class="selector-msg" style="display:none"></div>
 
     <div class="selector-header">
+      <div class="entrada-court-bg" id="selCourtBg" aria-hidden="true"></div>
       <img class="entrada-logo" src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
       <div id="selTitle" class="selector-title">Elige tu club</div>
       <div id="selSub" class="selector-sub">Para iniciar tu partido</div>
@@ -419,6 +459,7 @@
   <!-- Vista de entrada lista (con loc/can/lado ya resueltos) -->
   <div id="entradaContent" style="display:none">
     <div class="entrada-header">
+      <div class="entrada-court-bg" id="entradaCourtBg" aria-hidden="true"></div>
       <img class="entrada-logo" src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
       <div class="entrada-title">Estás en</div>
       <div id="locName" class="entrada-loc-name">…</div>
@@ -456,6 +497,21 @@
 <script>
 (function () {
   "use strict";
+
+  // Etapa 16.3 — cancha SVG decorativa en headers
+  (function injectCourtBgs() {
+    if (!window.PuntazoCourtSVG) return;
+    var html = window.PuntazoCourtSVG.topDown({
+      width: 280, height: 140,
+      team1Color: "#0B7CFF", team2Color: "#c8e835",
+      showNet: true, landscape: true,
+    });
+    var ids = ["selCourtBg", "entradaCourtBg"];
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el && !el.innerHTML.trim()) el.innerHTML = html;
+    });
+  })();
 
   // ---------- helpers ----------
   function getQueryParams() {
