@@ -529,6 +529,10 @@
   // - slotIndex debe estar en 0..3.
   // - displayName es opcional; si se omite, se usa user.displayName.
   // - Usa set() (sin merge) para que el doc quede con shape canónico.
+  //
+  // Etapa 15.7: el doc incluye `uid: user.uid` (idéntico al doc id) para
+  // permitir queries con collectionGroup('claims').where('uid','==', miUid)
+  // desde perfil.html ("Mis partidos"). Las rules ya validan que coincida.
   async function claimSlot(matchId, slotIndex, displayName) {
     const user = requireUser();
     const slot = Number(slotIndex);
@@ -541,6 +545,7 @@
       : (user.displayName ? String(user.displayName).slice(0, 80) : "");
     const ref = db().collection(COL).doc(id).collection(CLAIMS_SUB).doc(user.uid);
     await ref.set({
+      uid: user.uid,
       slot: slot,
       claimedAt: FV().serverTimestamp(),
       displayName: nm,
