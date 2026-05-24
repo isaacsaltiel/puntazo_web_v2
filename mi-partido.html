@@ -376,11 +376,382 @@
   .mp-state-msg h2 { font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
   .mp-state-msg p { color: rgba(234, 242, 255, .65); margin-bottom: 18px; font-size: 0.92rem; }
 
+  /* ── Etapa 15: selector de modo + cancha visual + scoring +/- ── */
+  .mp-modo-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin: 10px 0 4px;
+  }
+  .mp-modo-btn {
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.04);
+    border-radius: 12px;
+    color: rgba(234,242,255,.78);
+    padding: 10px 8px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.86rem;
+    cursor: pointer;
+    transition: all .15s ease;
+    line-height: 1.2;
+    text-align: center;
+  }
+  .mp-modo-btn .desc {
+    display: block;
+    font-weight: 500;
+    font-size: 0.72rem;
+    color: rgba(234,242,255,.45);
+    margin-top: 2px;
+  }
+  .mp-modo-btn:hover { background: rgba(0,79,200,.10); }
+  .mp-modo-btn.is-selected {
+    background: rgba(0,79,200,.22);
+    border-color: rgba(11,124,255,.55);
+    color: #fff;
+  }
+  .mp-modo-btn.is-selected .desc { color: rgba(207,226,255,.85); }
+
+  .mp-court-wrap {
+    margin: 14px auto 8px;
+    padding: 18px 14px;
+    background: linear-gradient(180deg, rgba(11,80,200,.18), rgba(0,40,120,.10));
+    border: 1px solid rgba(11,124,255,.22);
+    border-radius: 18px;
+    position: relative;
+  }
+  .mp-court-team-label {
+    font-size: 0.70rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: rgba(207,226,255,.85);
+    text-align: center;
+    margin: 4px 0;
+  }
+  .mp-court-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 8px;
+    position: relative;
+    background: rgba(11,124,255,.06);
+    border: 2px solid rgba(255,255,255,.28);
+    border-radius: 12px;
+    padding: 10px;
+    min-height: 200px;
+  }
+  /* línea de la red (horizontal central) */
+  .mp-court-grid::before {
+    content: "";
+    position: absolute;
+    left: 8px; right: 8px;
+    top: 50%; transform: translateY(-50%);
+    height: 3px;
+    background: repeating-linear-gradient(90deg,
+      rgba(255,255,255,.55) 0 6px,
+      transparent 6px 12px);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .mp-slot {
+    position: relative;
+    z-index: 2;
+    min-height: 84px;
+    border: 1px dashed rgba(255,255,255,.22);
+    background: rgba(255,255,255,.04);
+    border-radius: 10px;
+    color: rgba(234,242,255,.65);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 6px;
+    text-align: center;
+    transition: all .16s ease;
+    font-family: inherit;
+  }
+  .mp-slot:hover {
+    background: rgba(0,79,200,.14);
+    border-color: rgba(11,124,255,.45);
+  }
+  .mp-slot.is-filled {
+    background: rgba(0,79,200,.14);
+    border-style: solid;
+    border-color: rgba(11,124,255,.40);
+    color: #fff;
+  }
+  .mp-slot .slot-plus { font-size: 1.6rem; font-weight: 300; color: rgba(207,226,255,.75); line-height: 1; }
+  .mp-slot .slot-hint { font-size: 0.70rem; color: rgba(234,242,255,.45); font-weight: 600; }
+  .mp-slot .slot-name { font-size: 0.95rem; font-weight: 800; color: #fff; line-height: 1.15; word-break: break-word; }
+  .mp-slot .slot-photo {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(11,124,255,.55);
+    margin-bottom: 2px;
+  }
+  .mp-court-hint {
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: rgba(234,242,255,.55);
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* Bottom sheet para editar slot */
+  .mp-sheet-backdrop {
+    position: fixed; inset: 0; z-index: 10000;
+    display: none; align-items: flex-end; justify-content: center;
+    background: rgba(2,6,14,0.62);
+    backdrop-filter: blur(8px);
+  }
+  .mp-sheet-backdrop.is-open { display: flex; }
+  .mp-sheet {
+    width: 100%;
+    max-width: 480px;
+    background: rgba(15,22,38,.98);
+    border-top: 1px solid rgba(255,255,255,.12);
+    border-radius: 18px 18px 0 0;
+    padding: 18px 18px 24px;
+    color: #eaf2ff;
+    box-shadow: 0 -16px 40px rgba(0,0,0,.45);
+  }
+  .mp-sheet h3 { margin: 0 0 10px; font-size: 1.05rem; font-weight: 800; }
+  .mp-sheet-team-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    background: rgba(11,124,255,.22);
+    border: 1px solid rgba(11,124,255,.40);
+    color: #cfe2ff;
+    margin-bottom: 12px;
+  }
+  .mp-sheet-input {
+    width: 100%;
+    min-height: 46px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    border-radius: 10px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0 12px;
+    margin-bottom: 10px;
+  }
+  .mp-sheet-input:focus { outline: none; border-color: rgba(11,124,255,.55); background: rgba(0,79,200,.12); }
+  .mp-sheet-actions { display: flex; flex-direction: column; gap: 8px; }
+  .mp-sheet-btn {
+    width: 100%; min-height: 46px;
+    border: none; border-radius: 999px; cursor: pointer;
+    font-family: inherit; font-weight: 800; font-size: 0.95rem;
+    transition: all .15s ease;
+  }
+  .mp-sheet-btn.primary {
+    background: linear-gradient(135deg, #0B7CFF, #004FC8);
+    color: #fff;
+    border: 1px solid rgba(11,124,255,.55);
+  }
+  .mp-sheet-btn.secondary {
+    background: rgba(255,255,255,.06);
+    color: #eaf2ff;
+    border: 1px solid rgba(255,255,255,.14);
+  }
+  .mp-sheet-btn.danger {
+    background: rgba(255,80,80,.08);
+    color: #ffd5d5;
+    border: 1px solid rgba(255,80,80,.30);
+  }
+
+  /* Scoring UI +/- */
+  .mp-score-set {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.10);
+    transition: border-color .18s ease, background .18s ease;
+  }
+  .mp-score-set.is-valid {
+    background: rgba(34,180,100,.08);
+    border-color: rgba(34,180,100,.38);
+  }
+  .mp-score-set.is-invalid {
+    background: rgba(255,80,80,.06);
+    border-color: rgba(255,80,80,.30);
+  }
+  .mp-score-set-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .mp-score-set-label { font-size: 0.82rem; font-weight: 800; color: rgba(234,242,255,.85); }
+  .mp-score-set-status { font-size: 0.74rem; font-weight: 700; color: rgba(234,242,255,.55); }
+  .mp-score-set.is-valid .mp-score-set-status { color: #9af2c0; }
+  .mp-score-set.is-invalid .mp-score-set-status { color: #ffb1a3; }
+  .mp-score-set-rmv {
+    margin-left: 8px;
+    background: transparent;
+    border: none;
+    color: rgba(234,242,255,.55);
+    font-size: 1rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px 6px;
+  }
+  .mp-score-set-rmv:hover { color: #ffb1a3; }
+
+  .mp-score-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .mp-score-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 10px;
+  }
+  .mp-score-cell-team {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: rgba(207,226,255,.78);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    flex-basis: 100%;
+    text-align: center;
+  }
+  .mp-score-cell-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; }
+  .mp-score-ctrl {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .mp-score-pm {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(255,255,255,.06);
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .15s ease, transform .12s ease;
+    font-family: inherit;
+  }
+  .mp-score-pm:hover { background: rgba(11,124,255,.22); }
+  .mp-score-pm:active { transform: scale(0.94); }
+  .mp-score-pm[disabled] { opacity: .35; cursor: not-allowed; }
+  .mp-score-val {
+    min-width: 38px;
+    font-size: 1.45rem;
+    font-weight: 900;
+    color: #fff;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .mp-tb-block {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(255,255,255,.16);
+  }
+  .mp-tb-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: rgba(255,170,60,.85);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .mp-add-set {
+    width: 100%;
+    min-height: 42px;
+    background: rgba(255,255,255,.04);
+    border: 1px dashed rgba(255,255,255,.22);
+    border-radius: 10px;
+    color: rgba(207,226,255,.85);
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .mp-add-set:hover:not(:disabled) {
+    background: rgba(0,79,200,.14);
+    border-color: rgba(11,124,255,.45);
+    color: #fff;
+  }
+  .mp-add-set:disabled { opacity: .35; cursor: not-allowed; }
+
+  .mp-winner-banner {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255,215,90,.10);
+    border: 1px solid rgba(255,215,90,.30);
+    color: #ffe49a;
+    font-weight: 800;
+    font-size: 0.94rem;
+    text-align: center;
+  }
+
+  /* Reta: 2 botones grandes */
+  .mp-reta-pick {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .mp-reta-btn {
+    min-height: 72px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.04);
+    color: #fff;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all .16s ease;
+    padding: 10px;
+    line-height: 1.25;
+  }
+  .mp-reta-btn:hover {
+    background: rgba(0,79,200,.18);
+    border-color: rgba(11,124,255,.45);
+  }
+  .mp-reta-btn.is-selected {
+    background: rgba(34,180,100,.16);
+    border-color: rgba(34,180,100,.50);
+    box-shadow: 0 0 16px rgba(34,180,100,.20);
+  }
+
+  /* Libre: contadores de games */
+  .mp-libre-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
   @media (max-width: 480px) {
     .mp-wrap { padding-top: 75px; }
     .mp-loc-name { font-size: 1.25rem; }
     .mp-set-row { grid-template-columns: 60px 1fr 14px 1fr; }
     .mp-timer { font-size: 1.8rem; }
+    .mp-score-pm { width: 34px; height: 34px; font-size: 1.10rem; }
+    .mp-score-val { font-size: 1.30rem; }
   }
 
   /* ── Clip states (Etapa 13 — R3.1) ── */
@@ -530,17 +901,27 @@
 
   <div id="mpNuevaForm" class="mp-card" style="display:none">
     <h3 class="mp-jug-title">¿Quiénes juegan? <span class="mp-jug-opt">(opcional)</span></h3>
-    <p class="mp-jug-note">Llena los 4 nombres o usa “Saltar”. Todo o nada: el orden de los campos define los equipos.</p>
+    <p class="mp-jug-note">Toca un cuadrante para agregar jugadores. Puedes dejarlos vacíos y agregarlos durante el partido.</p>
 
-    <div class="mp-jug-team">
-      <div class="mp-jug-team-label">Equipo 1</div>
-      <input type="text" class="mp-jug-input" id="nuevaJ1" placeholder="Jugador 1" maxlength="80" autocomplete="off">
-      <input type="text" class="mp-jug-input" id="nuevaJ2" placeholder="Jugador 2" maxlength="80" autocomplete="off">
+    <div class="mp-modal-section-label">Modo de partido</div>
+    <div class="mp-modo-row" id="nuevaModoRow" data-modo-target="nueva">
+      <button type="button" class="mp-modo-btn is-selected" data-modo="partido_3">Partido<span class="desc">Mejor de 3 sets</span></button>
+      <button type="button" class="mp-modo-btn" data-modo="partido_5">Partido largo<span class="desc">Mejor de 5 sets</span></button>
+      <button type="button" class="mp-modo-btn" data-modo="reta">Reta<span class="desc">Sin sets, solo ganador</span></button>
+      <button type="button" class="mp-modo-btn" data-modo="libre">Libre<span class="desc">Cuenta de games</span></button>
     </div>
-    <div class="mp-jug-team">
-      <div class="mp-jug-team-label">Equipo 2</div>
-      <input type="text" class="mp-jug-input" id="nuevaJ3" placeholder="Jugador 3" maxlength="80" autocomplete="off">
-      <input type="text" class="mp-jug-input" id="nuevaJ4" placeholder="Jugador 4" maxlength="80" autocomplete="off">
+
+    <div class="mp-modal-section-label">Jugadores</div>
+    <div class="mp-court-wrap">
+      <div class="mp-court-team-label" id="nuevaTeamTopLabel">Equipo 2</div>
+      <div class="mp-court-grid" id="nuevaCourtGrid">
+        <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
+        <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
+        <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
+        <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
+      </div>
+      <div class="mp-court-team-label" id="nuevaTeamBotLabel">Equipo 1</div>
+      <div class="mp-court-hint" id="nuevaCourtHint">Sugerencia: pádel se juega 2 vs 2.</div>
     </div>
 
     <div id="mpNuevaMsg" class="mp-msg"></div>
@@ -607,58 +988,55 @@
 
 </main>
 
-<!-- ── Modal terminar partido ── -->
+<!-- ── Modal terminar partido (Etapa 15) ── -->
 <div id="mpModal" class="mp-modal-backdrop">
   <div class="mp-modal" role="dialog" aria-modal="true">
     <h3>Terminar partido</h3>
-    <p class="note">Registra los jugadores y el marcador (ambos opcionales). Solo Set 1 es obligatorio si quieres guardar marcador.</p>
+    <p class="note">Registra los jugadores y el marcador (ambos opcionales).</p>
 
-    <div class="mp-modal-section-label">Jugadores (opcional)</div>
-    <div class="mp-jug-team">
-      <div class="mp-jug-team-label">Equipo 1</div>
-      <input type="text" class="mp-jug-input" id="endJ1" placeholder="Jugador 1" maxlength="80" autocomplete="off">
-      <input type="text" class="mp-jug-input" id="endJ2" placeholder="Jugador 2" maxlength="80" autocomplete="off">
-    </div>
-    <div class="mp-jug-team">
-      <div class="mp-jug-team-label">Equipo 2</div>
-      <input type="text" class="mp-jug-input" id="endJ3" placeholder="Jugador 3" maxlength="80" autocomplete="off">
-      <input type="text" class="mp-jug-input" id="endJ4" placeholder="Jugador 4" maxlength="80" autocomplete="off">
+    <div class="mp-modal-section-label">Modo de partido</div>
+    <div class="mp-modo-row" id="endModoRow" data-modo-target="end">
+      <button type="button" class="mp-modo-btn" data-modo="partido_3">Partido<span class="desc">Mejor de 3 sets</span></button>
+      <button type="button" class="mp-modo-btn" data-modo="partido_5">Partido largo<span class="desc">Mejor de 5 sets</span></button>
+      <button type="button" class="mp-modo-btn" data-modo="reta">Reta<span class="desc">Sin sets, solo ganador</span></button>
+      <button type="button" class="mp-modo-btn" data-modo="libre">Libre<span class="desc">Cuenta de games</span></button>
     </div>
 
-    <div class="mp-modal-section-label">Marcador</div>
-    <div class="mp-set-row">
-      <span class="mp-set-label">Set 1</span>
-      <input type="number" class="mp-set-input" id="set1t1" min="0" max="99" inputmode="numeric" placeholder="Eq.1">
-      <span class="mp-set-sep">–</span>
-      <input type="number" class="mp-set-input" id="set1t2" min="0" max="99" inputmode="numeric" placeholder="Eq.2">
-    </div>
-    <div class="mp-set-row">
-      <span class="mp-set-label">Set 2</span>
-      <input type="number" class="mp-set-input" id="set2t1" min="0" max="99" inputmode="numeric" placeholder="Eq.1">
-      <span class="mp-set-sep">–</span>
-      <input type="number" class="mp-set-input" id="set2t2" min="0" max="99" inputmode="numeric" placeholder="Eq.2">
-    </div>
-    <div class="mp-set-row">
-      <span class="mp-set-label">Set 3</span>
-      <input type="number" class="mp-set-input" id="set3t1" min="0" max="99" inputmode="numeric" placeholder="Eq.1">
-      <span class="mp-set-sep">–</span>
-      <input type="number" class="mp-set-input" id="set3t2" min="0" max="99" inputmode="numeric" placeholder="Eq.2">
+    <div class="mp-modal-section-label">Jugadores</div>
+    <div class="mp-court-wrap">
+      <div class="mp-court-team-label">Equipo 2</div>
+      <div class="mp-court-grid" id="endCourtGrid">
+        <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
+        <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
+        <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
+        <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
+      </div>
+      <div class="mp-court-team-label">Equipo 1</div>
     </div>
 
-    <div class="mp-ganador-row">
-      <label for="mpGanador">Ganador:</label>
-      <select id="mpGanador">
-        <option value="">No especificar</option>
-        <option value="team1">Equipo 1</option>
-        <option value="team2">Equipo 2</option>
-      </select>
-    </div>
+    <div class="mp-modal-section-label" id="endScoreLabel">Marcador</div>
+    <div id="endScoreArea"><!-- render por JS según modo --></div>
 
     <div id="mpModalMsg" class="mp-msg"></div>
 
     <div class="mp-modal-actions">
       <button id="mpModalSave" class="mp-btn-end" type="button">Guardar y terminar</button>
       <button id="mpModalCancel" class="mp-btn-cancel" type="button">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Bottom sheet "Agregar jugador a slot" (Etapa 15) ── -->
+<div id="mpSlotSheet" class="mp-sheet-backdrop">
+  <div class="mp-sheet" role="dialog" aria-modal="true">
+    <h3 id="mpSheetTitle">Agregar jugador</h3>
+    <span class="mp-sheet-team-tag" id="mpSheetTeamTag">Equipo 1</span>
+    <input type="text" class="mp-sheet-input" id="mpSheetInput" placeholder="Nombre" maxlength="80" autocomplete="off">
+    <div class="mp-sheet-actions">
+      <button type="button" id="mpSheetSave" class="mp-sheet-btn primary">Guardar</button>
+      <button type="button" id="mpSheetMe" class="mp-sheet-btn secondary" style="display:none">Soy yo</button>
+      <button type="button" id="mpSheetRemove" class="mp-sheet-btn danger" style="display:none">Quitar</button>
+      <button type="button" id="mpSheetCancel" class="mp-sheet-btn secondary">Cancelar</button>
     </div>
   </div>
 </div>
@@ -793,33 +1171,244 @@
 
   let currentMatch = null;
 
-  // ---------- jugadores: regla "todo o nada" ----------
-  // El mapeo de equipos en resumen.html depende del orden del array
-  // (jugadores[0,1]=Equipo 1, [2,3]=Equipo 2) y filtra nombres vacíos.
-  // Por eso NO se colapsan posiciones: o se llenan los 4 nombres, o
-  // ninguno. Devuelve { jugadores: [...] } | { jugadores: [] } | { error }.
-  const JUG_INCOMPLETO = "Llena los 4 nombres de jugadores o déjalos todos vacíos (el orden define los equipos).";
+  // ---------- jugadores: cancha visual 0-4 slots (Etapa 15) ----------
+  // El estado vive en `playerState[context]`: un array de 4 objetos
+  // { nombre, equipo, uid?, claimedByUid? }. Slots vacíos = { nombre:"",
+  // equipo: defaultParaIndice }. Cuando se guarda, vacíos se filtran salvo
+  // si tienen uid o claimedByUid (slot reservado).
+  const SLOT_EQUIPO = ["team1", "team1", "team2", "team2"];
+  const playerState = {
+    nueva: emptyJugadoresArray(),
+    end: emptyJugadoresArray(),
+  };
+  const modoState = {
+    nueva: "partido_3",
+    end: "partido_3",
+  };
 
-  function readJugadores(ids) {
-    const names = ids.map(function (id) {
-      const el = document.getElementById(id);
-      return el ? String(el.value || "").trim() : "";
-    });
-    const filled = names.filter(function (n) { return n !== ""; });
-    if (filled.length === 0) return { jugadores: [] };
-    if (filled.length === 4) return { jugadores: names.map(function (n) { return { nombre: n }; }) };
-    return { error: JUG_INCOMPLETO };
+  function emptyJugadoresArray() {
+    return SLOT_EQUIPO.map(function (eq) { return { nombre: "", equipo: eq }; });
   }
 
-  function fillJugadorInputs(ids, jugadores) {
-    const arr = Array.isArray(jugadores) ? jugadores : [];
-    for (let i = 0; i < ids.length; i++) {
-      const el = document.getElementById(ids[i]);
-      if (!el) continue;
-      const j = arr[i];
-      el.value = (j && j.nombre) ? String(j.nombre) : "";
+  function escHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  // Render de un slot dado context + idx
+  function renderSlot(ctx, idx) {
+    const grid = ctx === "nueva"
+      ? document.getElementById("nuevaCourtGrid")
+      : document.getElementById("endCourtGrid");
+    if (!grid) return;
+    const btn = grid.querySelector('[data-slot="' + idx + '"]');
+    if (!btn) return;
+    const j = playerState[ctx][idx];
+    btn.innerHTML = "";
+    const hasName = !!(j && j.nombre);
+    const hasUid = !!(j && j.uid);
+    if (!hasName && !hasUid) {
+      btn.classList.remove("is-filled");
+      const plus = document.createElement("span");
+      plus.className = "slot-plus";
+      plus.textContent = "+";
+      const hint = document.createElement("span");
+      hint.className = "slot-hint";
+      hint.textContent = (j && j.equipo === "team2") ? "Equipo 2" : "Equipo 1";
+      btn.appendChild(plus);
+      btn.appendChild(hint);
+      return;
+    }
+    btn.classList.add("is-filled");
+    if (hasUid) {
+      const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      const photo = (user && user.uid === j.uid && user.photoURL) ? user.photoURL : null;
+      if (photo) {
+        const img = document.createElement("img");
+        img.className = "slot-photo";
+        img.referrerPolicy = "no-referrer";
+        img.src = photo;
+        img.alt = "";
+        btn.appendChild(img);
+      }
+    }
+    const name = document.createElement("span");
+    name.className = "slot-name";
+    name.textContent = j.nombre || (hasUid ? "Yo" : "");
+    btn.appendChild(name);
+  }
+
+  function renderCourt(ctx) {
+    for (let i = 0; i < 4; i++) renderSlot(ctx, i);
+  }
+
+  // Devuelve los jugadores del state listos para escribir. Conserva el
+  // orden por índice (slot 0..3) — la cancha es la fuente de verdad.
+  // Slots vacíos sin uid/claimedByUid se omiten (longitud final 0-4).
+  function collectJugadores(ctx) {
+    const out = [];
+    for (let i = 0; i < 4; i++) {
+      const j = playerState[ctx][i];
+      const hasName = j && j.nombre;
+      const hasUid = j && (j.uid || j.claimedByUid);
+      if (!hasName && !hasUid) continue;
+      const o = { nombre: String(j.nombre || ""), equipo: j.equipo };
+      if (j.uid) o.uid = j.uid;
+      if (j.claimedByUid) o.claimedByUid = j.claimedByUid;
+      out.push(o);
+    }
+    return out;
+  }
+
+  function setPlayerStateFromMatch(ctx, jugadoresFromMatch) {
+    playerState[ctx] = emptyJugadoresArray();
+    if (!Array.isArray(jugadoresFromMatch)) { renderCourt(ctx); return; }
+    // Reasignar a slots por posición preservando equipo si viene.
+    // El doc ya viene normalizado por matches.js (con `equipo`), así que
+    // intentamos respetar primero el slot por índice; si el doc tiene >4
+    // elementos los truncamos a 4 (raro pero defensivo).
+    const arr = jugadoresFromMatch.slice(0, 4);
+    for (let i = 0; i < arr.length; i++) {
+      const src = arr[i] || {};
+      const defaultEq = SLOT_EQUIPO[i];
+      const eq = (src.equipo === "team1" || src.equipo === "team2") ? src.equipo : defaultEq;
+      playerState[ctx][i] = {
+        nombre: String(src.nombre || ""),
+        equipo: eq,
+      };
+      if (src.uid) playerState[ctx][i].uid = src.uid;
+      if (src.claimedByUid) playerState[ctx][i].claimedByUid = src.claimedByUid;
+    }
+    renderCourt(ctx);
+  }
+
+  // ---------- selector de modo ----------
+  function setModo(ctx, modo) {
+    if (!["partido_3", "partido_5", "reta", "libre"].includes(modo)) return;
+    modoState[ctx] = modo;
+    const rows = document.querySelectorAll('[data-modo-target="' + ctx + '"] .mp-modo-btn');
+    rows.forEach(function (b) {
+      b.classList.toggle("is-selected", b.getAttribute("data-modo") === modo);
+    });
+    if (ctx === "end") {
+      // Al entrar a un modo de sets, garantizar al menos un set en blanco
+      if ((modo === "partido_3" || modo === "partido_5") && endScoreState.sets.length === 0) {
+        endScoreState.sets.push({ t1: 0, t2: 0, tb: null });
+      }
+      rebuildScoreArea();
     }
   }
+
+  function wireModoSelector(ctx) {
+    const row = document.querySelector('[data-modo-target="' + ctx + '"]');
+    if (!row) return;
+    row.addEventListener("click", function (e) {
+      const btn = e.target.closest(".mp-modo-btn");
+      if (!btn) return;
+      const m = btn.getAttribute("data-modo");
+      if (m) setModo(ctx, m);
+    });
+  }
+  wireModoSelector("nueva");
+  wireModoSelector("end");
+
+  // ---------- bottom sheet de slot ----------
+  const $sheet = document.getElementById("mpSlotSheet");
+  const $sheetTitle = document.getElementById("mpSheetTitle");
+  const $sheetTeamTag = document.getElementById("mpSheetTeamTag");
+  const $sheetInput = document.getElementById("mpSheetInput");
+  const $sheetSave = document.getElementById("mpSheetSave");
+  const $sheetMe = document.getElementById("mpSheetMe");
+  const $sheetRemove = document.getElementById("mpSheetRemove");
+  const $sheetCancel = document.getElementById("mpSheetCancel");
+  let _sheetCtx = null, _sheetIdx = -1;
+
+  function openSheet(ctx, idx) {
+    _sheetCtx = ctx; _sheetIdx = idx;
+    const j = playerState[ctx][idx];
+    $sheetTitle.textContent = "Agregar jugador al slot";
+    $sheetTeamTag.textContent = j.equipo === "team2" ? "Equipo 2" : "Equipo 1";
+    $sheetInput.value = j.nombre || "";
+    // Mostrar "Soy yo" si hay user y no está ya en otro slot.
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    const alreadyMine = playerState[ctx].some(function (x, i) { return i !== idx && x.uid && user && x.uid === user.uid; });
+    $sheetMe.style.display = (user && !alreadyMine) ? "block" : "none";
+    $sheetMe.textContent = (user && j.uid === user.uid)
+      ? "Quitar vínculo conmigo"
+      : "Soy yo" + (user && user.displayName ? " (" + user.displayName.split(" ")[0] + ")" : "");
+    $sheetRemove.style.display = (j.nombre || j.uid || j.claimedByUid) ? "block" : "none";
+    $sheet.classList.add("is-open");
+    setTimeout(function () { try { $sheetInput.focus(); } catch (_) {} }, 50);
+  }
+
+  function closeSheet() {
+    $sheet.classList.remove("is-open");
+    _sheetCtx = null; _sheetIdx = -1;
+  }
+
+  $sheet.addEventListener("click", function (e) { if (e.target === $sheet) closeSheet(); });
+  $sheetCancel.addEventListener("click", closeSheet);
+
+  $sheetSave.addEventListener("click", function () {
+    if (_sheetCtx == null) return;
+    const name = String($sheetInput.value || "").trim().slice(0, 80);
+    playerState[_sheetCtx][_sheetIdx].nombre = name;
+    renderSlot(_sheetCtx, _sheetIdx);
+    closeSheet();
+  });
+
+  $sheetMe.addEventListener("click", function () {
+    if (_sheetCtx == null) return;
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) return;
+    const slot = playerState[_sheetCtx][_sheetIdx];
+    if (slot.uid === user.uid) {
+      // toggle off
+      delete slot.uid;
+    } else {
+      // Limpiar uid de cualquier otro slot del mismo ctx (un solo "Yo")
+      playerState[_sheetCtx].forEach(function (s, i) {
+        if (s.uid === user.uid && i !== _sheetIdx) {
+          delete s.uid;
+          renderSlot(_sheetCtx, i);
+        }
+      });
+      slot.uid = user.uid;
+      if (!slot.nombre) slot.nombre = (user.displayName || "Yo").trim().slice(0, 80);
+      $sheetInput.value = slot.nombre;
+    }
+    renderSlot(_sheetCtx, _sheetIdx);
+    closeSheet();
+  });
+
+  $sheetRemove.addEventListener("click", function () {
+    if (_sheetCtx == null) return;
+    const i = _sheetIdx;
+    const eq = playerState[_sheetCtx][i].equipo;
+    playerState[_sheetCtx][i] = { nombre: "", equipo: eq };
+    renderSlot(_sheetCtx, i);
+    closeSheet();
+  });
+
+  // Bind clicks de la cancha visual a openSheet
+  function wireCourt(ctx) {
+    const grid = ctx === "nueva"
+      ? document.getElementById("nuevaCourtGrid")
+      : document.getElementById("endCourtGrid");
+    if (!grid) return;
+    grid.addEventListener("click", function (e) {
+      const slot = e.target.closest(".mp-slot");
+      if (!slot) return;
+      const idx = Number(slot.getAttribute("data-slot"));
+      if (!Number.isInteger(idx) || idx < 0 || idx > 3) return;
+      openSheet(ctx, idx);
+    });
+  }
+  wireCourt("nueva");
+  wireCourt("end");
+  renderCourt("nueva");
+  renderCourt("end");
 
   // ---------- live features (cronómetro + contador clips) ----------
   let _timerId = null;
@@ -1159,17 +1748,366 @@
     show("mpContent");
   }
 
-  // ---------- modal terminar ----------
+  // ---------- modal terminar (Etapa 15) ----------
+  // Estado del score area. Se reconstruye cada vez que cambia el modo o
+  // se abre el modal. Para sets/partido, cada set guarda games y tb opcional.
+  const endScoreState = {
+    sets: [],                       // [{ t1, t2, tb: { t1, t2 } | null }]
+    gamesTotal: { t1: 0, t2: 0 },   // modo libre
+    ganadorReta: null,              // modo reta
+  };
+
+  const $endScoreArea = document.getElementById("endScoreArea");
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function emptySet() { return { t1: 0, t2: 0, tb: null }; }
+
+  function isSetMode() {
+    return modoState.end === "partido_3" || modoState.end === "partido_5";
+  }
+
+  function validateScoreLive() {
+    // Devuelve resultados de validación + ganador deducido (cuando aplica).
+    if (modoState.end === "reta") {
+      return { ok: !!endScoreState.ganadorReta, ganador: endScoreState.ganadorReta, complete: !!endScoreState.ganadorReta };
+    }
+    if (modoState.end === "libre") {
+      const a = endScoreState.gamesTotal.t1, b = endScoreState.gamesTotal.t2;
+      let ganador = null;
+      if (a > b) ganador = "team1";
+      else if (b > a) ganador = "team2";
+      else if (a > 0 || b > 0) ganador = "empate";
+      return { ok: a > 0 || b > 0, ganador, complete: a > 0 || b > 0 };
+    }
+    // Set modes
+    const target = modoState.end === "partido_5" ? 3 : 2;
+    const validatedSets = endScoreState.sets.map(function (s) {
+      const tb = s.tb ? { team1: s.tb.t1, team2: s.tb.t2 } : null;
+      return window.PuntazoMatches.score.validateSet(s.t1, s.t2, tb);
+    });
+    const allValid = validatedSets.every(function (v) { return v.state === "valid"; });
+    const winnerObjs = validatedSets.map(function (v) { return { winner: v.winner }; });
+    const r = window.PuntazoMatches.score.deduceMatchWinner(winnerObjs, modoState.end);
+    return {
+      ok: allValid && endScoreState.sets.length > 0,
+      ganador: r.winner,
+      complete: r.complete,
+      target: target,
+      validatedSets,
+      t1Sets: r.t1Sets,
+      t2Sets: r.t2Sets,
+    };
+  }
+
+  function rebuildScoreArea() {
+    if (!$endScoreArea) return;
+    $endScoreArea.innerHTML = "";
+
+    if (modoState.end === "reta") {
+      const wrap = document.createElement("div");
+      wrap.className = "mp-reta-pick";
+      const labels = playerLabelsByTeam("end");
+      [["team1", labels.t1], ["team2", labels.t2]].forEach(function (pair) {
+        const key = pair[0], lab = pair[1];
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "mp-reta-btn" + (endScoreState.ganadorReta === key ? " is-selected" : "");
+        b.innerHTML = '🏆 Ganó<br><span>' + escHtml(lab) + '</span>';
+        b.addEventListener("click", function () {
+          endScoreState.ganadorReta = (endScoreState.ganadorReta === key) ? null : key;
+          rebuildScoreArea();
+        });
+        wrap.appendChild(b);
+      });
+      $endScoreArea.appendChild(wrap);
+      return;
+    }
+
+    if (modoState.end === "libre") {
+      const wrap = document.createElement("div");
+      wrap.className = "mp-libre-wrap";
+      ["team1", "team2"].forEach(function (key) {
+        const cell = document.createElement("div");
+        cell.className = "mp-score-cell";
+        const inner = document.createElement("div");
+        inner.className = "mp-score-cell-wrap";
+        const team = document.createElement("span");
+        team.className = "mp-score-cell-team";
+        team.textContent = key === "team1" ? "Equipo 1 (Games)" : "Equipo 2 (Games)";
+        const ctrl = document.createElement("div");
+        ctrl.className = "mp-score-ctrl";
+        const minus = document.createElement("button");
+        minus.type = "button"; minus.className = "mp-score-pm"; minus.textContent = "−";
+        const val = document.createElement("span");
+        val.className = "mp-score-val";
+        val.textContent = String(key === "team1" ? endScoreState.gamesTotal.t1 : endScoreState.gamesTotal.t2);
+        const plus = document.createElement("button");
+        plus.type = "button"; plus.className = "mp-score-pm"; plus.textContent = "+";
+        minus.addEventListener("click", function () {
+          const k = key === "team1" ? "t1" : "t2";
+          endScoreState.gamesTotal[k] = clamp(endScoreState.gamesTotal[k] - 1, 0, 99);
+          rebuildScoreArea();
+        });
+        plus.addEventListener("click", function () {
+          const k = key === "team1" ? "t1" : "t2";
+          endScoreState.gamesTotal[k] = clamp(endScoreState.gamesTotal[k] + 1, 0, 99);
+          rebuildScoreArea();
+        });
+        ctrl.appendChild(minus); ctrl.appendChild(val); ctrl.appendChild(plus);
+        inner.appendChild(team); inner.appendChild(ctrl);
+        cell.appendChild(inner);
+        wrap.appendChild(cell);
+      });
+      $endScoreArea.appendChild(wrap);
+      const live = validateScoreLive();
+      if (live.ok) {
+        const banner = document.createElement("div");
+        banner.className = "mp-winner-banner";
+        banner.textContent = live.ganador === "empate"
+          ? "Empate"
+          : "Ganador: " + (live.ganador === "team1" ? "Equipo 1" : "Equipo 2");
+        $endScoreArea.appendChild(banner);
+      }
+      return;
+    }
+
+    // Set modes (partido_3 / partido_5)
+    const live = validateScoreLive();
+    endScoreState.sets.forEach(function (s, idx) {
+      const setBox = document.createElement("div");
+      const v = live.validatedSets[idx] || { state: "incomplete" };
+      setBox.className = "mp-score-set " + (
+        v.state === "valid" ? "is-valid" :
+        v.state === "invalid" ? "is-invalid" : ""
+      );
+      const head = document.createElement("div");
+      head.className = "mp-score-set-head";
+      const lab = document.createElement("span");
+      lab.className = "mp-score-set-label";
+      lab.textContent = "Set " + (idx + 1);
+      const status = document.createElement("span");
+      status.className = "mp-score-set-status";
+      if (v.state === "valid") status.textContent = "✓ válido";
+      else if (v.state === "needsTiebreak") status.textContent = "Tiebreak requerido (6-6)";
+      else if (v.state === "invalid") status.textContent = "✗ " + (v.error || "inválido");
+      else status.textContent = v.hint || "incompleto";
+      head.appendChild(lab);
+      head.appendChild(status);
+      // Botón quitar el último set
+      if (idx === endScoreState.sets.length - 1 && endScoreState.sets.length > 1) {
+        const rmv = document.createElement("button");
+        rmv.type = "button"; rmv.className = "mp-score-set-rmv"; rmv.textContent = "✕";
+        rmv.title = "Quitar este set";
+        rmv.addEventListener("click", function () {
+          endScoreState.sets.pop();
+          rebuildScoreArea();
+        });
+        head.appendChild(rmv);
+      }
+      setBox.appendChild(head);
+
+      const row = document.createElement("div");
+      row.className = "mp-score-row";
+      ["team1", "team2"].forEach(function (key) {
+        const k = key === "team1" ? "t1" : "t2";
+        const cell = document.createElement("div");
+        cell.className = "mp-score-cell";
+        const inner = document.createElement("div");
+        inner.className = "mp-score-cell-wrap";
+        const team = document.createElement("span");
+        team.className = "mp-score-cell-team";
+        team.textContent = key === "team1" ? "Equipo 1" : "Equipo 2";
+        const ctrl = document.createElement("div");
+        ctrl.className = "mp-score-ctrl";
+        const minus = document.createElement("button");
+        minus.type = "button"; minus.className = "mp-score-pm"; minus.textContent = "−";
+        const val = document.createElement("span");
+        val.className = "mp-score-val";
+        val.textContent = String(s[k]);
+        const plus = document.createElement("button");
+        plus.type = "button"; plus.className = "mp-score-pm"; plus.textContent = "+";
+        minus.addEventListener("click", function () {
+          s[k] = clamp(s[k] - 1, 0, 7);
+          // si baja de 6-6, limpiar tiebreak
+          if (!(s.t1 === 6 && s.t2 === 6) && !((s.t1 === 7 && s.t2 === 6) || (s.t1 === 6 && s.t2 === 7))) s.tb = null;
+          rebuildScoreArea();
+        });
+        plus.addEventListener("click", function () {
+          s[k] = clamp(s[k] + 1, 0, 7);
+          if (s.t1 === 6 && s.t2 === 6 && !s.tb) s.tb = { t1: 0, t2: 0 };
+          if ((s.t1 === 7 && s.t2 === 6) || (s.t1 === 6 && s.t2 === 7)) {
+            if (!s.tb) s.tb = { t1: 0, t2: 0 };
+          }
+          rebuildScoreArea();
+        });
+        ctrl.appendChild(minus); ctrl.appendChild(val); ctrl.appendChild(plus);
+        inner.appendChild(team); inner.appendChild(ctrl);
+        cell.appendChild(inner);
+        row.appendChild(cell);
+      });
+      setBox.appendChild(row);
+
+      // Tiebreak: cuando games son 6-6 o 7-6/6-7
+      const showTb = (s.t1 === 6 && s.t2 === 6) || (s.t1 === 7 && s.t2 === 6) || (s.t1 === 6 && s.t2 === 7);
+      if (showTb) {
+        if (!s.tb) s.tb = { t1: 0, t2: 0 };
+        const tbBlock = document.createElement("div");
+        tbBlock.className = "mp-tb-block";
+        const tbLbl = document.createElement("div");
+        tbLbl.className = "mp-tb-label";
+        tbLbl.textContent = "Tiebreak (puntos)";
+        tbBlock.appendChild(tbLbl);
+        const tbRow = document.createElement("div");
+        tbRow.className = "mp-score-row";
+        ["team1", "team2"].forEach(function (key) {
+          const k = key === "team1" ? "t1" : "t2";
+          const cell = document.createElement("div");
+          cell.className = "mp-score-cell";
+          const inner = document.createElement("div");
+          inner.className = "mp-score-cell-wrap";
+          const team = document.createElement("span");
+          team.className = "mp-score-cell-team";
+          team.textContent = key === "team1" ? "Eq.1 (TB)" : "Eq.2 (TB)";
+          const ctrl = document.createElement("div");
+          ctrl.className = "mp-score-ctrl";
+          const minus = document.createElement("button");
+          minus.type = "button"; minus.className = "mp-score-pm"; minus.textContent = "−";
+          const val = document.createElement("span");
+          val.className = "mp-score-val";
+          val.textContent = String(s.tb[k]);
+          const plus = document.createElement("button");
+          plus.type = "button"; plus.className = "mp-score-pm"; plus.textContent = "+";
+          minus.addEventListener("click", function () {
+            s.tb[k] = clamp(s.tb[k] - 1, 0, 99);
+            rebuildScoreArea();
+          });
+          plus.addEventListener("click", function () {
+            s.tb[k] = clamp(s.tb[k] + 1, 0, 99);
+            rebuildScoreArea();
+          });
+          ctrl.appendChild(minus); ctrl.appendChild(val); ctrl.appendChild(plus);
+          inner.appendChild(team); inner.appendChild(ctrl);
+          cell.appendChild(inner);
+          tbRow.appendChild(cell);
+        });
+        tbBlock.appendChild(tbRow);
+        setBox.appendChild(tbBlock);
+      }
+
+      $endScoreArea.appendChild(setBox);
+    });
+
+    // Botón "Agregar set" — deshabilitado si ya hay ganador o último set inválido.
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "mp-add-set";
+    addBtn.textContent = "+ Agregar set";
+    const last = endScoreState.sets[endScoreState.sets.length - 1];
+    const lastValidated = last ? live.validatedSets[live.validatedSets.length - 1] : null;
+    const canAdd = !live.complete && (!last || (lastValidated && lastValidated.state === "valid"));
+    addBtn.disabled = !canAdd;
+    if (live.complete) addBtn.textContent = "Partido completo";
+    addBtn.addEventListener("click", function () {
+      endScoreState.sets.push(emptySet());
+      rebuildScoreArea();
+    });
+    $endScoreArea.appendChild(addBtn);
+
+    if (live.complete && live.ganador) {
+      const banner = document.createElement("div");
+      banner.className = "mp-winner-banner";
+      const setsStr = live.t1Sets + "–" + live.t2Sets;
+      banner.textContent = "🏆 Ganador: " + (live.ganador === "team1" ? "Equipo 1" : "Equipo 2") +
+        " (" + setsStr + " sets)";
+      $endScoreArea.appendChild(banner);
+    }
+  }
+
+  function playerLabelsByTeam(ctx) {
+    const arr = playerState[ctx];
+    const t1 = arr.filter(function (j) { return j.equipo === "team1" && j.nombre; }).map(function (j) { return j.nombre; });
+    const t2 = arr.filter(function (j) { return j.equipo === "team2" && j.nombre; }).map(function (j) { return j.nombre; });
+    return {
+      t1: t1.length ? t1.join(" / ") : "Equipo 1",
+      t2: t2.length ? t2.join(" / ") : "Equipo 2",
+    };
+  }
+
+  function buildMarcadorFromState() {
+    if (modoState.end === "reta") {
+      if (!endScoreState.ganadorReta) return { empty: true };
+      return { marcador: { ganador: endScoreState.ganadorReta } };
+    }
+    if (modoState.end === "libre") {
+      const gt = { team1: endScoreState.gamesTotal.t1, team2: endScoreState.gamesTotal.t2 };
+      if (gt.team1 === 0 && gt.team2 === 0) return { empty: true };
+      const m = { gamesTotal: gt };
+      if (gt.team1 > gt.team2) m.ganador = "team1";
+      else if (gt.team2 > gt.team1) m.ganador = "team2";
+      else m.ganador = "empate";
+      return { marcador: m };
+    }
+    // partido_3 / partido_5
+    if (endScoreState.sets.length === 0) return { empty: true };
+    const live = validateScoreLive();
+    for (let i = 0; i < live.validatedSets.length; i++) {
+      const v = live.validatedSets[i];
+      if (v.state !== "valid") {
+        return { error: "Set " + (i + 1) + ": " + (v.error || v.hint || "inválido o incompleto") };
+      }
+    }
+    const sets = endScoreState.sets.map(function (s) { return { team1: s.t1, team2: s.t2 }; });
+    const tiebreaks = endScoreState.sets.map(function (s) {
+      if (!s.tb) return null;
+      return { team1: s.tb.t1, team2: s.tb.t2 };
+    });
+    const hasAnyTb = tiebreaks.some(function (x) { return x != null; });
+    const m = { sets };
+    if (hasAnyTb) m.tiebreak = tiebreaks.map(function (x) { return x || { team1: 0, team2: 0 }; });
+    if (live.ganador) m.ganador = live.ganador;
+    return { marcador: m };
+  }
+
   function openModal() {
-    document.getElementById("set1t1").value = "";
-    document.getElementById("set1t2").value = "";
-    document.getElementById("set2t1").value = "";
-    document.getElementById("set2t2").value = "";
-    document.getElementById("set3t1").value = "";
-    document.getElementById("set3t2").value = "";
-    document.getElementById("mpGanador").value = "";
-    // Prellena los 4 campos de jugadores con lo capturado al inicio (si lo hubo).
-    fillJugadorInputs(["endJ1","endJ2","endJ3","endJ4"], currentMatch && currentMatch.jugadores);
+    // Modo: heredar del match si existe, default partido_3
+    const matchModo = (currentMatch && currentMatch.modo) || "partido_3";
+    setModo("end", matchModo);
+    // Jugadores: copiar del match al state del modal
+    setPlayerStateFromMatch("end", currentMatch && currentMatch.jugadores);
+    // Score state: reiniciar; si el match tenía marcador previo, hidratar
+    endScoreState.sets = [];
+    endScoreState.gamesTotal = { t1: 0, t2: 0 };
+    endScoreState.ganadorReta = null;
+    const prev = currentMatch && currentMatch.marcador;
+    if (prev) {
+      if (Array.isArray(prev.sets) && prev.sets.length > 0) {
+        prev.sets.forEach(function (s, i) {
+          const tb = Array.isArray(prev.tiebreak) && prev.tiebreak[i]
+            ? { t1: Number(prev.tiebreak[i].team1) || 0, t2: Number(prev.tiebreak[i].team2) || 0 }
+            : null;
+          endScoreState.sets.push({
+            t1: Number(s.team1) || 0,
+            t2: Number(s.team2) || 0,
+            tb,
+          });
+        });
+      }
+      if (prev.gamesTotal && typeof prev.gamesTotal === "object") {
+        endScoreState.gamesTotal = {
+          t1: Number(prev.gamesTotal.team1) || 0,
+          t2: Number(prev.gamesTotal.team2) || 0,
+        };
+      }
+      if (matchModo === "reta" && (prev.ganador === "team1" || prev.ganador === "team2")) {
+        endScoreState.ganadorReta = prev.ganador;
+      }
+    }
+    // En modos de sets, garantizar al menos un set en blanco si no hay nada.
+    if (isSetMode() && endScoreState.sets.length === 0) {
+      endScoreState.sets.push(emptySet());
+    }
+    rebuildScoreArea();
     $modalMsg.className = "mp-msg";
     $modalMsg.textContent = "";
     $modal.classList.add("is-open");
@@ -1177,38 +2115,6 @@
 
   function closeModal() {
     $modal.classList.remove("is-open");
-  }
-
-  function readSet(idx) {
-    const t1raw = document.getElementById(`set${idx}t1`).value;
-    const t2raw = document.getElementById(`set${idx}t2`).value;
-    const t1str = String(t1raw).trim();
-    const t2str = String(t2raw).trim();
-    if (t1str === "" && t2str === "") return null; // set vacío → omitir
-    if (t1str === "" || t2str === "") return { error: `Set ${idx}: completa ambos equipos o déjalo vacío.` };
-    const t1 = Number(t1str);
-    const t2 = Number(t2str);
-    if (!Number.isInteger(t1) || !Number.isInteger(t2) || t1 < 0 || t2 < 0) {
-      return { error: `Set ${idx}: los valores deben ser enteros >= 0.` };
-    }
-    return { team1: t1, team2: t2 };
-  }
-
-  function buildMarcador() {
-    const sets = [];
-    for (let i = 1; i <= 3; i++) {
-      const r = readSet(i);
-      if (!r) continue;
-      if (r.error) return { error: r.error };
-      sets.push({ team1: r.team1, team2: r.team2 });
-    }
-    const ganador = document.getElementById("mpGanador").value;
-    const marcador = {};
-    if (sets.length > 0) marcador.sets = sets;
-    if (ganador === "team1" || ganador === "team2") marcador.ganador = ganador;
-    if (sets.length === 0 && !marcador.ganador) return { empty: true };
-    if (sets.length === 0) marcador.sets = [];
-    return { marcador };
   }
 
   $btnEnd.addEventListener("click", function () {
@@ -1225,43 +2131,38 @@
 
   $modalSave.addEventListener("click", async function () {
     if (!currentMatch || !currentMatch.id) return;
-    const built = buildMarcador();
+    const built = buildMarcadorFromState();
     if (built.error) {
       $modalMsg.className = "mp-msg is-visible error";
       $modalMsg.textContent = built.error;
       return;
     }
-    // Jugadores: regla "todo o nada". 4 → se envían; 0 → se omiten
-    // (se conserva lo que ya tuviera el match); 1-3 → se rechaza.
-    const jugRes = readJugadores(["endJ1","endJ2","endJ3","endJ4"]);
-    if (jugRes.error) {
-      $modalMsg.className = "mp-msg is-visible error";
-      $modalMsg.textContent = jugRes.error;
-      return;
-    }
+    const jugadoresNuevos = collectJugadores("end");
+
     $modalSave.disabled = true;
     $modalSave.textContent = "Guardando…";
     $modalMsg.className = "mp-msg";
     $modalMsg.textContent = "";
     try {
-      const opts = {};
+      const opts = { modo: modoState.end };
       if (built.marcador) opts.marcador = built.marcador;
-      if (jugRes.jugadores.length === 4) opts.jugadores = jugRes.jugadores;
+      // Siempre mandar jugadores (puede ser []) para que el doc quede en
+      // formato nuevo (con `equipo`). El brief permite escribir formato
+      // nuevo cuando el usuario edita.
+      opts.jugadores = jugadoresNuevos;
+
       const matchId = currentMatch.id;
       const snapshotLoc = currentMatch.loc;
       const snapshotCan = currentMatch.can;
       const snapshotLado = currentMatch.lado;
       await window.PuntazoMatches.end(matchId, opts);
 
-      // Sub-tarea C: sin redirect — cerrar modal, re-fetch con retry, re-render ended.
       closeModal();
       $modalSave.disabled = false;
       $modalSave.textContent = "Guardar y terminar";
 
-      // Pausa features vivas inmediatamente (status va a cambiar).
       teardownLive();
 
-      // Mitigar write-lag de Firestore: hasta 2 intentos con 400ms de gap.
       let fresh = null;
       for (let attempt = 0; attempt < 2; attempt++) {
         try { fresh = await window.PuntazoMatches.get(matchId); } catch (err) { console.warn("[mi-partido] get after end failed", err); }
@@ -1269,12 +2170,12 @@
         if (attempt === 0) await new Promise(function (r) { setTimeout(r, 400); });
       }
       if (!fresh) {
-        // Fallback: usa el snapshot local marcado como ended para no dejar la UI rota.
         fresh = Object.assign({}, currentMatch, {
           status: "ended",
           loc: snapshotLoc, can: snapshotCan, lado: snapshotLado,
+          modo: opts.modo,
           marcador: built.marcador != null ? built.marcador : currentMatch.marcador,
-          jugadores: opts.jugadores != null ? opts.jugadores : currentMatch.jugadores,
+          jugadores: opts.jugadores,
         });
       }
 
@@ -1408,10 +2309,10 @@
     });
   }
 
-  // ---------- formulario "nueva" (creación inline con jugadores) ----------
+  // ---------- formulario "nueva" (creación inline con cancha visual) ----------
   let nuevaBusy = false;
 
-  async function createNueva(jugadores) {
+  async function createNueva(jugadores, modo) {
     if (nuevaBusy) return;                 // guard anti doble-click
     nuevaBusy = true;
     if ($nuevaStart) $nuevaStart.disabled = true;
@@ -1419,8 +2320,8 @@
     const prevText = $nuevaStart ? $nuevaStart.textContent : "";
     if ($nuevaStart) $nuevaStart.textContent = "Creando…";
     try {
-      const opts = { loc: newLoc, can: newCan, lado: newLado };
-      if (Array.isArray(jugadores) && jugadores.length === 4) opts.jugadores = jugadores;
+      const opts = { loc: newLoc, can: newCan, lado: newLado, modo: modo || "partido_3" };
+      if (Array.isArray(jugadores) && jugadores.length > 0) opts.jugadores = jugadores;
       const newId = await window.PuntazoMatches.create(opts);
       // Reemplaza la URL para que F5 no recree
       const newUrl = `${window.location.pathname}?matchId=${encodeURIComponent(newId)}`;
@@ -1442,23 +2343,15 @@
 
   if ($nuevaStart) {
     $nuevaStart.addEventListener("click", function () {
-      const res = readJugadores(["nuevaJ1","nuevaJ2","nuevaJ3","nuevaJ4"]);
-      if (res.error) {
-        if ($nuevaMsg) {
-          $nuevaMsg.className = "mp-msg is-visible error";
-          $nuevaMsg.textContent = res.error;
-        }
-        return;
-      }
       if ($nuevaMsg) { $nuevaMsg.className = "mp-msg"; $nuevaMsg.textContent = ""; }
-      createNueva(res.jugadores);
+      createNueva(collectJugadores("nueva"), modoState.nueva);
     });
   }
 
   if ($nuevaSkip) {
     $nuevaSkip.addEventListener("click", function () {
       if ($nuevaMsg) { $nuevaMsg.className = "mp-msg"; $nuevaMsg.textContent = ""; }
-      createNueva([]);
+      createNueva([], modoState.nueva);
     });
   }
 

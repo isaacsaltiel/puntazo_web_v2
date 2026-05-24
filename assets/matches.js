@@ -48,21 +48,61 @@
     return v.trim();
   }
 
+  // -------- schema helpers (Etapa 15) ----------------------------------
+  // Mapeo legacy: array plano de 4 slots → posiciones 0-1 son Equipo 1,
+  // posiciones 2-3 son Equipo 2 (invariante de Etapa 6.5, ahora soft).
+  const LEGACY_INDEX_TO_TEAM = ["team1", "team1", "team2", "team2"];
+
+  const MODOS_VALIDOS = ["partido_3", "partido_5", "reta", "libre"];
+  const DEPORTES_VALIDOS = ["padel", "tenis"];
+
+  // sanitizeJugadores acepta arrays de longitud 0-4. Cada elemento es un
+  // objeto { nombre, equipo, uid?, claimedByUid? }. Si el caller manda el
+  // formato legacy (array de strings, o objetos {nombre} sin equipo), se
+  // normaliza derivando `equipo` por posición. Slots con nombre vacío son
+  // válidos (reservados sin nombre).
   function sanitizeJugadores(input) {
     if (!Array.isArray(input)) return [];
-    return input
-      .filter(j => j && typeof j === "object")
-      .slice(0, 4)
-      .map(j => {
-        const out = { nombre: String(j.nombre || "").slice(0, 80) };
-        if (j.uid && typeof j.uid === "string") out.uid = j.uid;
-        return out;
-      });
+    const arr = input.slice(0, 4);
+    return arr.map((raw, idx) => {
+      const defaultEquipo = LEGACY_INDEX_TO_TEAM[idx] || "team1";
+      // Legacy string
+      if (typeof raw === "string") {
+        return { nombre: String(raw).slice(0, 80), equipo: defaultEquipo };
+      }
+      if (!raw || typeof raw !== "object") {
+        return { nombre: "", equipo: defaultEquipo };
+      }
+      const out = { nombre: String(raw.nombre || "").slice(0, 80) };
+      out.equipo = (raw.equipo === "team1" || raw.equipo === "team2")
+        ? raw.equipo
+        : defaultEquipo;
+      if (raw.uid && typeof raw.uid === "string") out.uid = raw.uid;
+      if (raw.claimedByUid && typeof raw.claimedByUid === "string") {
+        out.claimedByUid = raw.claimedByUid;
+      }
+      return out;
+    });
+  }
+
+  // normalizeMatchFromDoc: aplica backward-compat al LEER el doc.
+  // - jugadores: string[] → [{nombre, equipo}], array de objetos sin equipo
+  //   → infiere equipo por posición (LEGACY_INDEX_TO_TEAM).
+  // - modo: default "partido_3".
+  // - deporte: default "padel".
+  // No muta el doc original; retorna copia normalizada.
+  function normalizeMatchFromDoc(data) {
+    if (!data || typeof data !== "object") return data;
+    const out = Object.assign({}, data);
+    out.jugadores = sanitizeJugadores(Array.isArray(data.jugadores) ? data.jugadores : []);
+    out.modo = MODOS_VALIDOS.includes(data.modo) ? data.modo : "partido_3";
+    out.deporte = DEPORTES_VALIDOS.includes(data.deporte) ? data.deporte : "padel";
+    return out;
   }
 
   // Firestore prohíbe arrays anidados a cualquier profundidad.
   // Shape canónico de marcador.sets: array de objetos { team1, team2 },
-  // NO array de arrays [[6,4],...]. Ver docs/matches-schema.md §2.
+  // NO array de arrays. Ver docs/matches-schema.md §2.
   function validateMarcador(m) {
     if (m == null) return null;
     if (typeof m !== "object") return null;
@@ -76,7 +116,97 @@
         }
       }
     }
+    if (Array.isArray(m.tiebreak)) {
+      for (const t of m.tiebreak) {
+        if (Array.isArray(t)) {
+          throw new Error("[Matches] marcador.tiebreak contiene arrays anidados.");
+        }
+      }
+    }
     return m;
+  }
+
+  // -------- scoring engine (Etapa 15) ----------------------------------
+  // validateSet: regla real de pádel. Devuelve uno de:
+  //   { state: "valid",         winner: "team1"|"team2" }
+  //   { state: "needsTiebreak", winner: null }
+  //   { state: "incomplete",    winner: null, hint: "..." }
+  //   { state: "invalid",       winner: null, error: "..." }
+  //
+  // - 6-0..6-4 (diff ≥ 2): valid.
+  // - 7-5:                  valid.
+  // - 6-6:                  needsTiebreak (sin tb provisto).
+  // - 7-6:                  requiere tb provisto y válido (mín 7, diff ≥ 2).
+  // - Otros casos < 6:      incomplete.
+  // - Casos imposibles:     invalid.
+  function validateSet(t1Raw, t2Raw, tb /* { team1, team2 } | null */) {
+    const t1 = Number(t1Raw);
+    const t2 = Number(t2Raw);
+    if (!Number.isInteger(t1) || !Number.isInteger(t2) || t1 < 0 || t2 < 0) {
+      return { state: "invalid", winner: null, error: "Los games deben ser enteros ≥ 0." };
+    }
+    if (t1 > 7 || t2 > 7) {
+      return { state: "invalid", winner: null, error: "Un set no puede pasar de 7 games." };
+    }
+    // 6-0..6-4
+    if (t1 === 6 && t2 <= 4) return { state: "valid", winner: "team1" };
+    if (t2 === 6 && t1 <= 4) return { state: "valid", winner: "team2" };
+    // 7-5
+    if (t1 === 7 && t2 === 5) return { state: "valid", winner: "team1" };
+    if (t2 === 7 && t1 === 5) return { state: "valid", winner: "team2" };
+    // 7-6 con tiebreak
+    if ((t1 === 7 && t2 === 6) || (t2 === 7 && t1 === 6)) {
+      if (!tb) return { state: "incomplete", winner: null, hint: "Falta el tiebreak." };
+      const tbR = validateTiebreak(tb.team1, tb.team2);
+      if (tbR.state !== "valid") {
+        return { state: "invalid", winner: null, error: tbR.error || "Tiebreak inválido." };
+      }
+      const setWinner = t1 === 7 ? "team1" : "team2";
+      if (tbR.winner !== setWinner) {
+        return { state: "invalid", winner: null, error: "El ganador del tiebreak no coincide con el set." };
+      }
+      return { state: "valid", winner: setWinner };
+    }
+    // 6-6 → falta tiebreak
+    if (t1 === 6 && t2 === 6) return { state: "needsTiebreak", winner: null };
+    // Casos imposibles bajo regla de pádel
+    if (t1 === 7 || t2 === 7) {
+      return { state: "invalid", winner: null, error: "7 sólo es válido como 7-5 o 7-6." };
+    }
+    if (t1 === 6 || t2 === 6) {
+      // 6-5 o 5-6: aún incompleto
+      return { state: "incomplete", winner: null, hint: "Set incompleto (jueguen 7-5 o lleguen a 6-6)." };
+    }
+    return { state: "incomplete", winner: null, hint: "Set incompleto (uno debe llegar a 6 con diferencia ≥ 2)." };
+  }
+
+  function validateTiebreak(t1Raw, t2Raw) {
+    const t1 = Number(t1Raw);
+    const t2 = Number(t2Raw);
+    if (!Number.isInteger(t1) || !Number.isInteger(t2) || t1 < 0 || t2 < 0) {
+      return { state: "invalid", winner: null, error: "Tiebreak: enteros ≥ 0." };
+    }
+    const max = Math.max(t1, t2);
+    const diff = Math.abs(t1 - t2);
+    if (max < 7) return { state: "incomplete", winner: null };
+    if (diff < 2) return { state: "incomplete", winner: null };
+    return { state: "valid", winner: t1 > t2 ? "team1" : "team2" };
+  }
+
+  // deduceMatchWinner: dado modo + sets validados, devuelve quién ganó
+  // (si alguien alcanzó el target) y si el partido está completo.
+  function deduceMatchWinner(sets, modo) {
+    const target = modo === "partido_5" ? 3 : 2;
+    let t1 = 0, t2 = 0;
+    for (const s of Array.isArray(sets) ? sets : []) {
+      if (!s || typeof s !== "object") continue;
+      if (s.winner === "team1") t1++;
+      else if (s.winner === "team2") t2++;
+    }
+    let winner = null;
+    if (t1 >= target) winner = "team1";
+    else if (t2 >= target) winner = "team2";
+    return { winner, complete: !!winner, target, t1Sets: t1, t2Sets: t2 };
   }
 
   // parseFromName: réplica idéntica de la lógica en assets/script.js.
@@ -175,6 +305,9 @@
     const can = nonEmptyString(o.can, "can");
     const lado = nonEmptyString(o.lado, "lado");
 
+    const modo = MODOS_VALIDOS.includes(o.modo) ? o.modo : "partido_3";
+    const deporte = DEPORTES_VALIDOS.includes(o.deporte) ? o.deporte : "padel";
+
     const ref = db().collection(COL).doc();
     const data = {
       userId: user.uid,
@@ -182,6 +315,8 @@
       status: "active",
       startedAt: FV().serverTimestamp(),
       endedAt: null,
+      modo,
+      deporte,
       marcador: validateMarcador(o.marcadorInicial),
       jugadores: sanitizeJugadores(o.jugadores),
       clipCount: 0,
@@ -196,7 +331,26 @@
     const id = nonEmptyString(matchId, "matchId");
     const snap = await db().collection(COL).doc(id).get();
     if (!snap.exists) return null;
-    return snapToDoc(snap);
+    const raw = snapToDoc(snap);
+    return normalizeMatchFromDoc(raw);
+  }
+
+  async function updateMatch(matchId, opts) {
+    const id = nonEmptyString(matchId, "matchId");
+    const o = opts || {};
+    const ref = db().collection(COL).doc(id);
+    const upd = { updatedAt: FV().serverTimestamp() };
+    if (o.jugadores !== undefined) upd.jugadores = sanitizeJugadores(o.jugadores);
+    if (o.marcador !== undefined)  upd.marcador = validateMarcador(o.marcador);
+    if (o.modo !== undefined) {
+      if (!MODOS_VALIDOS.includes(o.modo)) throw new Error("[Matches] modo inválido.");
+      upd.modo = o.modo;
+    }
+    if (o.deporte !== undefined) {
+      if (!DEPORTES_VALIDOS.includes(o.deporte)) throw new Error("[Matches] deporte inválido.");
+      upd.deporte = o.deporte;
+    }
+    await ref.update(upd);
   }
 
   async function end(matchId, opts) {
@@ -214,6 +368,14 @@
     }
     if (o.jugadores !== undefined) {
       update.jugadores = sanitizeJugadores(o.jugadores);
+    }
+    if (o.modo !== undefined) {
+      if (!MODOS_VALIDOS.includes(o.modo)) throw new Error("[Matches] modo inválido.");
+      update.modo = o.modo;
+    }
+    if (o.deporte !== undefined) {
+      if (!DEPORTES_VALIDOS.includes(o.deporte)) throw new Error("[Matches] deporte inválido.");
+      update.deporte = o.deporte;
     }
     await ref.update(update);
 
@@ -251,7 +413,7 @@
     q = q.orderBy("startedAt", "desc").limit(limit);
 
     const snap = await q.get();
-    return snap.docs.map(snapToDoc);
+    return snap.docs.map(snapToDoc).map(normalizeMatchFromDoc);
   }
 
   async function getActiveForUser(userId) {
@@ -263,7 +425,7 @@
       .limit(1)
       .get();
     if (snap.empty) return null;
-    return snapToDoc(snap.docs[0]);
+    return normalizeMatchFromDoc(snapToDoc(snap.docs[0]));
   }
 
   async function findClipsForMatch(matchDoc) {
@@ -315,13 +477,23 @@
 
   window.PuntazoMatches = {
     create,
+    update: updateMatch,
     end,
     cancel,
     get,
     listByUser,
     getActiveForUser,
     findClipsForMatch,
+    score: {
+      validateSet,
+      validateTiebreak,
+      deduceMatchWinner,
+    },
+    MODOS: MODOS_VALIDOS.slice(),
+    DEPORTES: DEPORTES_VALIDOS.slice(),
     _parseFromName: parseFromName,
     _toMillis: toMillis,
+    _normalizeMatchFromDoc: normalizeMatchFromDoc,
+    _sanitizeJugadores: sanitizeJugadores,
   };
 })();
