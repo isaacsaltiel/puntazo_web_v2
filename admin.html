@@ -1144,7 +1144,7 @@ function renderPlayers(){
     const av=p.photoURL?`<img src="${esc(p.photoURL)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">`:`<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(0,79,200,.4);font-weight:900;font-size:11px;margin-right:8px">${(p.displayName||'?')[0].toUpperCase()}</span>`;
     return`<tr>
       <td class="td-rank">${rankEmoji(i)}</td>
-      <td class="td-name"><a href="/jugador.html?uid=${encodeURIComponent(p.uid)}" target="_blank" style="color:#eaf2ff;text-decoration:none;display:flex;align-items:center">${av}${esc(p.displayName||'Anónimo')}</a></td>
+      <td class="td-name"><span style="color:#eaf2ff;display:flex;align-items:center">${av}${esc(p.displayName||'Anónimo')}</span></td>
       <td class="td-bar"><div class="bar"><div class="bar-fill green" style="width:${pct}%"></div></div></td>
       <td class="td-num">${p.claims} clip${p.claims!==1?'s':''}</td>
     </tr>`;
@@ -1162,7 +1162,7 @@ function renderUsers(){
     const av=u.photoURL?`<img src="${esc(u.photoURL)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">`:`<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(0,79,200,.35);font-weight:900;font-size:11px;margin-right:8px">${(u.displayName||'?')[0].toUpperCase()}</span>`;
     return`<tr>
       <td class="td-rank" style="font-size:.82rem">${i+1}</td>
-      <td class="td-name"><a href="/jugador.html?uid=${encodeURIComponent(u.uid)}" target="_blank" style="color:#eaf2ff;text-decoration:none;display:flex;align-items:center">${av}${esc(u.displayName||'Usuario')}</a><small style="color:var(--muted);font-size:.67rem">${esc(u.uid.slice(0,14))}…</small></td>
+      <td class="td-name"><span style="color:#eaf2ff;display:flex;align-items:center">${av}${esc(u.displayName||'Usuario')}</span><small style="color:var(--muted);font-size:.67rem">${esc(u.uid.slice(0,14))}…</small></td>
       <td class="td-num"><span class="pill pill-green">${u.claims} reclamados</span></td>
     </tr>`;
   }).join('');
