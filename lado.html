@@ -25,12 +25,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
 
 <link rel="stylesheet" href="assets/estilo.css" />
-<link rel="stylesheet" href="/assets/reactions.css" />
 <link rel="stylesheet" href="/assets/vitrina.css" />
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="/assets/reactions.js"></script>
 <script src="/assets/matches.js"></script>
 
 <style>
@@ -102,29 +100,6 @@
   margin: 0 0 14px;
 }
 
-/* ── Mensaje sutil de concurso ── */
-.contest-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border-radius: 999px;
-  background: rgba(255, 190, 0, 0.07);
-  border: 1px solid rgba(255, 190, 0, 0.18);
-  color: rgba(255, 210, 60, 0.80);
-  font-size: 0.80rem;
-  font-weight: 700;
-  margin-bottom: 18px;
-  text-decoration: none;
-  transition: all .18s ease;
-}
-
-.contest-hint:hover {
-  background: rgba(255, 190, 0, 0.12);
-  border-color: rgba(255, 190, 0, 0.30);
-  color: rgba(255, 215, 70, 1);
-}
-
 /* ── Botón volver ── */
 .btn-volver-container {
   margin-bottom: 14px;
@@ -164,14 +139,6 @@
   line-height: 1;
 }
 
-.card-rxn-preview {
-  display: flex;
-  gap: 3px;
-  font-size: 1.15rem;
-  min-height: 24px;
-  align-items: center;
-}
-
 /* 2. Video */
 .video-wrap {
   position: relative;
@@ -191,9 +158,6 @@
 video.video-preview {
   cursor: pointer;
 }
-
-/* 3. Participantes (poblado por reactions.js) */
-[data-participants-slot]:empty { display: none; }
 
 /* 4. Botones de acción pill */
 .action-pills {
@@ -248,8 +212,6 @@ video.video-preview {
   border-color: rgba(11, 124, 255, 0.35);
   color: #fff;
 }
-
-/* 5–7. Slots de reacciones / comentarios / claim → estilos en reactions.css */
 
 /* ── Botón "Otro ángulo" (aparece asíncronamente) ── */
 .btn-alt {
@@ -325,27 +287,6 @@ video.video-preview {
   font-size: 0.90rem;
 }
 
-/* ── Top-month nav btn en header (interno) ── */
-.top-month-nav-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: .56rem .95rem;
-  border-radius: 999px;
-  text-decoration: none;
-  font-weight: 800;
-  font-size: .84rem;
-  color: #fff;
-  background: linear-gradient(135deg, rgba(255,190,0,.14), rgba(0,79,200,.20));
-  border: 1px solid rgba(255,190,0,.22);
-  transition: all .18s ease;
-  white-space: nowrap;
-}
-
-.top-month-nav-btn:hover {
-  transform: translateY(-1px);
-  border-color: rgba(255,190,0,.38);
-}
-
 /* ── Responsive ── */
 @media (max-width: 480px) {
   #link-cancha { font-size: 1.3rem; }
@@ -388,11 +329,6 @@ video.video-preview {
   <!-- Filtros de día (generados por script.js en #filtro-dia) -->
   <!-- Filtros de hora (generados por script.js en #filtro-horario) -->
   <div id="filtro-horario"></div>
-
-  <!-- Mensaje discreto del concurso -->
-  <a class="contest-hint" href="mejores.html">
-    🏆 ¿Listo para el concurso del mes? Reacciona y comparte
-  </a>
 
   <!-- Loading -->
   <div id="loading" style="display:none">Cargando videos…</div>

@@ -11,15 +11,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="assets/estilo.css" />
 <link rel="stylesheet" href="/assets/card.css" />
-<link rel="stylesheet" href="/assets/reactions.css" />
 
 <!-- Firebase PRIMERO, antes que cualquier otro script -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
 
-<!-- card y reactions DESPUÉS de firebase -->
-<script src="/assets/reactions.js"></script>
 <script src="/assets/card.js"></script>
 
 <style>
@@ -242,19 +239,9 @@
 
     let url='', club='', cancha='', lado='', fecha='';
 
-    // Índice global
     const hit = videoIndex[p.videoId];
     if (hit && hit.url) {
       url=hit.url; club=hit.club||''; cancha=hit.cancha||''; lado=hit.lado||''; fecha=hit.fecha||'';
-    } else {
-      // Fallback Firestore
-      try {
-        const rxDoc = await db.collection('reactions').doc(p.videoId).get();
-        if (rxDoc.exists) {
-          const d = rxDoc.data();
-          url=d.videoUrl||''; club=d.club||''; cancha=d.cancha||''; lado=d.lado||''; fecha=d.fecha||'';
-        }
-      } catch(e2) { log('Error leyendo reactions/' + p.videoId + ': ' + e2.message, 'err'); }
     }
 
     if (!url) { log('Sin URL para ' + p.videoId.slice(0,30) + '…, saltando', 'warn'); continue; }
@@ -264,12 +251,10 @@
     if (window.PuntazoCard) {
       const card = window.PuntazoCard.build(entry, {
         showSave:true, showShare:true, showFullscreen:true,
-        showClaim:false, showReactions:true, showComments:false,
-        showClubInfo:true, showHeroName:false,
+        showClubInfo:true,
         topLabel: club || '',
       });
       $grid.appendChild(card);
-      window.PuntazoCard.attachReactions(card, entry);
     } else {
       // Fallback HTML puro
       const div = document.createElement('div');
