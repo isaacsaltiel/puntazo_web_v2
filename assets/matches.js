@@ -90,6 +90,7 @@
   //   → infiere equipo por posición (LEGACY_INDEX_TO_TEAM).
   // - modo: default "partido_3".
   // - deporte: default "padel".
+  // - notas: string trimmed (max 280 chars), default "".
   // No muta el doc original; retorna copia normalizada.
   function normalizeMatchFromDoc(data) {
     if (!data || typeof data !== "object") return data;
@@ -97,7 +98,18 @@
     out.jugadores = sanitizeJugadores(Array.isArray(data.jugadores) ? data.jugadores : []);
     out.modo = MODOS_VALIDOS.includes(data.modo) ? data.modo : "partido_3";
     out.deporte = DEPORTES_VALIDOS.includes(data.deporte) ? data.deporte : "padel";
+    out.notas = sanitizeNotas(data.notas);
     return out;
+  }
+
+  // sanitizeNotas (Etapa 15.8 — Feature 3): string limpio max 280 chars.
+  // Acepta null/undefined → "". Trim para evitar whitespace ruidoso.
+  const NOTAS_MAX = 280;
+  function sanitizeNotas(v) {
+    if (v == null) return "";
+    if (typeof v !== "string") return "";
+    const t = v.replace(/\s+$/g, "").replace(/^\s+/g, "");
+    return t.slice(0, NOTAS_MAX);
   }
 
   // Firestore prohíbe arrays anidados a cualquier profundidad.
@@ -349,6 +361,9 @@
     if (o.deporte !== undefined) {
       if (!DEPORTES_VALIDOS.includes(o.deporte)) throw new Error("[Matches] deporte inválido.");
       upd.deporte = o.deporte;
+    }
+    if (o.notas !== undefined) {
+      upd.notas = sanitizeNotas(o.notas);
     }
     await ref.update(upd);
   }
