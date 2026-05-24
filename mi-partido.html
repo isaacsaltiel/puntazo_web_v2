@@ -1035,6 +1035,267 @@
     cursor: pointer;
   }
   .mp-conflict-row button:hover { background: rgba(255, 80, 80, 0.22); }
+
+  /* ── Etapa 15.6: UX refinements (toasts, slot-x, save dot, count, paste modal, drag) ── */
+
+  /* Toasts */
+  .mp-toast-container {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    z-index: 11000;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+    max-width: calc(100vw - 24px);
+  }
+  .mp-toast {
+    pointer-events: auto;
+    min-width: 200px;
+    max-width: 88vw;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(15, 22, 38, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #eaf2ff;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.88rem;
+    line-height: 1.35;
+    text-align: center;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity .18s ease, transform .18s ease;
+  }
+  .mp-toast.is-visible { opacity: 1; transform: translateY(0); }
+  .mp-toast.kind-ok { border-color: rgba(34, 180, 100, 0.50); color: #c8f7dc; }
+  .mp-toast.kind-bad { border-color: rgba(255, 80, 80, 0.50); color: #ffd5d5; }
+  .mp-toast.kind-warn { border-color: rgba(255, 170, 60, 0.50); color: #ffd497; }
+  .mp-toast.kind-info { border-color: rgba(11, 124, 255, 0.45); color: #cfe2ff; }
+
+  /* Make slot a positioning context for tachesito + drag visuals */
+  .mp-slot { position: relative; }
+
+  /* Tachesito ✕ */
+  .mp-slot-x {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.35);
+    color: rgba(255, 255, 255, 0.85);
+    font-family: inherit;
+    font-weight: 900;
+    font-size: 0.74rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.4;
+    transition: opacity .15s ease, background .15s ease, transform .12s ease;
+    z-index: 3;
+    padding: 0;
+  }
+  .mp-slot:hover .mp-slot-x { opacity: 1; }
+  .mp-slot-x:hover { background: rgba(255, 80, 80, 0.85); transform: scale(1.05); }
+  .mp-slot-x:active { transform: scale(0.92); }
+
+  .mp-slot-x-confirm {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 3;
+    background: rgba(15, 22, 38, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    padding: 2px 4px;
+  }
+  .mp-slot-x-confirm button {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 900;
+    font-size: 0.78rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .mp-slot-x-yes { background: rgba(34, 180, 100, 0.85); color: #fff; }
+  .mp-slot-x-yes:hover { background: rgba(34, 180, 100, 1); }
+  .mp-slot-x-no { background: rgba(255, 80, 80, 0.85); color: #fff; }
+  .mp-slot-x-no:hover { background: rgba(255, 80, 80, 1); }
+
+  /* Save indicator (puntito naranja → rojo si falla) */
+  .mp-court-save-dot {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 170, 60, 0.95);
+    box-shadow: 0 0 8px rgba(255, 170, 60, 0.65);
+    z-index: 5;
+    display: none;
+    animation: mpSavePulse 1.0s ease-in-out infinite;
+    pointer-events: auto;
+    cursor: help;
+  }
+  .mp-court-save-dot.is-visible { display: block; }
+  .mp-court-save-dot.is-failed {
+    background: rgba(255, 80, 80, 0.95);
+    box-shadow: 0 0 8px rgba(255, 80, 80, 0.65);
+    animation: none;
+  }
+  @keyframes mpSavePulse {
+    0%, 100% { opacity: 0.55; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.10); }
+  }
+
+  /* Court footer: paste button + count */
+  .mp-court-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .mp-court-paste-btn {
+    flex-shrink: 0;
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(11, 124, 255, 0.40);
+    background: rgba(0, 79, 200, 0.18);
+    color: #cfe2ff;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 0.80rem;
+    cursor: pointer;
+    transition: all .15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mp-court-paste-btn:hover {
+    background: rgba(0, 79, 200, 0.30);
+    border-color: rgba(11, 124, 255, 0.60);
+    color: #fff;
+  }
+  .mp-court-count {
+    font-size: 0.78rem;
+    color: rgba(234, 242, 255, .60);
+    font-weight: 700;
+    text-align: right;
+  }
+
+  /* Slot ping (animación corta al doble-tap "Soy yo") */
+  @keyframes mpSlotPing {
+    0% { box-shadow: 0 0 0 0 rgba(34, 180, 100, 0.55); }
+    100% { box-shadow: 0 0 0 18px rgba(34, 180, 100, 0); }
+  }
+  .mp-slot.is-pinging {
+    animation: mpSlotPing 0.55s ease-out;
+  }
+
+  /* Drag visuals */
+  .mp-slot.is-dragging { opacity: 0.4; }
+  .mp-slot.is-drop-target {
+    border-color: rgba(11, 124, 255, 0.85) !important;
+    background: rgba(11, 124, 255, 0.20) !important;
+    border-style: solid !important;
+  }
+  .mp-slot[draggable="true"] { cursor: grab; }
+  .mp-slot[draggable="true"]:active { cursor: grabbing; }
+
+  /* Paste bulk modal — reusa .mp-modal* */
+  .mp-paste-textarea {
+    width: 100%;
+    min-height: 130px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    border-radius: 10px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 10px 12px;
+    resize: vertical;
+    line-height: 1.4;
+  }
+  .mp-paste-textarea:focus {
+    outline: none;
+    border-color: rgba(11,124,255,.55);
+    background: rgba(0,79,200,.12);
+  }
+  .mp-paste-warn {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(255, 170, 60, 0.10);
+    border: 1px solid rgba(255, 170, 60, 0.25);
+    color: #ffd497;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  /* Mobile long-press move menu */
+  .mp-move-menu {
+    position: fixed;
+    z-index: 11500;
+    background: rgba(15, 22, 38, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    padding: 6px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 180px;
+  }
+  .mp-move-menu.is-open { display: flex; }
+  .mp-move-menu button {
+    width: 100%;
+    min-height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #eaf2ff;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.86rem;
+    text-align: left;
+    padding: 0 10px;
+    cursor: pointer;
+  }
+  .mp-move-menu button:hover { background: rgba(11, 124, 255, 0.18); }
+  .mp-move-menu button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .mp-move-menu .mp-move-menu-head {
+    font-size: 0.72rem;
+    color: rgba(234, 242, 255, .55);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 800;
+    padding: 6px 10px 2px;
+  }
 </style>
 </head>
 <body>
@@ -1155,7 +1416,8 @@
 
     <div id="mpMainCourtCard" class="mp-card mp-main-court-card" style="display:none">
       <div class="mp-main-court-title">🎾 Cancha</div>
-      <div class="mp-court-wrap">
+      <div class="mp-court-wrap" style="position:relative">
+        <span id="mpCourtSaveDot" class="mp-court-save-dot" title="Guardando…" aria-hidden="true"></span>
         <div class="mp-court-team-label">Equipo 2</div>
         <div class="mp-court-grid" id="mpMainCourtGrid">
           <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
@@ -1165,6 +1427,10 @@
         </div>
         <div class="mp-court-team-label">Equipo 1</div>
         <div class="mp-court-hint" id="mpMainCourtHint"></div>
+        <div class="mp-court-footer">
+          <button id="mpPasteBtn" type="button" class="mp-court-paste-btn" title="Pegar nombres en bulk">📋 Pegar jugadores</button>
+          <span id="mpCourtCount" class="mp-court-count">0/4 jugadores</span>
+        </div>
       </div>
     </div>
 
@@ -1282,6 +1548,27 @@
     </div>
   </div>
 </div>
+
+<!-- ── Modal Pegar jugadores en bulk (Etapa 15.6) ── -->
+<div id="mpPasteModal" class="mp-modal-backdrop">
+  <div class="mp-modal" role="dialog" aria-modal="true">
+    <h3>📋 Pegar jugadores</h3>
+    <p class="note">Pega los nombres separados por coma, punto y coma o nueva línea. Se tomarán los primeros 4.</p>
+    <textarea id="mpPasteTextarea" class="mp-paste-textarea" placeholder="Isaac, Jul, Amir, Galia" maxlength="800" autocomplete="off"></textarea>
+    <div id="mpPasteWarn" class="mp-paste-warn" style="display:none">⚠️ Esto reemplazará a los jugadores actuales.</div>
+    <div id="mpPasteMsg" class="mp-msg"></div>
+    <div class="mp-modal-actions">
+      <button id="mpPasteApply" type="button" class="mp-btn-end">Aplicar</button>
+      <button id="mpPasteCancel" type="button" class="mp-btn-cancel">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Menú de mover slot (mobile fallback, Etapa 15.6) ── -->
+<div id="mpMoveMenu" class="mp-move-menu" role="menu"></div>
+
+<!-- ── Contenedor de toasts (Etapa 15.6) ── -->
+<div id="mpToastContainer" class="mp-toast-container" aria-live="polite" aria-atomic="true"></div>
 
 <!-- ── Modal Conflicto (dueño, Etapa 15.5) ── -->
 <div id="mpConflictModal" class="mp-modal-backdrop">
@@ -2839,6 +3126,7 @@
     const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
     const byslot = claimsBySlot();
     let hasConflict = false;
+    let filledCount = 0;
 
     [0, 1, 2, 3].forEach(function (idx) {
       const btn = $mainCourtGrid.querySelector('[data-slot="' + idx + '"]');
@@ -2853,6 +3141,16 @@
       const ownedByDueno = !!(j && j.uid); // uid puesto por dueño en Etapa 15
       const hasName = !!(j && j.nombre);
       const slotFilled = ownedByDueno || hasName || !!win;
+      if (slotFilled) filledCount++;
+
+      // Etapa 15.6 — drag/drop attrs: cualquier slot ocupado es draggable;
+      // todos son drop target. Bloquear drag mientras hay confirm-de-borrado.
+      if (slotFilled && _xConfirmingIdx == null) {
+        btn.setAttribute("draggable", "true");
+      } else {
+        btn.removeAttribute("draggable");
+      }
+      btn.classList.remove("is-dragging", "is-drop-target");
 
       if (slotFilled) {
         btn.classList.add("is-filled");
@@ -2916,17 +3214,61 @@
           }
           btn.appendChild(a);
         }
+
+        // Etapa 15.6 — tachesito ✕ (sin miedo: cualquier auth puede borrar).
+        if (_xConfirmingIdx === idx) {
+          // Render del estado de confirmación inline en lugar del ✕ normal.
+          const wrap = document.createElement("div");
+          wrap.className = "mp-slot-x-confirm";
+          const yes = document.createElement("button");
+          yes.type = "button";
+          yes.className = "mp-slot-x-yes";
+          yes.title = "Confirmar borrado";
+          yes.textContent = "✓";
+          yes.dataset.action = "x-confirm";
+          yes.dataset.slot = String(idx);
+          const no = document.createElement("button");
+          no.type = "button";
+          no.className = "mp-slot-x-no";
+          no.title = "Cancelar";
+          no.textContent = "✕";
+          no.dataset.action = "x-cancel";
+          no.dataset.slot = String(idx);
+          wrap.appendChild(yes);
+          wrap.appendChild(no);
+          btn.appendChild(wrap);
+        } else {
+          const x = document.createElement("button");
+          x.type = "button";
+          x.className = "mp-slot-x";
+          x.title = "Borrar slot";
+          x.textContent = "✕";
+          x.setAttribute("aria-label", "Borrar slot");
+          x.dataset.action = "x-open";
+          x.dataset.slot = String(idx);
+          btn.appendChild(x);
+        }
       }
     });
 
     if ($mainCourtHint) {
       if (isOwner) {
         $mainCourtHint.textContent = currentClaims.length
-          ? (currentClaims.length + " reclamo" + (currentClaims.length === 1 ? "" : "s") + " activo" + (currentClaims.length === 1 ? "" : "s") + ".")
-          : "Comparte el link para que tus amigos se vinculen a un slot.";
+          ? (currentClaims.length + " reclamo" + (currentClaims.length === 1 ? "" : "s") + " activo" + (currentClaims.length === 1 ? "" : "s") + ". Arrastra para reordenar, doble tap para entrar.")
+          : "Arrastra para reordenar slots. Doble tap en uno vacío para entrar tú.";
       } else {
-        $mainCourtHint.textContent = "Toca un slot para vincularte. Necesitas iniciar sesión para reclamar.";
+        $mainCourtHint.textContent = "Toca un slot para vincularte. Arrastra o doble tap si quieres editar.";
       }
+    }
+
+    // Etapa 15.6 — conteo N/4 (feature G)
+    if ($courtCount) {
+      const claimsCount = currentClaims.length;
+      let txt = filledCount + "/4 jugadores";
+      if (claimsCount > 0) {
+        txt += " · " + claimsCount + " reclamado" + (claimsCount === 1 ? "" : "s");
+      }
+      $courtCount.textContent = txt;
     }
 
     // Banner de conflicto (sólo dueño)
@@ -3197,6 +3539,659 @@
       }
     });
   }
+
+  // =================================================================
+  // ETAPA 15.6 — UX refinements (toasts, save dot, live sub, ✕, double
+  // tap, paste bulk, drag-and-drop, conteo N/4)
+  // =================================================================
+
+  // -------- refs nuevos --------
+  const $toastContainer = document.getElementById("mpToastContainer");
+  const $courtSaveDot = document.getElementById("mpCourtSaveDot");
+  const $courtCount = document.getElementById("mpCourtCount");
+  const $pasteBtn = document.getElementById("mpPasteBtn");
+  const $pasteModal = document.getElementById("mpPasteModal");
+  const $pasteTextarea = document.getElementById("mpPasteTextarea");
+  const $pasteWarn = document.getElementById("mpPasteWarn");
+  const $pasteMsg = document.getElementById("mpPasteMsg");
+  const $pasteApply = document.getElementById("mpPasteApply");
+  const $pasteCancel = document.getElementById("mpPasteCancel");
+  const $moveMenu = document.getElementById("mpMoveMenu");
+
+  // Estado nuevo
+  let _xConfirmingIdx = null;       // slot idx en confirm-borrar, o null
+  let _xConfirmTimer = null;
+  let _matchUnsub = null;           // onSnapshot a matches/{id}
+  let _saveDotTimer = null;         // timer 5s para puntito rojo
+  let _saveDotActive = false;
+  let _pendingSignature = null;     // hash de la última escritura local pendiente
+  let _dragSourceIdx = -1;          // slot fuente durante drag
+  let _lastTapByIdx = {};           // detector de doble-tap por slot
+  let _longPressTimer = null;
+  let _longPressFired = false;
+  let _touchStartXY = null;
+
+  // -------- toasts (Feature E) --------
+  // showToast(msg, kind='info', durationMs=1900). kind ∈ ok|bad|warn|info.
+  function showToast(msg, kind, durationMs) {
+    if (!$toastContainer) return;
+    const t = document.createElement("div");
+    t.className = "mp-toast kind-" + (kind || "info");
+    t.textContent = String(msg || "");
+    $toastContainer.appendChild(t);
+    // Force layout, then add visible class for transition.
+    // eslint-disable-next-line no-unused-expressions
+    t.offsetHeight;
+    t.classList.add("is-visible");
+    const ms = Math.max(800, Math.min(8000, Number(durationMs) || 1900));
+    setTimeout(function () {
+      t.classList.remove("is-visible");
+      setTimeout(function () { try { t.remove(); } catch (_) {} }, 250);
+    }, ms);
+  }
+
+  // -------- save dot (Feature F) --------
+  function jugadoresSignature(arr) {
+    if (!Array.isArray(arr)) return "[]";
+    return arr.map(function (j) {
+      if (!j) return "_";
+      return [String(j.nombre || ""), String(j.equipo || ""), String(j.uid || ""), String(j.claimedByUid || "")].join("|");
+    }).join("§");
+  }
+
+  function showSaveDot() {
+    if (!$courtSaveDot) return;
+    _saveDotActive = true;
+    $courtSaveDot.classList.add("is-visible");
+    $courtSaveDot.classList.remove("is-failed");
+    $courtSaveDot.title = "Guardando…";
+    if (_saveDotTimer) { clearTimeout(_saveDotTimer); _saveDotTimer = null; }
+    _saveDotTimer = setTimeout(function () {
+      if (_saveDotActive && $courtSaveDot) {
+        $courtSaveDot.classList.add("is-failed");
+        $courtSaveDot.title = "No se pudo guardar — revisa tu conexión.";
+      }
+    }, 5000);
+  }
+
+  function hideSaveDot() {
+    _saveDotActive = false;
+    _pendingSignature = null;
+    if (_saveDotTimer) { clearTimeout(_saveDotTimer); _saveDotTimer = null; }
+    if ($courtSaveDot) {
+      $courtSaveDot.classList.remove("is-visible", "is-failed");
+      $courtSaveDot.title = "";
+    }
+  }
+
+  // -------- suscripción live al doc match (Feature F + general live sync) --------
+  function startMatchSubscription() {
+    if (!currentMatch || !currentMatch.id) return;
+    stopMatchSubscription();
+    try {
+      const fs = window.PuntazoFirebase && window.PuntazoFirebase.db && window.PuntazoFirebase.db();
+      if (!fs) return;
+      _matchUnsub = fs.collection("matches").doc(currentMatch.id).onSnapshot(function (snap) {
+        if (!snap.exists) return;
+        const raw = Object.assign({ id: snap.id }, snap.data());
+        const normalized = window.PuntazoMatches._normalizeMatchFromDoc
+          ? window.PuntazoMatches._normalizeMatchFromDoc(raw)
+          : raw;
+        currentMatch = normalized;
+        // Confirmación de save: si el snapshot trae los jugadores que
+        // escribimos, ocultamos el puntito.
+        if (_pendingSignature != null) {
+          const sig = jugadoresSignature(currentMatch.jugadores);
+          if (sig === _pendingSignature) hideSaveDot();
+        }
+        renderMainCourt();
+      }, function (err) {
+        console.warn("[mi-partido 15.6] match onSnapshot error", err);
+      });
+    } catch (e) {
+      console.warn("[mi-partido 15.6] startMatchSubscription failed", e);
+    }
+  }
+
+  function stopMatchSubscription() {
+    if (_matchUnsub) { try { _matchUnsub(); } catch (_) {} _matchUnsub = null; }
+  }
+
+  // Arrancar la subscripción tras la primera renderMatch. Se conecta vía
+  // hook: cada vez que renderMatch corre, garantizamos un sub vivo al
+  // doc actual.
+  (function hookLiveSubscription() {
+    const _origRenderMatch = renderMatch;
+    renderMatch = async function (match) {
+      const r = await _origRenderMatch(match);
+      startMatchSubscription();
+      return r;
+    };
+  })();
+
+  // -------- writeJugadores helper: write-through con optimistic UI --------
+  // Toma un array de jugadores (ya sanitized para el shape esperado),
+  // muestra puntito naranja, ejecuta update, y maneja toasts.
+  async function writeJugadores(newArr, successMsg, errorMsg) {
+    if (!currentMatch || !currentMatch.id) return false;
+    const sig = jugadoresSignature(newArr);
+    _pendingSignature = sig;
+    showSaveDot();
+    // Optimistic local update (la suscripción la sobreescribirá al confirmar)
+    currentMatch = Object.assign({}, currentMatch, { jugadores: newArr });
+    renderMainCourt();
+    try {
+      await window.PuntazoMatches.update(currentMatch.id, { jugadores: newArr });
+      if (successMsg) showToast(successMsg, "ok");
+      // No ocultamos el dot acá; lo oculta el snapshot confirm. Si el
+      // snapshot tarda más de 5s, pasa a fallo (cubre conexión lenta).
+      return true;
+    } catch (e) {
+      console.error("[mi-partido 15.6] writeJugadores failed", e);
+      hideSaveDot();
+      const isPerm = !!(e && (e.code === "permission-denied" || /permission/i.test(String(e.message || ""))));
+      const msg = isPerm
+        ? "Solo el dueño puede editar los slots de este partido."
+        : (errorMsg || "No se pudo guardar — intenta de nuevo.");
+      showToast(msg, "bad", 2800);
+      // Rollback optimista: el snapshot pendiente va a corregir, pero
+      // si quedó stale, forzamos un get manual.
+      try {
+        const fresh = await window.PuntazoMatches.get(currentMatch.id);
+        if (fresh) { currentMatch = fresh; renderMainCourt(); }
+      } catch (_) {}
+      return false;
+    }
+  }
+
+  // -------- helpers de claim cleanup tras drag --------
+  // Si soy invitado y arrastré mi propio claim a otro slot, re-claim al
+  // nuevo slot index. Para claims ajenos en slots movidos por el dueño,
+  // se quedan apuntando al índice viejo (best-effort; el master decidirá
+  // si endurecer en una etapa futura).
+  async function reissueMyClaimIfMoved(oldIdx, newIdx) {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) return;
+    const myClaim = currentClaims.find(function (c) { return c.uid === user.uid; });
+    if (!myClaim) return;
+    if (myClaim.slot === oldIdx) {
+      try { await window.PuntazoMatches.claimSlot(currentMatch.id, newIdx, myClaim.displayName || ""); } catch (_) {}
+    }
+  }
+
+  // -------- (B) Tachesito ✕ --------
+  function openXConfirm(idx) {
+    _xConfirmingIdx = idx;
+    if (_xConfirmTimer) { clearTimeout(_xConfirmTimer); _xConfirmTimer = null; }
+    renderMainCourt();
+    _xConfirmTimer = setTimeout(function () {
+      _xConfirmingIdx = null;
+      _xConfirmTimer = null;
+      renderMainCourt();
+    }, 3000);
+  }
+
+  function cancelXConfirm() {
+    _xConfirmingIdx = null;
+    if (_xConfirmTimer) { clearTimeout(_xConfirmTimer); _xConfirmTimer = null; }
+    renderMainCourt();
+  }
+
+  async function confirmXDelete(idx) {
+    _xConfirmingIdx = null;
+    if (_xConfirmTimer) { clearTimeout(_xConfirmTimer); _xConfirmTimer = null; }
+    const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores.slice() : [];
+    // Construir array de 4 slots y borrar el indicado.
+    const slots = [0, 1, 2, 3].map(function (i) {
+      const src = jugadores[i] || {};
+      return {
+        nombre: i === idx ? "" : String(src.nombre || ""),
+        equipo: (src.equipo === "team1" || src.equipo === "team2") ? src.equipo : SLOT_EQUIPO[i],
+      };
+    });
+    // Propagar uids de los slots no borrados.
+    for (let i = 0; i < 4; i++) {
+      if (i === idx) continue;
+      const src = jugadores[i] || {};
+      if (src.uid) slots[i].uid = src.uid;
+      if (src.claimedByUid) slots[i].claimedByUid = src.claimedByUid;
+    }
+    // Recortar trailing-vacíos para mantener el array compacto. matches.js
+    // sanitiza igual; pero por consistencia con el formato actual, dejamos
+    // hasta el último ocupado.
+    let lastNonEmpty = -1;
+    for (let i = 0; i < 4; i++) {
+      if (slots[i].nombre || slots[i].uid || slots[i].claimedByUid) lastNonEmpty = i;
+    }
+    const out = slots.slice(0, lastNonEmpty + 1);
+    await writeJugadores(out, "Slot eliminado", "No se pudo borrar el slot");
+  }
+
+  // Delegated listener: tachesito open / confirm / cancel
+  if ($mainCourtGrid) {
+    $mainCourtGrid.addEventListener("click", function (e) {
+      const t = e.target;
+      if (!t || !t.dataset || !t.dataset.action) return;
+      const idx = Number(t.dataset.slot);
+      if (!Number.isInteger(idx) || idx < 0 || idx > 3) return;
+      if (t.dataset.action === "x-open") {
+        e.stopPropagation();
+        // Para invitado sin auth, login flow.
+        const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+        if (!user) {
+          try { window.PuntazoAuth.requireAuth(function () {}); } catch (_) {}
+          return;
+        }
+        openXConfirm(idx);
+      } else if (t.dataset.action === "x-cancel") {
+        e.stopPropagation();
+        cancelXConfirm();
+      } else if (t.dataset.action === "x-confirm") {
+        e.stopPropagation();
+        confirmXDelete(idx);
+      }
+    }, true); // capture: para interceptar antes del click handler del slot existente
+  }
+
+  // -------- (D) Doble tap "Soy yo" --------
+  async function doSoyYoQuick(idx) {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) {
+      try { window.PuntazoAuth.requireAuth(function () {}); } catch (_) {}
+      return;
+    }
+    const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+    const existingSlot = jugadores.findIndex(function (j, i) { return i !== idx && j && j.uid === user.uid; });
+    if (existingSlot >= 0) {
+      // Ya estoy en otro slot. Offer move via toast con acción inline.
+      showToast("Ya estás en el slot " + (existingSlot + 1) + ". Toca el ✕ ahí para liberar y vuelve a intentar.", "warn", 2800);
+      return;
+    }
+    const userName = (user.displayName || "Yo").trim().slice(0, 80);
+    const slots = [0, 1, 2, 3].map(function (i) {
+      const src = jugadores[i] || {};
+      const o = {
+        nombre: String(src.nombre || ""),
+        equipo: (src.equipo === "team1" || src.equipo === "team2") ? src.equipo : SLOT_EQUIPO[i],
+      };
+      if (src.uid) o.uid = src.uid;
+      if (src.claimedByUid) o.claimedByUid = src.claimedByUid;
+      return o;
+    });
+    slots[idx].nombre = userName;
+    slots[idx].uid = user.uid;
+    // Animación visual ping
+    const btn = $mainCourtGrid && $mainCourtGrid.querySelector('[data-slot="' + idx + '"]');
+    if (btn) {
+      btn.classList.add("is-pinging");
+      setTimeout(function () { try { btn.classList.remove("is-pinging"); } catch (_) {} }, 600);
+    }
+    let lastNonEmpty = -1;
+    for (let i = 0; i < 4; i++) {
+      if (slots[i].nombre || slots[i].uid || slots[i].claimedByUid) lastNonEmpty = i;
+    }
+    const out = slots.slice(0, lastNonEmpty + 1);
+    await writeJugadores(out, "Soy yo en slot " + (idx + 1), "No se pudo entrar al slot");
+  }
+
+  if ($mainCourtGrid) {
+    // Doble click desktop
+    $mainCourtGrid.addEventListener("dblclick", function (e) {
+      // Si el target es un tachesito o su confirm, ignorar.
+      if (e.target.closest && (e.target.closest(".mp-slot-x") || e.target.closest(".mp-slot-x-confirm"))) return;
+      const slot = e.target.closest(".mp-slot");
+      if (!slot) return;
+      const idx = Number(slot.getAttribute("data-slot"));
+      if (!Number.isInteger(idx) || idx < 0 || idx > 3) return;
+      // Solo si está vacío.
+      const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+      const j = jugadores[idx] || {};
+      const winSlot = winningClaim(idx);
+      if (j.uid || j.nombre || winSlot) return; // sólo doble-tap en vacío
+      e.preventDefault();
+      doSoyYoQuick(idx);
+    });
+
+    // Touch double-tap detector
+    $mainCourtGrid.addEventListener("touchend", function (e) {
+      if (e.target.closest && (e.target.closest(".mp-slot-x") || e.target.closest(".mp-slot-x-confirm"))) return;
+      const slot = e.target.closest(".mp-slot");
+      if (!slot) return;
+      const idx = Number(slot.getAttribute("data-slot"));
+      if (!Number.isInteger(idx) || idx < 0 || idx > 3) return;
+      const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+      const j = jugadores[idx] || {};
+      const winSlot = winningClaim(idx);
+      if (j.uid || j.nombre || winSlot) return;
+      const now = Date.now();
+      const prev = _lastTapByIdx[idx] || 0;
+      _lastTapByIdx[idx] = now;
+      if (now - prev < 320) {
+        e.preventDefault();
+        // Para evitar que el sheet abrir también
+        e.stopPropagation();
+        doSoyYoQuick(idx);
+        _lastTapByIdx[idx] = 0;
+      }
+    }, { passive: false });
+  }
+
+  // -------- (C) Pegar bulk --------
+  function openPasteModal() {
+    if (!$pasteModal) return;
+    if ($pasteTextarea) $pasteTextarea.value = "";
+    if ($pasteWarn) {
+      const jugadores = Array.isArray(currentMatch && currentMatch.jugadores) ? currentMatch.jugadores : [];
+      const hasAny = jugadores.some(function (j) { return j && (j.nombre || j.uid || j.claimedByUid); });
+      $pasteWarn.style.display = hasAny ? "block" : "none";
+    }
+    if ($pasteMsg) { $pasteMsg.className = "mp-msg"; $pasteMsg.textContent = ""; }
+    $pasteModal.classList.add("is-open");
+    setTimeout(function () { try { $pasteTextarea && $pasteTextarea.focus(); } catch (_) {} }, 50);
+  }
+
+  function closePasteModal() {
+    if ($pasteModal) $pasteModal.classList.remove("is-open");
+  }
+
+  function parsePasteList(raw) {
+    if (typeof raw !== "string") return [];
+    return raw
+      .split(/[,\n;]+/)
+      .map(function (s) { return String(s || "").trim().slice(0, 80); })
+      .filter(function (s) { return s.length > 0; });
+  }
+
+  if ($pasteBtn) {
+    $pasteBtn.addEventListener("click", function () {
+      const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      if (!user) {
+        try { window.PuntazoAuth.requireAuth(function () { openPasteModal(); }); } catch (_) {}
+        return;
+      }
+      openPasteModal();
+    });
+  }
+  if ($pasteCancel) $pasteCancel.addEventListener("click", closePasteModal);
+  if ($pasteModal) {
+    $pasteModal.addEventListener("click", function (e) {
+      if (e.target === $pasteModal) closePasteModal();
+    });
+  }
+  if ($pasteApply) {
+    $pasteApply.addEventListener("click", async function () {
+      const raw = $pasteTextarea ? $pasteTextarea.value : "";
+      const all = parsePasteList(raw);
+      if (all.length === 0) {
+        if ($pasteMsg) { $pasteMsg.className = "mp-msg is-visible error"; $pasteMsg.textContent = "Pega al menos un nombre."; }
+        return;
+      }
+      const picked = all.slice(0, 4);
+      const ignored = Math.max(0, all.length - 4);
+      // Construir array fresco — sobreescribe TODO (decisión del brief).
+      const out = picked.map(function (nm, i) {
+        return { nombre: nm, equipo: SLOT_EQUIPO[i] };
+      });
+      $pasteApply.disabled = true;
+      $pasteApply.textContent = "Aplicando…";
+      const ok = await writeJugadores(out,
+        ignored > 0
+          ? "Lista aplicada (" + picked.length + " jugadores, se ignoraron " + ignored + ")"
+          : "Lista aplicada (" + picked.length + " jugadores)",
+        "No se pudo aplicar la lista");
+      $pasteApply.disabled = false;
+      $pasteApply.textContent = "Aplicar";
+      if (ok) closePasteModal();
+    });
+  }
+
+  // -------- (A) Drag-and-drop --------
+  function dragSrcAllowed() {
+    // Sin miedo: cualquier auth puede arrastrar. Si no hay user, login.
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    return !!user;
+  }
+
+  function setDragVisual(srcIdx, targetIdx) {
+    if (!$mainCourtGrid) return;
+    [0, 1, 2, 3].forEach(function (i) {
+      const btn = $mainCourtGrid.querySelector('[data-slot="' + i + '"]');
+      if (!btn) return;
+      btn.classList.toggle("is-dragging", i === srcIdx);
+      btn.classList.toggle("is-drop-target", targetIdx != null && i === targetIdx && i !== srcIdx);
+    });
+  }
+
+  function clearDragVisual() {
+    if (!$mainCourtGrid) return;
+    [0, 1, 2, 3].forEach(function (i) {
+      const btn = $mainCourtGrid.querySelector('[data-slot="' + i + '"]');
+      if (!btn) return;
+      btn.classList.remove("is-dragging", "is-drop-target");
+    });
+  }
+
+  async function performMoveOrSwap(srcIdx, dstIdx) {
+    if (srcIdx === dstIdx) return;
+    const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+    // Construir array completo de 4 slots con shape canónico.
+    const slots = [0, 1, 2, 3].map(function (i) {
+      const src = jugadores[i] || {};
+      const o = {
+        nombre: String(src.nombre || ""),
+        equipo: (src.equipo === "team1" || src.equipo === "team2") ? src.equipo : SLOT_EQUIPO[i],
+      };
+      if (src.uid) o.uid = src.uid;
+      if (src.claimedByUid) o.claimedByUid = src.claimedByUid;
+      return o;
+    });
+    const srcSlot = slots[srcIdx];
+    const dstSlot = slots[dstIdx];
+    const srcHasContent = !!(srcSlot.nombre || srcSlot.uid || srcSlot.claimedByUid);
+    if (!srcHasContent) return; // nada que mover
+
+    const dstEqOriginal = SLOT_EQUIPO[dstIdx];
+    const srcEqOriginal = SLOT_EQUIPO[srcIdx];
+    const dstHasContent = !!(dstSlot.nombre || dstSlot.uid || dstSlot.claimedByUid);
+    let swapped = false;
+    if (dstHasContent) {
+      // Swap: cada jugador conserva el equipo del NUEVO slot.
+      const newDst = {
+        nombre: srcSlot.nombre, equipo: dstEqOriginal,
+      };
+      if (srcSlot.uid) newDst.uid = srcSlot.uid;
+      if (srcSlot.claimedByUid) newDst.claimedByUid = srcSlot.claimedByUid;
+      const newSrc = {
+        nombre: dstSlot.nombre, equipo: srcEqOriginal,
+      };
+      if (dstSlot.uid) newSrc.uid = dstSlot.uid;
+      if (dstSlot.claimedByUid) newSrc.claimedByUid = dstSlot.claimedByUid;
+      slots[dstIdx] = newDst;
+      slots[srcIdx] = newSrc;
+      swapped = true;
+    } else {
+      // Mover: src queda vacío con su equipo default; dst recibe src con equipo destino.
+      const newDst = { nombre: srcSlot.nombre, equipo: dstEqOriginal };
+      if (srcSlot.uid) newDst.uid = srcSlot.uid;
+      if (srcSlot.claimedByUid) newDst.claimedByUid = srcSlot.claimedByUid;
+      slots[dstIdx] = newDst;
+      slots[srcIdx] = { nombre: "", equipo: srcEqOriginal };
+    }
+    let lastNonEmpty = -1;
+    for (let i = 0; i < 4; i++) {
+      if (slots[i].nombre || slots[i].uid || slots[i].claimedByUid) lastNonEmpty = i;
+    }
+    const out = slots.slice(0, lastNonEmpty + 1);
+
+    const ok = await writeJugadores(out,
+      swapped ? "Slots intercambiados" : "Slot movido",
+      "No se pudo mover");
+    if (ok) {
+      // Si el caller arrastró su propio claim, re-emitir al slot nuevo.
+      try { await reissueMyClaimIfMoved(srcIdx, dstIdx); } catch (_) {}
+      // Avisar si alguien arrastró un slot con claim ajeno en el slot
+      // fuente — el claim queda "huérfano" apuntando al índice viejo.
+      const claimAtOldSrc = (currentClaims || []).find(function (c) { return c.slot === srcIdx; });
+      const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      if (claimAtOldSrc && (!user || claimAtOldSrc.uid !== user.uid)) {
+        showToast("El claim de " + (claimAtOldSrc.displayName || "otro user") + " quedó desincronizado — pídele que lo retome o bórralo.", "warn", 3200);
+      }
+    }
+  }
+
+  if ($mainCourtGrid) {
+    // ----- HTML5 drag (desktop) -----
+    $mainCourtGrid.addEventListener("dragstart", function (e) {
+      const slot = e.target.closest && e.target.closest(".mp-slot");
+      if (!slot) return;
+      if (!dragSrcAllowed()) {
+        e.preventDefault();
+        try { window.PuntazoAuth.requireAuth(function () {}); } catch (_) {}
+        return;
+      }
+      // Cancelar confirm de borrado si estaba abierto
+      if (_xConfirmingIdx != null) cancelXConfirm();
+      const idx = Number(slot.getAttribute("data-slot"));
+      if (!Number.isInteger(idx) || idx < 0 || idx > 3) return;
+      const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+      const j = jugadores[idx] || {};
+      if (!(j.nombre || j.uid || j.claimedByUid)) {
+        e.preventDefault();
+        return;
+      }
+      _dragSourceIdx = idx;
+      try { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(idx)); } catch (_) {}
+      setDragVisual(idx, null);
+    });
+
+    $mainCourtGrid.addEventListener("dragover", function (e) {
+      const slot = e.target.closest && e.target.closest(".mp-slot");
+      if (!slot || _dragSourceIdx < 0) return;
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = "move"; } catch (_) {}
+      const idx = Number(slot.getAttribute("data-slot"));
+      if (!Number.isInteger(idx)) return;
+      setDragVisual(_dragSourceIdx, idx);
+    });
+
+    $mainCourtGrid.addEventListener("dragleave", function (e) {
+      // No-op global; el visual lo maneja dragover sobre nuevo target.
+      if (e.target === $mainCourtGrid) {
+        clearDragVisual();
+      }
+    });
+
+    $mainCourtGrid.addEventListener("drop", function (e) {
+      const slot = e.target.closest && e.target.closest(".mp-slot");
+      if (!slot || _dragSourceIdx < 0) return;
+      e.preventDefault();
+      const dstIdx = Number(slot.getAttribute("data-slot"));
+      const srcIdx = _dragSourceIdx;
+      _dragSourceIdx = -1;
+      clearDragVisual();
+      if (!Number.isInteger(dstIdx)) return;
+      performMoveOrSwap(srcIdx, dstIdx);
+    });
+
+    $mainCourtGrid.addEventListener("dragend", function () {
+      _dragSourceIdx = -1;
+      clearDragVisual();
+    });
+
+    // ----- Touch fallback: long-press → mover menú -----
+    function openMoveMenu(srcIdx, x, y) {
+      if (!$moveMenu) return;
+      $moveMenu.innerHTML = "";
+      const head = document.createElement("div");
+      head.className = "mp-move-menu-head";
+      head.textContent = "Mover slot " + (srcIdx + 1) + " a…";
+      $moveMenu.appendChild(head);
+      [0, 1, 2, 3].forEach(function (i) {
+        const b = document.createElement("button");
+        b.type = "button";
+        const isSrc = i === srcIdx;
+        const label = "Slot " + (i + 1) + " (" + (SLOT_EQUIPO[i] === "team2" ? "Eq.2" : "Eq.1") + ")";
+        b.textContent = isSrc ? label + " · (origen)" : label;
+        b.disabled = isSrc;
+        b.addEventListener("click", function () {
+          closeMoveMenu();
+          if (!isSrc) performMoveOrSwap(srcIdx, i);
+        });
+        $moveMenu.appendChild(b);
+      });
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.textContent = "Cancelar";
+      cancel.addEventListener("click", closeMoveMenu);
+      $moveMenu.appendChild(cancel);
+      // Posicionar dentro del viewport
+      $moveMenu.style.left = "0px";
+      $moveMenu.style.top = "0px";
+      $moveMenu.classList.add("is-open");
+      const rect = $moveMenu.getBoundingClientRect();
+      const vw = window.innerWidth, vh = window.innerHeight;
+      let lx = Math.min(Math.max(8, x - rect.width / 2), vw - rect.width - 8);
+      let ly = Math.min(Math.max(8, y - 10), vh - rect.height - 8);
+      $moveMenu.style.left = lx + "px";
+      $moveMenu.style.top = ly + "px";
+    }
+
+    function closeMoveMenu() {
+      if ($moveMenu) $moveMenu.classList.remove("is-open");
+    }
+    document.addEventListener("click", function (e) {
+      if (!$moveMenu || !$moveMenu.classList.contains("is-open")) return;
+      if (!$moveMenu.contains(e.target)) closeMoveMenu();
+    }, true);
+
+    $mainCourtGrid.addEventListener("touchstart", function (e) {
+      if (e.touches.length !== 1) return;
+      const slot = e.target.closest && e.target.closest(".mp-slot");
+      if (!slot) return;
+      // Si toque sobre tachesito, no iniciar long-press
+      if (e.target.closest && (e.target.closest(".mp-slot-x") || e.target.closest(".mp-slot-x-confirm"))) return;
+      const idx = Number(slot.getAttribute("data-slot"));
+      if (!Number.isInteger(idx)) return;
+      const jugadores = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+      const j = jugadores[idx] || {};
+      if (!(j.nombre || j.uid || j.claimedByUid)) return; // long-press solo en slot lleno
+      _longPressFired = false;
+      _touchStartXY = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      if (_longPressTimer) clearTimeout(_longPressTimer);
+      _longPressTimer = setTimeout(function () {
+        _longPressFired = true;
+        try { if (navigator.vibrate) navigator.vibrate(40); } catch (_) {}
+        openMoveMenu(idx, _touchStartXY.x, _touchStartXY.y);
+      }, 550);
+    }, { passive: true });
+
+    $mainCourtGrid.addEventListener("touchmove", function (e) {
+      if (!_longPressTimer || !_touchStartXY) return;
+      const t = e.touches[0];
+      const dx = Math.abs(t.clientX - _touchStartXY.x);
+      const dy = Math.abs(t.clientY - _touchStartXY.y);
+      if (dx > 12 || dy > 12) {
+        clearTimeout(_longPressTimer);
+        _longPressTimer = null;
+      }
+    }, { passive: true });
+
+    $mainCourtGrid.addEventListener("touchend", function (e) {
+      if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null; }
+      if (_longPressFired) {
+        // Prevenir que el click subsiguiente abra el claim flow.
+        e.preventDefault();
+        e.stopPropagation();
+        _longPressFired = false;
+      }
+    }, { passive: false });
+  }
+
+  // -------- teardown extendido --------
+  window.addEventListener("pagehide", function () {
+    stopMatchSubscription();
+    hideSaveDot();
+  });
 })();
 </script>
 
