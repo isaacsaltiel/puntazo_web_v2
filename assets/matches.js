@@ -56,62 +56,35 @@
   const MODOS_VALIDOS = ["partido_3", "partido_5", "reta", "libre"];
   const DEPORTES_VALIDOS = ["padel", "tenis"];
 
-  // Normaliza UN jugador (string legacy / obj / null) a {nombre, equipo, uid?, claimedByUid?}.
-  function _normalizeOneJugador(raw, defaultEquipo) {
-    const eqDefault = (defaultEquipo === "team1" || defaultEquipo === "team2") ? defaultEquipo : "team1";
-    if (typeof raw === "string") {
-      return { nombre: String(raw).slice(0, 80), equipo: eqDefault };
-    }
-    if (!raw || typeof raw !== "object") {
-      return { nombre: "", equipo: eqDefault };
-    }
-    const out = { nombre: String(raw.nombre || "").slice(0, 80) };
-    out.equipo = (raw.equipo === "team1" || raw.equipo === "team2") ? raw.equipo : eqDefault;
-    if (raw.uid && typeof raw.uid === "string") out.uid = raw.uid;
-    if (raw.claimedByUid && typeof raw.claimedByUid === "string") {
-      out.claimedByUid = raw.claimedByUid;
-    }
-    return out;
-  }
-
-  // sanitizeJugadores garantiza el invariante 0-ó-4 (length 0 si todos vacíos,
-  // length 4 en cualquier otro caso). Cuando el caller manda un array parcial
-  // (length 1-3), se reacomoda por equipo: team1 ocupa slots [0,1], team2 ocupa
-  // slots [2,3]. Esto evita el bug donde 1 jugador de team2 caía en slot 1 y
-  // visualmente aparecía en Equipo 1 (splitTeams mapea por índice, no por campo).
+  // sanitizeJugadores acepta arrays de longitud 0-4. Cada elemento es un
+  // objeto { nombre, equipo, uid?, claimedByUid? }. Length variable (0,1,2,3,4)
+  // es válido — un partido puede tener 1, 2, 3 o 4 jugadores registrados.
+  // El campo `equipo` del objeto es AUTORITATIVO; si no viene, se deriva por
+  // posición (LEGACY_INDEX_TO_TEAM: slot 0,1→team1; slot 2,3→team2).
+  // El consumidor (splitTeams, cancha visual) DEBE agrupar por j.equipo,
+  // NUNCA por índice — esa fue la causa del bug donde 2 jugadores caían
+  // en mismo equipo: el consumer mapeaba por índice ignorando j.equipo.
   function sanitizeJugadores(input) {
-    if (!Array.isArray(input) || input.length === 0) return [];
-
-    const hasAnyName = input.some(j => {
-      if (typeof j === "string") return j.trim().length > 0;
-      return j && typeof j === "object" && j.nombre && String(j.nombre).trim().length > 0;
+    if (!Array.isArray(input)) return [];
+    const arr = input.slice(0, 4);
+    return arr.map((raw, idx) => {
+      const defaultEquipo = LEGACY_INDEX_TO_TEAM[idx] || "team1";
+      if (typeof raw === "string") {
+        return { nombre: String(raw).slice(0, 80), equipo: defaultEquipo };
+      }
+      if (!raw || typeof raw !== "object") {
+        return { nombre: "", equipo: defaultEquipo };
+      }
+      const out = { nombre: String(raw.nombre || "").slice(0, 80) };
+      out.equipo = (raw.equipo === "team1" || raw.equipo === "team2")
+        ? raw.equipo
+        : defaultEquipo;
+      if (raw.uid && typeof raw.uid === "string") out.uid = raw.uid;
+      if (raw.claimedByUid && typeof raw.claimedByUid === "string") {
+        out.claimedByUid = raw.claimedByUid;
+      }
+      return out;
     });
-    if (!hasAnyName) return [];
-
-    // Si length === 4, respetar posición del caller (cancha visual ya mapeó por slot).
-    // Aún así, FORZAR equipo del slot para garantizar consistencia visual.
-    if (input.length === 4) {
-      return input.map((raw, idx) => {
-        const j = _normalizeOneJugador(raw, LEGACY_INDEX_TO_TEAM[idx]);
-        j.equipo = LEGACY_INDEX_TO_TEAM[idx] || "team1";
-        return j;
-      });
-    }
-
-    // Length 1-3: reacomodar por equipo del input, padear a length 4.
-    const team1 = [];
-    const team2 = [];
-    input.slice(0, 4).forEach((raw, idx) => {
-      const j = _normalizeOneJugador(raw, LEGACY_INDEX_TO_TEAM[idx]);
-      if (j.equipo === "team2") team2.push(j); else team1.push(j);
-    });
-
-    return [
-      team1[0] ? Object.assign({}, team1[0], { equipo: "team1" }) : { nombre: "", equipo: "team1" },
-      team1[1] ? Object.assign({}, team1[1], { equipo: "team1" }) : { nombre: "", equipo: "team1" },
-      team2[0] ? Object.assign({}, team2[0], { equipo: "team2" }) : { nombre: "", equipo: "team2" },
-      team2[1] ? Object.assign({}, team2[1], { equipo: "team2" }) : { nombre: "", equipo: "team2" },
-    ];
   }
 
   // normalizeMatchFromDoc: aplica backward-compat al LEER el doc.
