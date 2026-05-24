@@ -340,6 +340,19 @@
     display: block;
     filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
   }
+  /* Etapa 16.4 F4 — ícono hex neón por cancha (B1..B8 generados con AI) */
+  .sel-card--cancha {
+    padding: 12px 10px 14px;
+  }
+  .sel-card .court-icon {
+    width: 96px;
+    height: 96px;
+    max-width: 100%;
+    object-fit: contain;
+    margin: 0 auto 6px;
+    display: block;
+    border-radius: 18px;
+  }
   .sel-card .name {
     font-size: 1rem;
     font-weight: 800;
@@ -655,12 +668,15 @@
         return;
       }
 
-      canchas.forEach(cancha => {
+      canchas.forEach((cancha, canchaIdx) => {
         const card = document.createElement("button");
         card.type = "button";
-        card.className = "sel-card";
+        card.className = "sel-card sel-card--cancha";
+        // Etapa 16.4 F4 (+): ícono hex neón por cancha (B1..B8, ciclo si >8)
+        const iconNum = (canchaIdx % 8) + 1;
+        const iconSrc = "/assets/court-icons/B" + iconNum + ".png";
         card.innerHTML =
-          '<div class="emoji">🎾</div>' +
+          '<img class="court-icon" src="' + iconSrc + '" alt="' + escapeHtml(cancha.nombre) + '" onerror="this.outerHTML=\'<div class=&quot;emoji&quot;>🎾</div>\'">' +
           '<div class="name">' + escapeHtml(cancha.nombre) + '</div>';
         card.addEventListener("click", function () {
           selectorState.selectedCancha = cancha;
