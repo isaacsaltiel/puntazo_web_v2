@@ -17,6 +17,22 @@
   --text:#eaf2ff;
   --muted:rgba(234,242,255,0.55);
   --radius:18px;
+
+  /* ── Etapa 16.3 — Paleta por equipo ──
+     Equipo 1 = azul Puntazo (color brand).
+     Equipo 2 = verde pelota de tenis (acento, solo para distinguir el otro
+     equipo; NUNCA domina la página). */
+  --team1-color: #0B7CFF;
+  --team1-color-bg: rgba(11, 124, 255, 0.14);
+  --team1-color-bg-strong: rgba(11, 124, 255, 0.22);
+  --team1-color-border: rgba(11, 124, 255, 0.55);
+  --team1-color-glow: rgba(11, 124, 255, 0.45);
+
+  --team2-color: #c8e835;
+  --team2-color-bg: rgba(200, 232, 53, 0.16);
+  --team2-color-bg-strong: rgba(200, 232, 53, 0.24);
+  --team2-color-border: rgba(200, 232, 53, 0.60);
+  --team2-color-glow: rgba(200, 232, 53, 0.45);
 }
 html{scroll-behavior:smooth;}
 body{
