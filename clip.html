@@ -20,12 +20,10 @@
 
 <link rel="stylesheet" href="assets/estilo.css" />
 <link rel="stylesheet" href="/assets/card.css" />
-<link rel="stylesheet" href="/assets/reactions.css" />
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
-<script src="/assets/reactions.js"></script>
 <script src="/assets/card.js"></script>
 
 <style>
@@ -56,13 +54,6 @@
   }
   .clip-error a:hover { border-color:rgba(255,190,0,.42); }
 
-  .immortal-note {
-    display:inline-flex; align-items:center; gap:6px;
-    padding:5px 12px; border-radius:999px; margin-bottom:12px;
-    background:rgba(255,190,0,.08); border:1px solid rgba(255,190,0,.20);
-    color:rgba(255,210,60,.85); font-size:.76rem; font-weight:700;
-  }
-
   .clip-footer {
     margin-top:32px; padding:20px; border-radius:18px;
     background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
@@ -90,7 +81,6 @@
   <div class="clip-wrap">
 
     <div id="clipBreadcrumb" class="clip-breadcrumb" style="display:none"></div>
-    <div id="immortalNote" class="immortal-note" style="display:none">⭐ Video inmortal — este clip no expira</div>
 
     <div id="clipLoading" class="clip-loading">
       <div style="font-size:32px;margin-bottom:12px">🎾</div>
@@ -102,9 +92,7 @@
     <div id="clipError" class="clip-error" style="display:none">
       <div class="clip-error-icon">📭</div>
       <h2>Este clip ya expiró</h2>
-      <p>Los clips de los últimos días están disponibles en la cancha.<br>
-         Los mejores puntazos del mes no expiran nunca:</p>
-      <a href="mejores.html">🏆 Ver Puntazos del mes</a>
+      <p>Los clips de los últimos días están disponibles en la cancha.</p>
     </div>
 
     <div id="clipFooter" class="clip-footer" style="display:none">
@@ -138,7 +126,6 @@
   const videoId = params.get('videoId') || params.get('v') || '';
 
   const $breadcrumb   = document.getElementById('clipBreadcrumb');
-  const $immortalNote = document.getElementById('immortalNote');
   const $loading      = document.getElementById('clipLoading');
   const $card         = document.getElementById('clipCard');
   const $error        = document.getElementById('clipError');
@@ -162,7 +149,6 @@
 
   // ── 1. Buscar en el índice global ──────────────────────────
   let entry = null;
-  let fromFirestore = false;
 
   try {
     const res = await fetch(INDEX_URL + '?cb=' + Date.now(), { cache: 'no-store' });
@@ -191,40 +177,10 @@
     console.warn('[clip] videos_index.json no disponible:', e);
   }
 
-  // ── 2. Fallback: Firestore (videos inmortales / guardados) ──
-  if (!entry) {
-    entry = await PuntazoCard.loadEntryFromFirestore(videoId);
-    if (entry) {
-      fromFirestore = true;
-      // Construir hrefs desde el nombre del archivo si está disponible
-      const m = PuntazoCard.parseFromName(videoId);
-      if (m) {
-        entry._ladoHref   = `/lado.html?loc=${encodeURIComponent(m.loc)}&can=${encodeURIComponent(m.can)}&lado=${encodeURIComponent(m.lado)}`;
-        entry._canchaHref = `/cancha.html?loc=${encodeURIComponent(m.loc)}&can=${encodeURIComponent(m.can)}`;
-      }
-    }
-  }
-
-  // ── 3. No encontrado ────────────────────────────────────────
+  // ── 2. No encontrado ────────────────────────────────────────
   if (!entry || !entry.url) { showError(); return; }
 
-  // ── 4. Registrar vista en Firestore ─────────────────────────
-  try {
-    const db = PuntazoCard.getDb();
-    if (db) {
-      await db.collection('reactions').doc(videoId).set({
-        views:    firebase.firestore.FieldValue.increment(1),
-        videoId:  entry.nombre,
-        videoUrl: entry.url,
-        club:     entry.club,
-        cancha:   entry.cancha,
-        lado:     entry.lado,
-        fecha:    entry.fecha,
-      }, { merge: true });
-    }
-  } catch {}
-
-  // ── 5. Render ────────────────────────────────────────────────
+  // ── 3. Render ────────────────────────────────────────────────
   document.title = `${entry.club || 'Puntazo'} · Clip`;
 
   if (entry.club) {
@@ -236,22 +192,13 @@
     $breadcrumb.style.display = 'flex';
   }
 
-  if (entry.immortal || fromFirestore) {
-    $immortalNote.style.display = 'inline-flex';
-  }
-
-  const shareMsg = '¡Vota por este puntazo! 🔥 Puede ganar el premio del mes en Puntazo 🏆';
   const card = PuntazoCard.build(entry, {
     showSave:true, showShare:true, showFullscreen:true,
-    showClaim:true, showReactions:true, showComments:true,
-    showHeroName:true,
     topLabel: entry.club || PuntazoCard.formatDisplayTime(entry.nombre),
-    shareMessage: shareMsg,
   });
 
   $loading.style.display = 'none';
   $card.appendChild(card);
-  PuntazoCard.attachReactions(card, entry);
 
   // Footer
   const footerClub = document.getElementById('clipFooterClub');

@@ -15,7 +15,7 @@
 }
 .video-card:hover { border-color: rgba(255,255,255,.16); }
 
-/* ── Header: label + rxn preview ── */
+/* ── Header: label ── */
 .card-top {
   display: flex;
   align-items: center;
@@ -31,66 +31,6 @@
   letter-spacing: -0.5px;
   line-height: 1;
   flex: 1;
-}
-
-.card-rxn-preview {
-  display: flex;
-  gap: 3px;
-  font-size: 1.05rem;
-  min-height: 24px;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-/* ── has-rank: medalla arriba, label centrado, sin solapamiento ── */
-/*
-  Cuando hay medalla (mejores.html), el card-top cambia:
-  - La medalla se saca del flujo absoluto y pasa a ser el primer hijo del card-top
-  - El label (club / jugador) se centra
-  - Las reacciones van al final
-*/
-.video-card.has-rank .rank-badge {
-  position: static;          /* quitar el absolute */
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  font-size: 1.2rem;
-}
-
-.video-card.has-rank .card-top {
-  justify-content: flex-start;
-}
-
-.video-card.has-rank .card-time {
-  font-size: 1.05rem;
-  font-weight: 800;
-  text-align: center;
-  flex: 1;
-  letter-spacing: 0;
-  /* Truncar si el nombre es largo */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* card-hero-name: se oculta en has-rank porque el nombre ya está en card-time */
-.video-card.has-rank .card-hero-name {
-  display: none !important;
-}
-
-/* ── Hero name slot (perfil, clip, jugador) ── */
-.card-hero-name {
-  font-size: 0.84rem;
-  font-weight: 800;
-  color: rgba(234,242,255,.80);
-  margin: -4px 0 10px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(0,79,200,.12);
-  border: 1px solid rgba(11,124,255,.18);
-  display: none; /* reactions.js lo muestra cuando hay claim */
-  align-items: center;
-  gap: 6px;
 }
 
 /* ── Subtítulo (club·cancha) ── */
@@ -171,45 +111,12 @@
   color: #eaf2ff;
 }
 
-/* ── Rank badge (solo para cuando no es has-rank, fallback) ── */
-.rank-badge {
-  position: absolute;
-  top: 12px; left: 12px;
-  z-index: 8;
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  background: rgba(0,0,0,.65);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 900;
-  pointer-events: none;
-}
-.rank-badge.top1 { background:rgba(255,190,0,.22); border-color:rgba(255,190,0,.48); color:#ffe89a; }
-.rank-badge.top2 { background:rgba(180,180,180,.18); border-color:rgba(200,200,200,.38); color:#d8d8d8; }
-.rank-badge.top3 { background:rgba(180,100,30,.22); border-color:rgba(200,120,40,.38); color:#e09060; }
-
 /* ── Grids ── */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px,1fr));
   gap: 20px;
 }
-
-/* ── Tabs (perfil.html) ── */
-.pz-tabs { display:flex; gap:8px; margin-bottom:24px; border-bottom:1px solid rgba(255,255,255,.08); }
-.pz-tab-btn {
-  padding:10px 20px; border-radius:999px 999px 0 0; border:1px solid transparent;
-  background:transparent; color:rgba(234,242,255,.55); font-family:inherit;
-  font-size:.88rem; font-weight:700; cursor:pointer; transition:all .18s;
-}
-.pz-tab-btn:hover { color:#eaf2ff; }
-.pz-tab-btn.active { color:#fff; background:rgba(0,79,200,.18); border-color:rgba(11,124,255,.30); border-bottom-color:transparent; }
-.pz-tab-pane { display:none; }
-.pz-tab-pane.active { display:block; }
 
 /* ── Empty state ── */
 .empty-state { text-align:center; padding:60px 20px; color:rgba(234,242,255,.55); }
@@ -225,16 +132,8 @@
 .skeleton-line.short { width:55%; }
 @keyframes pz-shimmer { 0%,100%{opacity:1} 50%{opacity:.55} }
 
-/* ── Botón borrar comentario ── */
-.pz-comment-delete {
-  background:transparent; border:none; font-size:13px; opacity:.40;
-  cursor:pointer; padding:2px 4px; border-radius:6px; transition:opacity .15s,background .15s; line-height:1;
-}
-.pz-comment-delete:hover { opacity:.90; background:rgba(255,60,40,.12); }
-
 @media(max-width:560px){
   .cards-grid { grid-template-columns:1fr; }
   .card-time { font-size:1.25rem; }
-  .video-card.has-rank .card-time { font-size:.95rem; }
   .action-pill { font-size:.95rem; padding:.5rem .65rem; }
 }

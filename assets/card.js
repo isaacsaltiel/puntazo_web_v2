@@ -76,12 +76,6 @@ window.PuntazoCard = (function () {
       savedAt:getTs(), nombreArchivo:entry.nombre,
     };
     await db.collection('usuarios').doc(user.uid).collection('guardados').doc(entry.nombre).set(meta,{merge:true});
-    try {
-      await db.collection('reactions').doc(entry.nombre).set({
-        immortal:true, immortal_reasons:{saved_by_user:{uid:user.uid,at:getTs()}},
-        immortal_markedAt:getTs(), saves:firebase.firestore.FieldValue.increment(1),
-      },{merge:true});
-    } catch {}
   }
 
   async function unsaveVideo(videoId) {
@@ -219,60 +213,39 @@ window.PuntazoCard = (function () {
   /**
    * opts:
    *   showSave, showShare, showFullscreen: true
-   *   showClaim, showReactions, showComments: true
    *   showClubInfo: false
-   *   rankBadge: null | 1|2|3|N  → badge inline en card-top (NO absolute)
    *   onUnsave: null | fn()
    *   topLabel: null | string   → texto en card-time (null = hora del archivo)
-   *   showHeroName: false       → slot data-hero-name bajo el video (para perfil/clip/jugador)
    *   shareMessage: null | string
    */
   function build(entry, opts) {
     opts = Object.assign({
       showSave:true, showShare:true, showFullscreen:true,
-      showClaim:true, showReactions:true, showComments:true,
-      showClubInfo:false, rankBadge:null, onUnsave:null,
-      topLabel:null, showHeroName:false, shareMessage:null,
+      showClubInfo:false, onUnsave:null,
+      topLabel:null, shareMessage:null,
     }, opts||{});
 
     if (!entry._meta && entry.nombre) entry._meta = parseFromName(entry.nombre);
 
     const card = document.createElement('div');
-    card.className = 'video-card' + (opts.rankBadge ? ' has-rank' : '');
+    card.className = 'video-card';
     if (entry.nombre) card.id = entry.nombre;
 
-    // 1. Header: [rank badge?] label rxn-preview
+    // 1. Header: label
     const topEl = document.createElement('div');
     topEl.className = 'card-top';
 
-    // Rank badge dentro del card-top (NO absolute) cuando has-rank
-    if (opts.rankBadge) {
-      const badge = document.createElement('div');
-      const cls   = opts.rankBadge===1?'top1':opts.rankBadge===2?'top2':opts.rankBadge===3?'top3':'';
-      badge.className = `rank-badge ${cls}`;
-      badge.textContent = opts.rankBadge===1?'🥇':opts.rankBadge===2?'🥈':opts.rankBadge===3?'🥉':'#'+opts.rankBadge;
-      topEl.appendChild(badge);
-    }
-
     const labelEl = document.createElement('div');
     labelEl.className = 'card-time';
-    // topLabel: si se pasa explícitamente úsalo; si no, usar la hora del archivo
     labelEl.textContent = opts.topLabel !== null && opts.topLabel !== undefined
       ? opts.topLabel
       : (formatDisplayTime(entry.nombre) || entry.fecha || '');
-    // Para ranked cards: reactions.js actualizará el texto a nombre del jugador
-    if (opts.rankBadge) labelEl.setAttribute('data-card-label', '');
     topEl.appendChild(labelEl);
-
-    const rxnPreview = document.createElement('div');
-    rxnPreview.className = 'card-rxn-preview';
-    rxnPreview.setAttribute('data-rxn-preview','');
-    topEl.appendChild(rxnPreview);
 
     card.appendChild(topEl);
 
-    // Subtítulo (club·cancha) — para tarjetas sin rank
-    if (opts.showClubInfo && !opts.rankBadge && (entry.club||entry.cancha)) {
+    // Subtítulo (club·cancha)
+    if (opts.showClubInfo && (entry.club||entry.cancha)) {
       const sub = document.createElement('div');
       sub.className = 'card-subtitle';
       sub.textContent = [entry.club, entry.cancha?'· '+entry.cancha:''].filter(Boolean).join(' ');
@@ -291,20 +264,7 @@ window.PuntazoCard = (function () {
     wrap.appendChild(video);
     card.appendChild(wrap);
 
-    // Hero name slot (solo en tarjetas SIN rank, para perfil/clip/jugador)
-    if (opts.showHeroName && !opts.rankBadge) {
-      const heroEl = document.createElement('div');
-      heroEl.className = 'card-hero-name';
-      heroEl.setAttribute('data-hero-name','');
-      card.appendChild(heroEl);
-    }
-
-    // 3. Participants slot
-    const pSlot = document.createElement('div');
-    pSlot.setAttribute('data-participants-slot','');
-    card.appendChild(pSlot);
-
-    // 4. Action pills
+    // 3. Action pills
     const pillsEl = document.createElement('div');
     pillsEl.className = 'action-pills';
     if (opts.showShare) pillsEl.appendChild(buildSharePill(entry, { shareMessage: opts.shareMessage }));
@@ -312,42 +272,6 @@ window.PuntazoCard = (function () {
     if (opts.showFullscreen) pillsEl.appendChild(buildFullscreenPill(video));
     card.appendChild(pillsEl);
 
-    // 5. Reactions slot
-    if (opts.showReactions) {
-      const rxnSlot = document.createElement('div'); rxnSlot.setAttribute('data-rxn-slot',''); card.appendChild(rxnSlot);
-    }
-    // 6. Comments slot
-    if (opts.showComments) {
-      const cSlot = document.createElement('div'); cSlot.setAttribute('data-comments-slot',''); card.appendChild(cSlot);
-    }
-    // 7. Claim slot
-    if (opts.showClaim) {
-      const clSlot = document.createElement('div'); clSlot.setAttribute('data-claim-slot',''); card.appendChild(clSlot);
-    }
-
-    return card;
-  }
-
-  function attachReactions(card, entry) {
-    function tryAttach(retries) {
-      if (window.PuntazoReactions) {
-        const _meta = entry._meta || parseFromName(entry.nombre);
-        const fecha = entry.fecha || (_meta?`${_meta.Y}-${_meta.M}-${_meta.D}`:'');
-        PuntazoReactions.attach(card, {
-          videoId: entry.nombre, videoUrl: entry.url||'',
-          club: entry.club||'', cancha: entry.cancha||'', lado: entry.lado||'', fecha,
-        });
-      } else if ((retries||0) > 0) {
-        setTimeout(()=>tryAttach((retries||0)-1), 200);
-      }
-    }
-    tryAttach(20);
-  }
-
-  function buildAndAppend(entry, opts, container) {
-    const card = build(entry, opts);
-    container.appendChild(card);
-    attachReactions(card, entry);
     return card;
   }
 
@@ -389,26 +313,10 @@ window.PuntazoCard = (function () {
     };
   }
 
-  async function loadEntryFromFirestore(videoId) {
-    const db = getDb();
-    if (!db) return null;
-    try {
-      const doc = await db.collection('reactions').doc(videoId).get();
-      if (!doc.exists) return null;
-      const d = doc.data();
-      if (!d.videoUrl) return null;
-      return {
-        nombre: videoId, url: d.videoUrl,
-        club: d.club||'', cancha: d.cancha||'', lado: d.lado||'', fecha: d.fecha||'',
-        _meta: parseFromName(videoId), immortal: d.immortal||false, _fromFirestore: true,
-      };
-    } catch { return null; }
-  }
-
   return {
-    build, buildAndAppend, attachReactions,
+    build,
     buildSharePill, buildSavePill, buildFullscreenPill,
-    loadEntryFromConfig, loadEntryFromFirestore,
+    loadEntryFromConfig,
     parseFromName, formatDisplayTime, escapeHTML,
     isVideoSaved, saveVideo, unsaveVideo,
     getUser, getDb, toast,
