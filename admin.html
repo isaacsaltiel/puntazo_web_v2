@@ -265,11 +265,8 @@ tr:hover td{background:rgba(255,255,255,.025);}
     <div class="kpi src-gh"><div class="kpi-value" id="kpiClubs">—</div><div class="kpi-label">Clubs activos</div></div>
     <div class="kpi src-gh"><div class="kpi-value" id="kpiActivos">—</div><div class="kpi-label">Videos ahora (24h)</div></div>
     <div class="kpi src-fs"><div class="kpi-value" id="kpiViews">—</div><div class="kpi-label">Reproducciones</div></div>
-    <div class="kpi src-fs"><div class="kpi-value" id="kpiReactions">—</div><div class="kpi-label">Reacciones</div></div>
     <div class="kpi src-green"><div class="kpi-value" id="kpiSaves">—</div><div class="kpi-label">Guardados</div></div>
     <div class="kpi src-green"><div class="kpi-value" id="kpiUsers">—</div><div class="kpi-label">Usuarios Firestore</div></div>
-    <div class="kpi src-fs"><div class="kpi-value" id="kpiComments">—</div><div class="kpi-label">Comentarios</div></div>
-    <div class="kpi src-fs"><div class="kpi-value" id="kpiClaims">—</div><div class="kpi-label">Claims "Soy yo"</div></div>
   </div>
   <p style="color:var(--muted);font-size:.71rem;margin-top:-14px;margin-bottom:24px">
     🔵 Azul = videos_log.csv en GitHub (datos de grabación). 🟡 Amarillo/verde = Firestore (engagement).
@@ -278,7 +275,6 @@ tr:hover td{background:rgba(255,255,255,.025);}
   <div class="tabs">
     <button class="tab-btn active" data-tab="clubs">🏢 Clubs</button>
     <button class="tab-btn" data-tab="views">▶ Reproducciones</button>
-    <button class="tab-btn" data-tab="reactions">🔥 Reacciones</button>
     <button class="tab-btn" data-tab="saves">💾 Guardados</button>
     <button class="tab-btn" data-tab="players">🥷 Jugadores</button>
     <button class="tab-btn" data-tab="users">👤 Usuarios</button>
@@ -288,7 +284,6 @@ tr:hover td{background:rgba(255,255,255,.025);}
 
   <div id="tab-clubs"     class="tab-pane active"></div>
   <div id="tab-views"     class="tab-pane"></div>
-  <div id="tab-reactions" class="tab-pane"></div>
   <div id="tab-saves"     class="tab-pane"></div>
   <div id="tab-players"   class="tab-pane"></div>
   <div id="tab-users"     class="tab-pane"></div>
@@ -952,7 +947,6 @@ function shiftT(d,t){_timeOffset=Math.max(0,_timeOffset-d);renderTab(t);}
 function renderTab(t){
   if(t==='clubs')     renderClubs();
   if(t==='views')     renderTopFS('tab-views','views','▶ Top por reproducciones','');
-  if(t==='reactions') renderTopFS('tab-reactions','total','🔥 Top por reacciones','gold');
   if(t==='saves')     renderTopFS('tab-saves','saves','💾 Top por guardados','green');
 }
 
@@ -982,7 +976,6 @@ async function refreshAll(){
   renderKPIs();
   renderClubs();
   renderTopFS('tab-views','views','▶ Top por reproducciones','');
-  renderTopFS('tab-reactions','total','🔥 Top por reacciones','gold');
   renderTopFS('tab-saves','saves','💾 Top por guardados','green');
   renderPlayers();
   renderUsers();
@@ -1028,18 +1021,12 @@ function renderKPIs(){
   s('kpiClubs',         fmt(t.clubs_activos));
   s('kpiActivos',       fmt(t.videos_activos));
   const fs=_fsDocs.reduce((a,d)=>({
-    views:    a.views    +(d.views||0),
-    rxn:      a.rxn      +(d.total||0),
-    saves:    a.saves    +(d.saves||0),
-    comments: a.comments +(d.comments_count||0),
-    claims:   a.claims   +(d.claims_count||0),
-  }),{views:0,rxn:0,saves:0,comments:0,claims:0});
-  s('kpiViews',    fmt(fs.views));
-  s('kpiReactions',fmt(fs.rxn));
-  s('kpiSaves',    fmt(fs.saves));
-  s('kpiComments', fmt(fs.comments));
-  s('kpiClaims',   fmt(fs.claims));
-  s('kpiUsers',    fmt(_users.length));
+    views: a.views +(d.views||0),
+    saves: a.saves +(d.saves||0),
+  }),{views:0,saves:0});
+  s('kpiViews', fmt(fs.views));
+  s('kpiSaves', fmt(fs.saves));
+  s('kpiUsers', fmt(_users.length));
 }
 
 // ── Tab Clubs ──
@@ -1123,7 +1110,7 @@ function renderTopFS(tabId,field,title,color){
     const link=d.videoId?`/clip.html?videoId=${encodeURIComponent(d.videoId)}`:'#';
     return`<tr>
       <td class="td-rank">${rankEmoji(i)}</td>
-      <td class="td-name"><a href="${link}" target="_blank" style="color:#eaf2ff;text-decoration:none">${videoLabel(d)}<small>${esc(d.club||'')} ${d.cancha?'· '+esc(d.cancha):''} ${d.fecha?'· '+d.fecha:''}</small></a>${d.immortal?'<span class="pill pill-gold" style="margin-left:4px">⭐</span>':''}</td>
+      <td class="td-name"><a href="${link}" target="_blank" style="color:#eaf2ff;text-decoration:none">${videoLabel(d)}<small>${esc(d.club||'')} ${d.cancha?'· '+esc(d.cancha):''} ${d.fecha?'· '+d.fecha:''}</small></a></td>
       <td class="td-bar"><div class="bar"><div class="bar-fill ${color}" style="width:${pct}%"></div></div></td>
       <td class="td-num">${fmt(d[field]||0)}</td>
     </tr>`;
