@@ -223,6 +223,521 @@
     return { winner, complete: !!winner, target, t1Sets: t1, t2Sets: t2 };
   }
 
+  // =================================================================
+  // Live scoring engine (Etapa 16.2) — punto-a-punto en vivo
+  // =================================================================
+  // Modelo del campo `marcador` (compatible con el existente):
+  //   {
+  //     sets: [{ team1:N, team2:M }, ...],   // sets ganados (cerrados)
+  //     tiebreak: [...] | undefined,         // marcador del tb por set (opcional)
+  //     current: {
+  //       team1Games:N, team2Games:M,
+  //       team1Points:0|15|30|40|"AD",
+  //       team2Points:0|15|30|40|"AD",
+  //       servingTeam: "team1"|"team2",
+  //       tiebreak: { team1:N, team2:N } | null,
+  //     },
+  //     goldenPoint: boolean,
+  //     ganador: "team1"|"team2"|undefined,
+  //     modo: "partido_3"|"partido_5"|"reta"|"libre" (opcional, copia local),
+  //     history: Array<deltaOp>,             // pila para undo
+  //   }
+  //
+  // `history` guarda cambios atómicos (1 punto, force game, force set) con
+  // suficiente info para deshacer SIN reconstruir desde cero. Mantenemos
+  // los últimos LIVE_HISTORY_MAX elementos para evitar inflar el doc.
+  const LIVE_HISTORY_MAX = 200;
+  const POINTS_SEQ = [0, 15, 30, 40];
+
+  function _cloneMarcador(m) {
+    // Clone profundo "manual" suficiente para el shape conocido. Evitamos
+    // JSON.parse(JSON.stringify) para no perder tipos no-numéricos en futuro.
+    if (!m || typeof m !== "object") return {};
+    const out = {};
+    if (Array.isArray(m.sets)) {
+      out.sets = m.sets.map(function (s) {
+        return { team1: Number(s && s.team1) || 0, team2: Number(s && s.team2) || 0 };
+      });
+    }
+    if (Array.isArray(m.tiebreak)) {
+      out.tiebreak = m.tiebreak.map(function (t) {
+        if (!t) return null;
+        return { team1: Number(t.team1) || 0, team2: Number(t.team2) || 0 };
+      });
+    }
+    if (m.current && typeof m.current === "object") {
+      out.current = {
+        team1Games: Number(m.current.team1Games) || 0,
+        team2Games: Number(m.current.team2Games) || 0,
+        team1Points: _normalizePoint(m.current.team1Points),
+        team2Points: _normalizePoint(m.current.team2Points),
+        servingTeam: (m.current.servingTeam === "team2") ? "team2" : "team1",
+        tiebreak: (m.current.tiebreak && typeof m.current.tiebreak === "object")
+          ? { team1: Number(m.current.tiebreak.team1) || 0, team2: Number(m.current.tiebreak.team2) || 0 }
+          : null,
+      };
+    }
+    if (typeof m.goldenPoint === "boolean") out.goldenPoint = m.goldenPoint;
+    if (m.ganador === "team1" || m.ganador === "team2") out.ganador = m.ganador;
+    if (typeof m.modo === "string") out.modo = m.modo;
+    if (Array.isArray(m.history)) {
+      out.history = m.history.slice(-LIVE_HISTORY_MAX).map(function (h) { return Object.assign({}, h); });
+    }
+    if (m.gamesTotal && typeof m.gamesTotal === "object") {
+      out.gamesTotal = { team1: Number(m.gamesTotal.team1) || 0, team2: Number(m.gamesTotal.team2) || 0 };
+    }
+    if (m.ganadorReta === "team1" || m.ganadorReta === "team2") out.ganadorReta = m.ganadorReta;
+    return out;
+  }
+
+  function _normalizePoint(p) {
+    if (p === "AD" || p === "ad") return "AD";
+    const n = Number(p);
+    if (n === 15 || n === 30 || n === 40) return n;
+    return 0;
+  }
+
+  function _defaultCurrent() {
+    return {
+      team1Games: 0,
+      team2Games: 0,
+      team1Points: 0,
+      team2Points: 0,
+      servingTeam: "team1",
+      tiebreak: null,
+    };
+  }
+
+  // initLiveMarcador: crea un marcador en blanco con `current` para empezar a
+  // trackear punto-a-punto. Opcional `goldenPoint` y `modo`.
+  function initLiveMarcador(opts) {
+    const o = opts || {};
+    const m = {
+      sets: [],
+      current: _defaultCurrent(),
+      history: [],
+      goldenPoint: !!o.goldenPoint,
+    };
+    if (typeof o.modo === "string" && MODOS_VALIDOS.includes(o.modo)) m.modo = o.modo;
+    return m;
+  }
+
+  // ensureLiveCurrent: si el marcador no tiene `current`, lo agrega con default.
+  // No muta `m` original; devuelve copia con current poblado.
+  function ensureLiveCurrent(marcador) {
+    const m = _cloneMarcador(marcador || {});
+    if (!m.sets) m.sets = [];
+    if (!m.current) m.current = _defaultCurrent();
+    if (!Array.isArray(m.history)) m.history = [];
+    return m;
+  }
+
+  // pointsLabel: 0|15|30|40|"AD" → string para UI.
+  function pointsLabel(p) {
+    const n = _normalizePoint(p);
+    if (n === "AD") return "AD";
+    return String(n);
+  }
+
+  // _setsTargetForMode: cuántos sets ganados se necesitan para terminar.
+  function _setsTargetForMode(modo) {
+    if (modo === "partido_5") return 3;
+    if (modo === "partido_3") return 2;
+    return null; // reta/libre/otros: el caller decide
+  }
+
+  // _countSetsWon: cuenta sets ganados por cada equipo (basado en games por set).
+  function _countSetsWon(sets) {
+    let t1 = 0, t2 = 0;
+    if (!Array.isArray(sets)) return { t1: 0, t2: 0 };
+    for (const s of sets) {
+      if (!s) continue;
+      const a = Number(s.team1) || 0, b = Number(s.team2) || 0;
+      if (a > b) t1++; else if (b > a) t2++;
+    }
+    return { t1: t1, t2: t2 };
+  }
+
+  // isLiveMatchOver: ¿ya hay ganador del partido?
+  function isLiveMatchOver(marcador) {
+    if (!marcador || typeof marcador !== "object") return { done: false, winner: null };
+    const modo = typeof marcador.modo === "string" ? marcador.modo : null;
+    const target = _setsTargetForMode(modo);
+    const counted = _countSetsWon(marcador.sets);
+    if (target == null) {
+      // sin modo conocido — sólo respetamos `ganador` si ya viene marcado.
+      return { done: !!marcador.ganador, winner: marcador.ganador || null, t1Sets: counted.t1, t2Sets: counted.t2 };
+    }
+    let winner = null;
+    if (counted.t1 >= target) winner = "team1";
+    else if (counted.t2 >= target) winner = "team2";
+    return { done: !!winner, winner: winner, t1Sets: counted.t1, t2Sets: counted.t2 };
+  }
+
+  // _pushHistory: agrega op al historial truncando al máximo.
+  function _pushHistory(m, op) {
+    if (!Array.isArray(m.history)) m.history = [];
+    m.history.push(op);
+    if (m.history.length > LIVE_HISTORY_MAX) {
+      m.history.splice(0, m.history.length - LIVE_HISTORY_MAX);
+    }
+  }
+
+  function _otherTeam(t) { return t === "team1" ? "team2" : "team1"; }
+
+  function _isTiebreakSet(current) {
+    return current && current.team1Games === 6 && current.team2Games === 6;
+  }
+
+  // _applyGameWin: cierra un game ganado por `winner`. Mutates m.current
+  // y avanza set si corresponde. Devuelve {gameClosed, setClosed, matchClosed}
+  // y la "snapshot previa" útil para undo.
+  function _applyGameWin(m, winner) {
+    const before = {
+      current: Object.assign({}, m.current, {
+        tiebreak: m.current.tiebreak ? Object.assign({}, m.current.tiebreak) : null,
+      }),
+      setsBefore: m.sets ? m.sets.length : 0,
+    };
+    // Incrementa games del winner; reinicia points; alterna saque.
+    m.current[winner + "Games"] = Number(m.current[winner + "Games"] || 0) + 1;
+    m.current.team1Points = 0;
+    m.current.team2Points = 0;
+    m.current.tiebreak = null;
+    m.current.servingTeam = _otherTeam(m.current.servingTeam || "team1");
+
+    let setClosed = false;
+    const a = m.current.team1Games, b = m.current.team2Games;
+    // Set se cierra cuando alguien llega a 6 con diff ≥ 2, o llega a 7 (7-5 o 7-6 vía tb).
+    if ((a >= 6 || b >= 6) && Math.abs(a - b) >= 2 && Math.max(a, b) <= 7) {
+      // 6-0..6-4 o 7-5
+      _closeSet(m, a, b);
+      setClosed = true;
+    } else if (a === 7 && b === 5) {
+      _closeSet(m, 7, 5); setClosed = true;
+    } else if (b === 7 && a === 5) {
+      _closeSet(m, 7, 5); setClosed = true;
+    } else if (a === 7 && b === 6) {
+      _closeSet(m, 7, 6); setClosed = true;
+    } else if (b === 7 && a === 6) {
+      _closeSet(m, 6, 7); setClosed = true;
+    }
+
+    let matchClosed = false;
+    if (setClosed) {
+      const over = isLiveMatchOver(m);
+      if (over.done) {
+        m.ganador = over.winner;
+        matchClosed = true;
+      }
+    }
+    return { before: before, setClosed: setClosed, matchClosed: matchClosed };
+  }
+
+  function _closeSet(m, t1, t2) {
+    if (!Array.isArray(m.sets)) m.sets = [];
+    m.sets.push({ team1: Number(t1) || 0, team2: Number(t2) || 0 });
+    m.current = _defaultCurrent();
+    // Saque del próximo set: alterna respecto al último servidor. Como
+    // dentro del set ya alternamos cada game, simplemente dejamos el
+    // current.servingTeam por defecto (team1). UX: no es load-bearing
+    // porque el dueño puede sobreescribir desde UI si necesita.
+  }
+
+  // _applyPoint: aplica un punto al ganador. Maneja deuce, AD, golden point,
+  // y tiebreak. Mutates m. Devuelve op para historial.
+  function _applyPoint(m, winner, goldenPoint) {
+    const op = {
+      type: "point",
+      winner: winner,
+      before: {
+        current: Object.assign({}, m.current, {
+          tiebreak: m.current.tiebreak ? Object.assign({}, m.current.tiebreak) : null,
+        }),
+        setsBefore: m.sets ? m.sets.length : 0,
+        ganadorBefore: m.ganador || null,
+      },
+    };
+
+    // Tiebreak en juego (6-6 del set en curso)
+    if (_isTiebreakSet(m.current) || m.current.tiebreak) {
+      if (!m.current.tiebreak) m.current.tiebreak = { team1: 0, team2: 0 };
+      m.current.tiebreak[winner] = Number(m.current.tiebreak[winner] || 0) + 1;
+      const a = m.current.tiebreak.team1, b = m.current.tiebreak.team2;
+      const max = Math.max(a, b), diff = Math.abs(a - b);
+      if (max >= 7 && diff >= 2) {
+        // Cierra game del tiebreak para el winner: 7-6 en games.
+        m.current[winner + "Games"] = 7;
+        // Aseguramos que el otro equipo quede en 6 (estaba 6-6 antes).
+        const otherTeam = _otherTeam(winner);
+        if (m.current[otherTeam + "Games"] !== 6) m.current[otherTeam + "Games"] = 6;
+        const result = _applyTiebreakSetClose(m, winner, a, b);
+        op.setClosed = true;
+        op.matchClosed = result.matchClosed;
+      }
+      _pushHistory(m, op);
+      return op;
+    }
+
+    // Punto normal
+    const wP = _normalizePoint(m.current[winner + "Points"]);
+    const lP = _normalizePoint(m.current[_otherTeam(winner) + "Points"]);
+
+    if (wP === "AD") {
+      // winner ya tenía ventaja → game para winner
+      _applyGameWin(m, winner);
+      const over = isLiveMatchOver(m);
+      op.setClosed = m.sets && m.sets.length > op.before.setsBefore;
+      op.matchClosed = over.done && !op.before.ganadorBefore;
+      _pushHistory(m, op);
+      return op;
+    }
+    if (lP === "AD") {
+      // El otro tenía ventaja, ahora regresa a deuce (40-40)
+      m.current[_otherTeam(winner) + "Points"] = 40;
+      m.current[winner + "Points"] = 40;
+      _pushHistory(m, op);
+      return op;
+    }
+    if (wP === 40 && lP === 40) {
+      // Deuce → según golden point
+      if (goldenPoint) {
+        _applyGameWin(m, winner);
+        const over = isLiveMatchOver(m);
+        op.setClosed = m.sets && m.sets.length > op.before.setsBefore;
+        op.matchClosed = over.done && !op.before.ganadorBefore;
+      } else {
+        m.current[winner + "Points"] = "AD";
+      }
+      _pushHistory(m, op);
+      return op;
+    }
+    if (wP === 40) {
+      // 40-X (X<40) → game para winner
+      _applyGameWin(m, winner);
+      const over = isLiveMatchOver(m);
+      op.setClosed = m.sets && m.sets.length > op.before.setsBefore;
+      op.matchClosed = over.done && !op.before.ganadorBefore;
+      _pushHistory(m, op);
+      return op;
+    }
+    // Sube en la secuencia 0→15→30→40
+    const idx = POINTS_SEQ.indexOf(wP);
+    if (idx >= 0 && idx < POINTS_SEQ.length - 1) {
+      m.current[winner + "Points"] = POINTS_SEQ[idx + 1];
+    }
+    _pushHistory(m, op);
+    return op;
+  }
+
+  function _applyTiebreakSetClose(m, winner, tbA, tbB) {
+    if (!Array.isArray(m.sets)) m.sets = [];
+    if (!Array.isArray(m.tiebreak)) m.tiebreak = [];
+    // El set se cierra como 7-6 a favor del winner; el array tiebreak refleja
+    // el marcador del tiebreak ganado.
+    const team1Games = winner === "team1" ? 7 : 6;
+    const team2Games = winner === "team1" ? 6 : 7;
+    m.sets.push({ team1: team1Games, team2: team2Games });
+    // Empareja el largo de tiebreak con el de sets (rellena nulls previos).
+    while (m.tiebreak.length < m.sets.length - 1) m.tiebreak.push(null);
+    m.tiebreak.push({ team1: Number(tbA) || 0, team2: Number(tbB) || 0 });
+    m.current = _defaultCurrent();
+    const over = isLiveMatchOver(m);
+    let matchClosed = false;
+    if (over.done) { m.ganador = over.winner; matchClosed = true; }
+    return { matchClosed: matchClosed };
+  }
+
+  // nextPointWinner: API pública. Devuelve nuevo marcador (clon) tras
+  // aplicar +1 punto al equipo ganador. NO muta el input.
+  function nextPointWinner(marcador, winnerTeam, opts) {
+    if (winnerTeam !== "team1" && winnerTeam !== "team2") {
+      throw new Error("[Matches.live] winnerTeam debe ser 'team1' o 'team2'.");
+    }
+    const o = opts || {};
+    const m = ensureLiveCurrent(marcador);
+    if (typeof o.modo === "string" && MODOS_VALIDOS.includes(o.modo)) m.modo = o.modo;
+    if (typeof o.goldenPoint === "boolean") m.goldenPoint = o.goldenPoint;
+    if (m.ganador) return m; // partido terminado: no-op
+    _applyPoint(m, winnerTeam, !!m.goldenPoint);
+    return m;
+  }
+
+  // undoLastPoint: deshace la última op aplicada (de cualquier tipo, no sólo
+  // punto). Devuelve marcador clonado sin la última op. Si no hay history,
+  // retorna el marcador sin cambios.
+  function undoLastPoint(marcador) {
+    const m = ensureLiveCurrent(marcador);
+    if (!Array.isArray(m.history) || m.history.length === 0) return m;
+    const op = m.history.pop();
+    if (!op || !op.before) return m;
+    // Restaurar `current` desde snapshot
+    if (op.before.current) {
+      m.current = Object.assign({}, op.before.current, {
+        tiebreak: op.before.current.tiebreak ? Object.assign({}, op.before.current.tiebreak) : null,
+      });
+    }
+    // Si la op cerró sets, recortar el array.
+    if (op.setClosed && Array.isArray(m.sets) && m.sets.length > op.before.setsBefore) {
+      const removed = m.sets.length - op.before.setsBefore;
+      m.sets.splice(op.before.setsBefore, removed);
+      if (Array.isArray(m.tiebreak) && m.tiebreak.length > op.before.setsBefore) {
+        m.tiebreak.splice(op.before.setsBefore, m.tiebreak.length - op.before.setsBefore);
+      }
+    }
+    // Restaurar ganador si la op cerró el partido.
+    if (op.matchClosed) {
+      if (op.before.ganadorBefore) m.ganador = op.before.ganadorBefore;
+      else delete m.ganador;
+    }
+    return m;
+  }
+
+  // forceGameWin: atajo. Cierra un game para el team indicado sin trackear
+  // puntos individuales. Útil cuando el operador se distrajo.
+  function forceGameWin(marcador, team) {
+    if (team !== "team1" && team !== "team2") {
+      throw new Error("[Matches.live] team debe ser 'team1' o 'team2'.");
+    }
+    const m = ensureLiveCurrent(marcador);
+    if (m.ganador) return m;
+    const op = {
+      type: "forceGame",
+      winner: team,
+      before: {
+        current: Object.assign({}, m.current, {
+          tiebreak: m.current.tiebreak ? Object.assign({}, m.current.tiebreak) : null,
+        }),
+        setsBefore: m.sets ? m.sets.length : 0,
+        ganadorBefore: m.ganador || null,
+      },
+    };
+    _applyGameWin(m, team);
+    const over = isLiveMatchOver(m);
+    op.setClosed = m.sets && m.sets.length > op.before.setsBefore;
+    op.matchClosed = over.done && !op.before.ganadorBefore;
+    _pushHistory(m, op);
+    return m;
+  }
+
+  // undoLastGame: deshace ops hasta encontrar (e incluir) la última que
+  // cerró un game (sea por punto, force, o tiebreak). Si no hay tal op,
+  // deshace 1 sola op. Devuelve marcador clonado.
+  function undoLastGame(marcador) {
+    let m = ensureLiveCurrent(marcador);
+    if (!Array.isArray(m.history) || m.history.length === 0) return m;
+    // Para detectar "cerró game" comparamos el estado "antes" de op[i]
+    // con el estado "después" de op[i] (= "antes" de op[i+1], o m.current
+    // si i es la última op).
+    function afterOf(i) {
+      if (i + 1 < m.history.length) return m.history[i + 1].before.current;
+      return m.current;
+    }
+    function opClosedGame(op, i) {
+      if (!op) return false;
+      if (op.type === "forceGame") return true;
+      if (op.type === "forceSet") return true;
+      if (op.type === "point") {
+        const b = op.before.current || {};
+        const a = afterOf(i) || {};
+        const bG = Number(b.team1Games || 0) + Number(b.team2Games || 0);
+        const aG = Number(a.team1Games || 0) + Number(a.team2Games || 0);
+        if (aG !== bG) return true; // games cambiaron → cerró game (o tiebreak)
+        // También si el set se cerró sin que current refleje (caso de cierre + reset)
+        if (op.setClosed) return true;
+        return false;
+      }
+      return false;
+    }
+    let target = -1;
+    for (let i = m.history.length - 1; i >= 0; i--) {
+      if (opClosedGame(m.history[i], i)) { target = i; break; }
+    }
+    if (target < 0) {
+      // No hay game cerrado en la pila — undo último punto.
+      return undoLastPoint(m);
+    }
+    // Hacer pop hasta dejar el array de longitud `target` (es decir, borrar
+    // las ops desde target inclusive hasta el final).
+    const opsToUndo = m.history.length - target;
+    for (let k = 0; k < opsToUndo; k++) {
+      m = undoLastPoint(m);
+    }
+    return m;
+  }
+
+  // forceSetWin: atajo "el set acabó X-Y". Cierra set agregándolo al array
+  // sets con los games provistos. Reinicia current. Si es 7-6, opcionalmente
+  // recibe tiebreak.
+  function forceSetWin(marcador, team, score, tb) {
+    if (team !== "team1" && team !== "team2") {
+      throw new Error("[Matches.live] team debe ser 'team1' o 'team2'.");
+    }
+    const m = ensureLiveCurrent(marcador);
+    if (m.ganador) return m;
+    const t1 = Number(score && score.team1);
+    const t2 = Number(score && score.team2);
+    if (!Number.isInteger(t1) || !Number.isInteger(t2) || t1 < 0 || t2 < 0) {
+      throw new Error("[Matches.live] score inválido para forceSetWin.");
+    }
+    const winnerByScore = t1 > t2 ? "team1" : (t2 > t1 ? "team2" : null);
+    if (winnerByScore !== team) {
+      throw new Error("[Matches.live] team no coincide con el score provisto.");
+    }
+    const op = {
+      type: "forceSet",
+      winner: team,
+      score: { team1: t1, team2: t2 },
+      tb: tb ? { team1: Number(tb.team1) || 0, team2: Number(tb.team2) || 0 } : null,
+      before: {
+        current: Object.assign({}, m.current, {
+          tiebreak: m.current.tiebreak ? Object.assign({}, m.current.tiebreak) : null,
+        }),
+        setsBefore: m.sets ? m.sets.length : 0,
+        tiebreakBefore: Array.isArray(m.tiebreak) ? m.tiebreak.length : 0,
+        ganadorBefore: m.ganador || null,
+      },
+    };
+    if (!Array.isArray(m.sets)) m.sets = [];
+    m.sets.push({ team1: t1, team2: t2 });
+    if (op.tb) {
+      if (!Array.isArray(m.tiebreak)) m.tiebreak = [];
+      while (m.tiebreak.length < m.sets.length - 1) m.tiebreak.push(null);
+      m.tiebreak.push(op.tb);
+    }
+    m.current = _defaultCurrent();
+    const over = isLiveMatchOver(m);
+    op.setClosed = true;
+    op.matchClosed = over.done && !op.before.ganadorBefore;
+    if (over.done) m.ganador = over.winner;
+    _pushHistory(m, op);
+    return m;
+  }
+
+  // formatLiveScoreboard: helper de UI. Devuelve estructura plana para render.
+  function formatLiveScoreboard(marcador) {
+    const m = ensureLiveCurrent(marcador);
+    const counted = _countSetsWon(m.sets);
+    const setsArr = Array.isArray(m.sets) ? m.sets.slice() : [];
+    const inProgress = !m.ganador && m.current && (
+      m.current.team1Games > 0 || m.current.team2Games > 0 ||
+      m.current.team1Points !== 0 || m.current.team2Points !== 0 ||
+      m.current.tiebreak
+    );
+    return {
+      modo: m.modo || null,
+      goldenPoint: !!m.goldenPoint,
+      ganador: m.ganador || null,
+      sets: setsArr,
+      tiebreak: Array.isArray(m.tiebreak) ? m.tiebreak.slice() : [],
+      setsWon: counted,
+      current: Object.assign({}, m.current),
+      inProgress: !!inProgress,
+      pointsLabelT1: pointsLabel(m.current.team1Points),
+      pointsLabelT2: pointsLabel(m.current.team2Points),
+    };
+  }
+
   // parseFromName: réplica idéntica de la lógica en assets/script.js.
   // Se duplica a propósito para que matches.js sea self-contained y no
   // dependa de cargar script.js (que ejecuta DOMContentLoaded handlers
@@ -648,6 +1163,18 @@
       validateSet,
       validateTiebreak,
       deduceMatchWinner,
+    },
+    live: {
+      initMarcador: initLiveMarcador,
+      ensureCurrent: ensureLiveCurrent,
+      nextPointWinner: nextPointWinner,
+      undoLastPoint: undoLastPoint,
+      forceGameWin: forceGameWin,
+      undoLastGame: undoLastGame,
+      forceSetWin: forceSetWin,
+      isMatchOver: isLiveMatchOver,
+      pointsLabel: pointsLabel,
+      formatScoreboard: formatLiveScoreboard,
     },
     MODOS: MODOS_VALIDOS.slice(),
     DEPORTES: DEPORTES_VALIDOS.slice(),
