@@ -4043,10 +4043,20 @@
     $clipFeedback.textContent = "";
   }
 
+  // Etapa 16.4 F14 fix: el botón "PEDIR PUNTAZO" ahora tiene HTML interno
+  // (img + span). Cambiar textContent destruía el logo "P". Toggleamos solo
+  // el texto del .pz-puntazo-label.
+  function setClipBtnLabel(text) {
+    if (!$btnClip) return;
+    const label = $btnClip.querySelector(".pz-puntazo-label");
+    if (label) label.textContent = text;
+    else $btnClip.textContent = text;
+  }
+
   function resetClipBtn() {
     if (!$btnClip) return;
     $btnClip.disabled = false;
-    $btnClip.textContent = "🎯 Pedir clip ahora";
+    setClipBtnLabel("PEDIR PUNTAZO");
   }
 
   function startClipCooldown() {
@@ -4057,7 +4067,7 @@
       const elapsed = Date.now() - start;
       const remaining = Math.max(0, Math.ceil((CLIP_COOLDOWN_MS - elapsed) / 1000));
       if (remaining > 0) {
-        if ($btnClip) $btnClip.textContent = `⏳ Espera ${remaining}s`;
+        setClipBtnLabel(`ESPERA ${remaining}s`);
       } else {
         clearInterval(clipCooldownTimer);
         clipCooldownTimer = null;
@@ -4087,20 +4097,26 @@
 
       clipBusy = true;
       $btnClip.disabled = true;
-      $btnClip.textContent = "⏳ Guardando…";
+      setClipBtnLabel("GUARDANDO…");
       setClipFeedback("Enviando puntazo…", "info");
       try { if (navigator.vibrate) navigator.vibrate(40); } catch (_) {}
+
+      // Etapa 16.4 F14 fix: el Apps Script espera `cancha=4` (solo el número),
+      // no `cancha=Cancha4`. Extraemos el dígito de currentMatch.can (formato
+      // del schema interno) igual que en boton.html (que sí funciona).
+      const canchaMatch = String(currentMatch.can || "").match(/(\d+)/);
+      const canchaNum = canchaMatch ? canchaMatch[1] : currentMatch.can;
 
       try {
         const url = APPS_URL
           + "?action=save"
           + "&club=" + encodeURIComponent(currentMatch.loc)
-          + "&cancha=" + encodeURIComponent(currentMatch.can);
+          + "&cancha=" + encodeURIComponent(canchaNum);
         const res = await fetch(url, { redirect: "follow" });
         const data = await res.json();
 
         if (data && data.ok) {
-          setClipFeedback("✅ Puntazo guardado. Aparecerá en el contador en ~60 segundos.", "ok");
+          setClipFeedback("✅ Puntazo guardado.", "ok");
           try { if (navigator.vibrate) navigator.vibrate([40, 60, 40]); } catch (_) {}
           // Acelera el contador de Etapa 5 (best-effort, pollClipsOnce hace bail si ya no está active).
           setTimeout(function () { try { pollClipsOnce(); } catch (_) {} }, 30000);
@@ -4111,7 +4127,7 @@
         }
       } catch (err) {
         console.error("[mi-partido] clip request failed", err);
-        setClipFeedback("No se pudo guardar el clip. Intenta de nuevo.", "bad");
+        setClipFeedback("No se pudo guardar el Puntazo. Intenta de nuevo.", "bad");
         clipBusy = false;
         resetClipBtn();
       }
