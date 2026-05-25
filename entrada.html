@@ -64,10 +64,18 @@
   }
   .entrada-topbar { z-index: 3; }
 
+  /* Etapa 16.4 F42: header de la vista ready con más identidad */
   .entrada-header {
     text-align: center;
     margin-bottom: 28px;
     position: relative;
+    padding: 28px 22px 24px;
+    border-radius: 22px;
+    background: rgba(8, 14, 28, 0.62);
+    border: 1px solid rgba(11, 124, 255, 0.28);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 14px 42px rgba(0, 0, 0, 0.42),
+                0 0 0 1px rgba(255, 255, 255, 0.04) inset;
   }
   .entrada-logo {
     /* El PNG real es horizontal (~1.82:1). Dejamos que el aspect ratio
@@ -124,25 +132,36 @@
     gap: 8px;
   }
 
+  /* F42: jerarquía: "ESTÁS EN" pill chico + nombre HUGE + cancha medio */
   .entrada-title {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: rgba(234, 242, 255, 0.72);
-    margin-bottom: 6px;
+    display: inline-block;
+    font-size: 0.70rem;
+    font-weight: 800;
+    color: rgba(11, 124, 255, 0.92);
+    letter-spacing: 2.0px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(11, 124, 255, 0.12);
+    border: 1px solid rgba(11, 124, 255, 0.35);
   }
 
   .entrada-loc-name {
-    font-size: 1.75rem;
+    font-size: 2.30rem;
     font-weight: 900;
     color: #fff;
-    letter-spacing: -0.6px;
-    line-height: 1.15;
+    letter-spacing: -0.8px;
+    line-height: 1.05;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
   }
 
   .entrada-sub {
-    font-size: 0.92rem;
-    color: rgba(234, 242, 255, 0.55);
-    margin-top: 4px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: rgba(234, 242, 255, 0.78);
+    margin-top: 8px;
+    letter-spacing: 0.3px;
   }
 
   .entrada-actions {
@@ -437,8 +456,9 @@
 
   @media (max-width: 480px) {
     .entrada-wrap { padding-top: 50px; }
-    .entrada-loc-name { font-size: 1.5rem; }
+    .entrada-loc-name { font-size: 1.85rem; }
     .selector-title { font-size: 1.3rem; }
+    .entrada-header { padding: 22px 18px 20px; }
   }
 </style>
 </head>

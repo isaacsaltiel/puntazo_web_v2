@@ -1871,9 +1871,9 @@
     margin-top: 4px;
   }
 
-  /* Etapa 16.4 F39: botón PEDIR PUNTAZO con P_Vector.png — la P es el
-     protagonista, el botón es solo un halo/contenedor sutil que la deja
-     respirar. Label "PEDIR PUNTAZO" fuera, debajo. */
+  /* Etapa 16.4 F43: botón PEDIR PUNTAZO estilo "app icon" — cuadrado
+     redondeado con fondo navy SOLID (el azul de Puntazo) + P_Vector
+     adentro. Coherente con el logo de la app. */
   .mp-fs-puntazo-row {
     margin: 22px 0 26px;
     display: flex;
@@ -1884,56 +1884,59 @@
   }
   .mp-fs-puntazo-btn {
     appearance: none;
-    border: none;
+    border: 2px solid rgba(255, 255, 255, 0.12);
     cursor: pointer;
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
-    background: radial-gradient(circle at center, rgba(11, 124, 255, 0.22) 0%, rgba(11, 124, 255, 0.05) 60%, transparent 100%);
+    width: 168px;
+    height: 168px;
+    border-radius: 32px;
+    background: #14245a; /* navy Puntazo solid, mismo que el logo */
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
+    padding: 14px;
+    box-sizing: border-box;
+    box-shadow:
+      0 0 0 8px rgba(20, 36, 90, 0.32),
+      0 18px 50px rgba(11, 124, 255, 0.55),
+      inset 0 -8px 18px rgba(0, 0, 0, 0.30);
     transition: transform 0.14s ease, filter 0.14s ease;
     position: relative;
   }
   .mp-fs-puntazo-btn::before {
     content: "";
     position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(11, 124, 255, 0.55) 0%, transparent 60%);
+    inset: -16px;
+    border-radius: 40px;
+    background: radial-gradient(circle, rgba(11, 124, 255, 0.55) 0%, transparent 65%);
     z-index: -1;
     animation: mpFsPuntazoPulse 2.4s ease-in-out infinite;
-    filter: blur(8px);
+    filter: blur(10px);
   }
   @keyframes mpFsPuntazoPulse {
-    0%, 100% { opacity: 0.50; transform: scale(0.95); }
-    50%      { opacity: 1.0; transform: scale(1.08); }
+    0%, 100% { opacity: 0.50; transform: scale(0.96); }
+    50%      { opacity: 1.0; transform: scale(1.10); }
   }
   .mp-fs-puntazo-btn:hover { transform: translateY(-2px); filter: brightness(1.10); }
   .mp-fs-puntazo-btn:active { transform: scale(0.94); }
   .mp-fs-puntazo-btn[disabled] {
     cursor: not-allowed;
-    filter: grayscale(0.6) brightness(0.75);
+    filter: grayscale(0.5) brightness(0.78);
   }
-  .mp-fs-puntazo-btn[disabled]::before { animation: none; opacity: 0.18; }
+  .mp-fs-puntazo-btn[disabled]::before { animation: none; opacity: 0.15; }
   .mp-fs-puntazo-mark {
-    width: 160px;
-    height: 160px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
     display: block;
-    filter: drop-shadow(0 6px 14px rgba(11, 124, 255, 0.55)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.40));
   }
   .mp-fs-puntazo-mark--fb {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 160px;
-    height: 160px;
-    border-radius: 28px;
-    background: #14245a;
-    font-size: 5.5rem;
+    width: 100%;
+    height: 100%;
+    font-size: 5.0rem;
     font-weight: 900;
     font-style: italic;
     color: #fff;
@@ -1948,9 +1951,8 @@
     text-shadow: 0 0 12px rgba(11, 124, 255, 0.55), 0 2px 4px rgba(0,0,0,0.5);
   }
   @media (max-width: 380px) {
-    .mp-fs-puntazo-btn { width: 150px; height: 150px; }
-    .mp-fs-puntazo-mark { width: 132px; height: 132px; }
-    .mp-fs-puntazo-mark--fb { width: 132px; height: 132px; font-size: 4.4rem; }
+    .mp-fs-puntazo-btn { width: 144px; height: 144px; border-radius: 28px; padding: 12px; }
+    .mp-fs-puntazo-mark--fb { font-size: 4.0rem; }
     .mp-fs-puntazo-label { font-size: 0.80rem; letter-spacing: 1.5px; }
   }
   .mp-fs-clip-feedback {
@@ -2192,8 +2194,30 @@
   /* Asegurar que el contenido queda por encima del fondo dinámico */
   .mp-wrap { position: relative; z-index: 2; }
 
-  /* ── Etapa 16.4 F10+F11: form de "nueva" reordenado + cancha más chica ── */
-  .mp-nueva-form { padding: 18px 16px 14px; }
+  /* ── Etapa 16.4 F10+F11+F41: form de "nueva" reordenado dinámico ──
+        Default: Iniciar arriba → Jugadores (toggle cerrado) → Modo.
+        Cuando jugadores está abierto: Iniciar pasa al fondo (después de Modo).
+        Layout flex column con `order` por sección. ── */
+  .mp-nueva-form {
+    padding: 18px 16px 14px;
+    display: flex;
+    flex-direction: column;
+  }
+  .mp-nueva-form > .mp-jug-title           { order: 1; }
+  .mp-nueva-form > .mp-nueva-actions-top   { order: 2; }
+  .mp-nueva-form > #mpNuevaMsg             { order: 3; }
+  .mp-nueva-form > #nuevaJugadoresToggle   { order: 4; margin-bottom: 10px; }
+  .mp-nueva-form > #nuevaJugadoresWrap     { order: 5; margin-bottom: 14px; }
+  .mp-nueva-form > .mp-modal-section-label { order: 6; }
+  .mp-nueva-form > .mp-modo-row            { order: 7; }
+  /* Cuando jugadores está abierto, los botones de iniciar pasan al fondo */
+  .mp-nueva-form.is-jugadores-open > .mp-nueva-actions-top {
+    order: 9;
+    margin-top: 18px;
+    margin-bottom: 0;
+  }
+  .mp-nueva-form.is-jugadores-open > #mpNuevaMsg { order: 10; }
+
   .mp-nueva-actions-top { margin-bottom: 16px; }
   .mp-nueva-actions-top .mp-btn-end {
     font-size: 1.05rem;
@@ -4992,8 +5016,11 @@
 
   // ---- click slot vista principal:
   // - invitado: dispara claim flow.
-  // - dueño (Etapa 16.4 F23): abre un mini-prompt para agregar/editar nombre
-  //   del jugador del slot. Antes era no-op y el usuario se sentía bloqueado.
+  // - dueño (Etapa 16.4 F40): detector debounced de single vs double click.
+  //   1 click → espera 280ms → si no llega 2do, abre editor.
+  //   2 clicks rápidos → "Soy yo" (solo si el slot está vacío).
+  //   Latency aceptable (280ms) a cambio de doble-tap CONFIABLE en touch.
+  const _slotTapTimers = {};
   if ($mainCourtGrid) {
     $mainCourtGrid.addEventListener("click", function (e) {
       const slot = e.target.closest(".mp-slot");
@@ -5001,7 +5028,27 @@
       const idx = Number(slot.getAttribute("data-slot"));
       if (!Number.isInteger(idx) || idx < 0 || idx > 3) return;
       if (currentViewMode === "owner") {
-        openMainSlotEditor(idx);
+        // Si ya había un timer pendiente para este slot, es el 2do click rápido
+        if (_slotTapTimers[idx]) {
+          clearTimeout(_slotTapTimers[idx]);
+          delete _slotTapTimers[idx];
+          const jugList = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores : [];
+          const jSlot = jugList[idx] || {};
+          const winSlot = winningClaim(idx);
+          const isEmpty = !jSlot.nombre && !jSlot.uid && !winSlot;
+          if (isEmpty) {
+            doSoyYoQuick(idx);
+            return;
+          }
+          // Slot ocupado: doble-click cae a editor normal
+          openMainSlotEditor(idx);
+          return;
+        }
+        // Primer click: esperamos 280ms a ver si llega 2do
+        _slotTapTimers[idx] = setTimeout(function () {
+          delete _slotTapTimers[idx];
+          openMainSlotEditor(idx);
+        }, 280);
         return;
       }
       claimSlotFlow(idx);
@@ -6877,8 +6924,20 @@
       });
     }
     bindToggle("mpClipStatesToggle", "mpClipStates");
-    // Etapa 16.4 F38: toggle de Jugadores (opcional) en mpNuevaForm
-    bindToggle("nuevaJugadoresToggle", "nuevaJugadoresWrap");
+    // Etapa 16.4 F38+F41: toggle de Jugadores también marca clase al form para
+    // reordenar dinámicamente (botones iniciar pasan al fondo cuando abierto).
+    (function bindNuevaJugadoresToggle() {
+      const t = document.getElementById("nuevaJugadoresToggle");
+      const w = document.getElementById("nuevaJugadoresWrap");
+      const f = document.getElementById("mpNuevaForm");
+      if (!t || !w || !f) return;
+      t.addEventListener("click", function () {
+        const isHidden = w.style.display === "none" || !w.style.display;
+        w.style.display = isHidden ? "block" : "none";
+        t.classList.toggle("is-open", isHidden);
+        f.classList.toggle("is-jugadores-open", isHidden);
+      });
+    })();
     // Etapa 16.4 F28: marcador y config NO son acordeones — son fullscreens.
     // mpLiveToggle → openFullscreenScoreboard (overlay del marcador).
     // mpConfigToggle → openConfigFullscreen (overlay de jugadores/cancha).
