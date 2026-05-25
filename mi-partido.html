@@ -1717,6 +1717,10 @@
     overflow: hidden;
     color: #fff;
     -webkit-tap-highlight-color: transparent;
+    /* Etapa 16.4 F57: 100dvh (dynamic viewport) — sin esto el iOS address
+       bar oculto/visible cambia la altura y el contenido se corta. */
+    height: 100dvh;
+    max-height: 100dvh;
   }
   .mp-fs-overlay.is-open { display: flex; }
   .mp-fs-bg {
@@ -1747,10 +1751,10 @@
     flex-direction: column;
     width: 100%;
     height: 100%;
-    padding: 14px 12px 18px;
+    padding: 10px 10px 14px;
     box-sizing: border-box;
-    gap: 10px;
-    /* Etapa 16.4 F52: contener overflow para que el layout no se rompa
+    gap: 6px;
+    /* Etapa 16.4 F57: contener overflow para que el layout no se rompa
        cuando un elemento crece (hint cambiando, números más largos, etc). */
     overflow: hidden;
   }
@@ -1830,8 +1834,8 @@
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    gap: 10px;
-    padding: 14px 6px;
+    gap: 8px;
+    padding: 8px 4px 4px;
     flex-shrink: 0;
   }
   .mp-fs-team {
@@ -1842,23 +1846,21 @@
   }
   .mp-fs-team--left  { text-align: left; padding-left: 4px; }
   .mp-fs-team--right { text-align: right; padding-right: 4px; }
-  /* Etapa 16.4 F36+F51: nombres de equipo PROTAGONISTAS pero responsivos.
-     Font scaling con clamp + max 2 líneas + word-break para que nombres
-     largos (ej. "Pedro / Carlos") no rompan el layout. */
+  /* Etapa 16.4 F57: nombres con ellipsis 1 línea (no break-word que partía
+     "Equipo 2" en "EQUI" y "PO 2" feo). Si el nombre es largo, se trunca
+     elegantemente con "…". */
   .mp-fs-team-name {
-    font-size: clamp(0.78rem, 4.2vw, 1.45rem);
+    font-size: clamp(0.78rem, 4vw, 1.40rem);
     font-weight: 900;
     color: #fff;
     text-transform: uppercase;
-    letter-spacing: 0.4px;
+    letter-spacing: 0.3px;
     line-height: 1.1;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
     overflow: hidden;
-    word-break: break-word;
-    hyphens: auto;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
   }
   .mp-fs-team[data-team="team1"] .mp-fs-team-name {
     color: #d4e8ff;
@@ -1883,12 +1885,12 @@
     column-gap: 14px;
   }
   .mp-fs-num {
-    font-size: 2.0rem;
+    font-size: 1.7rem;
     font-weight: 900;
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
-  .mp-fs-num--xl { font-size: 3.6rem; }
+  .mp-fs-num--xl { font-size: 2.6rem; }
   .mp-fs-num--team1 { color: #0b7cff; text-shadow: 0 0 14px rgba(11,124,255,0.55); }
   .mp-fs-num--team2 { color: #c8e835; text-shadow: 0 0 14px rgba(200,232,53,0.55); }
   .mp-fs-row-label {
@@ -1907,21 +1909,22 @@
 
   /* Etapa 16.4 F48: botón PEDIR PUNTAZO con P_BOTON.png — sin fondo solid,
      la imagen es vectorizada con transparencia para que se vea la cancha
-     a través de los huecos de la P y alrededor. Solo halo glow. */
+     a través de los huecos de la P y alrededor. Solo halo glow.
+     F57: 130px (era 168) para que TODO entre en pantalla sin scroll. */
   .mp-fs-puntazo-row {
-    margin: 18px 0 22px;
+    margin: 8px 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     flex-shrink: 0;
   }
   .mp-fs-puntazo-btn {
     appearance: none;
     border: none;
     cursor: pointer;
-    width: 168px;
-    height: 168px;
+    width: 130px;
+    height: 130px;
     border-radius: 50%;
     background: transparent;
     display: flex;
@@ -1971,8 +1974,11 @@
     text-shadow: 0 0 12px rgba(11, 124, 255, 0.55), 0 2px 4px rgba(0,0,0,0.55);
   }
   @media (max-width: 380px) {
-    .mp-fs-puntazo-btn { width: 140px; height: 140px; }
-    .mp-fs-puntazo-label { font-size: 0.78rem; letter-spacing: 1.5px; }
+    .mp-fs-puntazo-btn { width: 110px; height: 110px; }
+    .mp-fs-puntazo-label { font-size: 0.74rem; letter-spacing: 1.4px; }
+  }
+  @media (max-height: 700px) {
+    .mp-fs-puntazo-btn { width: 110px; height: 110px; }
   }
   .mp-fs-clip-feedback {
     min-height: 18px;
@@ -2123,15 +2129,18 @@
   }
   .mp-fs-team-pad[data-team="team1"] .mp-fs-team-pad-label { color: #cfe2ff; }
   .mp-fs-team-pad[data-team="team2"] .mp-fs-team-pad-label { color: #e9f5a8; }
+  /* F57: pads más compactos para que entren con el botón Undo abajo. */
   .mp-fs-team-pad-grid {
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(52px, auto) minmax(72px, auto) minmax(52px, auto);
-    gap: 6px;
+    grid-template-rows: minmax(42px, auto) minmax(56px, auto) minmax(42px, auto);
+    gap: 5px;
   }
-  .mp-fs-team-pad .mp-live-pad-btn { min-height: 52px; font-size: 1.00rem; }
-  .mp-fs-team-pad .mp-live-pad-btn.pad-game { font-size: 1.18rem; }
-  .mp-fs-team-pad .mp-live-pad-btn.pad-set  { font-size: 0.96rem; opacity: 0.92; }
+  .mp-fs-team-pad .mp-live-pad-btn { min-height: 42px; font-size: 0.92rem; }
+  .mp-fs-team-pad .mp-live-pad-btn.pad-game { font-size: 1.08rem; min-height: 56px; }
+  .mp-fs-team-pad .mp-live-pad-btn.pad-set  { font-size: 0.88rem; opacity: 0.92; }
+  .mp-fs-team-pad { padding: 8px 8px 10px; gap: 6px; }
+  .mp-fs-team-pad-label { font-size: 0.66rem; letter-spacing: 0.6px; }
 
   /* Etapa 16.4 F22c: colores por equipo en los pads del FS (mismas reglas
      que en el card normal, pero scope .mp-fs-team-pad). Antes los botones
@@ -2642,7 +2651,17 @@
   }
   .mp-live-undo-btn:active:not([disabled]) { transform: scale(0.96); }
   .mp-live-undo-btn[disabled] { opacity: 0.35; cursor: not-allowed; }
-  .mp-fs-undo-row { margin-top: 12px; text-align: center; flex-shrink: 0; }
+  /* F57: Undo siempre visible — al fondo, compacto */
+  .mp-fs-undo-row {
+    margin-top: 6px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .mp-fs-undo-row .mp-live-undo-btn {
+    min-height: 36px;
+    padding: 6px 14px;
+    font-size: 0.78rem;
+  }
   .mp-live-pad-btn:active:not([disabled]) { transform: scale(0.96); }
   .mp-live-pad-btn[disabled] { opacity: .42; cursor: not-allowed; }
   /* Botón minus (restar, 30%): naranja/rojo de advertencia */
