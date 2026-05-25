@@ -517,12 +517,14 @@
     background: rgba(255,255,255,.03);
     border-radius: 10px;
     color: rgba(234,242,255,.65);
-    /* Etapa 16.4 F56: prevenir text-select y scroll en touch mientras
-       el usuario interactúa con el slot (long-press = drag, no selección). */
+    /* Etapa 16.4 F56+F63: prevenir text-select y dejar el control total al
+       handler custom de drag (long-press → mover entre slots). touch-action
+       none permite los eventos touchstart/move/end sin que el browser
+       intervenga con scroll/zoom. */
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
-    touch-action: manipulation;
+    touch-action: none;
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -1832,12 +1834,15 @@
 
   .mp-fs-score {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    /* F59: minmax(0,1fr) en lugar de 1fr — sin esto el contenido empuja
+       sin respetar el espacio disponible y rompe el layout. */
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
     gap: 8px;
     padding: 8px 4px 4px;
     flex-shrink: 0;
   }
+  .mp-fs-team { min-width: 0; }
   .mp-fs-team {
     text-align: center;
     font-weight: 800;
@@ -2317,13 +2322,14 @@
   .mp-nueva-form > #nuevaJugadoresWrap     { order: 5; margin-bottom: 14px; }
   .mp-nueva-form > .mp-modal-section-label { order: 6; }
   .mp-nueva-form > .mp-modo-row            { order: 7; }
-  /* Cuando jugadores está abierto, los botones de iniciar pasan al fondo */
+  /* Cuando jugadores está abierto, los botones de iniciar pasan al fondo.
+     F60: !important para vencer cualquier override de specificity. */
   .mp-nueva-form.is-jugadores-open > .mp-nueva-actions-top {
-    order: 9;
-    margin-top: 18px;
-    margin-bottom: 0;
+    order: 9 !important;
+    margin-top: 18px !important;
+    margin-bottom: 0 !important;
   }
-  .mp-nueva-form.is-jugadores-open > #mpNuevaMsg { order: 10; }
+  .mp-nueva-form.is-jugadores-open > #mpNuevaMsg { order: 10 !important; }
 
   .mp-nueva-actions-top { margin-bottom: 16px; }
   .mp-nueva-actions-top .mp-btn-end {
@@ -2870,7 +2876,7 @@
     <!-- Etapa 16.4 F2: botón "Pedir Puntazo" promovido al top (era última acción) -->
     <div id="mpQuickActions" class="mp-quick-actions" style="display:none">
       <button id="mpBtnClip" class="mp-btn-puntazo" type="button">
-        <img class="pz-puntazo-mark" src="/assets/img/P_Blanca.png" alt="P" onerror="this.outerHTML='<span class=&quot;pz-puntazo-mark pz-puntazo-mark--fallback&quot;>P</span>'">
+        <img class="pz-puntazo-mark" src="/assets/img/puntazo_boton_redondo.png" alt="P" onerror="this.outerHTML='<span class=&quot;pz-puntazo-mark pz-puntazo-mark--fallback&quot;>P</span>'">
         <span class="pz-puntazo-label">PEDIR PUNTAZO</span>
       </button>
       <div id="mpClipFeedback" class="mp-clip-feedback"></div>
@@ -3073,7 +3079,7 @@
          alrededor de la P y en los huecos para dejar ver el fondo de cancha). -->
     <div class="mp-fs-puntazo-row">
       <button id="mpFsPuntazoBtn" type="button" class="mp-fs-puntazo-btn" aria-label="Pedir Puntazo">
-        <img class="mp-fs-puntazo-mark" src="/assets/img/P_BOTON.png" alt="Pedir Puntazo">
+        <img class="mp-fs-puntazo-mark" src="/assets/img/puntazo_boton_redondo.png" alt="Pedir Puntazo">
       </button>
       <div class="mp-fs-puntazo-label">PEDIR PUNTAZO</div>
       <div id="mpFsClipFeedback" class="mp-fs-clip-feedback"></div>
@@ -4601,9 +4607,21 @@
     if (!currentMatch || !currentMatch.id) return;
     const built = buildMarcadorFromState();
     if (built.error) {
-      $modalMsg.className = "mp-msg is-visible error";
-      $modalMsg.textContent = built.error;
-      return;
+      // Etapa 16.4 F62: en lugar de BLOQUEAR, dar opción de terminar igual.
+      // Útil para lesiones, retiros, sets extras, etc.
+      const ok = window.confirm(
+        "⚠️ El marcador tiene algo raro:\n\n" + built.error +
+        "\n\n¿Terminar el partido SIN guardar el marcador?\n" +
+        "(Podrás editarlo después desde el resumen.)\n\n" +
+        "OK = Terminar igual · Cancelar = Volver a editar"
+      );
+      if (!ok) {
+        $modalMsg.className = "mp-msg is-visible error";
+        $modalMsg.textContent = built.error;
+        return;
+      }
+      // Usuario eligió terminar igual: forzamos marcador = null
+      built.marcador = null;
     }
     const jugadoresNuevos = collectJugadores("end");
 
@@ -7099,6 +7117,7 @@
         w.style.display = isHidden ? "block" : "none";
         t.classList.toggle("is-open", isHidden);
         f.classList.toggle("is-jugadores-open", isHidden);
+        console.log("[F60] mpNuevaForm.is-jugadores-open =", f.classList.contains("is-jugadores-open"));
       });
     })();
     // Etapa 16.4 F28: marcador y config NO son acordeones — son fullscreens.

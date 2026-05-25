@@ -120,7 +120,19 @@
   //   - 1 jugador con nombre      → su nombre
   //   - 2 jugadores con nombre    → "Nombre 1 / Nombre 2"
   // El parámetro `teamId` debe ser "team1" o "team2".
-  function teamLabel(jugadores, teamId) {
+  // Etapa 16.4 F59: truncado elegante para nombres largos (evita romper
+  // layout del FS marcador). Si un nombre excede el max, se corta y se
+  // agrega "…" — ej. "Jose María Giménez" → "Jose Mar…".
+  function _truncate(s, max) {
+    const str = String(s || "").trim();
+    if (str.length <= max) return str;
+    return str.slice(0, max - 1) + "…";
+  }
+  function teamLabel(jugadores, teamId, opts) {
+    const o = opts || {};
+    // max chars por nombre cuando hay 1 vs 2 jugadores
+    const maxSingle = Number.isFinite(o.maxSingle) ? o.maxSingle : 14;
+    const maxDouble = Number.isFinite(o.maxDouble) ? o.maxDouble : 8;
     const J = Array.isArray(jugadores) ? jugadores : [];
     const filtered = J.filter(j => j && typeof j === "object" && j.equipo === teamId
       && j.nombre && String(j.nombre).trim().length > 0);
@@ -128,10 +140,10 @@
       return teamId === "team2" ? "Equipo 2" : "Equipo 1";
     }
     if (filtered.length === 1) {
-      return String(filtered[0].nombre).trim();
+      return _truncate(filtered[0].nombre, maxSingle);
     }
     return filtered.slice(0, 2)
-      .map(j => String(j.nombre).trim())
+      .map(j => _truncate(j.nombre, maxDouble))
       .join(" / ");
   }
 
