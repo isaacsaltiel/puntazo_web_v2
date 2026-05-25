@@ -2393,9 +2393,10 @@
     align-items: center;
     gap: 8px;
   }
-  /* F72: botón Pedir Puntazo = imagen completa (Boton_pediP.png con texto
-     y P integrados). El <button> es solo un contenedor transparente con
-     estados hover/active/disabled. Sin texto, sin gradient. */
+  /* F72/F75: botón Pedir Puntazo = imagen rectangular boton_P_rect.jpg
+     (texto + P integrados). Animacion equivalente a la del boton circular
+     del FS marcador: bob vertical + halo radial pulse + sheen sweep
+     (en lugar del anillo conico giratorio que no funciona en rectangulo). */
   .mp-btn-puntazo-img {
     appearance: none;
     border: none;
@@ -2406,22 +2407,74 @@
     display: block;
     width: 100%;
     max-width: 360px;
-    transition: transform 0.12s ease, filter 0.14s ease;
+    border-radius: 16px;
+    transition: transform 0.18s ease, filter 0.18s ease;
+    position: relative;
+    overflow: hidden;
+    animation: mpRectBob 3.6s ease-in-out infinite;
+  }
+  /* Halo radial que respira (igual que el circular) */
+  .mp-btn-puntazo-img::before {
+    content: "";
+    position: absolute;
+    inset: -16px;
+    border-radius: 28px;
+    background: radial-gradient(ellipse at center, rgba(11, 124, 255, 0.55) 0%, rgba(11, 124, 255, 0.12) 50%, transparent 75%);
+    z-index: -1;
+    animation: mpRectPulse 2.4s ease-in-out infinite;
+    filter: blur(14px);
+    pointer-events: none;
+  }
+  /* Sheen diagonal que cruza el botón cada ciclo */
+  .mp-btn-puntazo-img::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(110deg,
+      transparent 0%,
+      transparent 35%,
+      rgba(255,255,255,0.18) 50%,
+      transparent 65%,
+      transparent 100%);
+    background-size: 250% 100%;
+    background-position: 200% 0;
+    animation: mpRectSheen 4.5s ease-in-out infinite;
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+  @keyframes mpRectBob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
+  }
+  @keyframes mpRectPulse {
+    0%, 100% { opacity: 0.55; transform: scale(0.96); }
+    50%      { opacity: 1;    transform: scale(1.06); }
+  }
+  @keyframes mpRectSheen {
+    0%   { background-position: 200% 0; }
+    55%  { background-position: -100% 0; }
+    100% { background-position: -100% 0; }
   }
   .mp-btn-puntazo-img img {
     display: block;
     width: 100%;
     height: auto;
     object-fit: contain;
+    border-radius: inherit;
     -webkit-user-drag: none;
     user-select: none;
     pointer-events: none;
-    filter: drop-shadow(0 8px 24px rgba(11, 124, 255, 0.35));
   }
-  .mp-btn-puntazo-img:hover { transform: translateY(-2px); filter: brightness(1.06); }
-  .mp-btn-puntazo-img:active { transform: scale(0.97); }
-  .mp-btn-puntazo-img[disabled] { cursor: not-allowed; filter: grayscale(0.55) brightness(0.78); }
-  .mp-btn-puntazo-img[disabled] img { filter: none; }
+  .mp-btn-puntazo-img:hover { transform: translateY(-3px) scale(1.02); filter: brightness(1.08); }
+  .mp-btn-puntazo-img:active { transform: scale(0.96); transition: transform 0.06s ease; }
+  .mp-btn-puntazo-img[disabled] {
+    cursor: not-allowed;
+    filter: grayscale(0.55) brightness(0.78);
+    animation: none;
+  }
+  .mp-btn-puntazo-img[disabled]::before,
+  .mp-btn-puntazo-img[disabled]::after { animation: none; opacity: 0; }
   @media (max-width: 380px) {
     .mp-btn-puntazo-img { max-width: 300px; }
   }
@@ -2940,11 +2993,11 @@
          El nombre del lugar se infiere internamente para asignar el fondo
          de la cancha (F12), pero ya no se muestra al usuario. -->
 
-    <!-- Etapa 16.4 F2/F72: botón "Pedir Puntazo" — ahora es la imagen Boton_pediP.png
-         (ya trae texto + P integrados con el estilo Puntazo). -->
+    <!-- Etapa 16.4 F2/F72/F75: botón "Pedir Puntazo" — imagen rectangular
+         boton_P_rect.jpg (texto + P integrados, fondo arreglado). -->
     <div id="mpQuickActions" class="mp-quick-actions" style="display:none">
       <button id="mpBtnClip" class="mp-btn-puntazo-img" type="button" aria-label="Pedir Puntazo">
-        <img src="/assets/img/Boton_pediP.png" alt="Pedir Puntazo" />
+        <img src="/assets/img/boton_P_rect.jpg" alt="Pedir Puntazo" />
       </button>
       <div id="mpClipFeedback" class="mp-clip-feedback"></div>
     </div>
