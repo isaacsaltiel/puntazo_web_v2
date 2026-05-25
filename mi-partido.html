@@ -1830,13 +1830,12 @@
   .mp-fs-team-pad-grid {
     display: grid;
     grid-template-columns: 7fr 3fr;
-    grid-auto-rows: minmax(54px, auto);
+    grid-template-rows: minmax(52px, auto) minmax(72px, auto) minmax(52px, auto);
     gap: 6px;
   }
-  .mp-fs-team-pad .mp-live-pad-btn {
-    min-height: 54px;
-    font-size: 1.00rem;
-  }
+  .mp-fs-team-pad .mp-live-pad-btn { min-height: 52px; font-size: 1.00rem; }
+  .mp-fs-team-pad .mp-live-pad-btn.pad-game { font-size: 1.18rem; }
+  .mp-fs-team-pad .mp-live-pad-btn.pad-set  { font-size: 0.96rem; opacity: 0.92; }
 
   @media (max-width: 380px) {
     .mp-fs-num { font-size: 1.70rem; }
@@ -2124,14 +2123,16 @@
   .mp-live-team-pad[data-team="team1"] .mp-live-team-pad-label { color: #cfe2ff; }
   .mp-live-team-pad[data-team="team2"] .mp-live-team-pad-label { color: #e9f5a8; }
   /* ── 16.4 F3 — Grid 3 filas × 2 columnas (70/30 plus/minus) ── */
+  /* ── 16.4 F17: fila de GAME (la 2da) es la más alta porque es la acción
+        más usada en padel; PUNTO y SET son secundarias. ── */
   .mp-live-team-pad-grid {
     display: grid;
     grid-template-columns: 7fr 3fr;
-    grid-auto-rows: minmax(48px, auto);
+    grid-template-rows: minmax(46px, auto) minmax(64px, auto) minmax(46px, auto);
     gap: 6px;
   }
   .mp-live-pad-btn {
-    min-height: 48px;
+    min-height: 46px;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, .14);
     font-family: inherit;
@@ -2143,7 +2144,13 @@
     padding: 0 10px;
     transition: transform .10s ease, filter .12s ease, background .15s ease;
     letter-spacing: 0.3px;
+    width: 100%;
+    height: 100%;
   }
+  /* F17 — botones de la fila GAME visualmente más prominentes */
+  .mp-live-pad-btn.pad-game { font-size: 1.05rem; font-weight: 900; }
+  .mp-live-pad-btn.pad-pt   { font-size: 0.92rem; }
+  .mp-live-pad-btn.pad-set  { font-size: 0.90rem; opacity: 0.92; }
   .mp-live-pad-btn:active:not([disabled]) { transform: scale(0.96); }
   .mp-live-pad-btn[disabled] { opacity: .42; cursor: not-allowed; }
   /* Botón minus (restar, 30%): naranja/rojo de advertencia */
@@ -2516,7 +2523,7 @@
      Se abre desde el botón "📋 Marcador completo" de mi-partido.
      Fondo dinámico con la imagen de la cancha del partido.
      ════════════════════════════════════════════════════════════ -->
-<div id="mpLiveFullscreen" class="mp-fs-overlay" style="display:none" aria-hidden="true">
+<div id="mpLiveFullscreen" class="mp-fs-overlay" aria-hidden="true">
   <div id="mpFsCourtBg" class="mp-fs-bg" aria-hidden="true"></div>
   <div class="mp-fs-shell">
     <header class="mp-fs-header">
@@ -2770,6 +2777,10 @@
   const newLoc = (params.loc || "").trim();
   const newCan = (params.can || "").trim();
   const newLado = (params.lado || "").trim();
+  // Etapa 16.4 F16: si la URL trae ?edit=1, abrimos el modal "Terminar partido"
+  // automáticamente al cargar — útil para editar el marcador/jugadores de un
+  // partido ya terminado (acceso desde resumen.html).
+  const editFlag = (params.edit || "").trim() === "1";
 
   // ---------- config ----------
   let configCache = null;
@@ -3555,6 +3566,12 @@
     startClaims();
 
     show("mpContent");
+
+    // Etapa 16.4 F16: si vinimos con ?edit=1 desde resumen, abrir modal de
+    // edición automáticamente (solo el dueño puede editar).
+    if (editFlag && currentViewMode === "owner") {
+      setTimeout(function () { try { openModal(); } catch (_) {} }, 80);
+    }
   }
 
   // ---------- modal terminar (Etapa 15) ----------
@@ -3971,6 +3988,16 @@
       $modalSave.textContent = "Guardar y terminar";
 
       teardownLive();
+
+      // Etapa 16.4 F15: tras terminar el partido, redirigir directo a resumen.
+      // El usuario no necesita la pantalla intermedia con "Ver resumen / Compartir
+      // / Volver" — esas acciones viven en resumen.html.
+      try {
+        window.location.href = "/resumen.html?matchId=" + encodeURIComponent(matchId);
+        return;
+      } catch (_) {
+        // Si por alguna razón el redirect falla, hacemos el flujo viejo de re-render.
+      }
 
       let fresh = null;
       for (let attempt = 0; attempt < 2; attempt++) {
@@ -5440,6 +5467,32 @@
     return teamKey === "team1" ? "Equipo 1" : "Equipo 2";
   }
 
+  // Etapa 16.4 F18: disabledea los botones − (deshacer) cuando no hay nada
+  // que deshacer (puntos en 0, games en 0, sets en 0). Sigue respetando
+  // isOwner — invitados ven todo disabled siempre.
+  function applyMinusDisabledState(m, container, isOwner) {
+    if (!container) return;
+    const cur = (m && m.current) || {};
+    const sets = (m && Array.isArray(m.sets)) ? m.sets : [];
+    const hist = (m && Array.isArray(m.history)) ? m.history : [];
+    // − Punto: sin history no hay nada para deshacer (puntos ni transiciones).
+    const noPunto = hist.length === 0;
+    // − Game: sin games en el set actual Y sin sets cerrados → nada para deshacer.
+    const t1G = Number(cur.team1Games) || 0;
+    const t2G = Number(cur.team2Games) || 0;
+    const noGame = (t1G === 0 && t2G === 0 && sets.length === 0);
+    // − Set: sin sets cerrados → no hay set que pop'ear.
+    const noSet  = sets.length === 0;
+
+    container.querySelectorAll('button.pad-minus[data-live]').forEach(function (btn) {
+      if (!isOwner) { btn.disabled = true; return; }
+      const action = btn.dataset.live;
+      if (action === "undoPoint") btn.disabled = noPunto;
+      else if (action === "undoGame") btn.disabled = noGame;
+      else if (action === "undoSet") btn.disabled = noSet;
+    });
+  }
+
   // liveSupportsBoard: el marcador en vivo solo aplica a partidos con sets
   // (partido_3 / partido_5). Para reta/libre, el modal final clásico sigue
   // siendo la mejor opción.
@@ -5624,6 +5677,17 @@
         $liveTeams.querySelectorAll("button.mp-live-pad-btn").forEach(function (btn) {
           btn.disabled = !isOwner;
         });
+        // Etapa 16.4 F18: los botones − (deshacer) se disabledean también
+        // cuando no hay nada que deshacer (history vacío, sin sets, etc.).
+        applyMinusDisabledState(m, $liveTeams, isOwner);
+      }
+      // Aplicar también al overlay fullscreen si existe
+      if ($fsTeams) {
+        $fsTeams.dataset.owner = isOwner ? "1" : "0";
+        $fsTeams.querySelectorAll("button.mp-live-pad-btn").forEach(function (btn) {
+          btn.disabled = !isOwner;
+        });
+        applyMinusDisabledState(m, $fsTeams, isOwner);
       }
     } catch (e) {
       console.warn("[mi-partido 16.3] compact render error", e);

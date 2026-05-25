@@ -104,14 +104,16 @@
     background: #050914;
   }
 
-  /* Capa de foto de fondo (background-image se setea por JS como data URL) */
+  /* Capa de foto de fondo (background-image se setea por JS como data URL
+     cuando el usuario sube una foto custom). Default Etapa 16.4 F19:
+     ball-closeup.png como foto base para que la tarjeta nunca se vea pelona. */
   .pz-card-bg {
     position: absolute; inset: 0;
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
-    /* Degradado por defecto cuando no hay foto */
     background-image:
+      url('/assets/img/ball-closeup.png'),
       radial-gradient(ellipse 80% 55% at 25% 12%, rgba(11, 124, 255, 0.40) 0%, transparent 62%),
       radial-gradient(ellipse 70% 50% at 85% 92%, rgba(0, 79, 200, 0.45) 0%, transparent 60%),
       linear-gradient(160deg, #0a1830 0%, #050914 55%, #0a1226 100%);
@@ -340,6 +342,28 @@
     flex-direction: column;
     gap: 10px;
     margin-top: 22px;
+  }
+  /* Etapa 16.4 F16 — botón discreto "Editar marcador y jugadores" (owner-only) */
+  .rs-edit-row { margin-top: 8px; text-align: center; }
+  .rs-btn-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: rgba(234, 242, 255, 0.78);
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.16s ease;
+  }
+  .rs-btn-edit:hover {
+    background: rgba(255, 255, 255, 0.10);
+    color: #fff;
+    border-color: rgba(11, 124, 255, 0.45);
   }
   .rs-btn {
     width: 100%; min-height: 54px;
@@ -1014,6 +1038,11 @@
       <button id="rsBtnPhoto" class="rs-btn rs-btn-secondary" type="button">📷 Cambiar foto de fondo</button>
       <input type="file" id="rsPhotoInput" accept="image/*" capture="environment" style="display:none" />
     </div>
+    <!-- Etapa 16.4 F16: edición post-partido (discreto, owner-only se evalúa
+         al cargar; redirige a mi-partido.html?matchId=X&edit=1 que abre el modal) -->
+    <div class="rs-edit-row">
+      <a id="rsBtnEdit" class="rs-btn-edit" href="#" style="display:none">✏️ Editar marcador y jugadores</a>
+    </div>
     <div id="rsFeedback" class="rs-feedback"></div>
 
     <!-- Estado de tus clips (Etapa 13 — R3.1) -->
@@ -1187,6 +1216,7 @@
   const WHATSAPP_SUPPORT_NUMBER = "5212206804856";
 
   const $btnShare    = document.getElementById("rsBtnShare");
+  const $btnEdit     = document.getElementById("rsBtnEdit");
   const $btnDownload = document.getElementById("rsBtnDownload");
   const $btnPhoto    = document.getElementById("rsBtnPhoto");
   const $photoInput  = document.getElementById("rsPhotoInput");
@@ -1769,6 +1799,20 @@
   async function renderResumen(match) {
     currentMatch = match;
 
+    // Etapa 16.4 F16: mostrar botón "Editar marcador y jugadores" solo al dueño
+    try {
+      const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      const isOwner = !!(user && match && user.uid === match.userId);
+      if ($btnEdit) {
+        if (isOwner && match && match.id) {
+          $btnEdit.href = "/mi-partido.html?matchId=" + encodeURIComponent(match.id) + "&edit=1";
+          $btnEdit.style.display = "inline-flex";
+        } else {
+          $btnEdit.style.display = "none";
+        }
+      }
+    } catch (_) {}
+
     // Marcador
     renderScore(match);
 
@@ -2073,14 +2117,9 @@
       });
     });
     rows.forEach(function (r) { $rsClaimsList.appendChild(r); });
-    if (rows.length === 0) {
-      const empty = document.createElement("div");
-      empty.style.color = "rgba(234,242,255,.55)";
-      empty.style.fontSize = "0.88rem";
-      empty.style.lineHeight = "1.4";
-      empty.textContent = "Aún nadie se vinculó a un slot.";
-      $rsClaimsList.appendChild(empty);
-    }
+    // Etapa 16.4 F20: si no hay claims (vinculados), no mostramos placeholder
+    // "Aún nadie se vinculó a un slot." El bloque entero se oculta abajo si
+    // tampoco hay botones de claim que mostrar.
 
     // -------- botones de claim (invitados) --------
     // Mostramos botones para slots: vacíos O con nombre (sin uid). NO mostramos
@@ -2113,7 +2152,16 @@
       });
     }
 
-    $rsClaimsWrap.style.display = "block";
+    // Etapa 16.4 F20: ocultar todo el wrap si NO hay claims registrados Y
+    // tampoco hay botones de claim para invitados. Cuando no hay nadie
+    // vinculado, mostrar nada en lugar del placeholder estorboso.
+    const hasClaims = rows.length > 0;
+    const hasClaimButtons = !isOwner && $rsClaimSlots.children.length > 0;
+    if (!hasClaims && !hasClaimButtons) {
+      $rsClaimsWrap.style.display = "none";
+    } else {
+      $rsClaimsWrap.style.display = "block";
+    }
   }
 
   function rsOpenClaimModal(idx) {

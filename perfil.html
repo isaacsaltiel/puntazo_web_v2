@@ -198,6 +198,12 @@
         No pudimos cargar tus partidos. Intenta recargar la página.
       </div>
 
+      <!-- Etapa 16.4 F21: estado específico para permission-denied (rules
+           de collectionGroup claims no publicadas en Firestore Console) -->
+      <div id="matchesPermission" class="pz-matches-error" style="display:none">
+        ⚙️ Tus partidos están sincronizándose. Si esto persiste, contacta a soporte.
+      </div>
+
       <!-- ── Guardados ── -->
       <div class="pz-section-title">
         <h3>Videos guardados</h3>
@@ -250,6 +256,7 @@
   const $matchesList    = document.getElementById('matchesList');
   const $matchesEmpty   = document.getElementById('matchesEmpty');
   const $matchesError   = document.getElementById('matchesError');
+  const $matchesPerm    = document.getElementById('matchesPermission');
   const $matchesCount   = document.getElementById('matchesCount');
 
   fetch('/data/videos_index.json?cb='+Date.now(), { cache:'no-store' })
@@ -435,10 +442,11 @@
   }
 
   function showMatchesState(which) {
-    $matchesLoading.style.display = (which === 'loading') ? 'block' : 'none';
-    $matchesList.style.display    = (which === 'list')    ? 'flex'  : 'none';
-    $matchesEmpty.style.display   = (which === 'empty')   ? 'block' : 'none';
-    $matchesError.style.display   = (which === 'error')   ? 'block' : 'none';
+    $matchesLoading.style.display = (which === 'loading')    ? 'block' : 'none';
+    $matchesList.style.display    = (which === 'list')       ? 'flex'  : 'none';
+    $matchesEmpty.style.display   = (which === 'empty')      ? 'block' : 'none';
+    $matchesError.style.display   = (which === 'error')      ? 'block' : 'none';
+    if ($matchesPerm) $matchesPerm.style.display = (which === 'permission') ? 'block' : 'none';
     if (which !== 'list') $matchesCount.style.display = 'none';
   }
 
@@ -507,7 +515,13 @@
           if (err && err.code === 'failed-precondition') {
             console.warn('[perfil mis-partidos] Firestore índice compuesto requerido. Sigue el link del console.error de arriba.');
           }
-          showMatchesState('error');
+          // Etapa 16.4 F21: distinguir permission-denied de error genérico.
+          if (err && err.code === 'permission-denied') {
+            console.warn('[perfil mis-partidos] PERMISSION DENIED. Las reglas Firestore de collectionGroup("claims") no están publicadas. Aplica el bloque /claims/{claimUid} con allow read: if true en Firebase Console.');
+            showMatchesState('permission');
+          } else {
+            showMatchesState('error');
+          }
         });
     } catch (e) {
       console.error('[perfil mis-partidos] query setup error', e);
