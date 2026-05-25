@@ -440,9 +440,16 @@
     _tick(ts) {
       const t = (ts - this._t0) / 1000 * this.speed;
       const ctx = this.ctx;
+      // F74: limpiar todo el canvas (incluye letterbox) y clipear al area
+      // logica 1080x1920 para que las bolas entrando/saliendo no pinten
+      // afuera del 9:16 ni dejen residuos verdes en las esquinas.
+      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       ctx.save();
       ctx.translate(this.ox, this.oy);
       ctx.scale(this.sc, this.sc);
+      ctx.beginPath();
+      ctx.rect(0, 0, LW, LH);
+      ctx.clip();
       renderFrame(ctx, t, this.b1, this.b2, this.TBC);
       ctx.restore();
 
