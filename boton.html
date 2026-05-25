@@ -166,30 +166,35 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
 }
 .btn-cooldown-ring.active{opacity:1;}
 
-/* Main button */
+/* Main button — Etapa 16.4 F67: imagen P transparente como visual base.
+   El botón YA NO es un círculo solido azul; ahora es la imagen P
+   (transparente, con halo radial + ring giratorio del fondo) que aprovecha
+   la cancha de fondo y la marca Puntazo. */
 .big-btn{
   position:relative;width:100%;height:100%;border-radius:999px;border:none;
-  background:radial-gradient(circle at 30% 28%,rgba(255,255,255,.22),rgba(255,255,255,0) 35%),
-             radial-gradient(circle at 70% 75%,rgba(0,0,0,.28),rgba(0,0,0,0) 50%),
-             linear-gradient(180deg,var(--blue2),var(--blue));
+  background:transparent;
   color:#fff;cursor:pointer;user-select:none;
-  box-shadow:0 28px 100px rgba(0,79,200,.40);
-  transition:transform .08s ease;font-family:'Montserrat',sans-serif;
+  transition:transform .12s ease, filter .12s ease;font-family:'Montserrat',sans-serif;
+  padding:0;
 }
-.big-btn::before{
-  content:"";position:absolute;inset:0;border-radius:999px;pointer-events:none;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),inset 0 -14px 28px rgba(0,0,0,.25),0 28px 100px rgba(0,79,200,.40);
-  transition:opacity .18s;
-}
-.big-btn.pressed{transform:scale(.965) translateY(9px);box-shadow:none!important;}
-.big-btn.pressed::before{box-shadow:inset 0 24px 48px rgba(0,0,0,.40),inset 0 0 0 1px rgba(255,255,255,.08);}
-.big-btn.success{box-shadow:0 0 0 16px rgba(34,197,94,.06),0 22px 90px rgba(0,79,200,.32);}
-.big-btn.disabled-cooldown{cursor:not-allowed;filter:saturate(.85);}
+.big-btn.pressed{transform:scale(.92);filter:brightness(.85);}
+.big-btn.success{filter:drop-shadow(0 0 30px rgba(34,197,94,.55));}
+.big-btn.disabled-cooldown{cursor:not-allowed;filter:grayscale(.55) brightness(.72);}
 
-.btn-inner{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px;}
-.btn-main{font-size:clamp(22px,5.5vw,40px);font-weight:900;letter-spacing:1.5px;line-height:1;text-shadow:0 2px 10px rgba(0,0,0,.30);text-align:center;}
-.btn-sub{font-size:clamp(12px,3vw,16px);font-weight:800;letter-spacing:.8px;color:rgba(255,255,255,.85);text-transform:uppercase;text-align:center;}
-.btn-countdown{font-size:clamp(11px,2.8vw,15px);font-weight:700;color:rgba(255,255,255,.65);margin-top:2px;}
+/* Imagen P como contenido principal */
+.btn-puntazo-img{
+  width:100%;height:100%;object-fit:contain;display:block;
+  filter:drop-shadow(0 8px 22px rgba(11,124,255,.70))
+         drop-shadow(0 3px 8px rgba(0,0,0,.55));
+  pointer-events:none;
+}
+
+/* Inner: solo countdown (cooldown). Main/sub van al confirmText abajo
+   para no encimarse con el P. */
+.btn-inner{position:absolute;inset:auto 0 10% 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;pointer-events:none;}
+.btn-main{display:none;}
+.btn-sub{display:none;}
+.btn-countdown{font-size:clamp(13px,3.2vw,17px);font-weight:900;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.75),0 0 14px rgba(11,124,255,.55);letter-spacing:.5px;}
 
 /* Text swap */
 @keyframes textIn{from{opacity:.15;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
@@ -288,7 +293,8 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
         <div class="btn-ring"></div>
         <div class="btn-pulse" id="btnPulse"></div>
 
-        <button id="bigBtn" class="big-btn">
+        <button id="bigBtn" class="big-btn" aria-label="Registrar Puntazo">
+          <img class="btn-puntazo-img" src="/assets/img/puntazo_boton_redondo.png" alt="Puntazo" />
           <div class="btn-inner">
             <div id="btnMain" class="btn-main">REGISTRAR PUNTAZO</div>
             <div id="btnSub" class="btn-sub">Toca para guardarlo</div>
@@ -370,12 +376,17 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
     $btnCountdown.style.display = 'none';
     $btnPulse.style.animationPlayState = 'running';
 
+    // F67: textos visibles ahora viven en confirmText (debajo del P);
+    // los swap de btnMain/btnSub quedan ocultos por CSS pero los mantenemos
+    // por compatibilidad si algún día se vuelven visibles.
     if (state === 'idle') {
       swap($btnMain, 'REGISTRAR PUNTAZO');
       swap($btnSub,  'Toca para guardarlo');
+      setConfirm('Toca el botón para registrar tu Puntazo', '');
     } else if (state === 'loading') {
       swap($btnMain, 'GUARDANDO…');
       swap($btnSub,  'Un momento…');
+      setConfirm('Guardando…', '');
     } else if (state === 'success') {
       $bigBtn.classList.add('success');
       swap($btnMain, '¡GUARDADO! ✅');
