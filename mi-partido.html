@@ -4760,17 +4760,30 @@
 
   let clipBusy = false;
   let clipCooldownTimer = null;
+  let clipFeedbackHideTimer = null;
 
-  function setClipFeedback(msg, cls) {
+  // F68: auto-hide para mensajes ok/info. "bad" se queda hasta clear manual
+  // o el siguiente setClipFeedback. autoHideMs override opcional.
+  function setClipFeedback(msg, cls, autoHideMs) {
     if (!$clipFeedback) return;
     $clipFeedback.className = "mp-clip-feedback is-visible " + (cls || "");
     $clipFeedback.textContent = msg || "";
+    if (clipFeedbackHideTimer) { clearTimeout(clipFeedbackHideTimer); clipFeedbackHideTimer = null; }
+    const isTransient = (cls === "ok" || cls === "info");
+    const delay = typeof autoHideMs === "number" ? autoHideMs : (isTransient ? 3500 : 0);
+    if (delay > 0) {
+      clipFeedbackHideTimer = setTimeout(function () {
+        clipFeedbackHideTimer = null;
+        clearClipFeedback();
+      }, delay);
+    }
   }
 
   function clearClipFeedback() {
     if (!$clipFeedback) return;
     $clipFeedback.className = "mp-clip-feedback";
     $clipFeedback.textContent = "";
+    if (clipFeedbackHideTimer) { clearTimeout(clipFeedbackHideTimer); clipFeedbackHideTimer = null; }
   }
 
   // Etapa 16.4 F14 fix: el botón "PEDIR PUNTAZO" ahora tiene HTML interno
