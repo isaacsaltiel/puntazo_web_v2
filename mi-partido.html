@@ -2749,7 +2749,6 @@
         <div class="mp-timer-label">⏱ En curso</div>
         <div id="mpVenueLabel" class="mp-venue-label"></div>
       </div>
-      <div class="mp-version-tag">v16.4 · F44</div>
       <div id="mpTimer" class="mp-timer">00:00:00</div>
       <div class="mp-clip-counter-wrap">
         <div id="mpClipCounter" class="mp-clip-counter">
@@ -2965,10 +2964,14 @@
       </div>
     </section>
 
-    <!-- Etapa 16.4 F29/F39: botón P central — equivale a "PEDIR PUNTAZO" -->
+    <!-- Etapa 16.4 F46: botón P con SVG inline — sin PNG con fondo blanco. -->
     <div class="mp-fs-puntazo-row">
       <button id="mpFsPuntazoBtn" type="button" class="mp-fs-puntazo-btn" aria-label="Pedir Puntazo">
-        <img class="mp-fs-puntazo-mark" src="/assets/img/P_Vector.png" alt="P" onerror="this.outerHTML='<span class=&quot;mp-fs-puntazo-mark mp-fs-puntazo-mark--fb&quot;>P</span>'">
+        <svg class="mp-fs-puntazo-mark" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <text x="50" y="98" font-family="Montserrat, 'Segoe UI', sans-serif" font-size="110" font-weight="900" font-style="italic" fill="#ffffff" letter-spacing="-2">P</text>
+          <circle cx="98" cy="36" r="10" fill="#ffffff"/>
+          <circle cx="98" cy="36" r="10" fill="none" stroke="#14245a" stroke-width="1.5"/>
+        </svg>
       </button>
       <div class="mp-fs-puntazo-label">PEDIR PUNTAZO</div>
       <div id="mpFsClipFeedback" class="mp-fs-clip-feedback"></div>
