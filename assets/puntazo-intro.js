@@ -1,5 +1,6 @@
 /**
- * puntazo-intro.js  –  Animación de intro para puntazoclips.com
+ * puntazo-intro-vertical.js  –  Formato 9:16 (1080x1920)
+ * Reels, Stories, TikTok, pantalla vertical  –  Animación de intro para puntazoclips.com
  *
  * USO OVERLAY  (tapa la página, desaparece a los 6s):
  *   PuntazoIntro.overlay({ onDone: () => console.log('listo') });
@@ -11,18 +12,18 @@
   'use strict';
 
   // ── Coordenadas lógicas (igual que el render Python) ──────────────────
-  const LW = 1920, LH = 1080;
-  const BALL_R = 62, GROUND_Y = LH * 0.80;
+  const LW = 1080, LH = 1920;
+  const BALL_R = 52, GROUND_Y = LH * 0.80;
   const SQUISH_Z = BALL_R * 2, G = 2400, COR = 0.76;
 
-  const LOGO_S = 0.65, LCX = LW / 2, LCY = Math.floor(LH * 0.445);
+  const LOGO_S = 0.85, LCX = LW / 2, LCY = Math.floor(LH * 0.445);
   const P_CX = 491, P_CY = 526.5;
   const L_LEFT  = 305 * LOGO_S + (LCX - P_CX * LOGO_S);
   const L_RIGHT = 677 * LOGO_S + (LCX - P_CX * LOGO_S);
   const L_TOP   = 294 * LOGO_S + (LCY - P_CY * LOGO_S);
   const L_BOT   = 759 * LOGO_S + (LCY - P_CY * LOGO_S);
 
-  const SEP_Y = L_BOT + 92, NAME_Y = SEP_Y + 62, HDL_Y = NAME_Y + 56;
+  const SEP_Y = L_BOT + 80, NAME_Y = SEP_Y + 62, HDL_Y = NAME_Y + 56;
 
   const B1_ENTER = 1.2, B1_EXIT = 4.4;
   const B2_ENTER = 1.5, B2_EXIT = 4.8;
@@ -112,11 +113,11 @@
   // ── Perspectiva diagonal ─────────────────────────────────────────────────
   function perspB1(bx, by) {
     const nt = (bx + BALL_R) / (LW + 2*BALL_R);
-    return [by + lerp(-80,35,nt), lerp(0.82,1.02,nt)];
+    return [by + lerp(-60,25,nt), lerp(0.84,1.0,nt)];
   }
   function perspB2(bx, by) {
     const nt = (LW + BALL_R - bx) / (LW + 2*BALL_R);
-    return [by + lerp(-80,35,nt), lerp(0.82,1.02,nt)];
+    return [by + lerp(-60,25,nt), lerp(0.84,1.0,nt)];
   }
 
   // ── Dibujo de bola ────────────────────────────────────────────────────────
@@ -211,7 +212,7 @@
   }
 
   // ── Ball 3 (hacia la cámara) ───────────────────────────────────────────
-  const VP_X = LW/2+40, VP_Y = LH*0.28, CAM_Y = LH*0.52;
+  const VP_X = LW/2+30, VP_Y = LH*0.22, CAM_Y = LH*0.44;
   function drawBall3(ctx, t) {
     if (t < B3_START || t > B3_IMPACT) return;
     const nt = (t - B3_START) / (B3_IMPACT - B3_START);
@@ -308,16 +309,16 @@
       const sp = eoc(clamp(dtt/0.30));
       ctx.save(); ctx.globalAlpha = sp*0.24*foScale;
       ctx.strokeStyle='white'; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(LW/2-200*sp,SEP_Y); ctx.lineTo(LW/2+200*sp,SEP_Y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(LW/2-160*sp,SEP_Y); ctx.lineTo(LW/2+160*sp,SEP_Y); ctx.stroke();
       ctx.restore();
       // PUNTAZO stamp
       ctx.save();
       ctx.globalAlpha = nmA;
       ctx.translate(LW/2, NAME_Y); ctx.scale(nmSc,nmSc); ctx.translate(-LW/2,-NAME_Y);
       ctx.fillStyle = 'white';
-      ctx.font = '700 45px Montserrat, Arial, sans-serif';
+      ctx.font = '700 52px Montserrat, Arial, sans-serif';
       ctx.textAlign = 'center';
-      ctx.letterSpacing = '13px';
+      ctx.letterSpacing = '14px';
       ctx.fillText('PUNTAZO', LW/2, NAME_Y);
       ctx.restore();
     }
@@ -328,7 +329,7 @@
     if (hdlFinal > 0) {
       ctx.save(); ctx.globalAlpha = hdlFinal;
       ctx.fillStyle = 'white';
-      ctx.font = '300 27px Montserrat, Arial, sans-serif';
+      ctx.font = '300 30px Montserrat, Arial, sans-serif';
       ctx.textAlign = 'center';
       ctx.letterSpacing = '5px';
       ctx.fillText('@puntazoclips', LW/2, HDL_Y);
@@ -411,8 +412,8 @@
 
       const b1vx =  (LW+2*BALL_R)/(B1_EXIT-B1_ENTER);
       const b2vx = -(LW+2*BALL_R)/(B2_EXIT-B2_ENTER);
-      this.b1 = simulate(B1_ENTER, B1_EXIT, -BALL_R, GROUND_Y, b1vx, -1100);
-      this.b2 = simulate(B2_ENTER, B2_EXIT, LW+BALL_R, GROUND_Y, b2vx, -1350);
+      this.b1 = simulate(B1_ENTER, B1_EXIT, -BALL_R, GROUND_Y, b1vx, -1000);
+      this.b2 = simulate(B2_ENTER, B2_EXIT, LW+BALL_R, GROUND_Y, b2vx, -1250);
       this.TBC = this.b1.bounces.reduce((best,b) =>
         Math.abs(b[1]-LW/2) < Math.abs(best[1]-LW/2) ? b : best
       )[0];
