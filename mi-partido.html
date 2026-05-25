@@ -1686,15 +1686,20 @@
     z-index: 0;
     background-position: center;
     background-size: cover;
-    filter: blur(34px) saturate(0.85);
-    transform: scale(1.10);
-    opacity: 0.55;
+    /* Etapa 16.4 F22: blur reducido y opacity subida para que la imagen
+       de la cancha se VEA (antes 34px blur + 0.55 opacity la diluía). */
+    filter: blur(8px) saturate(1.05);
+    transform: scale(1.06);
+    opacity: 0.92;
   }
   .mp-fs-bg::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at center, rgba(2,6,16,0.35) 0%, rgba(2,6,16,0.78) 70%, rgba(2,6,16,0.94) 100%);
+    /* Overlay menos pesado para mantener legibilidad sin tapar la cancha. */
+    background:
+      linear-gradient(180deg, rgba(2,6,16,0.55) 0%, rgba(2,6,16,0.25) 30%, rgba(2,6,16,0.25) 70%, rgba(2,6,16,0.65) 100%),
+      radial-gradient(ellipse at center, rgba(2,6,16,0.10) 0%, rgba(2,6,16,0.45) 80%);
   }
   .mp-fs-shell {
     position: relative;
@@ -1829,13 +1834,55 @@
   .mp-fs-team-pad[data-team="team2"] .mp-fs-team-pad-label { color: #e9f5a8; }
   .mp-fs-team-pad-grid {
     display: grid;
-    grid-template-columns: 7fr 3fr;
+    grid-template-columns: 1fr;
     grid-template-rows: minmax(52px, auto) minmax(72px, auto) minmax(52px, auto);
     gap: 6px;
   }
   .mp-fs-team-pad .mp-live-pad-btn { min-height: 52px; font-size: 1.00rem; }
   .mp-fs-team-pad .mp-live-pad-btn.pad-game { font-size: 1.18rem; }
   .mp-fs-team-pad .mp-live-pad-btn.pad-set  { font-size: 0.96rem; opacity: 0.92; }
+
+  /* Etapa 16.4 F22c: colores por equipo en los pads del FS (mismas reglas
+     que en el card normal, pero scope .mp-fs-team-pad). Antes los botones
+     heredaban solo el color blanco/transparente base y se veían pelados. */
+  .mp-fs-team-pad .mp-live-pad-btn.pad-minus {
+    background: rgba(var(--undo-color-rgb, 240, 104, 69), .18);
+    border-color: rgba(var(--undo-color-rgb, 240, 104, 69), .55);
+    color: var(--undo-color, #f06845);
+    font-size: 1.30rem;
+  }
+  .mp-fs-team-pad[data-team="team1"] .mp-live-pad-btn.pad-pt {
+    background: rgba(120, 130, 145, .30);
+    border-color: rgba(160, 170, 185, .50);
+    color: #fff;
+  }
+  .mp-fs-team-pad[data-team="team1"] .mp-live-pad-btn.pad-game {
+    background: linear-gradient(135deg, var(--team1-color, #0b7cff), #004FC8);
+    border-color: var(--team1-color-border, rgba(11,124,255,.65));
+    box-shadow: 0 0 18px rgba(11, 124, 255, .35);
+    color: #fff;
+  }
+  .mp-fs-team-pad[data-team="team1"] .mp-live-pad-btn.pad-set {
+    background: rgba(11, 124, 255, .30);
+    border-color: var(--team1-color-border, rgba(11,124,255,.55));
+    color: #cfe2ff;
+  }
+  .mp-fs-team-pad[data-team="team2"] .mp-live-pad-btn.pad-pt {
+    background: rgba(120, 130, 145, .30);
+    border-color: rgba(160, 170, 185, .50);
+    color: #fff;
+  }
+  .mp-fs-team-pad[data-team="team2"] .mp-live-pad-btn.pad-game {
+    background: linear-gradient(135deg, var(--team2-color, #c8e835), #9ec628);
+    border-color: var(--team2-color-border, rgba(200,232,53,.65));
+    box-shadow: 0 0 18px rgba(200, 232, 53, .35);
+    color: #0a1428;
+  }
+  .mp-fs-team-pad[data-team="team2"] .mp-live-pad-btn.pad-set {
+    background: rgba(200, 232, 53, .30);
+    border-color: var(--team2-color-border, rgba(200,232,53,.55));
+    color: #e9f5a8;
+  }
 
   @media (max-width: 380px) {
     .mp-fs-num { font-size: 1.70rem; }
@@ -1849,27 +1896,31 @@
   }
 
   /* ── Etapa 16.4 F12: fondo dinámico con la imagen de la cancha ── */
+  /* Etapa 16.4 F22d: el body es opaco; .page-bg está en z-index:0; este
+     fondo necesita estar ENCIMA del body pero DEBAJO del contenido. */
   .mp-court-bg {
     position: fixed;
     inset: 0;
-    z-index: -1;
+    z-index: 0;
     pointer-events: none;
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
     opacity: 0;
     transition: opacity 0.45s ease, filter 0.45s ease;
-    filter: blur(28px) saturate(0.85);
-    transform: scale(1.08); /* expandir para que el blur no muestre bordes */
+    filter: blur(14px) saturate(1.05);
+    transform: scale(1.06);
   }
-  .mp-court-bg.is-active { opacity: 0.42; }
+  .mp-court-bg.is-active { opacity: 0.78; }
   .mp-court-bg::after {
     content: "";
     position: absolute;
     inset: 0;
-    /* overlay oscuro radial para mantener legibilidad del contenido central */
-    background: radial-gradient(ellipse at center, rgba(2,6,16,0.40) 0%, rgba(2,6,16,0.78) 70%, rgba(2,6,16,0.92) 100%);
+    background:
+      linear-gradient(180deg, rgba(2,6,16,0.62) 0%, rgba(2,6,16,0.30) 35%, rgba(2,6,16,0.30) 65%, rgba(2,6,16,0.78) 100%);
   }
+  /* Asegurar que el contenido queda por encima del fondo dinámico */
+  .mp-wrap { position: relative; z-index: 2; }
 
   /* ── Etapa 16.4 F10+F11: form de "nueva" reordenado + cancha más chica ── */
   .mp-nueva-form { padding: 18px 16px 14px; }
@@ -2122,12 +2173,13 @@
   }
   .mp-live-team-pad[data-team="team1"] .mp-live-team-pad-label { color: #cfe2ff; }
   .mp-live-team-pad[data-team="team2"] .mp-live-team-pad-label { color: #e9f5a8; }
-  /* ── 16.4 F3 — Grid 3 filas × 2 columnas (70/30 plus/minus) ── */
+  /* ── 16.4 F22: Grid 3 filas × 1 columna (sin botones − duplicados;
+        un solo UNDO centralizado debajo de los pads) ── */
   /* ── 16.4 F17: fila de GAME (la 2da) es la más alta porque es la acción
         más usada en padel; PUNTO y SET son secundarias. ── */
   .mp-live-team-pad-grid {
     display: grid;
-    grid-template-columns: 7fr 3fr;
+    grid-template-columns: 1fr;
     grid-template-rows: minmax(46px, auto) minmax(64px, auto) minmax(46px, auto);
     gap: 6px;
   }
@@ -2151,6 +2203,35 @@
   .mp-live-pad-btn.pad-game { font-size: 1.05rem; font-weight: 900; }
   .mp-live-pad-btn.pad-pt   { font-size: 0.92rem; }
   .mp-live-pad-btn.pad-set  { font-size: 0.90rem; opacity: 0.92; }
+
+  /* F22: botón único UNDO centralizado debajo de los pads */
+  .mp-live-undo-row { margin-top: 10px; text-align: center; }
+  .mp-live-undo-btn {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 42px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: rgba(var(--undo-color-rgb, 240, 104, 69), .14);
+    border: 1px solid rgba(var(--undo-color-rgb, 240, 104, 69), .45);
+    color: var(--undo-color, #f06845);
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 0.86rem;
+    cursor: pointer;
+    transition: all 0.14s ease;
+  }
+  .mp-live-undo-btn:hover:not([disabled]) {
+    background: rgba(var(--undo-color-rgb, 240, 104, 69), .26);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+  .mp-live-undo-btn:active:not([disabled]) { transform: scale(0.96); }
+  .mp-live-undo-btn[disabled] { opacity: 0.35; cursor: not-allowed; }
+  .mp-fs-undo-row { margin-top: 12px; text-align: center; flex-shrink: 0; }
   .mp-live-pad-btn:active:not([disabled]) { transform: scale(0.96); }
   .mp-live-pad-btn[disabled] { opacity: .42; cursor: not-allowed; }
   /* Botón minus (restar, 30%): naranja/rojo de advertencia */
@@ -2403,30 +2484,27 @@
         <div class="mp-live-compact-hint" id="mpLiveHint">🟢 Saca <strong>Equipo 1</strong></div>
       </div>
 
-      <!-- ── 16.4 F3 — Botonera 3 filas por equipo: Punto/Game/Set (70/30) ── -->
+      <!-- ── 16.4 F22 — Botonera 3 filas + 1 botón UNDO centralizado abajo ── -->
       <div id="mpLiveTeamActions" class="mp-live-teams" data-owner="0">
         <div class="mp-live-team-pad" data-team="team1">
           <div class="mp-live-team-pad-label" id="mpLiveTeam1Label">Equipo 1</div>
           <div class="mp-live-team-pad-grid">
-            <button type="button" class="mp-live-pad-btn pad-pt"     data-live="addPoint" data-team="team1">+ PUNTO</button>
-            <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoPoint" data-team="team1" aria-label="Quitar punto">−</button>
-            <button type="button" class="mp-live-pad-btn pad-game"   data-live="forceGame" data-team="team1">+ GAME</button>
-            <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoGame" data-team="team1" aria-label="Quitar game">−</button>
-            <button type="button" class="mp-live-pad-btn pad-set"    data-live="forceSet" data-team="team1">+ SET</button>
-            <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoSet" data-team="team1" aria-label="Quitar set">−</button>
+            <button type="button" class="mp-live-pad-btn pad-pt"   data-live="addPoint" data-team="team1">+ PUNTO</button>
+            <button type="button" class="mp-live-pad-btn pad-game" data-live="forceGame" data-team="team1">+ GAME</button>
+            <button type="button" class="mp-live-pad-btn pad-set"  data-live="forceSet" data-team="team1">+ SET</button>
           </div>
         </div>
         <div class="mp-live-team-pad" data-team="team2">
           <div class="mp-live-team-pad-label" id="mpLiveTeam2Label">Equipo 2</div>
           <div class="mp-live-team-pad-grid">
-            <button type="button" class="mp-live-pad-btn pad-pt"     data-live="addPoint" data-team="team2">+ PUNTO</button>
-            <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoPoint" data-team="team2" aria-label="Quitar punto">−</button>
-            <button type="button" class="mp-live-pad-btn pad-game"   data-live="forceGame" data-team="team2">+ GAME</button>
-            <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoGame" data-team="team2" aria-label="Quitar game">−</button>
-            <button type="button" class="mp-live-pad-btn pad-set"    data-live="forceSet" data-team="team2">+ SET</button>
-            <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoSet" data-team="team2" aria-label="Quitar set">−</button>
+            <button type="button" class="mp-live-pad-btn pad-pt"   data-live="addPoint" data-team="team2">+ PUNTO</button>
+            <button type="button" class="mp-live-pad-btn pad-game" data-live="forceGame" data-team="team2">+ GAME</button>
+            <button type="button" class="mp-live-pad-btn pad-set"  data-live="forceSet" data-team="team2">+ SET</button>
           </div>
         </div>
+      </div>
+      <div class="mp-live-undo-row">
+        <button id="mpLiveUndo" type="button" class="mp-live-undo-btn" data-live="undoPoint" aria-label="Deshacer último cambio">↶ Deshacer último</button>
       </div>
 
       <!-- Botón para abrir la tabla detallada (sheet) -->
@@ -2562,26 +2640,23 @@
       <div class="mp-fs-team-pad" data-team="team1">
         <div class="mp-fs-team-pad-label">Equipo 1</div>
         <div class="mp-fs-team-pad-grid">
-          <button type="button" class="mp-live-pad-btn pad-pt"     data-live="addPoint"  data-team="team1">+ PUNTO</button>
-          <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoPoint" data-team="team1" aria-label="Quitar punto">−</button>
-          <button type="button" class="mp-live-pad-btn pad-game"   data-live="forceGame" data-team="team1">+ GAME</button>
-          <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoGame"  data-team="team1" aria-label="Quitar game">−</button>
-          <button type="button" class="mp-live-pad-btn pad-set"    data-live="forceSet"  data-team="team1">+ SET</button>
-          <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoSet"   data-team="team1" aria-label="Quitar set">−</button>
+          <button type="button" class="mp-live-pad-btn pad-pt"   data-live="addPoint" data-team="team1">+ PUNTO</button>
+          <button type="button" class="mp-live-pad-btn pad-game" data-live="forceGame" data-team="team1">+ GAME</button>
+          <button type="button" class="mp-live-pad-btn pad-set"  data-live="forceSet" data-team="team1">+ SET</button>
         </div>
       </div>
       <div class="mp-fs-team-pad" data-team="team2">
         <div class="mp-fs-team-pad-label">Equipo 2</div>
         <div class="mp-fs-team-pad-grid">
-          <button type="button" class="mp-live-pad-btn pad-pt"     data-live="addPoint"  data-team="team2">+ PUNTO</button>
-          <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoPoint" data-team="team2" aria-label="Quitar punto">−</button>
-          <button type="button" class="mp-live-pad-btn pad-game"   data-live="forceGame" data-team="team2">+ GAME</button>
-          <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoGame"  data-team="team2" aria-label="Quitar game">−</button>
-          <button type="button" class="mp-live-pad-btn pad-set"    data-live="forceSet"  data-team="team2">+ SET</button>
-          <button type="button" class="mp-live-pad-btn pad-minus"  data-live="undoSet"   data-team="team2" aria-label="Quitar set">−</button>
+          <button type="button" class="mp-live-pad-btn pad-pt"   data-live="addPoint" data-team="team2">+ PUNTO</button>
+          <button type="button" class="mp-live-pad-btn pad-game" data-live="forceGame" data-team="team2">+ GAME</button>
+          <button type="button" class="mp-live-pad-btn pad-set"  data-live="forceSet" data-team="team2">+ SET</button>
         </div>
       </div>
     </section>
+    <div class="mp-fs-undo-row">
+      <button id="mpFsUndo" type="button" class="mp-live-undo-btn" data-live="undoPoint" aria-label="Deshacer último cambio">↶ Deshacer último</button>
+    </div>
   </div>
 </div>
 
@@ -5447,6 +5522,8 @@
   const $liveOpenDetail = document.getElementById("mpLiveOpenDetail");
   const $liveDetSheet   = document.getElementById("mpLiveDetailSheet");
   const $liveCloseDet   = document.getElementById("mpLiveCloseDetail");
+  // Etapa 16.4 F22 — botón UNDO único (deshace último cambio sin importar equipo)
+  const $liveUndoBtn    = document.getElementById("mpLiveUndo");
 
   let _liveWriteInFlight = false;
   let _liveLastShownFinishedFor = null; // id del partido para el que ya mostramos overlay
@@ -5677,9 +5754,6 @@
         $liveTeams.querySelectorAll("button.mp-live-pad-btn").forEach(function (btn) {
           btn.disabled = !isOwner;
         });
-        // Etapa 16.4 F18: los botones − (deshacer) se disabledean también
-        // cuando no hay nada que deshacer (history vacío, sin sets, etc.).
-        applyMinusDisabledState(m, $liveTeams, isOwner);
       }
       // Aplicar también al overlay fullscreen si existe
       if ($fsTeams) {
@@ -5687,8 +5761,16 @@
         $fsTeams.querySelectorAll("button.mp-live-pad-btn").forEach(function (btn) {
           btn.disabled = !isOwner;
         });
-        applyMinusDisabledState(m, $fsTeams, isOwner);
       }
+      // Etapa 16.4 F22: botón UNDO único (no por equipo). Disabled cuando
+      // no hay nada que deshacer (history vacío Y sin sets) o sin permisos.
+      const histLen = (m && Array.isArray(m.history)) ? m.history.length : 0;
+      const setsLen = (m && Array.isArray(m.sets)) ? m.sets.length : 0;
+      const undoDisabled = !isOwner || (histLen === 0 && setsLen === 0);
+      const $undoMain = document.getElementById("mpLiveUndo");
+      const $undoFs   = document.getElementById("mpFsUndo");
+      if ($undoMain) $undoMain.disabled = undoDisabled;
+      if ($undoFs)   $undoFs.disabled   = undoDisabled;
     } catch (e) {
       console.warn("[mi-partido 16.3] compact render error", e);
     }
@@ -5928,12 +6010,17 @@
     if ($fsT1Name) $fsT1Name.textContent = t1Label;
     if ($fsT2Name) $fsT2Name.textContent = t2Label;
 
-    if ($fsT1Sets)   $fsT1Sets.textContent   = board.t1Sets;
-    if ($fsT2Sets)   $fsT2Sets.textContent   = board.t2Sets;
-    if ($fsT1Games)  $fsT1Games.textContent  = board.t1Games;
-    if ($fsT2Games)  $fsT2Games.textContent  = board.t2Games;
-    if ($fsT1Points) $fsT1Points.textContent = board.t1Points;
-    if ($fsT2Points) $fsT2Points.textContent = board.t2Points;
+    // Etapa 16.4 F22 fix: las keys correctas de formatScoreboard son
+    // board.setsWon.{t1,t2}, board.current.team{1,2}Games, board.pointsLabelT{1,2}.
+    // Antes usaba t1Sets/t2Sets etc. que no existen — los números no salían.
+    const sw = board.setsWon || { t1: 0, t2: 0 };
+    const cur = board.current || {};
+    if ($fsT1Sets)   $fsT1Sets.textContent   = sw.t1;
+    if ($fsT2Sets)   $fsT2Sets.textContent   = sw.t2;
+    if ($fsT1Games)  $fsT1Games.textContent  = (cur.team1Games != null ? cur.team1Games : 0);
+    if ($fsT2Games)  $fsT2Games.textContent  = (cur.team2Games != null ? cur.team2Games : 0);
+    if ($fsT1Points) $fsT1Points.textContent = (cur.tiebreak ? "TB " + (cur.tiebreak.team1 || 0) : (board.pointsLabelT1 != null ? board.pointsLabelT1 : 0));
+    if ($fsT2Points) $fsT2Points.textContent = (cur.tiebreak ? "TB " + (cur.tiebreak.team2 || 0) : (board.pointsLabelT2 != null ? board.pointsLabelT2 : 0));
 
     if ($fsHint) {
       if (board.ganador) {
@@ -6037,6 +6124,57 @@
       if (_fsOpen) fsRenderBoard();
     };
   })();
+
+  // Etapa 16.4 F22 — handler único para el botón UNDO (ambos: card y FS).
+  // Deshace el último cambio: punto/game si hay history; si no, pop del
+  // último set cerrado.
+  async function liveUndoLastChange() {
+    if (!currentMatch) return;
+    const m = liveBuildSafeMarcador(currentMatch);
+    let next = null;
+    try {
+      if (Array.isArray(m.history) && m.history.length > 0) {
+        next = window.PuntazoMatches.live.undoLastPoint(m);
+      } else if (Array.isArray(m.sets) && m.sets.length > 0) {
+        const cloned = JSON.parse(JSON.stringify(m));
+        cloned.sets.pop();
+        if (Array.isArray(cloned.tiebreak) && cloned.tiebreak.length > 0) cloned.tiebreak.pop();
+        cloned.ganador = null;
+        if (cloned.current) {
+          cloned.current.team1Games = 0; cloned.current.team2Games = 0;
+          cloned.current.team1Points = 0; cloned.current.team2Points = 0;
+          cloned.current.tiebreak = null;
+        }
+        cloned.history = [];
+        next = cloned;
+      }
+    } catch (err) {
+      console.error("[mi-partido 16.4 F22] undo error", err);
+      return;
+    }
+    if (!next) return;
+    await liveWriteMarcador(next, "deshacer último");
+    if (_fsOpen) fsRenderBoard();
+    try { if (navigator.vibrate) navigator.vibrate(20); } catch (_) {}
+  }
+  if ($liveUndoBtn) {
+    $liveUndoBtn.addEventListener("click", function (e) {
+      if (e && e.preventDefault) e.preventDefault();
+      if ($liveUndoBtn.disabled) return;
+      liveUndoLastChange();
+    });
+  }
+  // Para el botón FS: lo cacheamos lazy porque puede no existir al carga
+  document.addEventListener("click", function (e) {
+    const t = e.target;
+    if (!t) return;
+    if (t.id === "mpFsUndo" || (t.closest && t.closest("#mpFsUndo"))) {
+      e.preventDefault();
+      const btn = document.getElementById("mpFsUndo");
+      if (btn && btn.disabled) return;
+      liveUndoLastChange();
+    }
+  });
   if ($liveCloseDet)   $liveCloseDet.addEventListener("click", liveCloseDetailSheet);
   if ($liveDetSheet) {
     $liveDetSheet.addEventListener("click", function (e) {
