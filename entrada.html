@@ -905,7 +905,15 @@
     $lnkSoloClips.href = "/lado.html" + ladoQuery;
     $lnkInvitado.href = "/lado.html" + ladoQuery;
 
-    // Esperar auth para renderForUser; mientras, resolver nombres en paralelo.
+    // Etapa 16.4 F44: mostrar el contenedor INMEDIATAMENTE (header + bg cancha)
+    // sin esperar a auth. Antes el header solo se renderizaba después del
+    // evento puntazo:auth-ready, que podía tardar 3s+ — el usuario veía
+    // "⏳ Cargando…" sin header nuevo. Ahora el header aparece desde el frame 1.
+    showContent();
+    $authed.style.display = "none";
+    $guest.style.display = "none";
+
+    // Resolver nombres en paralelo (popula locName/locSub del header)
     resolveNames();
 
     let authReady = false;
@@ -922,17 +930,15 @@
       if (authReady) handleAuthState();
     });
 
-    // Fallback: si auth no responde, mostramos modo invitado a los 3s.
+    // Etapa 16.4 F44: fallback más rápido — 800ms (era 3100ms). El header ya
+    // está visible desde el frame 1, este solo controla la visibilidad de
+    // las acciones (Iniciar partido vs Invitado).
     setTimeout(function () {
-      if (!authReady && window.PuntazoAuth) {
-        setTimeout(function () {
-          if (!authReady) {
-            authReady = true;
-            handleAuthState();
-          }
-        }, 3000);
+      if (!authReady) {
+        authReady = true;
+        handleAuthState();
       }
-    }, 100);
+    }, 800);
   }
 
   async function startSelectorFlow(opts) {
