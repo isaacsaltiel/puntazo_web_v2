@@ -290,6 +290,25 @@
     border: 1px solid rgba(34, 180, 100, 0.22);
   }
   .mp-timer-box.is-active { display: flex; }
+  /* Etapa 16.4 F24: venue (club/cancha) en el header del timer, alineado
+     a la derecha del label "En curso" */
+  .mp-timer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 10px;
+  }
+  .mp-venue-label {
+    font-size: 0.84rem;
+    font-weight: 800;
+    color: rgba(234, 242, 255, 0.92);
+    letter-spacing: 0.2px;
+    text-align: right;
+    max-width: 60%;
+    word-break: break-word;
+    line-height: 1.2;
+  }
   .mp-timer-label {
     font-size: 0.72rem;
     color: rgba(154, 242, 192, .85);
@@ -2039,15 +2058,33 @@
     background: linear-gradient(180deg, rgba(11, 80, 200, 0.12), rgba(11, 80, 200, 0.04));
     border: 1px solid rgba(11, 124, 255, 0.20);
   }
-  .mp-live-compact-row {
+  /* Etapa 16.4 F27: header con nombres de equipos arriba */
+  .mp-live-compact-teams {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr 1fr;
     align-items: center;
     gap: 10px;
-    margin-bottom: 6px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.10);
   }
-  .mp-live-compact-row:last-child { margin-bottom: 0; }
-  .mp-live-compact-row--sets { margin-bottom: 8px; }
+  /* Filas SETS / GAMES / PUNTOS verticales, cada una label + score */
+  .mp-live-compact-row {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .mp-live-compact-row:last-of-type { margin-bottom: 0; }
+  .mp-live-compact-label {
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: rgba(207, 226, 255, .65);
+    letter-spacing: 1.0px;
+    text-transform: uppercase;
+    text-align: right;
+  }
   .mp-live-compact-team {
     display: inline-flex;
     align-items: center;
@@ -2088,30 +2125,31 @@
     box-shadow: 0 0 6px rgba(154, 242, 192, .60);
     animation: mpPulse 1.4s ease-in-out infinite;
   }
+  /* Etapa 16.4 F27: scores alineados a la izquierda (después del label) */
   .mp-live-compact-score {
     font-size: 1.85rem;
     font-weight: 900;
     color: #fff;
     letter-spacing: -0.4px;
     font-variant-numeric: tabular-nums;
-    text-align: center;
+    text-align: left;
     line-height: 1;
   }
   .mp-live-compact-score-sm {
-    font-size: 1.35rem;
+    font-size: 1.50rem;
     font-weight: 800;
-    color: rgba(234, 242, 255, .80);
+    color: rgba(234, 242, 255, .92);
     font-variant-numeric: tabular-nums;
-    text-align: center;
+    text-align: left;
     line-height: 1;
   }
   .mp-live-compact-points {
-    font-size: 2.10rem;
+    font-size: 2.20rem;
     font-weight: 900;
     color: #ffe49a;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.5px;
-    text-align: center;
+    text-align: left;
     line-height: 1;
   }
   .mp-live-compact-points.is-tb { color: #ffd497; font-size: 1.5rem; }
@@ -2414,7 +2452,10 @@
     <div id="mpSuccessBanner" class="mp-success-banner">✅ Partido terminado. Marcador guardado.</div>
 
     <div id="mpTimerBox" class="mp-timer-box">
-      <div class="mp-timer-label">⏱ En curso</div>
+      <div class="mp-timer-head">
+        <div class="mp-timer-label">⏱ En curso</div>
+        <div id="mpVenueLabel" class="mp-venue-label"></div>
+      </div>
       <div id="mpTimer" class="mp-timer">00:00:00</div>
       <div class="mp-clip-counter-wrap">
         <div id="mpClipCounter" class="mp-clip-counter">
@@ -2447,7 +2488,12 @@
       <button id="mpConflictResolve" type="button">Revisar conflictos</button>
     </div>
 
-    <!-- Etapa 16.4 F8: Marcador en vivo PROMOVIDO arriba de la cancha de jugadores -->
+    <!-- Etapa 16.4 F8: Marcador en vivo PROMOVIDO arriba de la cancha de jugadores
+         Etapa 16.4 F26: ahora con acordeón colapsable (como editar jugadores/pulsos) -->
+    <button id="mpLiveToggle" class="mp-section-toggle" type="button" style="display:none">
+      <span>🎾 Marcador en vivo</span>
+      <span class="toggle-caret" aria-hidden="true">▼</span>
+    </button>
     <div id="mpLiveCard" class="mp-card mp-live-card" style="display:none">
       <div class="mp-live-head">
         <span class="mp-live-title">🎾 Marcador en vivo</span>
@@ -2458,28 +2504,30 @@
         </label>
       </div>
 
-      <!-- ── 16.3 — Vista compacta inline (siempre visible, escaneable a 1m) ── -->
+      <!-- ── 16.4 F27 — Vista compacta vertical: SETS arriba, GAMES medio,
+            PUNTOS abajo. Nombres de equipo encima como header. ── -->
       <div id="mpLiveCompact" class="mp-live-compact" aria-live="polite">
-        <div class="mp-live-compact-row mp-live-compact-row--sets">
+        <div class="mp-live-compact-teams">
           <div class="mp-live-compact-team" data-team="team1">
             <span class="mp-live-compact-team-name" id="mpLcT1Name">Equipo 1</span>
             <span class="mp-live-compact-serve" id="mpLcT1Serve" aria-hidden="true"></span>
           </div>
-          <div class="mp-live-compact-score" id="mpLcSets">0 – 0</div>
           <div class="mp-live-compact-team mp-live-compact-team--right" data-team="team2">
             <span class="mp-live-compact-team-name" id="mpLcT2Name">Equipo 2</span>
             <span class="mp-live-compact-serve" id="mpLcT2Serve" aria-hidden="true"></span>
           </div>
         </div>
+        <div class="mp-live-compact-row mp-live-compact-row--sets">
+          <div class="mp-live-compact-label">SETS</div>
+          <div class="mp-live-compact-score" id="mpLcSets">0 – 0</div>
+        </div>
         <div class="mp-live-compact-row mp-live-compact-row--games">
-          <div class="mp-live-compact-meta">Sets</div>
+          <div class="mp-live-compact-label">GAMES</div>
           <div class="mp-live-compact-score-sm" id="mpLcGames">0 – 0</div>
-          <div class="mp-live-compact-meta">Games</div>
         </div>
         <div class="mp-live-compact-row mp-live-compact-row--points">
-          <div class="mp-live-compact-meta">&nbsp;</div>
+          <div class="mp-live-compact-label">PUNTOS</div>
           <div class="mp-live-compact-points" id="mpLcPoints">0 – 0</div>
-          <div class="mp-live-compact-meta">Punto</div>
         </div>
         <div class="mp-live-compact-hint" id="mpLiveHint">🟢 Saca <strong>Equipo 1</strong></div>
       </div>
@@ -3150,6 +3198,13 @@
   $sheetSave.addEventListener("click", function () {
     if (_sheetCtx == null) return;
     const name = String($sheetInput.value || "").trim().slice(0, 80);
+    // Etapa 16.4 F23: ctx="main" escribe directo al match en lugar de a playerState
+    if (_sheetCtx === "main") {
+      const idx = _sheetIdx;
+      closeSheet();
+      saveMainSlot(idx, name);
+      return;
+    }
     playerState[_sheetCtx][_sheetIdx].nombre = name;
     renderSlot(_sheetCtx, _sheetIdx);
     closeSheet();
@@ -3159,6 +3214,12 @@
     if (_sheetCtx == null) return;
     const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     if (!user) return;
+    if (_sheetCtx === "main") {
+      const idx = _sheetIdx;
+      closeSheet();
+      meMainSlot(idx);
+      return;
+    }
     const slot = playerState[_sheetCtx][_sheetIdx];
     if (slot.uid === user.uid) {
       // toggle off
@@ -3182,6 +3243,11 @@
   $sheetRemove.addEventListener("click", function () {
     if (_sheetCtx == null) return;
     const i = _sheetIdx;
+    if (_sheetCtx === "main") {
+      closeSheet();
+      removeMainSlot(i);
+      return;
+    }
     const eq = playerState[_sheetCtx][i].equipo;
     playerState[_sheetCtx][i] = { nombre: "", equipo: eq };
     renderSlot(_sheetCtx, i);
@@ -3521,6 +3587,9 @@
     applyCourtBackground(match);
 
     const { locNombre, canNombre, ladoNombre } = await resolveNames(match.loc, match.can, match.lado);
+    // Etapa 16.4 F24: venue label en el header del timer (sin "lado")
+    const $venue = document.getElementById("mpVenueLabel");
+    if ($venue) $venue.textContent = locNombre + " · " + canNombre;
     // Etapa 16.4 F9: bloque mpCard eliminado — guards para refs huérfanas.
     if ($locName) $locName.textContent = locNombre;
     if ($locSub) $locSub.textContent = `${canNombre} · ${ladoNombre}`;
@@ -3589,15 +3658,17 @@
 
     // Acciones según status + viewMode + features vivas
     const isActive = match.status === "active";
-    // Etapa 16.4 F2: nuevos toggles colapsables y botón Pedir Puntazo promovido
+    // Etapa 16.4 F2/F26: toggles colapsables + botón Pedir Puntazo promovido
     const $quickActions     = document.getElementById("mpQuickActions");
     const $configToggle     = document.getElementById("mpConfigToggle");
     const $clipStatesToggle = document.getElementById("mpClipStatesToggle");
+    const $liveToggle       = document.getElementById("mpLiveToggle");
 
     if (isActive && currentViewMode === "owner") {
       $activeActions.style.display = "flex";
       $finishedActions.style.display = "none";
       if ($quickActions) $quickActions.style.display = "flex";
+      if ($liveToggle) $liveToggle.style.display = "flex";
       if ($configToggle) $configToggle.style.display = "flex";
       if ($clipStatesToggle) $clipStatesToggle.style.display = "flex";
       if ($timerBox) $timerBox.classList.add("is-active");
@@ -3617,6 +3688,7 @@
       $activeActions.style.display = "none";
       $finishedActions.style.display = "none";
       if ($quickActions) $quickActions.style.display = "none";
+      if ($liveToggle) $liveToggle.style.display = "flex";
       if ($configToggle) $configToggle.style.display = "flex";
       if ($clipStatesToggle) $clipStatesToggle.style.display = "flex";
       if ($timerBox) $timerBox.classList.add("is-active");
@@ -3631,6 +3703,7 @@
       $activeActions.style.display = "none";
       $finishedActions.style.display = "flex";
       if ($quickActions) $quickActions.style.display = "none";
+      if ($liveToggle) $liveToggle.style.display = "none";
       if ($configToggle) $configToggle.style.display = "none";
       if ($clipStatesToggle) $clipStatesToggle.style.display = "none";
       teardownLive();
@@ -4208,11 +4281,18 @@
       // del schema interno) igual que en boton.html (que sí funciona).
       const canchaMatch = String(currentMatch.can || "").match(/(\d+)/);
       const canchaNum = canchaMatch ? canchaMatch[1] : currentMatch.can;
+      // Etapa 16.4 F25 fix: el Apps Script (CLUBS en el .gs) tiene keys con
+      // espacios para algunos clubs. Mapear el id interno al display esperado.
+      const APPS_CLUB_MAP = {
+        "WellStreet-Pickleball": "WellStreet - Pickleball",
+        // otros se mandan tal cual (BreakPoint, Interpadel)
+      };
+      const clubForApps = APPS_CLUB_MAP[currentMatch.loc] || currentMatch.loc;
 
       try {
         const url = APPS_URL
           + "?action=save"
-          + "&club=" + encodeURIComponent(currentMatch.loc)
+          + "&club=" + encodeURIComponent(clubForApps)
           + "&cancha=" + encodeURIComponent(canchaNum);
         const res = await fetch(url, { redirect: "follow" });
         const data = await res.json();
@@ -4593,10 +4673,10 @@
     }
   }
 
-  // ---- click slot vista principal: dispara claim flow (invitado) o el
-  // sheet de edición del dueño (mismo bottom sheet del modal terminar
-  // no aplica directo a la vista principal; al dueño le mostramos un
-  // alerta breve sugiriendo abrir "Terminar partido" para editar).
+  // ---- click slot vista principal:
+  // - invitado: dispara claim flow.
+  // - dueño (Etapa 16.4 F23): abre un mini-prompt para agregar/editar nombre
+  //   del jugador del slot. Antes era no-op y el usuario se sentía bloqueado.
   if ($mainCourtGrid) {
     $mainCourtGrid.addEventListener("click", function (e) {
       const slot = e.target.closest(".mp-slot");
@@ -4604,12 +4684,81 @@
       const idx = Number(slot.getAttribute("data-slot"));
       if (!Number.isInteger(idx) || idx < 0 || idx > 3) return;
       if (currentViewMode === "owner") {
-        // El dueño edita jugadores desde el flujo de creación/terminar.
-        // En vista principal sólo mostramos info; click es no-op.
+        openMainSlotEditor(idx);
         return;
       }
       claimSlotFlow(idx);
     });
+  }
+
+  // Editor de slot para la vista activa (Etapa 16.4 F23). Usa el mpSlotSheet
+  // existente pero con un ctx "main" que escribe directo a Firestore vía
+  // writeJugadores (no via playerState como nueva/end).
+  function openMainSlotEditor(idx) {
+    if (!currentMatch || currentViewMode !== "owner") return;
+    const jugRaw = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores.slice() : [];
+    // Garantizar length 4 con defaults
+    while (jugRaw.length < 4) {
+      jugRaw.push({ nombre: "", equipo: SLOT_EQUIPO[jugRaw.length] });
+    }
+    const cur = jugRaw[idx] || { nombre: "", equipo: SLOT_EQUIPO[idx] };
+
+    // Reusamos el HTML de mpSlotSheet pero con handlers custom para "main".
+    _sheetCtx = "main";
+    _sheetIdx = idx;
+    $sheetTitle.textContent = "Jugador " + ["A", "B", "C", "D"][idx];
+    $sheetTeamTag.textContent = SLOT_EQUIPO[idx] === "team2" ? "Equipo 2" : "Equipo 1";
+    $sheetInput.value = cur.nombre || "";
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    $sheetMe.style.display = user ? "block" : "none";
+    $sheetMe.textContent = (user && cur.uid === user.uid)
+      ? "Quitar vínculo conmigo"
+      : "Soy yo" + (user && user.displayName ? " (" + user.displayName.split(" ")[0] + ")" : "");
+    $sheetRemove.style.display = (cur.nombre || cur.uid) ? "block" : "none";
+    $sheet.classList.add("is-open");
+    setTimeout(function () { try { $sheetInput.focus(); $sheetInput.select(); } catch (_) {} }, 50);
+  }
+
+  async function saveMainSlot(idx, newName) {
+    const jug = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores.slice() : [];
+    while (jug.length < 4) jug.push({ nombre: "", equipo: SLOT_EQUIPO[jug.length] });
+    const cur = jug[idx] || { equipo: SLOT_EQUIPO[idx] };
+    jug[idx] = Object.assign({}, cur, {
+      nombre: String(newName || "").trim().slice(0, 80),
+      equipo: SLOT_EQUIPO[idx],
+    });
+    await writeJugadores(jug, "Jugador actualizado", "No se pudo actualizar");
+  }
+  async function removeMainSlot(idx) {
+    const jug = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores.slice() : [];
+    if (!jug[idx]) return;
+    jug[idx] = { nombre: "", equipo: SLOT_EQUIPO[idx] };
+    await writeJugadores(jug, "Slot vaciado", "No se pudo borrar");
+  }
+  async function meMainSlot(idx) {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) return;
+    const jug = Array.isArray(currentMatch.jugadores) ? currentMatch.jugadores.slice() : [];
+    while (jug.length < 4) jug.push({ nombre: "", equipo: SLOT_EQUIPO[jug.length] });
+    const cur = jug[idx] || {};
+    if (cur.uid === user.uid) {
+      // toggle off
+      jug[idx] = { nombre: cur.nombre || "", equipo: SLOT_EQUIPO[idx] };
+    } else {
+      // Limpiar uid de cualquier otro slot del mismo match
+      for (let i = 0; i < jug.length; i++) {
+        if (i !== idx && jug[i] && jug[i].uid === user.uid) {
+          jug[i] = Object.assign({}, jug[i]); delete jug[i].uid;
+        }
+      }
+      const nameFromUser = (user.displayName || "Yo").trim().slice(0, 80);
+      jug[idx] = Object.assign({}, cur, {
+        uid: user.uid,
+        nombre: cur.nombre || nameFromUser,
+        equipo: SLOT_EQUIPO[idx],
+      });
+    }
+    await writeJugadores(jug, "Vinculo actualizado", "No se pudo vincular");
   }
 
   // ---- claim flow (invitado) ----
@@ -5601,7 +5750,8 @@
       $liveCard.style.display = "none";
       return;
     }
-    $liveCard.style.display = "block";
+    // Etapa 16.4 F26: NO forzar display:block — el toggle mpLiveToggle controla.
+    // Solo populamos el contenido; el usuario decide cuándo verlo.
 
     const m = liveBuildSafeMarcador(currentMatch);
     const board = window.PuntazoMatches.live.formatScoreboard(m);
@@ -6333,6 +6483,8 @@
     }
     bindToggle("mpConfigToggle", "mpMainCourtCard");
     bindToggle("mpClipStatesToggle", "mpClipStates");
+    // Etapa 16.4 F26: marcador en vivo también acordeón
+    bindToggle("mpLiveToggle", "mpLiveCard");
   })();
 })();
 </script>
