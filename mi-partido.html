@@ -1871,90 +1871,87 @@
     margin-top: 4px;
   }
 
-  /* Etapa 16.4 F37: botón PEDIR PUNTAZO grande, color azul Puntazo solid
-     (el navy del fondo del logo P_Blanca.png, sin gradient confuso) */
+  /* Etapa 16.4 F39: botón PEDIR PUNTAZO con P_Vector.png — la P es el
+     protagonista, el botón es solo un halo/contenedor sutil que la deja
+     respirar. Label "PEDIR PUNTAZO" fuera, debajo. */
   .mp-fs-puntazo-row {
-    margin: 18px 0 22px;
+    margin: 22px 0 26px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 14px;
     flex-shrink: 0;
   }
   .mp-fs-puntazo-btn {
     appearance: none;
-    border: 3px solid rgba(255, 255, 255, 0.18);
+    border: none;
     cursor: pointer;
-    width: 168px;
-    height: 168px;
+    width: 180px;
+    height: 180px;
     border-radius: 50%;
-    background: #14245a; /* azul navy del fondo del logo P_Blanca */
-    box-shadow:
-      0 0 0 8px rgba(20, 36, 90, 0.28),
-      0 18px 50px rgba(11, 124, 255, 0.50),
-      inset 0 -8px 18px rgba(0, 0, 0, 0.28);
+    background: radial-gradient(circle at center, rgba(11, 124, 255, 0.22) 0%, rgba(11, 124, 255, 0.05) 60%, transparent 100%);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    color: #fff;
-    font-family: inherit;
-    transition: transform 0.14s ease, box-shadow 0.18s ease, filter 0.14s ease;
+    padding: 0;
+    transition: transform 0.14s ease, filter 0.14s ease;
     position: relative;
   }
   .mp-fs-puntazo-btn::before {
     content: "";
     position: absolute;
-    inset: -14px;
+    inset: 0;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(11, 124, 255, 0.45) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba(11, 124, 255, 0.55) 0%, transparent 60%);
     z-index: -1;
-    animation: mpFsPuntazoPulse 2.2s ease-in-out infinite;
+    animation: mpFsPuntazoPulse 2.4s ease-in-out infinite;
+    filter: blur(8px);
   }
   @keyframes mpFsPuntazoPulse {
-    0%, 100% { opacity: 0.55; transform: scale(1); }
-    50%      { opacity: 1.0; transform: scale(1.10); }
+    0%, 100% { opacity: 0.50; transform: scale(0.95); }
+    50%      { opacity: 1.0; transform: scale(1.08); }
   }
-  .mp-fs-puntazo-btn:hover { transform: translateY(-2px); filter: brightness(1.12); }
-  .mp-fs-puntazo-btn:active { transform: scale(0.95); }
+  .mp-fs-puntazo-btn:hover { transform: translateY(-2px); filter: brightness(1.10); }
+  .mp-fs-puntazo-btn:active { transform: scale(0.94); }
   .mp-fs-puntazo-btn[disabled] {
     cursor: not-allowed;
-    filter: grayscale(0.5) brightness(0.80);
-    animation: none;
+    filter: grayscale(0.6) brightness(0.75);
   }
-  .mp-fs-puntazo-btn[disabled]::before { animation: none; opacity: 0; }
+  .mp-fs-puntazo-btn[disabled]::before { animation: none; opacity: 0.18; }
   .mp-fs-puntazo-mark {
-    width: 92px;
-    height: 92px;
+    width: 160px;
+    height: 160px;
     object-fit: contain;
     display: block;
-    filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.50));
+    filter: drop-shadow(0 6px 14px rgba(11, 124, 255, 0.55)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
   }
   .mp-fs-puntazo-mark--fb {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 92px;
-    height: 92px;
-    font-size: 3.5rem;
+    width: 160px;
+    height: 160px;
+    border-radius: 28px;
+    background: #14245a;
+    font-size: 5.5rem;
     font-weight: 900;
     font-style: italic;
     color: #fff;
   }
   .mp-fs-puntazo-label {
-    font-size: 0.80rem;
+    font-size: 0.90rem;
     font-weight: 900;
-    letter-spacing: 1.0px;
-    color: rgba(255, 255, 255, 0.95);
+    letter-spacing: 2.0px;
+    color: #fff;
     text-transform: uppercase;
     line-height: 1;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    text-shadow: 0 0 12px rgba(11, 124, 255, 0.55), 0 2px 4px rgba(0,0,0,0.5);
   }
   @media (max-width: 380px) {
-    .mp-fs-puntazo-btn { width: 144px; height: 144px; }
-    .mp-fs-puntazo-mark { width: 78px; height: 78px; }
-    .mp-fs-puntazo-label { font-size: 0.74rem; }
+    .mp-fs-puntazo-btn { width: 150px; height: 150px; }
+    .mp-fs-puntazo-mark { width: 132px; height: 132px; }
+    .mp-fs-puntazo-mark--fb { width: 132px; height: 132px; font-size: 4.4rem; }
+    .mp-fs-puntazo-label { font-size: 0.80rem; letter-spacing: 1.5px; }
   }
   .mp-fs-clip-feedback {
     min-height: 18px;
@@ -2677,18 +2674,24 @@
     </div>
     <div id="mpNuevaMsg" class="mp-msg"></div>
 
-    <!-- 2. SECUNDARIO: Jugadores (opcional, cancha real con red horizontal) -->
-    <div class="mp-modal-section-label">Jugadores <span class="mp-jug-opt">(opcional)</span></div>
-    <p class="mp-jug-note">Toca un cuadrante para agregar nombres. Puedes dejarlos vacíos.</p>
-    <div class="mp-court-wrap mp-nueva-court-wrap">
-      <div class="mp-court-team-label" id="nuevaTeamTopLabel">Jugadores C · D</div>
-      <div class="mp-court-grid mp-court-grid--real" id="nuevaCourtGrid">
-        <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
-        <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
-        <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
-        <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
+    <!-- Etapa 16.4 F38: Jugadores (opcional) DESPLEGABLE — TODA la cancha
+         colapsa cuando el usuario no la usa. Doble-tap "Soy yo" sigue funcionando. -->
+    <button id="nuevaJugadoresToggle" class="mp-section-toggle" type="button">
+      <span>👥 Jugadores (opcional)</span>
+      <span class="toggle-caret" aria-hidden="true">▼</span>
+    </button>
+    <div id="nuevaJugadoresWrap" style="display:none">
+      <p class="mp-jug-note">Toca un cuadrante para agregar nombres. Doble tap = "Soy yo". Puedes dejarlos vacíos.</p>
+      <div class="mp-court-wrap mp-nueva-court-wrap">
+        <div class="mp-court-team-label" id="nuevaTeamTopLabel">Jugadores C · D</div>
+        <div class="mp-court-grid mp-court-grid--real" id="nuevaCourtGrid">
+          <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
+          <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
+          <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
+          <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
+        </div>
+        <div class="mp-court-team-label" id="nuevaTeamBotLabel">Jugadores A · B</div>
       </div>
-      <div class="mp-court-team-label" id="nuevaTeamBotLabel">Jugadores A · B</div>
     </div>
 
     <!-- 3. TERCIARIO: Modo de partido -->
@@ -2925,12 +2928,12 @@
       </div>
     </section>
 
-    <!-- Etapa 16.4 F29: botón P central — equivale a "PEDIR PUNTAZO" -->
+    <!-- Etapa 16.4 F29/F39: botón P central — equivale a "PEDIR PUNTAZO" -->
     <div class="mp-fs-puntazo-row">
       <button id="mpFsPuntazoBtn" type="button" class="mp-fs-puntazo-btn" aria-label="Pedir Puntazo">
-        <img class="mp-fs-puntazo-mark" src="/assets/img/P_Blanca.png" alt="P" onerror="this.outerHTML='<span class=&quot;mp-fs-puntazo-mark mp-fs-puntazo-mark--fb&quot;>P</span>'">
-        <span class="mp-fs-puntazo-label">PEDIR PUNTAZO</span>
+        <img class="mp-fs-puntazo-mark" src="/assets/img/P_Vector.png" alt="P" onerror="this.outerHTML='<span class=&quot;mp-fs-puntazo-mark mp-fs-puntazo-mark--fb&quot;>P</span>'">
       </button>
+      <div class="mp-fs-puntazo-label">PEDIR PUNTAZO</div>
       <div id="mpFsClipFeedback" class="mp-fs-clip-feedback"></div>
     </div>
 
@@ -6874,6 +6877,8 @@
       });
     }
     bindToggle("mpClipStatesToggle", "mpClipStates");
+    // Etapa 16.4 F38: toggle de Jugadores (opcional) en mpNuevaForm
+    bindToggle("nuevaJugadoresToggle", "nuevaJugadoresWrap");
     // Etapa 16.4 F28: marcador y config NO son acordeones — son fullscreens.
     // mpLiveToggle → openFullscreenScoreboard (overlay del marcador).
     // mpConfigToggle → openConfigFullscreen (overlay de jugadores/cancha).
