@@ -404,7 +404,8 @@
     constructor(canvas, opts = {}) {
       this.canvas  = canvas;
       this.ctx     = canvas.getContext('2d');
-      this.opts    = Object.assign({ loop:false, onDone:null }, opts);
+      this.opts    = Object.assign({ loop:false, onDone:null, speed:1 }, opts);
+      this.speed   = (typeof this.opts.speed === 'number' && this.opts.speed > 0) ? this.opts.speed : 1;
       this.started = false;
       this._resize();
 
@@ -436,7 +437,7 @@
     }
 
     _tick(ts) {
-      const t = (ts - this._t0) / 1000;
+      const t = (ts - this._t0) / 1000 * this.speed;
       const ctx = this.ctx;
       ctx.save();
       ctx.translate(this.ox, this.oy);
@@ -494,7 +495,7 @@
       };
       skip.addEventListener('click', () => { intro.stop(); done(); });
 
-      const intro = new Intro(canvas, { loop:false, onDone: done });
+      const intro = new Intro(canvas, { loop:false, onDone: done, speed: opts.speed });
       // Esperar 1 frame para que el canvas tenga dimensiones reales
       requestAnimationFrame(() => { intro._resize(); intro.start(); });
     },

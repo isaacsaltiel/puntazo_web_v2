@@ -2393,6 +2393,38 @@
     align-items: center;
     gap: 8px;
   }
+  /* F72: botón Pedir Puntazo = imagen completa (Boton_pediP.png con texto
+     y P integrados). El <button> es solo un contenedor transparente con
+     estados hover/active/disabled. Sin texto, sin gradient. */
+  .mp-btn-puntazo-img {
+    appearance: none;
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    max-width: 360px;
+    transition: transform 0.12s ease, filter 0.14s ease;
+  }
+  .mp-btn-puntazo-img img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    -webkit-user-drag: none;
+    user-select: none;
+    pointer-events: none;
+    filter: drop-shadow(0 8px 24px rgba(11, 124, 255, 0.35));
+  }
+  .mp-btn-puntazo-img:hover { transform: translateY(-2px); filter: brightness(1.06); }
+  .mp-btn-puntazo-img:active { transform: scale(0.97); }
+  .mp-btn-puntazo-img[disabled] { cursor: not-allowed; filter: grayscale(0.55) brightness(0.78); }
+  .mp-btn-puntazo-img[disabled] img { filter: none; }
+  @media (max-width: 380px) {
+    .mp-btn-puntazo-img { max-width: 300px; }
+  }
   .mp-btn-puntazo {
     appearance: none;
     border: none;
@@ -2908,11 +2940,11 @@
          El nombre del lugar se infiere internamente para asignar el fondo
          de la cancha (F12), pero ya no se muestra al usuario. -->
 
-    <!-- Etapa 16.4 F2: botón "Pedir Puntazo" promovido al top (era última acción) -->
+    <!-- Etapa 16.4 F2/F72: botón "Pedir Puntazo" — ahora es la imagen Boton_pediP.png
+         (ya trae texto + P integrados con el estilo Puntazo). -->
     <div id="mpQuickActions" class="mp-quick-actions" style="display:none">
-      <button id="mpBtnClip" class="mp-btn-puntazo" type="button">
-        <img class="pz-puntazo-mark" src="/assets/img/Boton_pediP.png" alt="P" onerror="this.outerHTML='<span class=&quot;pz-puntazo-mark pz-puntazo-mark--fallback&quot;>P</span>'">
-        <span class="pz-puntazo-label">PEDIR PUNTAZO</span>
+      <button id="mpBtnClip" class="mp-btn-puntazo-img" type="button" aria-label="Pedir Puntazo">
+        <img src="/assets/img/Boton_pediP.png" alt="Pedir Puntazo" />
       </button>
       <div id="mpClipFeedback" class="mp-clip-feedback"></div>
     </div>
@@ -3114,7 +3146,7 @@
          alrededor de la P y en los huecos para dejar ver el fondo de cancha). -->
     <div class="mp-fs-puntazo-row">
       <button id="mpFsPuntazoBtn" type="button" class="mp-fs-puntazo-btn" aria-label="Pedir Puntazo">
-        <img class="mp-fs-puntazo-mark" src="/assets/img/Boton_pediP.png" alt="Pedir Puntazo">
+        <img class="mp-fs-puntazo-mark" src="/assets/img/puntazo_boton_redondo.png" alt="Pedir Puntazo">
       </button>
       <div class="mp-fs-puntazo-label">PEDIR PUNTAZO</div>
       <div id="mpFsClipFeedback" class="mp-fs-clip-feedback"></div>
@@ -4786,14 +4818,20 @@
     if (clipFeedbackHideTimer) { clearTimeout(clipFeedbackHideTimer); clipFeedbackHideTimer = null; }
   }
 
-  // Etapa 16.4 F14 fix: el botón "PEDIR PUNTAZO" ahora tiene HTML interno
-  // (img + span). Cambiar textContent destruía el logo "P". Toggleamos solo
-  // el texto del .pz-puntazo-label.
+  // F14: botón PEDIR PUNTAZO con HTML interno (img+span). F72: ahora el
+  // botón es solo imagen sin <span>. Si no hay label DOM, mandamos el
+  // texto de estado al feedback abajo (la imagen ya dice "Pedir Puntazo").
   function setClipBtnLabel(text) {
     if (!$btnClip) return;
     const label = $btnClip.querySelector(".pz-puntazo-label");
-    if (label) label.textContent = text;
-    else $btnClip.textContent = text;
+    if (label) {
+      label.textContent = text;
+      return;
+    }
+    // Imagen pura: solo reflejamos estados transitorios (no el idle).
+    if (text && text !== "PEDIR PUNTAZO") {
+      setClipFeedback(text, "info");
+    }
   }
 
   function resetClipBtn() {

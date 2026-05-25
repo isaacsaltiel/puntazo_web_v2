@@ -1061,12 +1061,26 @@
 })();
 </script>
 
-<!-- Intro animada (overlay full-screen ~6s, skip en esquina inferior derecha) -->
+<!-- Intro animada — F72: speed 1.5x + sessionStorage flag para que no se
+     repita al re-cargar entrada.html con loc/can ya seleccionados.
+     Si el user llega DIRECTO (link/QR) con loc/can sin haber visto la
+     intro en esta sesion, sí se reproduce. -->
 <script src="/assets/puntazo-intro.js"></script>
 <script>
-  if (window.PuntazoIntro && typeof PuntazoIntro.overlay === "function") {
-    PuntazoIntro.overlay({});
-  }
+  (function () {
+    try {
+      if (sessionStorage.getItem("pz_intro_seen") === "1") return;
+    } catch (_) {}
+    if (!window.PuntazoIntro || typeof PuntazoIntro.overlay !== "function") return;
+    PuntazoIntro.overlay({
+      speed: 1.5,
+      onDone: function () {
+        try { sessionStorage.setItem("pz_intro_seen", "1"); } catch (_) {}
+      },
+    });
+    // Si el browser no soporta sessionStorage (Safari incógnito viejo, etc.)
+    // el flag no persiste — la intro se vería en cada nav. Aceptable fallback.
+  })();
 </script>
 
 </body>
