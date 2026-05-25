@@ -290,6 +290,18 @@
     border: 1px solid rgba(34, 180, 100, 0.22);
   }
   .mp-timer-box.is-active { display: flex; }
+  /* Etapa 16.4 F45: marker visible para confirmar deploy en producción */
+  .mp-version-tag {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font-size: 0.58rem;
+    font-weight: 700;
+    color: rgba(11, 124, 255, 0.45);
+    letter-spacing: 0.8px;
+    pointer-events: none;
+  }
+  .mp-timer-box { position: relative; }
   /* Etapa 16.4 F24: venue (club/cancha) en el header del timer, alineado
      a la derecha del label "En curso" */
   .mp-timer-head {
@@ -2737,6 +2749,7 @@
         <div class="mp-timer-label">⏱ En curso</div>
         <div id="mpVenueLabel" class="mp-venue-label"></div>
       </div>
+      <div class="mp-version-tag">v16.4 · F44</div>
       <div id="mpTimer" class="mp-timer">00:00:00</div>
       <div class="mp-clip-counter-wrap">
         <div id="mpClipCounter" class="mp-clip-counter">
