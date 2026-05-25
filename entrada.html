@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <base href="/" />
 <title>Entrada · Puntazo</title>
 
@@ -537,12 +537,9 @@
      vista ready (loc+can+lado resueltos) está activa. Lo controla el JS. -->
 <div id="entradaCourtBg" class="entrada-court-bg" aria-hidden="true"></div>
 
-<nav class="entrada-topbar" aria-label="Navegación general">
-  <a href="/landing.html" title="Conoce la plataforma Puntazo">ℹ Conoce Puntazo</a>
-  <div class="tb-right">
-    <a href="/perfil.html" title="Mi perfil">👤 Mi perfil</a>
-  </div>
-</nav>
+<!-- Etapa 16.4 F49: header consistente con mi-partido (header.js variant internal) -->
+<div id="nav-root" data-nav-variant="internal"></div>
+<script src="/assets/header.js"></script>
 
 <main class="entrada-wrap">
 
@@ -564,18 +561,13 @@
 
   <!-- Vista de entrada lista (con loc/can/lado ya resueltos) -->
   <div id="entradaContent" style="display:none">
-    <!-- Etapa 16.4 F47: header replica EXACTA del FS marcador (mismo estilo) -->
-    <header class="entrada-fs-header">
-      <a href="/landing.html" class="entrada-fs-brand" aria-label="Puntazo">
-        <img class="entrada-fs-logo" src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
-      </a>
-      <div class="entrada-fs-header-center">
-        <div class="entrada-fs-title">📍 ESTÁS EN</div>
-        <div id="locName" class="entrada-fs-venue">…</div>
-        <div id="locSub" class="entrada-fs-sub"></div>
-      </div>
-      <a href="/landing.html" class="entrada-fs-back" aria-label="Volver">✕</a>
-    </header>
+    <!-- Etapa 16.4 F49: restaurado el CARD bonito que le gustó al usuario -->
+    <div class="entrada-header">
+      <img class="entrada-logo" src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
+      <div class="entrada-title">📍 Estás en</div>
+      <div id="locName" class="entrada-loc-name">…</div>
+      <div id="locSub" class="entrada-sub"></div>
+    </div>
 
     <div id="actionsAuthed" class="entrada-actions" style="display:none">
       <button id="btnIniciar" class="btn-primary" type="button">🎾 Iniciar partido en esta cancha</button>

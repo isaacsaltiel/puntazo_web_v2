@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <base href="/" />
 <title>Mi partido · Puntazo</title>
 
@@ -517,6 +517,12 @@
     background: rgba(255,255,255,.03);
     border-radius: 10px;
     color: rgba(234,242,255,.65);
+    /* Etapa 16.4 F56: prevenir text-select y scroll en touch mientras
+       el usuario interactúa con el slot (long-press = drag, no selección). */
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -1744,6 +1750,9 @@
     padding: 14px 12px 18px;
     box-sizing: border-box;
     gap: 10px;
+    /* Etapa 16.4 F52: contener overflow para que el layout no se rompa
+       cuando un elemento crece (hint cambiando, números más largos, etc). */
+    overflow: hidden;
   }
   /* Etapa 16.4 F29: header del FS con identidad Puntazo (logo + venue + timer) */
   .mp-fs-header {
@@ -1793,10 +1802,13 @@
     letter-spacing: 0.3px;
     line-height: 1;
   }
+  /* Etapa 16.4 F53: ✕ siempre visible position fixed top-right (no relative
+     al header — sobrevive aunque el layout interno cambie/desborde). */
   .mp-fs-close {
     appearance: none;
     border: 1px solid rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(2, 6, 16, 0.78);
+    backdrop-filter: blur(8px);
     color: #fff;
     width: 44px; height: 44px;
     border-radius: 50%;
@@ -1805,8 +1817,13 @@
     cursor: pointer;
     line-height: 1;
     transition: background 0.14s ease, transform 0.10s ease;
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 10600;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
   }
-  .mp-fs-close:hover { background: rgba(255, 255, 255, 0.16); }
+  .mp-fs-close:hover { background: rgba(2, 6, 16, 0.92); }
   .mp-fs-close:active { transform: scale(0.94); }
 
   .mp-fs-score {
@@ -1825,15 +1842,23 @@
   }
   .mp-fs-team--left  { text-align: left; padding-left: 4px; }
   .mp-fs-team--right { text-align: right; padding-right: 4px; }
-  /* Etapa 16.4 F36: nombres de equipo PROTAGONISTAS — más grandes y brillantes */
+  /* Etapa 16.4 F36+F51: nombres de equipo PROTAGONISTAS pero responsivos.
+     Font scaling con clamp + max 2 líneas + word-break para que nombres
+     largos (ej. "Pedro / Carlos") no rompan el layout. */
   .mp-fs-team-name {
-    font-size: 1.55rem;
+    font-size: clamp(0.78rem, 4.2vw, 1.45rem);
     font-weight: 900;
     color: #fff;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    line-height: 1.0;
+    line-height: 1.1;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+    hyphens: auto;
   }
   .mp-fs-team[data-team="team1"] .mp-fs-team-name {
     color: #d4e8ff;
@@ -1842,9 +1867,6 @@
   .mp-fs-team[data-team="team2"] .mp-fs-team-name {
     color: #ecf5a8;
     text-shadow: 0 0 14px rgba(200, 232, 53, 0.55), 0 2px 6px rgba(0,0,0,0.5);
-  }
-  @media (max-width: 380px) {
-    .mp-fs-team-name { font-size: 1.20rem; }
   }
 
   .mp-fs-numbers {
@@ -1883,50 +1905,46 @@
     margin-top: 4px;
   }
 
-  /* Etapa 16.4 F43: botón PEDIR PUNTAZO estilo "app icon" — cuadrado
-     redondeado con fondo navy SOLID (el azul de Puntazo) + P_Vector
-     adentro. Coherente con el logo de la app. */
+  /* Etapa 16.4 F48: botón PEDIR PUNTAZO con P_BOTON.png — sin fondo solid,
+     la imagen es vectorizada con transparencia para que se vea la cancha
+     a través de los huecos de la P y alrededor. Solo halo glow. */
   .mp-fs-puntazo-row {
-    margin: 22px 0 26px;
+    margin: 18px 0 22px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     flex-shrink: 0;
   }
   .mp-fs-puntazo-btn {
     appearance: none;
-    border: 2px solid rgba(255, 255, 255, 0.12);
+    border: none;
     cursor: pointer;
     width: 168px;
     height: 168px;
-    border-radius: 32px;
-    background: #14245a; /* navy Puntazo solid, mismo que el logo */
+    border-radius: 50%;
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 14px;
+    padding: 0;
     box-sizing: border-box;
-    box-shadow:
-      0 0 0 8px rgba(20, 36, 90, 0.32),
-      0 18px 50px rgba(11, 124, 255, 0.55),
-      inset 0 -8px 18px rgba(0, 0, 0, 0.30);
     transition: transform 0.14s ease, filter 0.14s ease;
     position: relative;
   }
   .mp-fs-puntazo-btn::before {
     content: "";
     position: absolute;
-    inset: -16px;
-    border-radius: 40px;
+    inset: -10px;
+    border-radius: 50%;
     background: radial-gradient(circle, rgba(11, 124, 255, 0.55) 0%, transparent 65%);
     z-index: -1;
     animation: mpFsPuntazoPulse 2.4s ease-in-out infinite;
-    filter: blur(10px);
+    filter: blur(12px);
   }
   @keyframes mpFsPuntazoPulse {
-    0%, 100% { opacity: 0.50; transform: scale(0.96); }
-    50%      { opacity: 1.0; transform: scale(1.10); }
+    0%, 100% { opacity: 0.45; transform: scale(0.95); }
+    50%      { opacity: 0.95; transform: scale(1.10); }
   }
   .mp-fs-puntazo-btn:hover { transform: translateY(-2px); filter: brightness(1.10); }
   .mp-fs-puntazo-btn:active { transform: scale(0.94); }
@@ -1940,32 +1958,21 @@
     height: 100%;
     object-fit: contain;
     display: block;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.40));
-  }
-  .mp-fs-puntazo-mark--fb {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    font-size: 5.0rem;
-    font-weight: 900;
-    font-style: italic;
-    color: #fff;
+    filter: drop-shadow(0 4px 12px rgba(11, 124, 255, 0.50))
+            drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
   }
   .mp-fs-puntazo-label {
-    font-size: 0.90rem;
+    font-size: 0.88rem;
     font-weight: 900;
     letter-spacing: 2.0px;
     color: #fff;
     text-transform: uppercase;
     line-height: 1;
-    text-shadow: 0 0 12px rgba(11, 124, 255, 0.55), 0 2px 4px rgba(0,0,0,0.5);
+    text-shadow: 0 0 12px rgba(11, 124, 255, 0.55), 0 2px 4px rgba(0,0,0,0.55);
   }
   @media (max-width: 380px) {
-    .mp-fs-puntazo-btn { width: 144px; height: 144px; border-radius: 28px; padding: 12px; }
-    .mp-fs-puntazo-mark--fb { font-size: 4.0rem; }
-    .mp-fs-puntazo-label { font-size: 0.80rem; letter-spacing: 1.5px; }
+    .mp-fs-puntazo-btn { width: 140px; height: 140px; }
+    .mp-fs-puntazo-label { font-size: 0.78rem; letter-spacing: 1.5px; }
   }
   .mp-fs-clip-feedback {
     min-height: 18px;
@@ -2171,12 +2178,91 @@
   @media (max-width: 380px) {
     .mp-fs-num { font-size: 1.70rem; }
     .mp-fs-num--xl { font-size: 2.90rem; }
-    .mp-fs-team-name { font-size: 0.84rem; }
     .mp-fs-team-pad .mp-live-pad-btn { min-height: 48px; font-size: 0.92rem; }
   }
   @media (max-height: 600px) {
     .mp-fs-num--xl { font-size: 2.80rem; }
     .mp-fs-score { padding: 8px 6px; }
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     Etapa 16.4 F54: orientación LANDSCAPE del FS marcador
+     Detección automática vía media query (orientation: landscape).
+     Reorganiza el shell para aprovechar el ancho: header arriba,
+     debajo 3 columnas (pad E1 | score+P central | pad E2).
+     ════════════════════════════════════════════════════════════════ */
+  @media (orientation: landscape) and (max-height: 600px) {
+    .mp-fs-shell {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 1fr;
+      grid-template-rows: auto 1fr;
+      grid-template-areas:
+        "header header header"
+        "padl   center  padr";
+      gap: 10px;
+      padding: 10px 12px 14px;
+    }
+    .mp-fs-header {
+      grid-area: header;
+      padding: 4px 0 8px;
+      gap: 10px;
+    }
+    .mp-fs-logo { height: 26px; }
+    .mp-fs-venue { font-size: 0.78rem; }
+    .mp-fs-timer { font-size: 0.82rem; }
+
+    /* Centro: score + botón P + label + undo apilados verticales */
+    .mp-fs-center-stack {
+      grid-area: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    /* Score: ocultamos los nombres laterales (ya están en los pad labels) */
+    .mp-fs-score {
+      grid-template-columns: 1fr;
+      padding: 4px 0;
+      gap: 4px;
+    }
+    .mp-fs-score > .mp-fs-team { display: none; }
+    .mp-fs-numbers { grid-column: 1; }
+    .mp-fs-num { font-size: 1.50rem; }
+    .mp-fs-num--xl { font-size: 2.10rem; }
+    .mp-fs-row { gap: 10px; }
+    .mp-fs-row-label { font-size: 0.58rem; }
+    .mp-fs-hint { font-size: 0.70rem; margin-top: 2px; }
+
+    /* Botón P más chico en landscape */
+    .mp-fs-puntazo-row { margin: 6px 0 0; gap: 6px; }
+    .mp-fs-puntazo-btn { width: 92px; height: 92px; }
+    .mp-fs-puntazo-label { font-size: 0.66rem; letter-spacing: 1.2px; }
+    .mp-fs-clip-feedback { font-size: 0.68rem; min-height: 14px; }
+
+    /* Pads de equipo a los lados, no abajo */
+    .mp-fs-teams {
+      display: contents;
+    }
+    .mp-fs-team-pad[data-team="team1"] { grid-area: padl; }
+    .mp-fs-team-pad[data-team="team2"] { grid-area: padr; }
+    .mp-fs-team-pad {
+      padding: 8px 6px;
+      gap: 6px;
+      max-height: 100%;
+      overflow: hidden;
+    }
+    .mp-fs-team-pad-grid {
+      grid-template-rows: minmax(40px, 1fr) minmax(54px, 1fr) minmax(40px, 1fr);
+      gap: 5px;
+    }
+    .mp-fs-team-pad .mp-live-pad-btn { min-height: 40px; font-size: 0.84rem; }
+    .mp-fs-team-pad .mp-live-pad-btn.pad-game { font-size: 0.98rem; }
+
+    /* Undo abajo del centro */
+    .mp-fs-undo-row { margin-top: 4px; }
+    .mp-live-undo-btn { min-height: 34px; padding: 6px 14px; font-size: 0.76rem; }
   }
 
   /* ── Etapa 16.4 F12: fondo dinámico con la imagen de la cancha ── */
@@ -2964,14 +3050,11 @@
       </div>
     </section>
 
-    <!-- Etapa 16.4 F46: botón P con SVG inline — sin PNG con fondo blanco. -->
+    <!-- Etapa 16.4 F48: botón P con P_BOTON.png (vectorizada, transparente
+         alrededor de la P y en los huecos para dejar ver el fondo de cancha). -->
     <div class="mp-fs-puntazo-row">
       <button id="mpFsPuntazoBtn" type="button" class="mp-fs-puntazo-btn" aria-label="Pedir Puntazo">
-        <svg class="mp-fs-puntazo-mark" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <text x="50" y="98" font-family="Montserrat, 'Segoe UI', sans-serif" font-size="110" font-weight="900" font-style="italic" fill="#ffffff" letter-spacing="-2">P</text>
-          <circle cx="98" cy="36" r="10" fill="#ffffff"/>
-          <circle cx="98" cy="36" r="10" fill="none" stroke="#14245a" stroke-width="1.5"/>
-        </svg>
+        <img class="mp-fs-puntazo-mark" src="/assets/img/P_BOTON.png" alt="Pedir Puntazo">
       </button>
       <div class="mp-fs-puntazo-label">PEDIR PUNTAZO</div>
       <div id="mpFsClipFeedback" class="mp-fs-clip-feedback"></div>
@@ -3599,13 +3682,50 @@
       ? document.getElementById("nuevaCourtGrid")
       : document.getElementById("endCourtGrid");
     if (!grid) return;
+    // Etapa 16.4 F50: doble-tap detector en form previo (igual que F40 en cancha activa)
+    const tapTimers = {};
     grid.addEventListener("click", function (e) {
       const slot = e.target.closest(".mp-slot");
       if (!slot) return;
       const idx = Number(slot.getAttribute("data-slot"));
       if (!Number.isInteger(idx) || idx < 0 || idx > 3) return;
-      openSheet(ctx, idx);
+      const j = playerState[ctx][idx] || {};
+      const isEmpty = !j.nombre && !j.uid;
+      if (tapTimers[idx]) {
+        clearTimeout(tapTimers[idx]);
+        delete tapTimers[idx];
+        if (isEmpty) {
+          doSoyYoLocal(ctx, idx);
+        } else {
+          openSheet(ctx, idx);
+        }
+        return;
+      }
+      tapTimers[idx] = setTimeout(function () {
+        delete tapTimers[idx];
+        openSheet(ctx, idx);
+      }, 280);
     });
+  }
+  // Etapa 16.4 F50: "Soy yo" local para el form previo (no escribe a Firestore;
+  // solo marca playerState[ctx] y re-renderiza el slot).
+  function doSoyYoLocal(ctx, idx) {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) {
+      try { window.PuntazoAuth.requireAuth(function () { doSoyYoLocal(ctx, idx); }); } catch (_) {}
+      return;
+    }
+    // Quitar uid de cualquier otro slot del mismo ctx (un solo "Yo" por partido)
+    playerState[ctx].forEach(function (s, i) {
+      if (s.uid === user.uid && i !== idx) {
+        delete s.uid;
+        renderSlot(ctx, i);
+      }
+    });
+    const slot = playerState[ctx][idx];
+    slot.uid = user.uid;
+    slot.nombre = (user.displayName || "Yo").trim().slice(0, 80);
+    renderSlot(ctx, idx);
   }
   wireCourt("nueva");
   wireCourt("end");
@@ -4484,7 +4604,15 @@
       const snapshotLoc = currentMatch.loc;
       const snapshotCan = currentMatch.can;
       const snapshotLado = currentMatch.lado;
-      await window.PuntazoMatches.end(matchId, opts);
+      // Etapa 16.4 F55: si el partido YA está ended, llamar update() (no end())
+      // — end() reescribe endedAt con serverTimestamp() y las rules rechazan
+      // un cambio en endedAt sobre un partido ya cerrado ("insufficient
+      // permissions"). update() solo toca los campos editables.
+      if (currentMatch.status === "ended") {
+        await window.PuntazoMatches.update(matchId, opts);
+      } else {
+        await window.PuntazoMatches.end(matchId, opts);
+      }
 
       closeModal();
       $modalSave.disabled = false;
