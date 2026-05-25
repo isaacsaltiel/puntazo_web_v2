@@ -160,11 +160,12 @@
     });
   }
 
-  // Por default excluimos source="form" del flujo de partido: el form de
-  // recuperacion son pulsos viejos reprocesados, no son del momento del
-  // partido y suelen tener bugs de TZ (R2.3 en project memory). Callers
-  // pueden override pasando opts.excludeSources = [] o ["form","manual"], etc.
-  const DEFAULT_EXCLUDED_SOURCES = ["form"];
+  // E16.4: el botón "Pedir Puntazo" de mi-partido.html publica con
+  // source="form" (mismo endpoint Apps Script que boton.html), así que
+  // por default NO excluimos nada. La ventana del partido (startedAt..
+  // endedAt) ya descarta pulsos que no pertenezcan al partido. Callers
+  // pueden override pasando opts.excludeSources = ["form"], etc.
+  const DEFAULT_EXCLUDED_SOURCES = [];
 
   function clientSideSourceFilter(docs, excludedSources) {
     const blocked = Array.isArray(excludedSources) ? excludedSources : DEFAULT_EXCLUDED_SOURCES;
