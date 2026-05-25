@@ -30,6 +30,27 @@
 <script src="/assets/court-svg.js"></script>
 
 <style>
+  /* Etapa 16.4 F30: fondo con el ícono hex de la cancha (solo en vista ready) */
+  .entrada-court-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-position: center;
+    background-size: cover;
+    opacity: 0;
+    transition: opacity 0.45s ease;
+    filter: blur(16px) saturate(1.05);
+    transform: scale(1.08);
+  }
+  .entrada-court-bg.is-active { opacity: 0.72; }
+  .entrada-court-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(2,6,16,0.62) 0%, rgba(2,6,16,0.32) 35%, rgba(2,6,16,0.32) 65%, rgba(2,6,16,0.82) 100%);
+  }
+
   .entrada-wrap {
     max-width: 480px;
     margin: 0 auto;
@@ -38,7 +59,10 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    position: relative;
+    z-index: 2;
   }
+  .entrada-topbar { z-index: 3; }
 
   .entrada-header {
     text-align: center;
@@ -422,6 +446,10 @@
 
 <div class="page-bg"></div>
 
+<!-- Etapa 16.4 F30: fondo dinámico con el ícono hex de la cancha cuando la
+     vista ready (loc+can+lado resueltos) está activa. Lo controla el JS. -->
+<div id="entradaCourtBg" class="entrada-court-bg" aria-hidden="true"></div>
+
 <nav class="entrada-topbar" aria-label="Navegación general">
   <a href="/landing.html" title="Conoce la plataforma Puntazo">ℹ Conoce Puntazo</a>
   <div class="tb-right">
@@ -532,9 +560,23 @@
     $selector.style.display = "none";
     $content.style.display = "none";
   }
-  function showSelector() { hideAll(); $selector.style.display = "block"; }
-  function showContent()  { hideAll(); $content.style.display = "block"; }
-  function showLoading()  { hideAll(); $loading.style.display = "block"; }
+  function showSelector() { hideAll(); $selector.style.display = "block"; applyCourtBgEntrada(false); }
+  function showContent()  { hideAll(); $content.style.display = "block"; applyCourtBgEntrada(true); }
+  function showLoading()  { hideAll(); $loading.style.display = "block"; applyCourtBgEntrada(false); }
+
+  // Etapa 16.4 F30: fondo dinámico con el ícono hex de la cancha. Activo solo
+  // en la vista ready (cuando hay loc+can resueltos).
+  function applyCourtBgEntrada(active) {
+    const bg = document.getElementById("entradaCourtBg");
+    if (!bg) return;
+    if (!active || !can) { bg.classList.remove("is-active"); return; }
+    const m = String(can).match(/(\d+)/);
+    let n = m ? parseInt(m[1], 10) : 1;
+    if (!Number.isFinite(n) || n < 1) n = 1;
+    const idx = ((n - 1) % 8) + 1;
+    bg.style.backgroundImage = "url('/assets/court-icons/B" + idx + ".png')";
+    bg.classList.add("is-active");
+  }
 
   function showMsg(text, type) {
     $msg.textContent = text || "";

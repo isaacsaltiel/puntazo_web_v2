@@ -1731,19 +1731,53 @@
     box-sizing: border-box;
     gap: 10px;
   }
+  /* Etapa 16.4 F29: header del FS con identidad Puntazo (logo + venue + timer) */
   .mp-fs-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    gap: 14px;
+    flex-shrink: 0;
+    padding: 4px 0 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .mp-fs-brand {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
     flex-shrink: 0;
   }
-  .mp-fs-timer {
-    font-size: 1.05rem;
+  .mp-fs-logo {
+    height: 32px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+  }
+  .mp-fs-header-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+    text-align: center;
+  }
+  .mp-fs-venue {
+    font-size: 0.82rem;
     font-weight: 800;
-    color: rgba(234, 242, 255, 0.85);
+    color: #fff;
+    line-height: 1.1;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mp-fs-timer {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: rgba(207, 226, 255, 0.85);
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
+    line-height: 1;
   }
   .mp-fs-close {
     appearance: none;
@@ -1820,6 +1854,178 @@
     font-size: 0.78rem;
     color: rgba(234, 242, 255, 0.65);
     margin-top: 4px;
+  }
+
+  /* Etapa 16.4 F29: botón P de PEDIR PUNTAZO central, debajo del score */
+  .mp-fs-puntazo-row {
+    margin: 14px 0 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .mp-fs-puntazo-btn {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 28%, #2a92ff 0%, #0b7cff 38%, #004FC8 100%);
+    box-shadow:
+      0 0 0 6px rgba(11, 124, 255, 0.18),
+      0 12px 36px rgba(11, 124, 255, 0.55),
+      inset 0 -6px 14px rgba(0, 0, 0, 0.22);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: #fff;
+    font-family: inherit;
+    transition: transform 0.14s ease, box-shadow 0.18s ease, filter 0.14s ease;
+    position: relative;
+  }
+  .mp-fs-puntazo-btn::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(11, 124, 255, 0.42) 0%, transparent 65%);
+    z-index: -1;
+    animation: mpFsPuntazoPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes mpFsPuntazoPulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50%      { opacity: 1.0; transform: scale(1.08); }
+  }
+  .mp-fs-puntazo-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+  .mp-fs-puntazo-btn:active { transform: scale(0.95); }
+  .mp-fs-puntazo-btn[disabled] {
+    cursor: not-allowed;
+    filter: grayscale(0.6) brightness(0.85);
+    animation: none;
+  }
+  .mp-fs-puntazo-btn[disabled]::before { animation: none; opacity: 0; }
+  .mp-fs-puntazo-mark {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+  }
+  .mp-fs-puntazo-mark--fb {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    font-size: 2.2rem;
+    font-weight: 900;
+    font-style: italic;
+    color: #fff;
+  }
+  .mp-fs-puntazo-label {
+    font-size: 0.66rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.92);
+    text-transform: uppercase;
+    line-height: 1;
+    margin-top: 2px;
+  }
+  .mp-fs-clip-feedback {
+    min-height: 18px;
+    font-size: 0.80rem;
+    font-weight: 700;
+    color: rgba(234, 242, 255, 0.85);
+    text-align: center;
+    transition: opacity 0.15s ease;
+  }
+  .mp-fs-clip-feedback.bad { color: #ffb1a3; }
+  .mp-fs-clip-feedback.ok  { color: #9af2c0; }
+
+  /* Etapa 16.4 F28: cuerpo del FS de configuración */
+  .mp-fs-config-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 18px 6px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  .mp-fs-config-subtitle {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(207, 226, 255, 0.55);
+    text-transform: uppercase;
+    letter-spacing: 1.0px;
+    line-height: 1;
+    margin-top: 2px;
+  }
+  .mp-card--fs {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(12px);
+    width: 100%;
+    max-width: 420px;
+  }
+
+  /* Etapa 16.4 F30: cancha visual REAL (proporción vertical 2:3, red horizontal
+     punteada al centro como en una cancha de pádel de verdad) */
+  .mp-court-grid--real {
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-rows: 1fr 1fr !important;
+    gap: 10px !important;
+    aspect-ratio: 2 / 3 !important;
+    max-width: 280px !important;
+    padding: 14px 12px !important;
+    border: 2px solid rgba(255, 255, 255, 0.32) !important;
+    border-radius: 14px !important;
+    background:
+      linear-gradient(180deg, rgba(11, 80, 200, 0.18), rgba(0, 40, 120, 0.10)) !important;
+    position: relative !important;
+  }
+  /* Red horizontal punteada al centro (separa team2 arriba de team1 abajo) */
+  .mp-court-grid--real::before {
+    content: "";
+    position: absolute;
+    left: 10px; right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 3px;
+    background: repeating-linear-gradient(90deg,
+      rgba(255, 255, 255, 0.60) 0 7px,
+      transparent 7px 14px);
+    z-index: 1;
+    pointer-events: none;
+  }
+  /* Línea de servicio horizontal — sutil, 1px sólida hacia ambos lados de la red */
+  .mp-court-grid--real::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 14px; bottom: 14px;
+    width: 1.5px;
+    background: rgba(255, 255, 255, 0.18);
+    pointer-events: none;
+  }
+  .mp-court-grid--real .mp-slot {
+    min-height: 96px;
+    border: 1.5px dashed rgba(255, 255, 255, 0.24) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    position: relative;
+    z-index: 2;
+  }
+  .mp-court-grid--real .mp-slot.is-filled[data-equipo="team1"] {
+    background: var(--team1-color-bg) !important;
+    border: 1.5px solid var(--team1-color-border) !important;
+  }
+  .mp-court-grid--real .mp-slot.is-filled[data-equipo="team2"] {
+    background: var(--team2-color-bg) !important;
+    border: 1.5px solid var(--team2-color-border) !important;
   }
 
   .mp-fs-teams {
@@ -2568,30 +2774,11 @@
       </div>
     </div>
 
-    <!-- Etapa 16.4 F8: cancha visual (acordeón) movida DESPUÉS del marcador -->
+    <!-- Etapa 16.4 F28: trigger del fullscreen de jugadores/cancha (no acordeón) -->
     <button id="mpConfigToggle" class="mp-section-toggle" type="button" style="display:none">
       <span>⚙ Editar jugadores y cancha</span>
-      <span class="toggle-caret" aria-hidden="true">▼</span>
+      <span class="toggle-caret" aria-hidden="true">▶</span>
     </button>
-    <div id="mpMainCourtCard" class="mp-card mp-main-court-card" style="display:none">
-      <div class="mp-main-court-title">🎾 Cancha</div>
-      <div class="mp-court-wrap" style="position:relative">
-        <span id="mpCourtSaveDot" class="mp-court-save-dot" title="Guardando…" aria-hidden="true"></span>
-        <div class="mp-court-team-label">Jugadores C · D</div>
-        <div class="mp-court-grid" id="mpMainCourtGrid">
-          <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
-          <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
-          <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
-          <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
-        </div>
-        <div class="mp-court-team-label">Jugadores A · B</div>
-        <div class="mp-court-hint" id="mpMainCourtHint"></div>
-        <div class="mp-court-footer">
-          <button id="mpPasteBtn" type="button" class="mp-court-paste-btn" title="Pegar nombres en bulk">📋 Pegar jugadores</button>
-          <span id="mpCourtCount" class="mp-court-count">0/4 jugadores</span>
-        </div>
-      </div>
-    </div>
 
     <!-- ── 16.3 — Bottom sheet "Marcador completo" (tabla detallada) ── -->
     <div id="mpLiveDetailSheet" class="mp-sheet-backdrop" aria-hidden="true">
@@ -2653,7 +2840,13 @@
   <div id="mpFsCourtBg" class="mp-fs-bg" aria-hidden="true"></div>
   <div class="mp-fs-shell">
     <header class="mp-fs-header">
-      <div class="mp-fs-timer" id="mpFsTimer">⏱ 00:00:00</div>
+      <a href="/landing.html" class="mp-fs-brand" aria-label="Puntazo">
+        <img class="mp-fs-logo" src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
+      </a>
+      <div class="mp-fs-header-center">
+        <div class="mp-fs-venue" id="mpFsVenue"></div>
+        <div class="mp-fs-timer" id="mpFsTimer">⏱ 00:00:00</div>
+      </div>
       <button id="mpFsClose" class="mp-fs-close" type="button" aria-label="Cerrar marcador expandido">✕</button>
     </header>
 
@@ -2684,6 +2877,15 @@
       </div>
     </section>
 
+    <!-- Etapa 16.4 F29: botón P central — equivale a "PEDIR PUNTAZO" -->
+    <div class="mp-fs-puntazo-row">
+      <button id="mpFsPuntazoBtn" type="button" class="mp-fs-puntazo-btn" aria-label="Pedir Puntazo">
+        <img class="mp-fs-puntazo-mark" src="/assets/img/P_Blanca.png" alt="P" onerror="this.outerHTML='<span class=&quot;mp-fs-puntazo-mark mp-fs-puntazo-mark--fb&quot;>P</span>'">
+        <span class="mp-fs-puntazo-label">PEDIR PUNTAZO</span>
+      </button>
+      <div id="mpFsClipFeedback" class="mp-fs-clip-feedback"></div>
+    </div>
+
     <section class="mp-fs-teams" data-owner="0">
       <div class="mp-fs-team-pad" data-team="team1">
         <div class="mp-fs-team-pad-label">Equipo 1</div>
@@ -2704,6 +2906,48 @@
     </section>
     <div class="mp-fs-undo-row">
       <button id="mpFsUndo" type="button" class="mp-live-undo-btn" data-live="undoPoint" aria-label="Deshacer último cambio">↶ Deshacer último</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     Etapa 16.4 F28 — Fullscreen de configuración (jugadores + cancha).
+     Misma estructura visual que mpLiveFullscreen pero con la cancha
+     visual + slots y el botón Pegar como bonus.
+     ════════════════════════════════════════════════════════════ -->
+<div id="mpConfigFullscreen" class="mp-fs-overlay" aria-hidden="true">
+  <div id="mpFsConfigBg" class="mp-fs-bg" aria-hidden="true"></div>
+  <div class="mp-fs-shell">
+    <header class="mp-fs-header">
+      <a href="/landing.html" class="mp-fs-brand" aria-label="Puntazo">
+        <img class="mp-fs-logo" src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
+      </a>
+      <div class="mp-fs-header-center">
+        <div class="mp-fs-venue" id="mpFsConfigVenue"></div>
+        <div class="mp-fs-config-subtitle">⚙ Editar jugadores y cancha</div>
+      </div>
+      <button id="mpFsConfigClose" class="mp-fs-close" type="button" aria-label="Cerrar configuración">✕</button>
+    </header>
+
+    <div class="mp-fs-config-body">
+      <div id="mpMainCourtCard" class="mp-card mp-main-court-card mp-card--fs">
+        <div class="mp-court-wrap" style="position:relative">
+          <span id="mpCourtSaveDot" class="mp-court-save-dot" title="Guardando…" aria-hidden="true"></span>
+          <div class="mp-court-team-label">Jugadores C · D</div>
+          <div class="mp-court-grid mp-court-grid--real" id="mpMainCourtGrid">
+            <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
+            <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
+            <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
+            <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
+          </div>
+          <div class="mp-court-team-label">Jugadores A · B</div>
+          <div class="mp-court-hint" id="mpMainCourtHint"></div>
+          <div class="mp-court-footer">
+            <button id="mpPasteBtn" type="button" class="mp-court-paste-btn" title="Pegar nombres en bulk">📋 Pegar nombres</button>
+            <span id="mpCourtCount" class="mp-court-count">0/4 jugadores</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -6130,6 +6374,12 @@
     if (!$fsOverlay) return;
     fsApplyCourtBg();
     fsRenderBoard();
+    // Etapa 16.4 F29: setear venue (club · cancha) en el header FS
+    try {
+      const $venueFs = document.getElementById("mpFsVenue");
+      const $venueMain = document.getElementById("mpVenueLabel");
+      if ($venueFs && $venueMain) $venueFs.textContent = $venueMain.textContent;
+    } catch (_) {}
     $fsOverlay.classList.add("is-open");
     $fsOverlay.setAttribute("aria-hidden", "false");
     _fsOpen = true;
@@ -6199,7 +6449,76 @@
   }
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && _fsOpen) closeFullscreenScoreboard();
+    if (e.key === "Escape" && _fsConfigOpen) closeConfigFullscreen();
   });
+
+  // Etapa 16.4 F28: Fullscreen de configuración (jugadores + cancha)
+  const $fsConfigOverlay = document.getElementById("mpConfigFullscreen");
+  const $fsConfigBg      = document.getElementById("mpFsConfigBg");
+  const $fsConfigClose   = document.getElementById("mpFsConfigClose");
+  const $fsConfigVenue   = document.getElementById("mpFsConfigVenue");
+  let _fsConfigOpen = false;
+  function openConfigFullscreen() {
+    if (!$fsConfigOverlay) return;
+    // BG con la imagen de la cancha
+    if ($fsConfigBg && currentMatch) {
+      const url = inferCourtIconUrl(currentMatch);
+      if (url) $fsConfigBg.style.backgroundImage = "url('" + url + "')";
+    }
+    // Venue
+    try {
+      const $venueMain = document.getElementById("mpVenueLabel");
+      if ($fsConfigVenue && $venueMain) $fsConfigVenue.textContent = $venueMain.textContent;
+    } catch (_) {}
+    $fsConfigOverlay.classList.add("is-open");
+    $fsConfigOverlay.setAttribute("aria-hidden", "false");
+    _fsConfigOpen = true;
+    document.body.style.overflow = "hidden";
+    // Re-render del card (que ahora vive adentro del overlay)
+    try { renderMainCourt(); } catch (_) {}
+  }
+  function closeConfigFullscreen() {
+    if (!$fsConfigOverlay) return;
+    $fsConfigOverlay.classList.remove("is-open");
+    $fsConfigOverlay.setAttribute("aria-hidden", "true");
+    _fsConfigOpen = false;
+    document.body.style.overflow = "";
+  }
+  if ($fsConfigClose) $fsConfigClose.addEventListener("click", closeConfigFullscreen);
+  // Cerrar también al click en el backdrop (fondo)
+  if ($fsConfigOverlay) {
+    $fsConfigOverlay.addEventListener("click", function (e) {
+      if (e.target === $fsConfigOverlay || e.target === $fsConfigBg) closeConfigFullscreen();
+    });
+  }
+  // Expose globalmente para que el toggle (binded más abajo) la encuentre
+  window.__openConfigFullscreen = openConfigFullscreen;
+
+  // Etapa 16.4 F29: botón P central del FS — dispara click al $btnClip
+  // principal para reusar TODA la lógica (cooldown, vibración, error, etc.).
+  // Espejo el feedback al $fsClipFeedback para que se vea en el overlay.
+  const $fsPuntazoBtn = document.getElementById("mpFsPuntazoBtn");
+  const $fsClipFb     = document.getElementById("mpFsClipFeedback");
+  if ($fsPuntazoBtn && $btnClip) {
+    $fsPuntazoBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      if ($btnClip.disabled || $fsPuntazoBtn.disabled) return;
+      $btnClip.click();
+    });
+  }
+  // Espejo del estado/feedback del botón principal hacia el FS
+  function fsMirrorClipState() {
+    if (!$fsPuntazoBtn) return;
+    $fsPuntazoBtn.disabled = !!($btnClip && $btnClip.disabled);
+    if ($fsClipFb && $clipFeedback) {
+      $fsClipFb.textContent = $clipFeedback.textContent || "";
+      $fsClipFb.className = "mp-fs-clip-feedback" +
+        ($clipFeedback.classList.contains("ok") ? " ok" : "") +
+        ($clipFeedback.classList.contains("bad") ? " bad" : "");
+    }
+  }
+  // Observa cambios en el botón principal y espeja al FS cada 300ms cuando abierto
+  setInterval(function () { if (_fsOpen) fsMirrorClipState(); }, 300);
 
   // Pads del overlay FS comparten lógica con $liveTeams via data-live/data-team.
   // Attachamos el MISMO handler delegado (extraído arriba). Cuando se aplica el
@@ -6481,10 +6800,22 @@
         toggle.classList.toggle("is-open", isHidden);
       });
     }
-    bindToggle("mpConfigToggle", "mpMainCourtCard");
     bindToggle("mpClipStatesToggle", "mpClipStates");
-    // Etapa 16.4 F26: marcador en vivo también acordeón
-    bindToggle("mpLiveToggle", "mpLiveCard");
+    // Etapa 16.4 F28: marcador y config NO son acordeones — son fullscreens.
+    // mpLiveToggle → openFullscreenScoreboard (overlay del marcador).
+    // mpConfigToggle → openConfigFullscreen (overlay de jugadores/cancha).
+    const _liveToggle = document.getElementById("mpLiveToggle");
+    if (_liveToggle) {
+      _liveToggle.addEventListener("click", function () {
+        if (typeof openFullscreenScoreboard === "function") openFullscreenScoreboard();
+      });
+    }
+    const _configToggle = document.getElementById("mpConfigToggle");
+    if (_configToggle) {
+      _configToggle.addEventListener("click", function () {
+        if (typeof openConfigFullscreen === "function") openConfigFullscreen();
+      });
+    }
   })();
 })();
 </script>

@@ -171,23 +171,32 @@
     };
   }
 
-  // Defensa adicional: cerrar el nav si el usuario hace click fuera o hace scroll.
-  // El toggle principal está en onclick inline del botón (window.toggleNavMenu).
+  // Fix burger definitivo: event delegation en document. Sin importar cuándo
+  // se renderiza el header o cuándo se monta el botón, el delegated handler
+  // captura cualquier click en .menu-toggle / #menu-toggle.
   function setupMenuToggle() {
     const getNav = () => document.getElementById("nav-menu")
                        || document.querySelector(".nav-links")
                        || document.querySelector(".navbar");
-    const getBtn = () => document.getElementById("menu-toggle")
-                       || document.querySelector(".menu-toggle");
 
+    // Toggle del burger (delegated, sobrevive a cualquier re-render)
     document.addEventListener("click", function (e) {
-      const nav = getNav(); const btn = getBtn();
-      if (!nav || !btn) return;
-      if (!nav.classList.contains("show")) return;
+      const btn = e.target && e.target.closest && e.target.closest(".menu-toggle, #menu-toggle");
+      if (btn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const nav = getNav();
+        if (nav) nav.classList.toggle("show");
+        return;
+      }
+      // Cerrar si está abierto y el click fue fuera del nav
+      const nav = getNav();
+      if (!nav || !nav.classList.contains("show")) return;
       if (nav.contains(e.target)) return;
-      if (btn === e.target || btn.contains(e.target)) return;
       nav.classList.remove("show");
-    });
+    }, true); // capture phase: gana sobre cualquier handler stopPropagation interno
+
+    // Cerrar al hacer scroll
     window.addEventListener("scroll", function () {
       const nav = getNav();
       if (nav && nav.classList.contains("show")) nav.classList.remove("show");
