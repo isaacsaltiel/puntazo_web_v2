@@ -576,8 +576,10 @@
   }
 
   /* Bottom sheet para editar slot */
+  /* Etapa 16.4 F34: z-index 11000 para que el sheet aparezca ARRIBA del FS overlay
+     (mp-fs-overlay tiene z-index 10500; antes el sheet quedaba detrás). */
   .mp-sheet-backdrop {
-    position: fixed; inset: 0; z-index: 10000;
+    position: fixed; inset: 0; z-index: 11000;
     display: none; align-items: flex-end; justify-content: center;
     background: rgba(2,6,14,0.62);
     backdrop-filter: blur(8px);
@@ -1811,14 +1813,27 @@
   }
   .mp-fs-team--left  { text-align: left; padding-left: 4px; }
   .mp-fs-team--right { text-align: right; padding-right: 4px; }
+  /* Etapa 16.4 F36: nombres de equipo PROTAGONISTAS — más grandes y brillantes */
   .mp-fs-team-name {
-    font-size: 0.95rem;
-    color: rgba(234, 242, 255, 0.90);
+    font-size: 1.55rem;
+    font-weight: 900;
+    color: #fff;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.4px;
+    line-height: 1.0;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   }
-  .mp-fs-team[data-team="team1"] .mp-fs-team-name { color: #b4d5ff; }
-  .mp-fs-team[data-team="team2"] .mp-fs-team-name { color: #e2f29a; }
+  .mp-fs-team[data-team="team1"] .mp-fs-team-name {
+    color: #d4e8ff;
+    text-shadow: 0 0 14px rgba(11, 124, 255, 0.55), 0 2px 6px rgba(0,0,0,0.5);
+  }
+  .mp-fs-team[data-team="team2"] .mp-fs-team-name {
+    color: #ecf5a8;
+    text-shadow: 0 0 14px rgba(200, 232, 53, 0.55), 0 2px 6px rgba(0,0,0,0.5);
+  }
+  @media (max-width: 380px) {
+    .mp-fs-team-name { font-size: 1.20rem; }
+  }
 
   .mp-fs-numbers {
     display: flex;
@@ -1856,32 +1871,33 @@
     margin-top: 4px;
   }
 
-  /* Etapa 16.4 F29: botón P de PEDIR PUNTAZO central, debajo del score */
+  /* Etapa 16.4 F37: botón PEDIR PUNTAZO grande, color azul Puntazo solid
+     (el navy del fondo del logo P_Blanca.png, sin gradient confuso) */
   .mp-fs-puntazo-row {
-    margin: 14px 0 18px;
+    margin: 18px 0 22px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     flex-shrink: 0;
   }
   .mp-fs-puntazo-btn {
     appearance: none;
-    border: none;
+    border: 3px solid rgba(255, 255, 255, 0.18);
     cursor: pointer;
-    width: 110px;
-    height: 110px;
+    width: 168px;
+    height: 168px;
     border-radius: 50%;
-    background: radial-gradient(circle at 30% 28%, #2a92ff 0%, #0b7cff 38%, #004FC8 100%);
+    background: #14245a; /* azul navy del fondo del logo P_Blanca */
     box-shadow:
-      0 0 0 6px rgba(11, 124, 255, 0.18),
-      0 12px 36px rgba(11, 124, 255, 0.55),
-      inset 0 -6px 14px rgba(0, 0, 0, 0.22);
+      0 0 0 8px rgba(20, 36, 90, 0.28),
+      0 18px 50px rgba(11, 124, 255, 0.50),
+      inset 0 -8px 18px rgba(0, 0, 0, 0.28);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 6px;
     color: #fff;
     font-family: inherit;
     transition: transform 0.14s ease, box-shadow 0.18s ease, filter 0.14s ease;
@@ -1890,50 +1906,55 @@
   .mp-fs-puntazo-btn::before {
     content: "";
     position: absolute;
-    inset: -8px;
+    inset: -14px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(11, 124, 255, 0.42) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba(11, 124, 255, 0.45) 0%, transparent 65%);
     z-index: -1;
-    animation: mpFsPuntazoPulse 2.4s ease-in-out infinite;
+    animation: mpFsPuntazoPulse 2.2s ease-in-out infinite;
   }
   @keyframes mpFsPuntazoPulse {
-    0%, 100% { opacity: 0.6; transform: scale(1); }
-    50%      { opacity: 1.0; transform: scale(1.08); }
+    0%, 100% { opacity: 0.55; transform: scale(1); }
+    50%      { opacity: 1.0; transform: scale(1.10); }
   }
-  .mp-fs-puntazo-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+  .mp-fs-puntazo-btn:hover { transform: translateY(-2px); filter: brightness(1.12); }
   .mp-fs-puntazo-btn:active { transform: scale(0.95); }
   .mp-fs-puntazo-btn[disabled] {
     cursor: not-allowed;
-    filter: grayscale(0.6) brightness(0.85);
+    filter: grayscale(0.5) brightness(0.80);
     animation: none;
   }
   .mp-fs-puntazo-btn[disabled]::before { animation: none; opacity: 0; }
   .mp-fs-puntazo-mark {
-    width: 56px;
-    height: 56px;
+    width: 92px;
+    height: 92px;
     object-fit: contain;
     display: block;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+    filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.50));
   }
   .mp-fs-puntazo-mark--fb {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 56px;
-    height: 56px;
-    font-size: 2.2rem;
+    width: 92px;
+    height: 92px;
+    font-size: 3.5rem;
     font-weight: 900;
     font-style: italic;
     color: #fff;
   }
   .mp-fs-puntazo-label {
-    font-size: 0.66rem;
+    font-size: 0.80rem;
     font-weight: 900;
-    letter-spacing: 0.5px;
-    color: rgba(255, 255, 255, 0.92);
+    letter-spacing: 1.0px;
+    color: rgba(255, 255, 255, 0.95);
     text-transform: uppercase;
     line-height: 1;
-    margin-top: 2px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  }
+  @media (max-width: 380px) {
+    .mp-fs-puntazo-btn { width: 144px; height: 144px; }
+    .mp-fs-puntazo-mark { width: 78px; height: 78px; }
+    .mp-fs-puntazo-label { font-size: 0.74rem; }
   }
   .mp-fs-clip-feedback {
     min-height: 18px;
@@ -1972,6 +1993,33 @@
     width: 100%;
     max-width: 420px;
   }
+  /* Etapa 16.4 F35: footer del FS config con botón "Listo" CTA verde */
+  .mp-fs-config-foot {
+    flex-shrink: 0;
+    padding: 12px 6px 18px;
+    display: flex;
+    justify-content: center;
+  }
+  .mp-fs-done-btn {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    max-width: 320px;
+    min-height: 56px;
+    padding: 14px 24px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #22b464 0%, #169050 100%);
+    color: #fff;
+    font-family: inherit;
+    font-weight: 900;
+    font-size: 1.06rem;
+    letter-spacing: 0.4px;
+    box-shadow: 0 10px 30px rgba(34, 180, 100, 0.35), 0 2px 6px rgba(0,0,0,0.25);
+    transition: transform 0.12s ease, filter 0.14s ease, box-shadow 0.18s ease;
+  }
+  .mp-fs-done-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+  .mp-fs-done-btn:active { transform: scale(0.97); }
 
   /* Etapa 16.4 F30: cancha visual REAL (proporción vertical 2:3, red horizontal
      punteada al centro como en una cancha de pádel de verdad) */
@@ -2629,12 +2677,12 @@
     </div>
     <div id="mpNuevaMsg" class="mp-msg"></div>
 
-    <!-- 2. SECUNDARIO: Jugadores (opcional, cancha chica) -->
+    <!-- 2. SECUNDARIO: Jugadores (opcional, cancha real con red horizontal) -->
     <div class="mp-modal-section-label">Jugadores <span class="mp-jug-opt">(opcional)</span></div>
     <p class="mp-jug-note">Toca un cuadrante para agregar nombres. Puedes dejarlos vacíos.</p>
     <div class="mp-court-wrap mp-nueva-court-wrap">
       <div class="mp-court-team-label" id="nuevaTeamTopLabel">Jugadores C · D</div>
-      <div class="mp-court-grid" id="nuevaCourtGrid">
+      <div class="mp-court-grid mp-court-grid--real" id="nuevaCourtGrid">
         <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
         <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
         <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
@@ -2948,6 +2996,10 @@
           </div>
         </div>
       </div>
+    </div>
+    <!-- Etapa 16.4 F35: botón "Listo" verde, CTA principal para cerrar el FS -->
+    <div class="mp-fs-config-foot">
+      <button id="mpFsConfigDone" type="button" class="mp-fs-done-btn">✓ Listo</button>
     </div>
   </div>
 </div>
@@ -3822,6 +3874,22 @@
     bg.classList.add("is-active");
   }
 
+  // Etapa 16.4 F32: bg para la pantalla intermedia "¿Listo para jugar?"
+  // (mpNuevaForm) donde aún no hay match cargado pero sí tenemos newCan
+  // desde la URL.
+  function applyCourtBackgroundFromCanParam() {
+    const bg = document.getElementById("mpCourtBg");
+    if (!bg) return;
+    const canParam = newCan;
+    if (!canParam) { bg.classList.remove("is-active"); return; }
+    const mc = String(canParam).match(/(\d+)/);
+    let n = mc ? parseInt(mc[1], 10) : 1;
+    if (!Number.isFinite(n) || n < 1) n = 1;
+    const idx = ((n - 1) % 8) + 1;
+    bg.style.backgroundImage = "url('/assets/court-icons/B" + idx + ".png')";
+    bg.classList.add("is-active");
+  }
+
   async function renderMatch(match) {
     currentMatch = match;
     const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
@@ -4637,6 +4705,8 @@
         return;
       }
       show("mpNuevaForm");
+      // Etapa 16.4 F32: bg de cancha también en esta pantalla intermedia
+      applyCourtBackgroundFromCanParam();
       return;
     }
 
@@ -6485,6 +6555,9 @@
     document.body.style.overflow = "";
   }
   if ($fsConfigClose) $fsConfigClose.addEventListener("click", closeConfigFullscreen);
+  // Etapa 16.4 F35: botón Listo (CTA verde) cierra el FS config
+  const $fsConfigDone = document.getElementById("mpFsConfigDone");
+  if ($fsConfigDone) $fsConfigDone.addEventListener("click", closeConfigFullscreen);
   // Cerrar también al click en el backdrop (fondo)
   if ($fsConfigOverlay) {
     $fsConfigOverlay.addEventListener("click", function (e) {
