@@ -63,12 +63,18 @@
       throw new Error("Firebase compat SDK no cargado.");
     }
     const db = window.PuntazoFirebase.db();
-    const user = (window.PuntazoAuth && window.PuntazoAuth.currentUser) || null;
+    const user = (window.PuntazoAuth && window.PuntazoAuth.currentUser)
+      || (firebase.auth && firebase.auth().currentUser)
+      || null;
+
+    const isRecovery = opts.source === "recovery";
 
     const doc = {
       club: opts.loc,
       cancha: canchaDigit(opts.can),
-      lado: opts.lado || "LadoA",
+      // Recovery: no sabemos lado en general; la NUC decide (replicar
+      // logica del flujo Forms actual). Resto: default LadoA.
+      lado: opts.lado !== undefined ? opts.lado : (isRecovery ? null : "LadoA"),
       source: opts.source || "web",
       client_pulse_id: genClientPulseId(),
       match_id: opts.matchId || null,
@@ -77,6 +83,16 @@
       consumed_at: null,
       consumed_by: null,
     };
+
+    // R5: event_at solo para recovery (timestamp del puntazo a recuperar).
+    // La NUC usa este campo como anchor temporal en lugar de created_at,
+    // y aplica la ventana NVR ±90s que ya tiene para el flujo Forms.
+    if (isRecovery) {
+      if (!(opts.event_at instanceof Date) || isNaN(opts.event_at.getTime())) {
+        throw new Error("requestPulse: source=recovery requiere event_at:Date valido");
+      }
+      doc.event_at = firebase.firestore.Timestamp.fromDate(opts.event_at);
+    }
 
     const ref = await db.collection("pending_pulses").add(doc);
     return {
@@ -101,11 +117,22 @@
     return { ok: true, channel: "apps_script", raw: data };
   }
 
-  // requestPulse({ loc, can, lado?, matchId?, source? })
+  // requestPulse({ loc, can, lado?, matchId?, source?, event_at? })
   // Devuelve Promise<{ ok: true, channel, ... }>. Throw en error.
+  // - source="recovery" REQUIERE event_at:Date (timestamp del puntazo).
+  // - recovery siempre va por Firestore (no tiene equivalente Apps Script).
   async function requestPulse(opts) {
     if (!opts || !opts.loc || !opts.can) {
       throw new Error("requestPulse: faltan loc/can");
+    }
+    if (opts.source === "recovery") {
+      // Recovery solo soportado en clubs migrados (Firestore). Si
+      // alguien intenta recovery en un club no-Firestore, fallar
+      // explicitamente en lugar de caer a Apps Script (que no la soporta).
+      if (FIRESTORE_CLUBS.indexOf(opts.loc) < 0) {
+        throw new Error("Recuperación aún no disponible para " + opts.loc);
+      }
+      return requestViaFirestore(opts);
     }
     if (FIRESTORE_CLUBS.indexOf(opts.loc) >= 0) {
       return requestViaFirestore(opts);

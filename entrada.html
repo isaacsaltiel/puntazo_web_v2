@@ -688,10 +688,14 @@
   const can = (params.can || "").trim();
   const lado = (params.lado || "").trim();
   const qrCode = (params.qr || "").trim();
+  // R5: ?modo=boton → selector reusable que termina en /boton.html
+  // (registrar puntazos sin crear partido).
+  const modoBoton = (params.modo || "").trim().toLowerCase() === "boton";
 
   // Si el QR físico viejo apunta sin un lado pero con loc/can, tratamos como
   // selector parcial. Más limpio para el caso real: si vienen los 3 → flow viejo.
-  const hasFullParams = loc && can && lado;
+  // En modo boton ignoramos hasFullParams (siempre pasa por el selector).
+  const hasFullParams = !modoBoton && loc && can && lado;
 
   // ---------- SELECTOR FLOW ----------
   //
@@ -733,8 +737,14 @@
 
     if (selectorState.step === "clubs") {
       $selBack.style.display = "none";
-      $selTitle.textContent = "Elige tu club";
-      $selSub.textContent = "Toca el club donde estás jugando";
+      // R5: copy distinto si venimos en modo "solo botón"
+      if (modoBoton) {
+        $selTitle.textContent = "Elige tu club";
+        $selSub.textContent = "Para registrar puntazos sin crear partido";
+      } else {
+        $selTitle.textContent = "Elige tu club";
+        $selSub.textContent = "Toca el club donde estás jugando";
+      }
 
       const clubs = (selectorState.catalog && selectorState.catalog.clubs) || [];
       if (clubs.length === 0) {
@@ -776,6 +786,29 @@
         }
         $selGrid.appendChild(card);
       });
+
+      // R5: card extra al final con link discreto a otros flujos.
+      // Solo cuando NO estamos ya dentro del modo botón (sino confunde).
+      if (!modoBoton) {
+        const extras = document.createElement("div");
+        extras.style.cssText = "grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; margin-top:8px;";
+        extras.innerHTML =
+          '<a href="/entrada.html?modo=boton" class="sel-card" style="text-decoration:none; min-height:auto; padding:14px 16px; flex-direction:row; justify-content:space-between; gap:10px;">' +
+            '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px;">' +
+              '<span class="name" style="font-size:.92rem;">Solo registrar puntazos</span>' +
+              '<span class="meta" style="margin-top:0;">Sin crear partido — solo el botón</span>' +
+            '</span>' +
+            '<span style="font-size:1.2rem; opacity:.6;">→</span>' +
+          '</a>' +
+          '<a href="/recuperar.html" class="sel-card" style="text-decoration:none; min-height:auto; padding:14px 16px; flex-direction:row; justify-content:space-between; gap:10px;">' +
+            '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px;">' +
+              '<span class="name" style="font-size:.92rem;">¿Se te escapó un puntazo?</span>' +
+              '<span class="meta" style="margin-top:0;">Recupéralo de las últimas 24h</span>' +
+            '</span>' +
+            '<span style="font-size:1.2rem; opacity:.6;">→</span>' +
+          '</a>';
+        $selGrid.appendChild(extras);
+      }
       return;
     }
 
@@ -852,8 +885,15 @@
   }
 
   function commitSelection(club, cancha, ld) {
-    // Redirige a entrada.html con URL canónica. Esto re-ejecuta el flow viejo
-    // y deja una URL compartible/refresheable.
+    // R5: en modoBoton, saltamos el flow de partido y vamos directo a
+    // /boton.html (que ya acepta ?loc=&can= para auto-entrar al view del botón).
+    if (modoBoton) {
+      const qs = "?loc=" + encodeURIComponent(club.id) +
+                 "&can=" + encodeURIComponent(cancha.id);
+      window.location.href = "/boton.html" + qs;
+      return;
+    }
+    // Flow normal: URL canónica para entrada.html.
     const qs = "?loc=" + encodeURIComponent(club.id) +
                "&can=" + encodeURIComponent(cancha.id) +
                "&lado=" + encodeURIComponent(ld.id);

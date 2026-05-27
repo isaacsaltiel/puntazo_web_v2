@@ -636,6 +636,23 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
     }
   });
 
+  // ── Query params ?loc=&can= → salto directo a button view ──
+  // Map de id interno Puntazo → display que espera CONFIG.clubs.
+  const LOC_TO_DISPLAY = {
+    "WellStreet-Pickleball": "WellStreet - Pickleball",
+    // BreakPoint, Interpadel, Scorpion van iguales.
+  };
+  function canchaDigit(can) {
+    const m = String(can || '').match(/(\d+)/);
+    return m ? m[1] : String(can || '');
+  }
+  function getQueryParam(name) {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      return p.get(name);
+    } catch (_) { return null; }
+  }
+
   // ── INIT ──
   async function init() {
     try {
@@ -651,6 +668,24 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
     fillClubs();
     const clubs = Object.keys(CONFIG.clubs||{}).sort();
     if (clubs.length) { $clubSel.value=clubs[0]; fillCanchas($clubSel.value); }
+
+    // R5: si vinimos con ?loc=&can= (desde entrada.html → "Solo quiero
+    // el botón"), saltar directo al button view sin pasar por setup.
+    const qLoc = getQueryParam('loc');
+    const qCan = getQueryParam('can');
+    if (qLoc && qCan) {
+      const clubDisplay = LOC_TO_DISPLAY[qLoc] || qLoc;
+      const canchaDigitVal = canchaDigit(qCan);
+      if (CONFIG.clubs[clubDisplay] && (CONFIG.clubs[clubDisplay]||[]).indexOf(canchaDigitVal) >= 0) {
+        $clubSel.value = clubDisplay;
+        fillCanchas(clubDisplay);
+        $canchaSel.value = canchaDigitVal;
+        enterButton();
+        return;
+      }
+      // Si no matchea, caemos al flujo normal sin avisar
+      console.warn('[boton] params loc/can no validos en CONFIG:', qLoc, qCan);
+    }
 
     const last = loadLocal();
     if (last && CONFIG.clubs[last.club]) {
