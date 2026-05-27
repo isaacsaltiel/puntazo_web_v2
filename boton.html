@@ -14,6 +14,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
 
+<!-- R4: Firebase compat SDK + helper de pulsos (BreakPoint → Firestore directo) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/pulses.js"></script>
+
 <style>
 :root{
   --bg:#050914;--text:#eaf2ff;--muted:rgba(234,242,255,.55);
@@ -587,13 +593,24 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
     setConfirm('');
 
     try {
-      const url = APPS_URL
-        + '?action=save'
-        + '&club=' + encodeURIComponent($clubSel.value)
-        + '&cancha=' + encodeURIComponent($canchaSel.value);
-
-      const res  = await fetch(url, { redirect:'follow' });
-      const data = await res.json();
+      // R4: ruta por club via PuntazoPulses (BreakPoint → Firestore directo;
+      // resto → Apps Script legacy). Si el helper no cargó, fallback a Apps Script.
+      let data;
+      if (window.PuntazoPulses && typeof PuntazoPulses.requestPulse === 'function') {
+        await PuntazoPulses.requestPulse({
+          loc: $clubSel.value,
+          can: $canchaSel.value,
+          source: 'web_boton',
+        });
+        data = { ok: true };
+      } else {
+        const url = APPS_URL
+          + '?action=save'
+          + '&club=' + encodeURIComponent($clubSel.value)
+          + '&cancha=' + encodeURIComponent($canchaSel.value);
+        const res = await fetch(url, { redirect:'follow' });
+        data = await res.json();
+      }
 
       if (data.ok) {
         showFlash();

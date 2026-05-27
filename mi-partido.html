@@ -28,6 +28,7 @@
 <script src="/assets/matches.js"></script>
 <script src="/assets/clip-states.js"></script>
 <script src="/assets/court-svg.js"></script>
+<script src="/assets/pulses.js"></script>
 
 <style>
   .mp-wrap {
@@ -4935,37 +4936,40 @@
       setClipFeedback("Enviando puntazo…", "info");
       try { if (navigator.vibrate) navigator.vibrate(40); } catch (_) {}
 
-      // Etapa 16.4 F14 fix: el Apps Script espera `cancha=4` (solo el número),
-      // no `cancha=Cancha4`. Extraemos el dígito de currentMatch.can (formato
-      // del schema interno) igual que en boton.html (que sí funciona).
-      const canchaMatch = String(currentMatch.can || "").match(/(\d+)/);
-      const canchaNum = canchaMatch ? canchaMatch[1] : currentMatch.can;
-      // Etapa 16.4 F25 fix: el Apps Script (CLUBS en el .gs) tiene keys con
-      // espacios para algunos clubs. Mapear el id interno al display esperado.
-      const APPS_CLUB_MAP = {
-        "WellStreet-Pickleball": "WellStreet - Pickleball",
-        // otros se mandan tal cual (BreakPoint, Interpadel)
-      };
-      const clubForApps = APPS_CLUB_MAP[currentMatch.loc] || currentMatch.loc;
-
+      // R4: ruta por club via PuntazoPulses (BreakPoint → Firestore directo;
+      // resto → Apps Script legacy). El helper conoce cancha-digit + club map.
       try {
-        const url = APPS_URL
-          + "?action=save"
-          + "&club=" + encodeURIComponent(clubForApps)
-          + "&cancha=" + encodeURIComponent(canchaNum);
-        const res = await fetch(url, { redirect: "follow" });
-        const data = await res.json();
-
-        if (data && data.ok) {
-          setClipFeedback("✅ Puntazo guardado.", "ok");
-          try { if (navigator.vibrate) navigator.vibrate([40, 60, 40]); } catch (_) {}
-          // Acelera el contador de Etapa 5 (best-effort, pollClipsOnce hace bail si ya no está active).
-          setTimeout(function () { try { pollClipsOnce(); } catch (_) {} }, 30000);
-          setTimeout(function () { try { pollClipsOnce(); } catch (_) {} }, 60000);
-          startClipCooldown();
+        let result;
+        if (window.PuntazoPulses && typeof PuntazoPulses.requestPulse === "function") {
+          result = await PuntazoPulses.requestPulse({
+            loc: currentMatch.loc,
+            can: currentMatch.can,
+            lado: currentMatch.lado,
+            matchId: currentMatch.id || null,
+            source: "web_mi_partido",
+          });
         } else {
-          throw new Error((data && data.error) || "Error desconocido");
+          // Fallback hard si pulses.js no cargó: Apps Script directo.
+          const canchaMatch = String(currentMatch.can || "").match(/(\d+)/);
+          const canchaNum = canchaMatch ? canchaMatch[1] : currentMatch.can;
+          const APPS_CLUB_MAP = { "WellStreet-Pickleball": "WellStreet - Pickleball" };
+          const clubForApps = APPS_CLUB_MAP[currentMatch.loc] || currentMatch.loc;
+          const url = APPS_URL
+            + "?action=save"
+            + "&club=" + encodeURIComponent(clubForApps)
+            + "&cancha=" + encodeURIComponent(canchaNum);
+          const res = await fetch(url, { redirect: "follow" });
+          const data = await res.json();
+          if (!data || !data.ok) throw new Error((data && data.error) || "Error desconocido");
+          result = { ok: true, channel: "apps_script" };
         }
+
+        setClipFeedback("✅ Puntazo guardado.", "ok");
+        try { if (navigator.vibrate) navigator.vibrate([40, 60, 40]); } catch (_) {}
+        // Acelera el contador de Etapa 5 (best-effort, pollClipsOnce hace bail si ya no está active).
+        setTimeout(function () { try { pollClipsOnce(); } catch (_) {} }, 30000);
+        setTimeout(function () { try { pollClipsOnce(); } catch (_) {} }, 60000);
+        startClipCooldown();
       } catch (err) {
         console.error("[mi-partido] clip request failed", err);
         setClipFeedback("No se pudo guardar el Puntazo. Intenta de nuevo.", "bad");
