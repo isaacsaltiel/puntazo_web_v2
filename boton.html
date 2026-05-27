@@ -2,9 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <base href="/" />
-<title>Puntazo · Botón</title>
+<title>Botón · Puntazo</title>
 
 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
@@ -14,226 +14,235 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
 
-<!-- R4: Firebase compat SDK + helper de pulsos (BreakPoint → Firestore directo) -->
+<!-- R4 + R6: Firebase compat SDK + helpers Puntazo (BreakPoint → Firestore directo) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
+<script src="/assets/clubs-catalog.js"></script>
 <script src="/assets/pulses.js"></script>
 
 <style>
 :root{
-  --bg:#050914;--text:#eaf2ff;--muted:rgba(234,242,255,.55);
-  --blue:#004FC8;--blue2:#0B7CFF;--green:#22c55e;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
-
-:root{
+  --bg:#050914; --text:#eaf2ff; --muted:rgba(234,242,255,.55);
+  --blue:#004FC8; --blue2:#0B7CFF; --green:#22c55e;
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bottom:env(safe-area-inset-bottom,0px);
 }
-
-/* ── Background ── */
-.bg{position:fixed;inset:0;z-index:0;
-  background:
-    radial-gradient(900px 600px at 18% 8%,rgba(0,79,200,.32),transparent 55%),
-    radial-gradient(1000px 700px at 85% 12%,rgba(11,124,255,.18),transparent 55%),
-    radial-gradient(800px 700px at 45% 95%,rgba(34,197,94,.08),transparent 55%),
-    linear-gradient(180deg,#050914,#060b1a 55%,#050914);
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html, body {
+  height:100%; overflow:hidden;
+  font-family:'Montserrat', system-ui, sans-serif;
+  background:var(--bg); color:var(--text);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
 }
-.bg-grid{position:fixed;inset:-40px;z-index:0;
-  background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+
+/* ── Fondo ── */
+.bg {
+  position:fixed; inset:0; z-index:0;
+  background:
+    radial-gradient(900px 600px at 18% 8%, rgba(0,79,200,.32), transparent 55%),
+    radial-gradient(1000px 700px at 85% 12%, rgba(11,124,255,.18), transparent 55%),
+    radial-gradient(800px 700px at 45% 95%, rgba(34,197,94,.06), transparent 55%),
+    linear-gradient(180deg, #050914, #060b1a 55%, #050914);
+}
+.bg-grid {
+  position:fixed; inset:-40px; z-index:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
   background-size:44px 44px;
   transform:rotate(12deg) scale(1.2);
   pointer-events:none;
-  mask-image:radial-gradient(circle at 50% 40%,black 0%,rgba(0,0,0,.8) 35%,transparent 68%);
+  mask-image:radial-gradient(circle at 50% 40%, black 0%, rgba(0,0,0,.8) 35%, transparent 68%);
 }
 
-/* ── App ── */
-.app{position:relative;height:100%;display:flex;align-items:center;justify-content:center;z-index:1;padding:calc(16px + var(--safe-top)) 16px calc(16px + var(--safe-bottom));}
-
-/* ── Views ── */
-.view{display:none;}
-.view.active{display:flex;flex-direction:column;}
-
-/* ════════════════════════════════════
-   SETUP VIEW
-════════════════════════════════════ */
-#setupView.active{align-items:center;justify-content:center;width:100%;}
-
-.setup-card{
-  width:min(480px,100%);
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:24px;padding:24px;
-  box-shadow:0 30px 90px rgba(0,0,0,.55);
-  backdrop-filter:blur(16px);
-}
-
-.setup-logo{
-  display:flex;align-items:center;gap:12px;margin-bottom:20px;
-}
-.setup-logo img{height:36px;width:auto;filter:drop-shadow(0 0 18px rgba(0,79,200,.35));}
-.setup-logo-text{font-weight:900;font-size:1.1rem;letter-spacing:.8px;color:#fff;}
-.setup-logo-sub{font-size:.72rem;color:var(--muted);margin-top:2px;font-weight:700;}
-
-.setup-label{display:block;margin:14px 0 7px;font-size:.78rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
-
-.setup-select{
-  width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.12);
-  background:rgba(0,0,0,.25);color:var(--text);padding:13px 14px;
-  font-size:1rem;font-family:'Montserrat',sans-serif;font-weight:700;
-  outline:none;transition:border-color .2s,box-shadow .2s;
-  -webkit-appearance:none;appearance:none;
-}
-.setup-select:focus{border-color:rgba(0,79,200,.75);box-shadow:0 0 0 3px rgba(0,79,200,.22);}
-
-.btn-continue{
-  width:100%;margin-top:18px;padding:15px;border-radius:14px;border:none;
-  background:linear-gradient(180deg,var(--blue2),var(--blue));
-  color:#fff;font-family:'Montserrat',sans-serif;font-size:1rem;font-weight:900;
-  letter-spacing:.8px;text-transform:uppercase;cursor:pointer;
-  box-shadow:0 18px 45px rgba(0,79,200,.35);
-  transition:transform .08s ease;
-}
-.btn-continue:active{transform:scale(.98);}
-
-.setup-links{display:flex;gap:10px;margin-top:10px;}
-.setup-link{
-  flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);
-  background:rgba(0,0,0,.18);color:var(--text);font-family:'Montserrat',sans-serif;
-  font-size:.90rem;font-weight:800;text-decoration:none;cursor:pointer;transition:all .2s;
-}
-.setup-link.cta{border-color:rgba(34,197,94,.40);animation:pulseCTA 2.3s infinite;}
-@keyframes pulseCTA{0%,100%{transform:scale(1);}50%{transform:scale(1.02);}}
-
-.setup-status{margin-top:12px;min-height:18px;font-size:.84rem;color:var(--muted);text-align:center;}
-.setup-status.ok{color:var(--green);}
-.setup-status.bad{color:#ef4444;}
-
-/* ════════════════════════════════════
-   BUTTON VIEW
-════════════════════════════════════ */
-#buttonView.active{
-  position:fixed;inset:0;z-index:2;
+/* ── App layout (1 vista única) ── */
+.app {
+  position:fixed; inset:0; z-index:2;
   padding:calc(14px + var(--safe-top)) 16px calc(14px + var(--safe-bottom));
-  justify-content:space-between;align-items:stretch;gap:10px;
+  display:flex; flex-direction:column;
+  justify-content:space-between; align-items:stretch;
+  gap:10px;
 }
 
-/* Top HUD */
-.hud{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
-.hud-logo{display:flex;align-items:center;gap:10px;}
-.hud-logo img{height:30px;width:auto;filter:drop-shadow(0 0 12px rgba(0,79,200,.30));}
-.hud-info{margin-top:2px;}
-.hud-where{font-size:.84rem;color:var(--muted);line-height:1.25;}
-.hud-where b{color:var(--text);}
-.hud-edit{
-  font-size:.78rem;padding:9px 14px;border-radius:999px;
-  border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);
-  color:var(--text);cursor:pointer;font-family:'Montserrat',sans-serif;font-weight:700;
-  white-space:nowrap;
+/* ── HUD top: logo + contexto ── */
+.hud { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.hud-logo {
+  display:flex; align-items:center; gap:10px;
+  text-decoration:none; color:inherit;
+}
+.hud-logo img {
+  height:30px; width:auto;
+  filter:drop-shadow(0 0 12px rgba(0,79,200,.30));
+}
+.hud-context {
+  display:flex; flex-direction:column; gap:1px;
+  min-width:0;
+}
+.hud-where {
+  font-size:.86rem; color:#fff; font-weight:800;
+  letter-spacing:-.2px; line-height:1.2;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.hud-where .sep { color:rgba(234,242,255,.40); font-weight:500; margin:0 6px; }
+.hud-where .court { color:rgba(234,242,255,.78); font-weight:600; }
+.hud-edit {
+  font-size:.78rem; padding:9px 14px; border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(0,0,0,.18); color:var(--text);
+  cursor:pointer; font-family:inherit; font-weight:700;
+  white-space:nowrap; text-decoration:none;
+  transition:all .18s ease;
+}
+.hud-edit:hover { background:rgba(0,79,200,.16); border-color:rgba(11,124,255,.45); }
+
+/* ── Botón central ── */
+.btn-center {
+  flex:1;
+  display:flex; align-items:center; justify-content:center;
+  padding:8px 0;
+  width:100%;
+}
+.btn-wrap {
+  position:relative;
+  width:min(74vw, 360px);
+  aspect-ratio:1/1;
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto;
 }
 
-/* Center: big button. F68: width:min(74vw,360px) para dejar espacio al
-   bottom button y centrar perfectamente. margin auto refuerza horizontal. */
-.btn-center{flex:1;display:flex;align-items:center;justify-content:center;padding:4px 0;width:100%;}
-.btn-wrap{position:relative;width:min(74vw,360px);aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;margin:0 auto;}
-
-/* Ring + pulse */
-.btn-ring{
-  position:absolute;inset:-10px;border-radius:999px;
-  background:conic-gradient(from 180deg,rgba(255,255,255,.15),rgba(0,79,200,.95),rgba(11,124,255,.85),rgba(255,255,255,.15));
-  opacity:.80;animation:ringSpin 4s linear infinite;
-  mask-image:radial-gradient(circle,transparent 63%,black 64%);pointer-events:none;
-}
-@keyframes ringSpin{to{transform:rotate(360deg);}}
-
-.btn-pulse{
-  position:absolute;inset:0;border-radius:999px;pointer-events:none;
-  animation:btnPulse 2.2s ease-in-out infinite;
-}
-@keyframes btnPulse{
-  0%  {box-shadow:0 0 0 0 rgba(0,79,200,.35),0 0 80px rgba(0,79,200,.28),0 20px 80px rgba(0,0,0,.50);}
-  70% {box-shadow:0 0 0 18px rgba(0,79,200,0),0 0 110px rgba(0,79,200,.32),0 20px 80px rgba(0,0,0,.50);}
-  100%{box-shadow:0 0 0 0 rgba(0,79,200,0),0 0 80px rgba(0,79,200,.28),0 20px 80px rgba(0,0,0,.50);}
-}
-
-/* Cooldown ring */
-.btn-cooldown-ring{
-  position:absolute;inset:-18px;border-radius:999px;pointer-events:none;opacity:0;
+/* Cooldown ring (SVG, alrededor del botón cuando esperando) */
+.btn-cooldown-ring {
+  position:absolute; inset:-16px; border-radius:999px;
+  pointer-events:none; opacity:0;
   transition:opacity .3s;
 }
-.btn-cooldown-ring svg{width:100%;height:100%;transform:rotate(-90deg);}
-.btn-cooldown-ring circle{
-  fill:none;stroke:rgba(34,197,94,.55);stroke-width:4;
-  stroke-dasharray:var(--circumference);stroke-dashoffset:0;
+.btn-cooldown-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
+.btn-cooldown-ring circle {
+  fill:none; stroke:rgba(34,197,94,.55); stroke-width:4;
+  stroke-dasharray:var(--circumference); stroke-dashoffset:0;
   stroke-linecap:round;
-  transition:stroke-dashoffset .1s linear,stroke .3s;
+  transition:stroke-dashoffset .1s linear, stroke .3s;
 }
-.btn-cooldown-ring.active{opacity:1;}
+.btn-cooldown-ring.active { opacity:1; }
 
-/* Main button — Etapa 16.4 F67: imagen P transparente como visual base.
-   El botón YA NO es un círculo solido azul; ahora es la imagen P
-   (transparente, con halo radial + ring giratorio del fondo) que aprovecha
-   la cancha de fondo y la marca Puntazo. */
-.big-btn{
-  position:relative;width:100%;height:100%;border-radius:999px;border:none;
+/* Botón principal (solo la imagen P, sin halos extra asimétricos) */
+.big-btn {
+  position:relative;
+  width:100%; height:100%;
+  border-radius:999px; border:none;
   background:transparent;
-  color:#fff;cursor:pointer;user-select:none;
-  transition:transform .12s ease, filter .12s ease;font-family:'Montserrat',sans-serif;
+  color:#fff; cursor:pointer; user-select:none;
+  transition:transform .14s ease, filter .14s ease;
+  font-family:inherit;
   padding:0;
 }
-.big-btn.pressed{transform:scale(.92);filter:brightness(.85);}
-.big-btn.success{filter:drop-shadow(0 0 30px rgba(34,197,94,.55));}
-.big-btn.disabled-cooldown{cursor:not-allowed;filter:grayscale(.55) brightness(.72);}
+.big-btn.pressed { transform:scale(.93); filter:brightness(.88); }
+.big-btn.success { filter:drop-shadow(0 0 36px rgba(34,197,94,.62)); }
+.big-btn.disabled-cooldown { cursor:not-allowed; filter:grayscale(.45) brightness(.78); }
 
-/* Imagen P como contenido principal */
-.btn-puntazo-img{
-  width:100%;height:100%;object-fit:contain;display:block;
-  filter:drop-shadow(0 8px 22px rgba(11,124,255,.70))
-         drop-shadow(0 3px 8px rgba(0,0,0,.55));
+.btn-puntazo-img {
+  width:100%; height:100%;
+  object-fit:contain; display:block;
+  filter:
+    drop-shadow(0 8px 24px rgba(11,124,255,.55))
+    drop-shadow(0 3px 8px rgba(0,0,0,.55));
   pointer-events:none;
 }
 
-/* Inner: solo countdown (cooldown). Main/sub van al confirmText abajo
-   para no encimarse con el P. */
-.btn-inner{position:absolute;inset:auto 0 10% 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;pointer-events:none;}
-.btn-main{display:none;}
-.btn-sub{display:none;}
-.btn-countdown{font-size:clamp(13px,3.2vw,17px);font-weight:900;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.75),0 0 14px rgba(11,124,255,.55);letter-spacing:.5px;}
-
-/* Text swap */
-@keyframes textIn{from{opacity:.15;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
-.swap{animation:textIn 160ms ease-out;}
-
-/* Ripple */
-.btn-ripple{position:absolute;inset:0;border-radius:999px;overflow:hidden;pointer-events:none;}
-.btn-ripple span{position:absolute;width:16px;height:16px;border-radius:999px;background:rgba(255,255,255,.32);transform:translate(-50%,-50%) scale(0);animation:rippleOut 550ms ease-out;}
-@keyframes rippleOut{to{transform:translate(-50%,-50%) scale(22);opacity:0;}}
-
-/* Flash / confetti */
-.flash{position:fixed;inset:0;z-index:50;background:radial-gradient(circle at 50% 45%,rgba(34,197,94,.60),rgba(34,197,94,0) 70%);opacity:0;pointer-events:none;transition:opacity .35s;}
-.flash.on{opacity:1;}
-.confetti{position:fixed;inset:0;z-index:51;pointer-events:none;overflow:hidden;}
-.confetti i{position:absolute;width:9px;height:15px;border-radius:3px;opacity:.95;animation:cfFly 1.35s cubic-bezier(.18,.9,.2,1) forwards;transform:translate(-50%,-50%);}
-@keyframes cfFly{0%{transform:translate(-50%,-50%) rotate(0deg);opacity:1;}75%{opacity:1;}100%{transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) rotate(var(--rot));opacity:0;}}
-
-/* Bottom */
-.btn-bottom{display:flex;flex-direction:column;gap:8px;align-items:center;}
-.confirm-text{min-height:18px;font-size:.84rem;text-align:center;color:var(--muted);}
-.confirm-text.ok{color:rgba(34,197,94,.90);}
-.confirm-text.bad{color:#ef4444;}
-
-.btn-see-videos{
-  width:min(460px,100%);padding:13px;border-radius:14px;
-  border:1px solid rgba(34,197,94,.40);
-  background:linear-gradient(180deg,rgba(34,197,94,.20),rgba(0,0,0,.15));
-  color:var(--text);font-family:'Montserrat',sans-serif;
-  font-size:.95rem;font-weight:900;cursor:pointer;
-  box-shadow:0 14px 40px rgba(34,197,94,.08);transition:transform .08s;
+/* Ripple cuando se presiona */
+.btn-ripple {
+  position:absolute; inset:0; border-radius:999px;
+  overflow:hidden; pointer-events:none;
 }
-.btn-see-videos:active{transform:scale(.98);}
+.btn-ripple span {
+  position:absolute; width:16px; height:16px;
+  border-radius:999px; background:rgba(255,255,255,.30);
+  transform:translate(-50%,-50%) scale(0);
+  animation:rippleOut 600ms ease-out;
+}
+@keyframes rippleOut { to { transform:translate(-50%,-50%) scale(22); opacity:0; } }
+
+/* Countdown (cooldown) flotando en la parte baja interna del botón */
+.btn-countdown {
+  position:absolute; left:0; right:0; bottom:8%;
+  text-align:center;
+  font-size:clamp(13px, 3.2vw, 17px);
+  font-weight:900; color:#fff;
+  text-shadow:0 2px 10px rgba(0,0,0,.75), 0 0 14px rgba(11,124,255,.55);
+  letter-spacing:.5px;
+  pointer-events:none;
+  display:none;
+}
+
+/* Flash de éxito */
+.flash {
+  position:fixed; inset:0; z-index:50;
+  background:radial-gradient(circle at 50% 45%, rgba(34,197,94,.55), rgba(34,197,94,0) 70%);
+  opacity:0; pointer-events:none;
+  transition:opacity .35s;
+}
+.flash.on { opacity:1; }
+
+/* Confetti */
+.confetti {
+  position:fixed; inset:0; z-index:51;
+  pointer-events:none; overflow:hidden;
+}
+.confetti i {
+  position:absolute; width:9px; height:15px;
+  border-radius:3px; opacity:.95;
+  animation:cfFly 1.35s cubic-bezier(.18,.9,.2,1) forwards;
+  transform:translate(-50%,-50%);
+}
+@keyframes cfFly {
+  0%   { transform:translate(-50%,-50%) rotate(0deg); opacity:1; }
+  75%  { opacity:1; }
+  100% { transform:translate(-50%,-50%) translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity:0; }
+}
+
+/* ── Bottom: feedback + acceso a clips ── */
+.btn-bottom {
+  display:flex; flex-direction:column;
+  gap:10px; align-items:center;
+}
+.confirm-text {
+  min-height:20px;
+  font-size:.92rem; font-weight:700;
+  text-align:center; color:var(--muted);
+  transition:color .18s;
+}
+.confirm-text.ok  { color:rgba(34,197,94,.95); }
+.confirm-text.bad { color:#ef4444; }
+
+.btn-see-videos {
+  width:min(460px, 100%);
+  padding:13px 18px;
+  border-radius:14px;
+  border:1px solid rgba(11,124,255,.40);
+  background:linear-gradient(180deg, rgba(11,124,255,.18), rgba(0,0,0,.10));
+  color:var(--text); font-family:inherit;
+  font-size:.95rem; font-weight:900;
+  cursor:pointer; text-decoration:none;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  box-shadow:0 14px 40px rgba(0,79,200,.12);
+  transition:transform .08s, background .18s, border-color .18s;
+}
+.btn-see-videos:hover {
+  background:linear-gradient(180deg, rgba(11,124,255,.28), rgba(0,0,0,.12));
+  border-color:rgba(11,124,255,.55);
+}
+.btn-see-videos:active { transform:scale(.98); }
+
+/* ── Loader simple mientras resolvemos contexto/redirect ── */
+.boot-loader {
+  position:fixed; inset:0; z-index:5;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--bg);
+  font-size:.9rem; color:var(--muted);
+}
+.boot-loader.is-hidden { display:none; }
 </style>
 </head>
 <body>
@@ -243,112 +252,85 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
 <div id="flash" class="flash"></div>
 <div id="confetti" class="confetti"></div>
 
-<div class="app">
+<div id="bootLoader" class="boot-loader">Cargando…</div>
 
-  <!-- SETUP -->
-  <div id="setupView" class="view active">
-    <div class="setup-card">
-      <div class="setup-logo">
-        <img src="assets/logo.png" alt="Puntazo" onerror="this.style.display='none'" />
-        <div>
-          <div class="setup-logo-text">PUNTAZO</div>
-          <div class="setup-logo-sub">Registra tu puntazo al instante</div>
-        </div>
+<div class="app" id="appRoot" style="visibility:hidden">
+
+  <!-- HUD top -->
+  <div class="hud">
+    <a class="hud-logo" href="/entrada.html">
+      <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'" />
+      <div class="hud-context">
+        <div id="hudWhere" class="hud-where">—</div>
+      </div>
+    </a>
+    <a class="hud-edit" id="btnEdit" href="/entrada.html?modo=boton">Cambiar</a>
+  </div>
+
+  <!-- Botón grande -->
+  <div class="btn-center">
+    <div class="btn-wrap">
+
+      <!-- Cooldown progress ring (solo aparece durante el wait) -->
+      <div class="btn-cooldown-ring" id="cooldownRing">
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="100" cy="100" r="96" />
+        </svg>
       </div>
 
-      <label class="setup-label">Club</label>
-      <select id="club" class="setup-select"></select>
+      <button id="bigBtn" class="big-btn" aria-label="Registrar Puntazo">
+        <img class="btn-puntazo-img" src="/assets/img/puntazo_boton_redondo.png" alt="Puntazo" />
+        <div id="btnCountdown" class="btn-countdown"></div>
+      </button>
 
-      <label class="setup-label">Cancha</label>
-      <select id="cancha" class="setup-select"></select>
-
-      <button class="btn-continue" id="btnContinue">Listo — ir al botón ▶</button>
-
-      <div class="setup-links">
-        <a href="explorar.html" class="setup-link cta">🎾 Ver mis clips</a>
-      </div>
-
-      <div id="setupStatus" class="setup-status"></div>
+      <div class="btn-ripple" id="ripple"></div>
     </div>
   </div>
 
-  <!-- BUTTON VIEW -->
-  <div id="buttonView" class="view">
-
-    <!-- HUD top -->
-    <div class="hud">
-      <div class="hud-logo">
-        <img src="assets/logo.png" alt="Puntazo" onerror="this.style.display='none'" />
-        <div class="hud-info">
-          <div id="hudWhere" class="hud-where"></div>
-        </div>
-      </div>
-      <button class="hud-edit" id="btnEdit">Cambiar</button>
-    </div>
-
-    <!-- Big button -->
-    <div class="btn-center">
-      <div class="btn-wrap">
-
-        <!-- Cooldown ring (SVG) -->
-        <div class="btn-cooldown-ring" id="cooldownRing">
-          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="100" cy="100" r="96" />
-          </svg>
-        </div>
-
-        <div class="btn-ring"></div>
-        <div class="btn-pulse" id="btnPulse"></div>
-
-        <button id="bigBtn" class="big-btn" aria-label="Registrar Puntazo">
-          <img class="btn-puntazo-img" src="/assets/img/puntazo_boton_redondo.png" alt="Puntazo" />
-          <div class="btn-inner">
-            <div id="btnMain" class="btn-main">REGISTRAR PUNTAZO</div>
-            <div id="btnSub" class="btn-sub">Toca para guardarlo</div>
-            <div id="btnCountdown" class="btn-countdown" style="display:none"></div>
-          </div>
-        </button>
-
-        <div class="btn-ripple" id="ripple"></div>
-      </div>
-    </div>
-
-    <!-- Bottom -->
-    <div class="btn-bottom">
-      <div id="confirmText" class="confirm-text"></div>
-      <button class="btn-see-videos" id="btnSeeVideos">▶ Ver mis puntazos en esta cancha</button>
-    </div>
-
+  <!-- Bottom -->
+  <div class="btn-bottom">
+    <div id="confirmText" class="confirm-text">Toca el botón para registrar tu Puntazo</div>
+    <a id="btnSeeVideos" class="btn-see-videos" href="#">▶ Ver mis puntazos en esta cancha</a>
   </div>
+
 </div>
 
 <script>
-(function(){
+(function () {
   'use strict';
 
-  const APPS_URL  = 'https://script.google.com/macros/s/AKfycbzBMGzSOTreHJeW7oCnoO_7qPJ6cBbgby9MMzHUPmBWKYw7Nn-EuWOCZ5vao2ainUN4cg/exec';
-  const COOLDOWN_MS = 9000; // ms entre pulsaciones
+  const COOLDOWN_MS = 9000;
 
   // ── DOM ──
-  const $setup     = document.getElementById('setupView');
-  const $button    = document.getElementById('buttonView');
-  const $clubSel   = document.getElementById('club');
-  const $canchaSel = document.getElementById('cancha');
-  const $status    = document.getElementById('setupStatus');
-  const $hudWhere  = document.getElementById('hudWhere');
-  const $bigBtn    = document.getElementById('bigBtn');
-  const $btnMain   = document.getElementById('btnMain');
-  const $btnSub    = document.getElementById('btnSub');
-  const $btnCountdown = document.getElementById('btnCountdown');
-  const $confirm   = document.getElementById('confirmText');
-  const $flash     = document.getElementById('flash');
-  const $confetti  = document.getElementById('confetti');
-  const $ripple    = document.getElementById('ripple');
-  const $cooldownRing = document.getElementById('cooldownRing');
-  const $btnPulse  = document.getElementById('btnPulse');
+  const $loader        = document.getElementById('bootLoader');
+  const $app           = document.getElementById('appRoot');
+  const $hudWhere      = document.getElementById('hudWhere');
+  const $btnEdit       = document.getElementById('btnEdit');
+  const $bigBtn        = document.getElementById('bigBtn');
+  const $btnCountdown  = document.getElementById('btnCountdown');
+  const $confirm       = document.getElementById('confirmText');
+  const $flash         = document.getElementById('flash');
+  const $confetti      = document.getElementById('confetti');
+  const $ripple        = document.getElementById('ripple');
+  const $cooldownRing  = document.getElementById('cooldownRing');
+  const $btnSeeVideos  = document.getElementById('btnSeeVideos');
 
-  let CONFIG = { clubs: {}, videosUrl: '' };
-  let busy   = false;
+  // ── Context (siempre via query params; si faltan, redirect al selector) ──
+  function getQueryParam(name) {
+    try { return new URLSearchParams(window.location.search).get(name); }
+    catch (_) { return null; }
+  }
+  const LOC = (getQueryParam('loc') || '').trim();
+  const CAN = (getQueryParam('can') || '').trim();
+
+  if (!LOC || !CAN) {
+    // Sin contexto → al selector que SÍ sabe pre-llenar.
+    window.location.replace('/entrada.html?modo=boton');
+    return;
+  }
+
+  // ── Estado ──
+  let busy = false;
   let cooldownTimer = null;
   let cooldownStart = 0;
 
@@ -361,51 +343,26 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
   $circle.style.strokeDashoffset = CIRC;
 
   // ── Helpers ──
-  function setStatus(msg, cls) {
-    $status.className = 'setup-status ' + (cls||'');
-    $status.textContent = msg||'';
-  }
-
   function setConfirm(msg, cls) {
-    $confirm.className = 'confirm-text ' + (cls||'');
-    $confirm.textContent = msg||'';
+    $confirm.className = 'confirm-text ' + (cls || '');
+    $confirm.textContent = msg || '';
   }
 
-  function swap(el, txt) {
-    el.textContent = txt;
-    el.classList.remove('swap');
-    void el.offsetWidth;
-    el.classList.add('swap');
-  }
-
-  function setState(state, extra) {
-    $bigBtn.classList.remove('pressed','success','disabled-cooldown');
+  function setState(state) {
+    $bigBtn.classList.remove('pressed', 'success', 'disabled-cooldown');
     $btnCountdown.style.display = 'none';
-    $btnPulse.style.animationPlayState = 'running';
 
-    // F67: textos visibles ahora viven en confirmText (debajo del P);
-    // los swap de btnMain/btnSub quedan ocultos por CSS pero los mantenemos
-    // por compatibilidad si algún día se vuelven visibles.
     if (state === 'idle') {
-      swap($btnMain, 'REGISTRAR PUNTAZO');
-      swap($btnSub,  'Toca para guardarlo');
       setConfirm('Toca el botón para registrar tu Puntazo', '');
     } else if (state === 'loading') {
-      swap($btnMain, 'GUARDANDO…');
-      swap($btnSub,  'Un momento…');
       setConfirm('Guardando…', '');
     } else if (state === 'success') {
       $bigBtn.classList.add('success');
-      swap($btnMain, '¡GUARDADO! ✅');
-      swap($btnSub,  'Puntazo registrado');
+      setConfirm('¡Puntazo guardado!', 'ok');
     } else if (state === 'error') {
-      swap($btnMain, 'ERROR ❌');
-      swap($btnSub,  'Intenta otra vez');
+      setConfirm('No se pudo guardar. Intenta otra vez.', 'bad');
     } else if (state === 'cooldown') {
       $bigBtn.classList.add('disabled-cooldown');
-      $btnPulse.style.animationPlayState = 'paused';
-      swap($btnMain, '✅ LISTO');
-      swap($btnSub,  'Puntazo guardado');
       $btnCountdown.style.display = 'block';
     }
   }
@@ -419,12 +376,11 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
 
     const tick = () => {
       const elapsed = Date.now() - cooldownStart;
-      const pct     = Math.min(elapsed / COOLDOWN_MS, 1);
-      const offset  = CIRC * (1 - pct);
-      $circle.style.strokeDashoffset = offset;
+      const pct = Math.min(elapsed / COOLDOWN_MS, 1);
+      $circle.style.strokeDashoffset = CIRC * (1 - pct);
 
       const remaining = Math.max(0, Math.ceil((COOLDOWN_MS - elapsed) / 1000));
-      $btnCountdown.textContent = remaining > 0 ? `Siguiente en ${remaining}s` : '';
+      $btnCountdown.textContent = remaining > 0 ? remaining + 's' : '';
 
       if (elapsed < COOLDOWN_MS) {
         cooldownTimer = requestAnimationFrame(tick);
@@ -441,36 +397,34 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
     $bigBtn.disabled = false;
     busy = false;
     setState('idle');
-    setConfirm('');
   }
 
   // ── Press feel ──
-  $bigBtn.addEventListener('pointerdown', ()=>{ if(!busy) $bigBtn.classList.add('pressed'); });
-  const unpress = ()=>{ setTimeout(()=>$bigBtn.classList.remove('pressed'), 90); };
+  $bigBtn.addEventListener('pointerdown', () => { if (!busy) $bigBtn.classList.add('pressed'); });
+  const unpress = () => { setTimeout(() => $bigBtn.classList.remove('pressed'), 90); };
   $bigBtn.addEventListener('pointerup', unpress);
   $bigBtn.addEventListener('pointercancel', unpress);
 
   // ── Ripple ──
   function rippleAt(evt) {
     const rect = $bigBtn.getBoundingClientRect();
-    const x = (evt?.clientX ?? (rect.left+rect.width/2)) - rect.left;
-    const y = (evt?.clientY ?? (rect.top+rect.height/2)) - rect.top;
+    const x = (evt && evt.clientX != null ? evt.clientX : (rect.left + rect.width / 2)) - rect.left;
+    const y = (evt && evt.clientY != null ? evt.clientY : (rect.top + rect.height / 2)) - rect.top;
     const s = document.createElement('span');
-    s.style.left = x+'px'; s.style.top = y+'px';
+    s.style.left = x + 'px'; s.style.top = y + 'px';
     $ripple.appendChild(s);
-    setTimeout(()=>s.remove(), 650);
+    setTimeout(() => s.remove(), 650);
   }
 
   // ── Sonido ── (Acorde de éxito C maj)
   function playSuccess() {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+      const notes = [523.25, 659.25, 783.99];
       notes.forEach((freq, i) => {
         const o = ctx.createOscillator();
         const g = ctx.createGain();
-        o.type = 'sine';
-        o.frequency.value = freq;
+        o.type = 'sine'; o.frequency.value = freq;
         g.gain.setValueAtTime(0, ctx.currentTime + i * 0.07);
         g.gain.linearRampToValueAtTime(0.12, ctx.currentTime + i * 0.07 + 0.02);
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.07 + 0.45);
@@ -478,107 +432,49 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
         o.start(ctx.currentTime + i * 0.07);
         o.stop(ctx.currentTime + i * 0.07 + 0.5);
       });
-      setTimeout(()=>ctx.close(), 800);
-    } catch {}
+      setTimeout(() => ctx.close(), 800);
+    } catch (_) {}
   }
-
   function playError() {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const o = ctx.createOscillator(); const g = ctx.createGain();
+      const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = 'sawtooth'; o.frequency.value = 200;
       g.gain.setValueAtTime(0.08, ctx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
       o.connect(g); g.connect(ctx.destination);
       o.start(); o.stop(ctx.currentTime + 0.3);
-      setTimeout(()=>ctx.close(), 500);
-    } catch {}
+      setTimeout(() => ctx.close(), 500);
+    } catch (_) {}
   }
-
-  function vibe(pattern) { try { if(navigator.vibrate) navigator.vibrate(pattern||40); } catch {} }
+  function vibe(pattern) { try { if (navigator.vibrate) navigator.vibrate(pattern || 40); } catch (_) {} }
 
   // ── Flash + confetti ──
   function showFlash() {
     $flash.classList.add('on');
-    setTimeout(()=>$flash.classList.remove('on'), 420);
+    setTimeout(() => $flash.classList.remove('on'), 420);
   }
-
   function confettiBurst() {
     $confetti.innerHTML = '';
     const rect = $bigBtn.getBoundingClientRect();
-    const cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
-    const colors = ['rgba(255,255,255,.95)','rgba(0,79,200,.95)','rgba(11,124,255,.95)','rgba(34,197,94,.95)','rgba(255,190,0,.95)'];
-    for (let i=0; i<55; i++) {
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    const colors = ['rgba(255,255,255,.95)', 'rgba(0,79,200,.95)', 'rgba(11,124,255,.95)', 'rgba(34,197,94,.95)', 'rgba(255,190,0,.95)'];
+    for (let i = 0; i < 55; i++) {
       const el = document.createElement('i');
       const ang = Math.random() * Math.PI * 2, dist = 240 + Math.random() * 340;
-      el.style.left = cx+'px'; el.style.top = cy+'px';
-      el.style.background = colors[Math.floor(Math.random()*colors.length)];
-      el.style.setProperty('--dx',(Math.cos(ang)*dist).toFixed(1)+'px');
-      el.style.setProperty('--dy',(Math.sin(ang)*dist).toFixed(1)+'px');
-      el.style.setProperty('--rot',(Math.random()*720-360)+'deg');
-      el.style.animationDelay = (Math.random()*100)+'ms';
+      el.style.left = cx + 'px'; el.style.top = cy + 'px';
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.setProperty('--dx', (Math.cos(ang) * dist).toFixed(1) + 'px');
+      el.style.setProperty('--dy', (Math.sin(ang) * dist).toFixed(1) + 'px');
+      el.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+      el.style.animationDelay = (Math.random() * 100) + 'ms';
       $confetti.appendChild(el);
     }
-    setTimeout(()=>{ $confetti.innerHTML=''; }, 1600);
+    setTimeout(() => { $confetti.innerHTML = ''; }, 1600);
   }
 
-  // ── LocalStorage ──
-  function saveLocal() { localStorage.setItem('pz_btn_last', JSON.stringify({club:$clubSel.value,cancha:$canchaSel.value})); }
-  function loadLocal() { try { return JSON.parse(localStorage.getItem('pz_btn_last')); } catch { return null; } }
-
-  // ── Selects ──
-  function fillClubs() {
-    $clubSel.innerHTML = '';
-    Object.keys(CONFIG.clubs||{}).sort().forEach(c => {
-      const o = document.createElement('option'); o.value=c; o.textContent=c; $clubSel.appendChild(o);
-    });
-  }
-  function fillCanchas(club) {
-    $canchaSel.innerHTML = '';
-    (CONFIG.clubs[club]||[]).forEach(x => {
-      const o = document.createElement('option'); o.value=x; o.textContent='Cancha '+x; $canchaSel.appendChild(o);
-    });
-  }
-  $clubSel.addEventListener('change', ()=>{ fillCanchas($clubSel.value); setStatus(''); });
-
-  // ── Views ──
-  function enterButton() {
-    if (!$clubSel.value||!$canchaSel.value) { setStatus('Selecciona club y cancha', 'bad'); return; }
-    saveLocal();
-    $hudWhere.innerHTML = `📍 <b>${$clubSel.value}</b> — Cancha <b>${$canchaSel.value}</b>`;
-    $setup.classList.remove('active');
-    $button.classList.add('active');
-    setState('idle');
-    setConfirm('');
-  }
-
-  function backToSetup() {
-    $button.classList.remove('active');
-    $setup.classList.add('active');
-    setStatus('Puedes cambiar configuración ✓','ok');
-    // Limpiar cooldown si había uno
-    if (cooldownTimer) cancelAnimationFrame(cooldownTimer);
-    endCooldown();
-  }
-
-
-  const CLUB_URL_MAP = {
-    "WellStreet - Pickleball": "WellStreet-Pickleball",
-  };
-
-  function goToMyClips() {
-    const clubDisplay = $clubSel.value;
-    const clubId = CLUB_URL_MAP[clubDisplay] || clubDisplay;
-    const cancha = encodeURIComponent($canchaSel.value);
-    window.location.href = `/lado.html?loc=${encodeURIComponent(clubId)}&can=Cancha${cancha}&lado=LadoA&pg=0`;
-  }
-
-  document.getElementById('btnContinue').addEventListener('click', enterButton);
-  document.getElementById('btnEdit').addEventListener('click', backToSetup);
-  document.getElementById('btnSeeVideos').addEventListener('click', goToMyClips);
-
-  // ── CLICK PRINCIPAL ──
-  $bigBtn.addEventListener('click', async function(evt) {
+  // ── Click principal ──
+  $bigBtn.addEventListener('click', async function (evt) {
     if (busy) return;
     busy = true;
 
@@ -586,119 +482,87 @@ html,body{height:100%;overflow:hidden;font-family:'Montserrat',system-ui,sans-se
     vibe(50);
 
     $bigBtn.classList.add('pressed');
-    setTimeout(()=>$bigBtn.classList.remove('pressed'), 120);
+    setTimeout(() => $bigBtn.classList.remove('pressed'), 120);
 
     setState('loading');
     $bigBtn.disabled = true;
-    setConfirm('');
 
     try {
-      // R4: ruta por club via PuntazoPulses (BreakPoint → Firestore directo;
-      // resto → Apps Script legacy). Si el helper no cargó, fallback a Apps Script.
-      let data;
-      if (window.PuntazoPulses && typeof PuntazoPulses.requestPulse === 'function') {
-        await PuntazoPulses.requestPulse({
-          loc: $clubSel.value,
-          can: $canchaSel.value,
-          source: 'web_boton',
-        });
-        data = { ok: true };
-      } else {
-        const url = APPS_URL
-          + '?action=save'
-          + '&club=' + encodeURIComponent($clubSel.value)
-          + '&cancha=' + encodeURIComponent($canchaSel.value);
-        const res = await fetch(url, { redirect:'follow' });
-        data = await res.json();
+      if (!window.PuntazoPulses || typeof PuntazoPulses.requestPulse !== 'function') {
+        throw new Error('PuntazoPulses no disponible');
       }
+      await PuntazoPulses.requestPulse({
+        loc: LOC,
+        can: CAN,
+        source: 'web_boton',
+      });
 
-      if (data.ok) {
-        showFlash();
-        confettiBurst();
-        playSuccess();
-        vibe([40, 60, 40]);
-        setState('success');
-        setConfirm('¡Puntazo guardado! 🎾', 'ok');
-        // Iniciar cooldown de 4 segundos
-        setTimeout(startCooldown, 800);
-      } else {
-        throw new Error(data.error || 'Error desconocido');
-      }
+      showFlash();
+      confettiBurst();
+      playSuccess();
+      vibe([40, 60, 40]);
+      setState('success');
+      setTimeout(startCooldown, 800);
     } catch (err) {
       console.error('[boton]', err);
       playError();
       vibe([80, 40, 80]);
       setState('error');
-      setConfirm('No se pudo guardar. Intenta otra vez.', 'bad');
       $bigBtn.disabled = false;
       busy = false;
-      setTimeout(()=>{ setState('idle'); setConfirm(''); }, 2500);
+      setTimeout(() => setState('idle'), 2500);
     }
   });
 
-  // ── Query params ?loc=&can= → salto directo a button view ──
-  // Map de id interno Puntazo → display que espera CONFIG.clubs.
-  const LOC_TO_DISPLAY = {
-    "WellStreet-Pickleball": "WellStreet - Pickleball",
-    // BreakPoint, Interpadel, Scorpion van iguales.
-  };
-  function canchaDigit(can) {
-    const m = String(can || '').match(/(\d+)/);
-    return m ? m[1] : String(can || '');
-  }
-  function getQueryParam(name) {
+  // ── Ver mis clips de esta cancha ──
+  $btnSeeVideos.addEventListener('click', function (e) {
+    e.preventDefault();
+    // lado.html espera ?loc=&can=&lado=&pg=. Asumimos LadoA (boton.html no
+    // tiene contexto de lado; recovery/botón siempre asocian a LadoA o la
+    // NUC decide en pipeline).
+    const canFull = /^Cancha/i.test(CAN) ? CAN : 'Cancha' + CAN.replace(/^\D+/, '');
+    const qs = '?loc=' + encodeURIComponent(LOC)
+             + '&can=' + encodeURIComponent(canFull)
+             + '&lado=LadoA&pg=0';
+    window.location.href = '/lado.html' + qs;
+  });
+
+  // ── Resolver display names (club nombre + cancha N) via catálogo ──
+  async function resolveHud() {
+    let clubName = LOC;
+    let canchaName = /^Cancha/i.test(CAN) ? CAN : ('Cancha ' + CAN.replace(/^\D+/, ''));
     try {
-      const p = new URLSearchParams(window.location.search);
-      return p.get(name);
-    } catch (_) { return null; }
-  }
-
-  // ── INIT ──
-  async function init() {
-    try {
-      const res = await fetch(APPS_URL + '?action=config', { redirect:'follow' });
-      CONFIG = (await res.json()) || CONFIG;
-    } catch(e) {
-      console.warn('[boton] No se pudo cargar config:', e);
-      CONFIG = {
-        clubs: { "BreakPoint":["1","2","3","4","5"], "Interpadel":["3","4","5","6"],"WellStreet - Pickleball":["1","2","3","4","5","6"]},
-      };
-    }
-
-    fillClubs();
-    const clubs = Object.keys(CONFIG.clubs||{}).sort();
-    if (clubs.length) { $clubSel.value=clubs[0]; fillCanchas($clubSel.value); }
-
-    // R5: si vinimos con ?loc=&can= (desde entrada.html → "Solo quiero
-    // el botón"), saltar directo al button view sin pasar por setup.
-    const qLoc = getQueryParam('loc');
-    const qCan = getQueryParam('can');
-    if (qLoc && qCan) {
-      const clubDisplay = LOC_TO_DISPLAY[qLoc] || qLoc;
-      const canchaDigitVal = canchaDigit(qCan);
-      if (CONFIG.clubs[clubDisplay] && (CONFIG.clubs[clubDisplay]||[]).indexOf(canchaDigitVal) >= 0) {
-        $clubSel.value = clubDisplay;
-        fillCanchas(clubDisplay);
-        $canchaSel.value = canchaDigitVal;
-        enterButton();
-        return;
+      if (window.PuntazoClubs && typeof PuntazoClubs.getCatalog === 'function') {
+        const cat = await PuntazoClubs.getCatalog();
+        const club = (cat.clubs || []).find(x => x.id === LOC);
+        if (club) {
+          clubName = club.nombre || LOC;
+          const cancha = (club.canchas || []).find(x => x.id === CAN);
+          if (cancha) canchaName = cancha.nombre || canchaName;
+        }
       }
-      // Si no matchea, caemos al flujo normal sin avisar
-      console.warn('[boton] params loc/can no validos en CONFIG:', qLoc, qCan);
+    } catch (e) {
+      console.warn('[boton] no se pudo resolver display names:', e);
     }
-
-    const last = loadLocal();
-    if (last && CONFIG.clubs[last.club]) {
-      $clubSel.value = last.club;
-      fillCanchas($clubSel.value);
-      if ((CONFIG.clubs[$clubSel.value]||[]).includes(last.cancha)) $canchaSel.value = last.cancha;
-      setStatus('Listo ✅', 'ok');
-    } else {
-      setStatus('Selecciona tu club y cancha', '');
-    }
+    $hudWhere.innerHTML =
+      '<span class="club">' + escapeHtml(clubName) + '</span>' +
+      '<span class="sep">·</span>' +
+      '<span class="court">' + escapeHtml(canchaName) + '</span>';
   }
 
-  init();
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  // ── Boot ──
+  (async function boot() {
+    await resolveHud();
+    setState('idle');
+    $loader.classList.add('is-hidden');
+    $app.style.visibility = 'visible';
+  })();
 })();
 </script>
 </body>

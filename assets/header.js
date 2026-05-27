@@ -91,7 +91,7 @@
     // Mostrar en todas las páginas internas (antes solo en explorar)
     if (variant !== "internal" && variant !== "landing") return "";
     return `
-      <a href="https://puntazoclips.com/boton.html" target="_blank" rel="noopener"
+      <a href="/entrada.html?modo=boton" target="_blank" rel="noopener"
          class="pz-phone-cta"
          onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'header_phone_button'});}catch(e){}">
         📲 Usar teléfono como botón
