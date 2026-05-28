@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Tests · PuntazoRanking</title>
+<style>
+  body { font-family: 'Monaco', 'Menlo', monospace; background:#0c0e1a; color:#e7eef9; padding:20px; max-width:880px; margin:0 auto; }
+  h1 { color:#4d9eff; }
+  h2 { color:#9bf6ff; border-bottom:1px solid #283142; padding-bottom:6px; margin-top:30px; }
+  .pass { color:#4ade80; }
+  .fail { color:#f87171; }
+  .info { color:#94a3b8; }
+  pre { background:#11162a; padding:10px; border-radius:6px; overflow-x:auto; font-size:0.78rem; }
+  table { border-collapse: collapse; width:100%; margin: 10px 0; }
+  th, td { padding: 6px 10px; border-bottom:1px solid #283142; text-align:left; font-size:0.84rem; }
+  th { background:#11162a; color:#9bf6ff; }
+  .header { background:#11162a; padding:14px; border-radius:8px; margin-bottom:20px; }
+</style>
+<script src="/assets/ranking.js"></script>
+</head>
+<body>
+<div class="header">
+  <h1>PuntazoRanking · Tests</h1>
+  <p class="info">Validación del motor Glicko-2 contra el paper de Glickman y casos sintéticos de Puntazo.</p>
+</div>
+
+<div id="output"></div>
+
+<script>
+(function () {
+  'use strict';
+  const out = document.getElementById('output');
+  let passed = 0, failed = 0;
+
+  function section(title) {
+    const h = document.createElement('h2');
+    h.textContent = title;
+    out.appendChild(h);
+  }
+
+  function pass(msg) {
+    const p = document.createElement('div');
+    p.className = 'pass';
+    p.textContent = '✓ ' + msg;
+    out.appendChild(p);
+    passed++;
+  }
+  function fail(msg, detail) {
+    const p = document.createElement('div');
+    p.className = 'fail';
+    p.innerHTML = '✗ ' + msg + (detail ? ' <span class="info">' + detail + '</span>' : '');
+    out.appendChild(p);
+    failed++;
+  }
+  function info(msg) {
+    const p = document.createElement('pre');
+    p.textContent = msg;
+    out.appendChild(p);
+  }
+  function approxEq(a, b, tol) {
+    return Math.abs(a - b) < (tol || 0.01);
+  }
+
+  // ============================================================
+  section('1. Constantes y bootstrap');
+  // ============================================================
+
+  if (window.PuntazoRanking) pass('window.PuntazoRanking expuesto');
+  else { fail('PuntazoRanking NO expuesto'); return; }
+
+  const PR = window.PuntazoRanking;
+  if (PR.INITIAL_RATING === 1500) pass('INITIAL_RATING = 1500');
+  else fail('INITIAL_RATING inválido', '= ' + PR.INITIAL_RATING);
+
+  if (PR.INITIAL_RD === 350) pass('INITIAL_RD = 350');
+  else fail('INITIAL_RD inválido', '= ' + PR.INITIAL_RD);
+
+  if (PR.MIN_MATCHES_FOR_RANKED === 3) pass('Calibración = 3 matches');
+  else fail('MIN_MATCHES_FOR_RANKED inválido');
+
+  // ============================================================
+  section('2. Glickman paper test case (ejemplo del PDF original)');
+  // ============================================================
+  // El paper de Glickman tiene un ejemplo: player con rating=1500,
+  // RD=200, volatility=0.06 contra 3 oponentes:
+  //   - opp A: 1400/30, ganaste (s=1)
+  //   - opp B: 1550/100, perdiste (s=0)
+  //   - opp C: 1700/300, perdiste (s=0)
+  // Resultado esperado del paper: rating ≈ 1464, RD ≈ 152
+  // (referencia: Glickman 2012 "Example of the Glicko-2 system" §3)
+
+  const result = PR._updatePlayer(1500, 200, 0.06, [
+    { rating: 1400, rd: 30, score: 1 },
+    { rating: 1550, rd: 100, score: 0 },
+    { rating: 1700, rd: 300, score: 0 },
+  ]);
+
+  info('Glickman PDF test case:\n  Player 1500/200/0.06\n  vs [1400/30 W, 1550/100 L, 1700/300 L]\n\n  Esperado paper: ~1464 / ~152 / ~0.06\n  Calculado: ' + result.rating.toFixed(2) + ' / ' + result.rd.toFixed(2) + ' / ' + result.volatility.toFixed(5));
+
+  if (approxEq(result.rating, 1464, 5)) pass('Rating ≈ 1464 (Glickman PDF)');
+  else fail('Rating off del paper', 'got ' + result.rating.toFixed(2));
+
+  if (approxEq(result.rd, 152, 5)) pass('RD ≈ 152 (Glickman PDF)');
+  else fail('RD off del paper', 'got ' + result.rd.toFixed(2));
+
+  // ============================================================
+  section('3. Calibración y buckets');
+  // ============================================================
+
+  const b1 = PR.bucketForRating(800);
+  if (b1.nivel === 1.0) pass('800 → nivel 1.0 (🌱)');
+  else fail('800 → nivel ' + b1.nivel);
+
+  const b2 = PR.bucketForRating(1800);
+  if (b2.nivel === 5.0) pass('1800 → nivel 5.0 (🔥)');
+  else fail('1800 → nivel ' + b2.nivel);
+
+  const b3 = PR.bucketForRating(2300);
+  if (b3.nivel === 7.0) pass('2300 → nivel 7.0 (👑)');
+  else fail('2300 → nivel ' + b3.nivel);
+
+  // ============================================================
+  section('4. Conservative rating');
+  // ============================================================
+
+  const cR1 = PR.conservativeRating(1900, 50);
+  if (cR1 === 1875) pass('1900 ± 50 → conservative 1875');
+  else fail('Conservative incorrecto: ' + cR1);
+
+  const cR2 = PR.conservativeRating(1900, 200);
+  if (cR2 === 1800) pass('1900 ± 200 → conservative 1800 (penaliza incertidumbre)');
+  else fail('Conservative incorrecto: ' + cR2);
+
+  // ============================================================
+  section('5. MOV (Margen de victoria)');
+  // ============================================================
+
+  const movClose = PR.applyMOV(1, 2);   // win por 2 games
+  const movBlowout = PR.applyMOV(1, 12); // win por 12 games (blowout)
+  info('MOV win por 2 games: s=' + movClose.toFixed(3) + ' (cerca de 1)\nMOV win por 12 games: s=' + movBlowout.toFixed(3) + ' (mayor)');
+  if (movBlowout > movClose) pass('Blowout > close (MOV escalando)');
+  else fail('MOV no escala', 'close=' + movClose + ' blowout=' + movBlowout);
+
+  const movDraw = PR.applyMOV(0.5, 5);
+  if (movDraw === 0.5) pass('Empate (s=0.5) no se ajusta por MOV');
+  else fail('MOV de empate no debería cambiar', '= ' + movDraw);
+
+  // ============================================================
+  section('6. Decay temporal');
+  // ============================================================
+
+  const noDecay = PR.decayRDForInactivity(100, 15);
+  if (noDecay === 100) pass('Sin decay si <30 días (RD se mantiene)');
+  else fail('Decay aplicado mal', '15 días → ' + noDecay);
+
+  const withDecay = PR.decayRDForInactivity(100, 30 + 28); // 30+4 semanas
+  if (withDecay > 100 && withDecay <= 350) pass('Decay > 30 días infla RD (' + withDecay.toFixed(1) + ')');
+  else fail('Decay no infla RD', '= ' + withDecay);
+
+  // ============================================================
+  section('7. Anti-farm');
+  // ============================================================
+
+  const w1 = PR.antifarmWeight(0);
+  const w2 = PR.antifarmWeight(1);
+  const w3 = PR.antifarmWeight(3);
+  info('Antifarm weights: 0 partidos→' + w1 + ', 1→' + w2.toFixed(3) + ', 3→' + w3.toFixed(3));
+  if (w1 === 1.0) pass('Primer partido contra rival = peso 1.0');
+  else fail('Primer partido no peso 1.0');
+  if (w2 < w1 && w3 < w2) pass('Más partidos vs mismo rival = menor peso');
+  else fail('Antifarm no decae correctamente');
+
+  // ============================================================
+  section('8. applyMatchToRatings — match real');
+  // ============================================================
+
+  const match1 = {
+    id: 'test-match-1',
+    modo: 'partido_3',
+    jugadores: [
+      { uid: 'pedro', equipo: 'team1', nombre: 'Pedro' },
+      { uid: 'maria', equipo: 'team1', nombre: 'Maria' },
+      { uid: 'carlos', equipo: 'team2', nombre: 'Carlos' },
+      { uid: 'ana', equipo: 'team2', nombre: 'Ana' },
+    ],
+    marcador: {
+      sets: [{ team1: 6, team2: 4 }, { team1: 6, team2: 3 }],
+      ganador: 'team1',
+    },
+    endedAt: new Date(),
+  };
+  const ratings1 = {}; // todos nuevos (1500/350/0.06)
+  const out1 = PR.applyMatchToRatings(match1, ratings1);
+
+  if (out1.audit.algorithmVersion === PR.ALGORITHM_VERSION) pass('Audit registra ALGORITHM_VERSION');
+  else fail('Audit version missing');
+
+  if (!out1.audit.skipped) pass('Match procesado (no skipped)');
+  else fail('Match skipped: ' + out1.audit.reason);
+
+  const pedroR = out1.newRatings['pedro'];
+  if (pedroR && pedroR.rating > 1500) pass('Pedro sube rating tras ganar (' + pedroR.rating.toFixed(0) + ')');
+  else fail('Pedro debería subir rating', JSON.stringify(pedroR));
+
+  const carlosR = out1.newRatings['carlos'];
+  if (carlosR && carlosR.rating < 1500) pass('Carlos baja rating tras perder (' + carlosR.rating.toFixed(0) + ')');
+  else fail('Carlos debería bajar rating', JSON.stringify(carlosR));
+
+  if (pedroR && pedroR.isCalibrating === true) pass('Pedro sigue calibrando (matchCount=1)');
+  else fail('Pedro debería estar calibrando');
+
+  // ============================================================
+  section('9. Match sin ganador (empate o sin marcador)');
+  // ============================================================
+
+  const matchNoWinner = {
+    id: 'test-empate',
+    jugadores: [
+      { uid: 'a', equipo: 'team1', nombre: 'A' },
+      { uid: 'b', equipo: 'team2', nombre: 'B' },
+    ],
+    marcador: { sets: [{ team1: 6, team2: 6 }], ganador: null },
+    endedAt: new Date(),
+  };
+  const outNoWinner = PR.applyMatchToRatings(matchNoWinner, {});
+  if (outNoWinner.audit.skipped) pass('Match sin ganador es skipped');
+  else fail('Match sin ganador NO fue skipped');
+
+  // ============================================================
+  section('10. Match con equipo sin uids');
+  // ============================================================
+
+  const matchAnon = {
+    id: 'test-anon',
+    jugadores: [
+      { uid: 'pedro', equipo: 'team1', nombre: 'Pedro' },
+      { equipo: 'team2', nombre: 'Suelto' },  // sin uid
+    ],
+    marcador: { sets: [{ team1: 6, team2: 0 }], ganador: 'team1' },
+    endedAt: new Date(),
+  };
+  const outAnon = PR.applyMatchToRatings(matchAnon, {});
+  if (outAnon.audit.skipped) pass('Match con equipo sin uids registrados es skipped');
+  else fail('Match con team sin uids debería ser skipped');
+
+  // ============================================================
+  // Resumen final
+  // ============================================================
+  const summary = document.createElement('h2');
+  summary.style.marginTop = '40px';
+  summary.style.borderTop = '2px solid #283142';
+  summary.style.paddingTop = '14px';
+  if (failed === 0) {
+    summary.innerHTML = '<span class="pass">✓ ' + passed + ' tests pasaron · 0 fallaron</span>';
+  } else {
+    summary.innerHTML = '<span class="fail">✗ ' + failed + ' fallaron</span> · <span class="pass">' + passed + ' pasaron</span>';
+  }
+  out.appendChild(summary);
+})();
+</script>
+</body>
+</html>
