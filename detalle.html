@@ -573,7 +573,24 @@
 
   if ($joinDoLogin) {
     $joinDoLogin.addEventListener('click', function () {
-      try { window.PuntazoAuth.signIn(); } catch (_) {}
+      // F101 fix bug #2: usar requireAuth (no signIn directo) para que
+      // dispare el modal estándar de "necesitas crear cuenta" con el
+      // botón Google. Tras login, callback re-ejecuta load() para que
+      // el overlay se re-pinte mostrando los slots (ya con user).
+      if (!window.PuntazoAuth || typeof window.PuntazoAuth.requireAuth !== 'function') {
+        alert('Módulo de auth no disponible. Recarga la página.');
+        return;
+      }
+      try {
+        window.PuntazoAuth.requireAuth(function () {
+          // Tras login exitoso, recargar match para re-renderizar overlay
+          // con los slots habilitados (ya hay user).
+          load();
+        });
+      } catch (e) {
+        console.error('[detalle join] login error', e);
+        alert('No se pudo abrir el login. Intenta desde el botón ☰ del header.');
+      }
     });
   }
   if ($joinSkip) {
