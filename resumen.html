@@ -30,6 +30,7 @@
 <script src="/assets/auth.js"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/clip-states.js"></script>
+<script src="/assets/scoreboard-card.js"></script>
 
 <!-- html2canvas: captura el DOM de la tarjeta → canvas → PNG -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -80,6 +81,39 @@
      html2canvas captura #pz-resumen-card a su tamaño natural
      (el onclone neutraliza el scale en el clon).
   ════════════════════════════════════════════════════ */
+  /* F83 — Marcador inline al top (sustituye la foto auto-mostrada) */
+  .rs-scoreboard-top {
+    max-width: 540px;
+    margin: 0 auto 14px;
+  }
+  /* F83 — Botón "Ver foto resumen" (reveal on-demand) */
+  .rs-photo-toggle-wrap {
+    display: flex; justify-content: center;
+    margin: 6px 0 18px;
+  }
+  .rs-photo-toggle {
+    appearance: none;
+    padding: 12px 22px;
+    border-radius: 999px;
+    border: 1px solid rgba(11, 124, 255, 0.35);
+    background: linear-gradient(180deg, rgba(11,124,255,0.18), rgba(0,79,200,0.12));
+    color: #cfe2ff;
+    font-family: inherit; font-weight: 800; font-size: 0.94rem;
+    cursor: pointer;
+    transition: background .14s, border-color .14s, transform .12s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .rs-photo-toggle:hover {
+    background: linear-gradient(180deg, rgba(11,124,255,0.30), rgba(0,79,200,0.18));
+    border-color: rgba(11, 124, 255, 0.60);
+  }
+  .rs-photo-toggle:active { transform: scale(0.97); }
+  .rs-photo-toggle.is-expanded {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: rgba(234, 242, 255, 0.65);
+  }
+
   .rs-card-stage {
     position: relative;
     width: 100%;
@@ -1041,7 +1075,19 @@
   <!-- ── Contenido principal ── -->
   <div id="rsContent" style="display:none">
 
-    <div class="rs-card-stage" id="rsCardStage">
+    <!-- F83 Item 15: marcador inline siempre visible arriba (TV-style).
+         Render via PuntazoScoreboardCard. La foto compartible se ve on-demand. -->
+    <div id="rsScoreboardTop" class="rs-scoreboard-top"></div>
+
+    <!-- F83 Item 15: foto resumen on-demand (oculta por default).
+         Botón "Ver foto resumen" debajo la revela. -->
+    <div class="rs-photo-toggle-wrap">
+      <button id="rsBtnTogglePhoto" type="button" class="rs-photo-toggle">
+        📸 Ver foto resumen
+      </button>
+    </div>
+
+    <div class="rs-card-stage" id="rsCardStage" style="display:none">
       <div class="rs-card-scaler" id="rsCardScaler">
 
         <!-- ★ La tarjeta compartible — único nodo capturado por html2canvas ★ -->
@@ -1110,8 +1156,8 @@
       <input type="file" id="rsPhotoInput" accept="image/*" capture="environment" style="display:none" />
     </div>
 
-    <!-- Controles (fuera de la tarjeta) -->
-    <div class="rs-controls">
+    <!-- Controles (fuera de la tarjeta) — F83: visibles sólo cuando la foto está revelada -->
+    <div class="rs-controls" id="rsControls" style="display:none">
       <button id="rsBtnShare" class="rs-btn rs-btn-primary" type="button">📤 Compartir</button>
       <button id="rsBtnDownload" class="rs-btn rs-btn-secondary" type="button">⬇️ Descargar resumen</button>
     </div>
@@ -1642,6 +1688,28 @@
   }
 
   // ── Botón Descargar ──
+  // F83 Item 15: toggle de la foto resumen on-demand.
+  (function () {
+    const $btnToggle = document.getElementById("rsBtnTogglePhoto");
+    const $stage = document.getElementById("rsCardStage");
+    const $ctrls = document.getElementById("rsControls");
+    if (!$btnToggle || !$stage) return;
+    let expanded = false;
+    $btnToggle.addEventListener("click", function () {
+      expanded = !expanded;
+      $stage.style.display = expanded ? "" : "none";
+      if ($ctrls) $ctrls.style.display = expanded ? "" : "none";
+      $btnToggle.classList.toggle("is-expanded", expanded);
+      $btnToggle.textContent = expanded ? "Ocultar foto resumen ▲" : "📸 Ver foto resumen";
+      if (expanded) {
+        // Forzar el fit del card al revelarlo (estaba oculto, no se midió bien)
+        setTimeout(function () {
+          try { if (typeof fitCard === "function") fitCard(); } catch (_) {}
+        }, 60);
+      }
+    });
+  })();
+
   $btnDownload.addEventListener("click", async function () {
     if ($btnDownload.disabled) return;
     $btnDownload.disabled = true;
@@ -1890,8 +1958,29 @@
       }
     } catch (_) {}
 
-    // Marcador
+    // Marcador (dentro de la foto resumen)
     renderScore(match);
+
+    // F83 Item 15: scoreboard inline siempre visible al top (independiente
+    // de la foto resumen). Usa el helper PuntazoScoreboardCard.
+    try {
+      const $top = document.getElementById("rsScoreboardTop");
+      if ($top && window.PuntazoScoreboardCard) {
+        // Inyectar CSS del helper una sola vez
+        if (!document.getElementById("pz-sb-styles")) {
+          const s = document.createElement("style");
+          s.id = "pz-sb-styles";
+          s.textContent = window.PuntazoScoreboardCard.CSS_REFERENCE;
+          document.head.appendChild(s);
+        }
+        const auth = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+        $top.innerHTML = "";
+        $top.appendChild(window.PuntazoScoreboardCard.build(match, {
+          myUid: auth ? auth.uid : null,
+          showLocation: true,
+        }));
+      }
+    } catch (e) { console.warn("[resumen] scoreboard top falló", e); }
 
     // Duración = endedAt - startedAt
     const startD = tsToDate(match.startedAt);
