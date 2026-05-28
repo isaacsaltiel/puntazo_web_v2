@@ -184,6 +184,102 @@
   .mp-modal h3 { margin: 0 0 8px; font-size: 1.15rem; font-weight: 900; color: #fff; }
   .mp-modal p.note { margin: 0 0 14px; color: rgba(234, 242, 255, .65); font-size: 0.88rem; line-height: 1.5; }
 
+  /* F80 — Fase 2a · Item 7: modo como resumen [Cambiar] */
+  .mp-end-modo-summary {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(0, 79, 200, 0.08);
+    border: 1px solid rgba(11, 124, 255, 0.20);
+    margin-bottom: 14px;
+  }
+  .mp-end-modo-summary-info { flex: 1; min-width: 0; }
+  .mp-end-modo-label {
+    font-size: 0.72rem; font-weight: 700;
+    color: rgba(234, 242, 255, 0.55);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .mp-end-modo-value {
+    font-size: 0.98rem; font-weight: 800;
+    color: #fff;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mp-end-modo-change {
+    appearance: none; border: 1px solid rgba(11, 124, 255, 0.40);
+    background: rgba(0, 79, 200, 0.16);
+    color: #cfe2ff;
+    font-family: inherit; font-weight: 800; font-size: 0.82rem;
+    padding: 8px 14px; border-radius: 999px;
+    cursor: pointer; flex-shrink: 0;
+    transition: background .14s, border-color .14s;
+  }
+  .mp-end-modo-change:hover { background: rgba(11, 124, 255, 0.28); }
+
+  /* F80 — Fase 2a · Item 8: jugadores estilo marcador TV (no canchita) */
+  .mp-end-tvscore {
+    display: flex; flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 12px;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.20);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .mp-end-tvscore-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    min-height: 52px;
+  }
+  .mp-end-tvscore-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
+  }
+  .mp-end-tvscore-team-name {
+    flex: 1; min-width: 0;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    appearance: none; border: none; background: transparent;
+    color: #fff;
+    font-family: inherit; font-size: 1.02rem; font-weight: 800;
+    text-align: left;
+    cursor: pointer;
+    padding: 0;
+  }
+  .mp-end-tvscore-team-name > span:first-child {
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mp-end-tvscore-edit {
+    flex-shrink: 0;
+    color: rgba(234, 242, 255, 0.50);
+    font-size: 0.84rem;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    transition: background .14s, color .14s;
+  }
+  .mp-end-tvscore-team-name:hover .mp-end-tvscore-edit {
+    background: rgba(11, 124, 255, 0.18);
+    color: #cfe2ff;
+  }
+
+  /* F80 — sheet para editar nombres del equipo (similar a mpSlotSheet pero
+     con 2 inputs jugador1 + jugador2) */
+  .mp-end-team-edit-row {
+    display: flex; flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .mp-end-team-edit-label {
+    font-size: 0.78rem; font-weight: 700;
+    color: rgba(234, 242, 255, 0.65);
+  }
+
   .mp-set-row {
     display: grid;
     grid-template-columns: 70px 1fr 18px 1fr;
@@ -3316,26 +3412,48 @@
 <div id="mpModal" class="mp-modal-backdrop">
   <div class="mp-modal" role="dialog" aria-modal="true">
     <h3>Terminar partido</h3>
-    <p class="note">Registra los jugadores y el marcador (ambos opcionales).</p>
+    <p class="note">Confirma el marcador (opcional) para guardarlo en tu historial.</p>
 
-    <div class="mp-modal-section-label">Modo de partido</div>
-    <div class="mp-modo-row" id="endModoRow" data-modo-target="end">
+    <!-- F80 Item 7: modo como resumen + Cambiar (picker oculto por default) -->
+    <div class="mp-end-modo-summary" id="mpEndModoSummary">
+      <div class="mp-end-modo-summary-info">
+        <div class="mp-end-modo-label">Modo de partido</div>
+        <div class="mp-end-modo-value" id="mpEndModoText">Partido (mejor de 3 sets)</div>
+      </div>
+      <button type="button" class="mp-end-modo-change" id="mpEndModoChange">Cambiar</button>
+    </div>
+    <div class="mp-modo-row" id="endModoRow" data-modo-target="end" style="display:none">
       <button type="button" class="mp-modo-btn" data-modo="partido_3">Partido<span class="desc">Mejor de 3 sets</span></button>
       <button type="button" class="mp-modo-btn" data-modo="partido_5">Partido largo<span class="desc">Mejor de 5 sets</span></button>
       <button type="button" class="mp-modo-btn" data-modo="reta">Reta<span class="desc">Sin sets, solo ganador</span></button>
       <button type="button" class="mp-modo-btn" data-modo="libre">Libre<span class="desc">Cuenta de games</span></button>
     </div>
 
+    <!-- F80 Item 8: jugadores estilo marcador TV (no canchita visual) -->
     <div class="mp-modal-section-label">Jugadores</div>
-    <div class="mp-court-wrap">
-      <div class="mp-court-team-label">Jugadores C · D</div>
-      <div class="mp-court-grid" id="endCourtGrid">
-        <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
-        <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
-        <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
-        <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
+    <div class="mp-end-tvscore" id="mpEndTvScore">
+      <div class="mp-end-tvscore-row" data-team="team1">
+        <span class="mp-end-tvscore-dot" style="color:var(--team1-color,#0B7CFF);background:var(--team1-color,#0B7CFF)"></span>
+        <button type="button" class="mp-end-tvscore-team-name" data-end-edit="team1">
+          <span id="mpEndTeam1Name">Mi equipo</span>
+          <span class="mp-end-tvscore-edit">✎ Editar</span>
+        </button>
       </div>
-      <div class="mp-court-team-label">Jugadores A · B</div>
+      <div class="mp-end-tvscore-row" data-team="team2">
+        <span class="mp-end-tvscore-dot" style="color:var(--team2-color,#c8e835);background:var(--team2-color,#c8e835)"></span>
+        <button type="button" class="mp-end-tvscore-team-name" data-end-edit="team2">
+          <span id="mpEndTeam2Name">Equipo rival</span>
+          <span class="mp-end-tvscore-edit">✎ Editar</span>
+        </button>
+      </div>
+    </div>
+    <!-- legacy endCourtGrid mantenido oculto: algunos helpers lo siguen
+         consultando para limpiar slots. Lo retiramos visualmente. -->
+    <div class="mp-court-grid" id="endCourtGrid" style="display:none">
+      <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
+      <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
+      <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
+      <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
     </div>
 
     <div class="mp-modal-section-label" id="endScoreLabel">Marcador</div>
@@ -3346,6 +3464,25 @@
     <div class="mp-modal-actions">
       <button id="mpModalSave" class="mp-btn-end" type="button">Guardar y terminar</button>
       <button id="mpModalCancel" class="mp-btn-cancel" type="button">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── F80 Item 8: sheet para editar nombres del equipo (modal terminar) ── -->
+<div id="mpEndTeamEditSheet" class="mp-sheet-backdrop">
+  <div class="mp-sheet" role="dialog" aria-modal="true">
+    <h3 id="mpEndTeamEditTitle">Equipo</h3>
+    <div class="mp-end-team-edit-row">
+      <label class="mp-end-team-edit-label">Jugador 1</label>
+      <input type="text" class="mp-sheet-input" id="mpEndTeamEditJ1" placeholder="Nombre (opcional)" maxlength="80" autocomplete="off">
+    </div>
+    <div class="mp-end-team-edit-row">
+      <label class="mp-end-team-edit-label">Jugador 2</label>
+      <input type="text" class="mp-sheet-input" id="mpEndTeamEditJ2" placeholder="Nombre (opcional)" maxlength="80" autocomplete="off">
+    </div>
+    <div class="mp-sheet-actions">
+      <button type="button" id="mpEndTeamEditSave" class="mp-sheet-btn primary">Guardar</button>
+      <button type="button" id="mpEndTeamEditCancel" class="mp-sheet-btn secondary">Cancelar</button>
     </div>
   </div>
 </div>
@@ -4467,7 +4604,7 @@
         inner.className = "mp-score-cell-wrap";
         const team = document.createElement("span");
         team.className = "mp-score-cell-team";
-        team.textContent = key === "team1" ? "Equipo 1 (Games)" : "Equipo 2 (Games)";
+        team.textContent = endTeamDisplayName(key) + " (Games)";
         const ctrl = document.createElement("div");
         ctrl.className = "mp-score-ctrl";
         const minus = document.createElement("button");
@@ -4499,7 +4636,7 @@
         banner.className = "mp-winner-banner";
         banner.textContent = live.ganador === "empate"
           ? "Empate"
-          : "Ganador: " + (live.ganador === "team1" ? "Equipo 1" : "Equipo 2");
+          : "Ganador: " + endTeamDisplayName(live.ganador);
         $endScoreArea.appendChild(banner);
       }
       return;
@@ -4550,7 +4687,8 @@
         inner.className = "mp-score-cell-wrap";
         const team = document.createElement("span");
         team.className = "mp-score-cell-team";
-        team.textContent = key === "team1" ? "Equipo 1" : "Equipo 2";
+        // F80 Item 9: nombres reales en lugar de "Equipo 1/2"
+        team.textContent = endTeamDisplayName(key);
         const ctrl = document.createElement("div");
         ctrl.className = "mp-score-ctrl";
         const minus = document.createElement("button");
@@ -4647,19 +4785,20 @@
       const banner = document.createElement("div");
       banner.className = "mp-winner-banner";
       const setsStr = live.t1Sets + "–" + live.t2Sets;
-      banner.textContent = "🏆 Ganador: " + (live.ganador === "team1" ? "Equipo 1" : "Equipo 2") +
+      banner.textContent = "🏆 Ganador: " + endTeamDisplayName(live.ganador) +
         " (" + setsStr + " sets)";
       $endScoreArea.appendChild(banner);
     }
   }
 
   function playerLabelsByTeam(ctx) {
-    const arr = playerState[ctx];
+    const arr = playerState[ctx] || [];
     const t1 = arr.filter(function (j) { return j.equipo === "team1" && j.nombre; }).map(function (j) { return j.nombre; });
     const t2 = arr.filter(function (j) { return j.equipo === "team2" && j.nombre; }).map(function (j) { return j.nombre; });
+    // F80 Item 9: fallback "Mi equipo" / "Equipo rival" en lugar de "Equipo 1/2"
     return {
-      t1: t1.length ? t1.join(" / ") : "Equipo 1",
-      t2: t2.length ? t2.join(" / ") : "Equipo 2",
+      t1: t1.length ? t1.join(" / ") : (ctx === "end" ? "Mi equipo" : "Equipo 1"),
+      t2: t2.length ? t2.join(" / ") : (ctx === "end" ? "Equipo rival" : "Equipo 2"),
     };
   }
 
@@ -4698,12 +4837,137 @@
     return { marcador: m };
   }
 
+  // F80 Item 9 — display name de equipo en modal terminar.
+  // Reglas (de la dictado):
+  //  - ≥2 nombres en el equipo: "Nombre1 / Nombre2"
+  //  - 1 nombre: ese nombre
+  //  - 0 nombres en team1: "Mi equipo"
+  //  - 0 nombres en team2: "Equipo rival"
+  function endTeamDisplayName(teamKey) {
+    const arr = playerState["end"] || [];
+    const names = arr
+      .filter(function (j) { return j && j.equipo === teamKey && j.nombre; })
+      .map(function (j) { return String(j.nombre).trim(); })
+      .filter(Boolean);
+    if (names.length >= 2) return names.slice(0, 2).join(" / ");
+    if (names.length === 1) return names[0];
+    return teamKey === "team1" ? "Mi equipo" : "Equipo rival";
+  }
+
+  // F80 Item 8 — refs sheet de edición de nombres de equipo.
+  const $endTeamEditSheet  = document.getElementById("mpEndTeamEditSheet");
+  const $endTeamEditTitle  = document.getElementById("mpEndTeamEditTitle");
+  const $endTeamEditJ1     = document.getElementById("mpEndTeamEditJ1");
+  const $endTeamEditJ2     = document.getElementById("mpEndTeamEditJ2");
+  const $endTeamEditSave   = document.getElementById("mpEndTeamEditSave");
+  const $endTeamEditCancel = document.getElementById("mpEndTeamEditCancel");
+  let _endTeamEditTarget = null;
+
+  function openEndTeamEditSheet(team) {
+    if (!$endTeamEditSheet || !$endTeamEditJ1 || !$endTeamEditJ2) return;
+    _endTeamEditTarget = team;
+    const arr = playerState["end"] || [];
+    const inTeam = arr
+      .map(function (j, i) { return Object.assign({ _idx: i }, j); })
+      .filter(function (j) { return j && j.equipo === team; });
+    $endTeamEditTitle.textContent = team === "team1" ? "Editar Mi equipo" : "Editar Equipo rival";
+    $endTeamEditJ1.value = (inTeam[0] && inTeam[0].nombre) || "";
+    $endTeamEditJ2.value = (inTeam[1] && inTeam[1].nombre) || "";
+    $endTeamEditSheet.classList.add("is-open");
+    setTimeout(function () { try { $endTeamEditJ1.focus(); $endTeamEditJ1.select(); } catch (_) {} }, 50);
+  }
+
+  function closeEndTeamEditSheet() {
+    if ($endTeamEditSheet) $endTeamEditSheet.classList.remove("is-open");
+    _endTeamEditTarget = null;
+  }
+
+  function saveEndTeamEdit() {
+    if (!_endTeamEditTarget) return;
+    const team = _endTeamEditTarget;
+    const j1 = String($endTeamEditJ1.value || "").trim().slice(0, 80);
+    const j2 = String($endTeamEditJ2.value || "").trim().slice(0, 80);
+    // Reconstruir playerState["end"] preservando los del otro equipo.
+    const other = team === "team1" ? "team2" : "team1";
+    const arr = playerState["end"] || [];
+    const otherSlots = arr.filter(function (j) { return j && j.equipo === other; });
+    // Slot equipo team1 va en [0,1]; team2 en [2,3]. Si solo tenemos nombres,
+    // los reordenamos: team1 a 0,1 y team2 a 2,3. Vacíos para los faltantes.
+    const newArr = [
+      { nombre: "", equipo: "team1" },
+      { nombre: "", equipo: "team1" },
+      { nombre: "", equipo: "team2" },
+      { nombre: "", equipo: "team2" },
+    ];
+    // Llenar team1 y team2 según corresponda
+    function fillTeam(t, names, slotBase) {
+      for (let i = 0; i < 2; i++) {
+        const idx = slotBase + i;
+        if (names[i]) newArr[idx].nombre = names[i];
+      }
+    }
+    if (team === "team1") {
+      fillTeam("team1", [j1, j2].filter(Boolean), 0);
+      const otherNames = otherSlots.filter(function (s) { return s.nombre; }).map(function (s) { return s.nombre; });
+      fillTeam("team2", otherNames, 2);
+      // Preservar uid/claimedByUid del other team
+      otherSlots.forEach(function (s, i) {
+        if (i < 2 && s.uid) newArr[2 + i].uid = s.uid;
+        if (i < 2 && s.claimedByUid) newArr[2 + i].claimedByUid = s.claimedByUid;
+      });
+    } else {
+      fillTeam("team2", [j1, j2].filter(Boolean), 2);
+      const otherNames = otherSlots.filter(function (s) { return s.nombre; }).map(function (s) { return s.nombre; });
+      fillTeam("team1", otherNames, 0);
+      otherSlots.forEach(function (s, i) {
+        if (i < 2 && s.uid) newArr[0 + i].uid = s.uid;
+        if (i < 2 && s.claimedByUid) newArr[0 + i].claimedByUid = s.claimedByUid;
+      });
+    }
+    playerState["end"] = newArr;
+    renderEndTvScore();
+    rebuildScoreArea(); // refresca labels del marcador inferior
+    closeEndTeamEditSheet();
+  }
+
+  function renderEndTvScore() {
+    const $t1 = document.getElementById("mpEndTeam1Name");
+    const $t2 = document.getElementById("mpEndTeam2Name");
+    if ($t1) $t1.textContent = endTeamDisplayName("team1");
+    if ($t2) $t2.textContent = endTeamDisplayName("team2");
+  }
+
+  // F80 Item 7 — modo summary toggle
+  const MODO_LABEL = {
+    "partido_3": "Partido (mejor de 3 sets)",
+    "partido_5": "Partido largo (mejor de 5 sets)",
+    "reta":      "Reta (sin sets, solo ganador)",
+    "libre":     "Libre (cuenta de games)",
+  };
+  function renderEndModoSummary() {
+    const $txt = document.getElementById("mpEndModoText");
+    const $sum = document.getElementById("mpEndModoSummary");
+    const $row = document.getElementById("endModoRow");
+    if (!$txt || !$sum || !$row) return;
+    $txt.textContent = MODO_LABEL[modoState.end] || "Partido (mejor de 3 sets)";
+    $sum.style.display = "flex";
+    $row.style.display = "none";
+  }
+  function openEndModoPicker() {
+    const $sum = document.getElementById("mpEndModoSummary");
+    const $row = document.getElementById("endModoRow");
+    if ($sum) $sum.style.display = "none";
+    if ($row) $row.style.display = "";
+  }
+
   function openModal() {
     // Modo: heredar del match si existe, default partido_3
     const matchModo = (currentMatch && currentMatch.modo) || "partido_3";
     setModo("end", matchModo);
+    renderEndModoSummary();
     // Jugadores: copiar del match al state del modal
     setPlayerStateFromMatch("end", currentMatch && currentMatch.jugadores);
+    renderEndTvScore();
     // Score state: reiniciar; si el match tenía marcador previo, hidratar
     endScoreState.sets = [];
     endScoreState.gamesTotal = { t1: 0, t2: 0 };
@@ -4748,6 +5012,53 @@
 
   $btnEnd.addEventListener("click", function () {
     openModal();
+  });
+
+  // F80 Item 7 — handlers del summary modo (toggle picker)
+  const $endModoChangeBtn = document.getElementById("mpEndModoChange");
+  if ($endModoChangeBtn) {
+    $endModoChangeBtn.addEventListener("click", openEndModoPicker);
+  }
+  // Cuando el usuario elige un modo del picker, setModo() ya actualiza
+  // modoState.end. Hookear para re-renderizar summary y ocultar picker.
+  const $endModoRow = document.getElementById("endModoRow");
+  if ($endModoRow) {
+    $endModoRow.addEventListener("click", function (e) {
+      const btn = e.target.closest('.mp-modo-btn');
+      if (!btn) return;
+      // setModo() corre por el handler existente; sólo necesitamos
+      // re-render del summary tras el click. Pequeño defer para que
+      // modoState.end ya esté actualizado.
+      setTimeout(function () {
+        renderEndModoSummary();
+        rebuildScoreArea(); // los inputs de marcador dependen del modo
+      }, 0);
+    });
+  }
+
+  // F80 Item 8 — handlers del sheet de edición de nombres del equipo
+  const $endTvScoreContainer = document.getElementById("mpEndTvScore");
+  if ($endTvScoreContainer) {
+    $endTvScoreContainer.addEventListener("click", function (e) {
+      const btn = e.target.closest('[data-end-edit]');
+      if (!btn) return;
+      const team = btn.dataset.endEdit;
+      if (team === "team1" || team === "team2") openEndTeamEditSheet(team);
+    });
+  }
+  if ($endTeamEditSave) $endTeamEditSave.addEventListener("click", saveEndTeamEdit);
+  if ($endTeamEditCancel) $endTeamEditCancel.addEventListener("click", closeEndTeamEditSheet);
+  if ($endTeamEditSheet) {
+    $endTeamEditSheet.addEventListener("click", function (e) {
+      if (e.target === $endTeamEditSheet) closeEndTeamEditSheet();
+    });
+  }
+  // Enter en cualquier input → guarda
+  [$endTeamEditJ1, $endTeamEditJ2].forEach(function ($inp) {
+    if (!$inp) return;
+    $inp.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); saveEndTeamEdit(); }
+    });
   });
 
   $modalCancel.addEventListener("click", function () {
