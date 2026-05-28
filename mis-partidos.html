@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Mis partidos · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/header.js"></script>
+<script src="/assets/scoreboard-card.js"></script>
+
+<style>
+  html, body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mp-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 90px 16px 60px;
+  }
+  .mp-pageheader {
+    margin-bottom: 18px;
+  }
+  .mp-pageheader h1 {
+    font-size: 1.55rem;
+    font-weight: 900;
+    color: #fff;
+    margin: 0 0 4px;
+    letter-spacing: -0.3px;
+  }
+  .mp-pageheader p {
+    font-size: 0.92rem;
+    color: rgba(234, 242, 255, 0.60);
+    margin: 0;
+  }
+  .mp-backlink {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-bottom: 14px;
+    padding: 8px 14px;
+    background: rgba(11, 124, 255, 0.10);
+    border: 1px solid rgba(11, 124, 255, 0.30);
+    border-radius: 999px;
+    color: #cfe2ff;
+    font-family: inherit; font-weight: 700; font-size: 0.86rem;
+    text-decoration: none;
+    transition: background .14s, border-color .14s;
+  }
+  .mp-backlink:hover { background: rgba(11, 124, 255, 0.20); border-color: rgba(11, 124, 255, 0.55); }
+
+  .mp-list {
+    display: flex; flex-direction: column;
+    gap: 14px;
+  }
+  .mp-loading, .mp-empty, .mp-error {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(234, 242, 255, 0.60);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+  }
+  .mp-empty .icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .mp-loginreq {
+    text-align: center;
+    padding: 50px 20px;
+    color: rgba(234, 242, 255, 0.70);
+  }
+  .mp-loginreq a {
+    color: #6fb2ff; text-decoration: none; font-weight: 800;
+  }
+</style>
+</head>
+<body>
+
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="mp-wrap">
+  <a class="mp-backlink" href="/perfil.html">← Mi perfil</a>
+  <div class="mp-pageheader">
+    <h1>Mis partidos</h1>
+    <p id="mpSubtitle">Todos los partidos donde has jugado.</p>
+  </div>
+
+  <div id="mpLoading" class="mp-loading">⏳ Cargando tus partidos…</div>
+  <div id="mpList" class="mp-list" style="display:none"></div>
+  <div id="mpEmpty" class="mp-empty" style="display:none">
+    <div class="icon">🎾</div>
+    <p>Aún no tienes partidos vinculados.<br>
+       Inicia uno desde <a href="/entrada.html">entrada</a> o reclama tu slot cuando alguien comparta un partido en curso.</p>
+  </div>
+  <div id="mpError" class="mp-error" style="display:none">
+    No pudimos cargar tus partidos. Intenta recargar.
+  </div>
+  <div id="mpLoginReq" class="mp-loginreq" style="display:none">
+    Necesitas <a href="#" id="mpDoLogin">iniciar sesión</a> para ver tus partidos.
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  const $loading = document.getElementById('mpLoading');
+  const $list = document.getElementById('mpList');
+  const $empty = document.getElementById('mpEmpty');
+  const $error = document.getElementById('mpError');
+  const $loginReq = document.getElementById('mpLoginReq');
+  const $subtitle = document.getElementById('mpSubtitle');
+  const $doLogin = document.getElementById('mpDoLogin');
+
+  // Inyectar CSS del scoreboard-card
+  if (window.PuntazoScoreboardCard && window.PuntazoScoreboardCard.CSS_REFERENCE) {
+    const s = document.createElement('style');
+    s.textContent = window.PuntazoScoreboardCard.CSS_REFERENCE;
+    document.head.appendChild(s);
+  }
+
+  let _configCache = null;
+  const _matchCache = new Map();
+  let _unsub = null;
+
+  async function loadConfig() {
+    if (_configCache) return _configCache;
+    try {
+      const res = await fetch('/data/config_locations.json?cb=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) return null;
+      _configCache = await res.json();
+      return _configCache;
+    } catch (e) { return null; }
+  }
+
+  function resolveNames(cfg, loc, can) {
+    let locN = loc || '', canN = can || '';
+    if (cfg && Array.isArray(cfg.locaciones)) {
+      const L = cfg.locaciones.find(x => x.id === loc);
+      if (L) {
+        locN = L.nombre || loc;
+        if (Array.isArray(L.cancha)) {
+          const C = L.cancha.find(x => x.id === can);
+          if (C) canN = C.nombre || can;
+        }
+      }
+    }
+    return { locNombre: locN, canNombre: canN };
+  }
+
+  async function fetchMatchById(db, matchId) {
+    if (_matchCache.has(matchId)) return _matchCache.get(matchId);
+    try {
+      const snap = await db.collection('matches').doc(matchId).get();
+      if (!snap.exists) { _matchCache.set(matchId, null); return null; }
+      const data = Object.assign({ id: snap.id }, snap.data());
+      _matchCache.set(matchId, data);
+      return data;
+    } catch (e) {
+      console.warn('[mis-partidos] no se pudo leer match', matchId, e);
+      return null;
+    }
+  }
+
+  function showState(which) {
+    $loading.style.display  = (which === 'loading') ? 'block' : 'none';
+    $list.style.display     = (which === 'list')    ? 'flex'  : 'none';
+    $empty.style.display    = (which === 'empty')   ? 'block' : 'none';
+    $error.style.display    = (which === 'error')   ? 'block' : 'none';
+    $loginReq.style.display = (which === 'login')   ? 'block' : 'none';
+  }
+
+  async function loadAll(user) {
+    const db = (window.PuntazoFirebase && window.PuntazoFirebase.db) ? window.PuntazoFirebase.db() : null;
+    if (!db) { showState('error'); return; }
+    showState('loading');
+    const cfgP = loadConfig();
+
+    if (_unsub) { try { _unsub(); } catch (_) {} _unsub = null; }
+    try {
+      // Sin límite (perfil.html sí limita a 3; aquí los queremos todos)
+      _unsub = db.collectionGroup('claims')
+        .where('uid', '==', user.uid)
+        .orderBy('claimedAt', 'desc')
+        .limit(100)
+        .onSnapshot(async function (snap) {
+          try {
+            const claims = [];
+            snap.forEach(function (d) {
+              const data = d.data() || {};
+              const parent = d.ref.parent && d.ref.parent.parent;
+              const matchId = parent ? parent.id : null;
+              if (!matchId) return;
+              claims.push({
+                matchId: matchId,
+                uid: data.uid || d.id,
+                slot: Number.isInteger(data.slot) ? data.slot : Number(data.slot),
+                claimedAt: data.claimedAt || null,
+                displayName: typeof data.displayName === 'string' ? data.displayName : '',
+              });
+            });
+
+            if (!claims.length) { showState('empty'); return; }
+
+            const cfg = await cfgP;
+            const matches = await Promise.all(claims.map(c => fetchMatchById(db, c.matchId)));
+
+            $list.innerHTML = '';
+            let rendered = 0;
+            for (let i = 0; i < claims.length; i++) {
+              const m = matches[i];
+              if (!m) continue;
+              const { locNombre, canNombre } = resolveNames(cfg, m.loc, m.can);
+              const status = m.status || 'active';
+              const href = (status === 'ended')
+                ? `/resumen.html?matchId=${encodeURIComponent(m.id)}`
+                : `/mi-partido.html?matchId=${encodeURIComponent(m.id)}`;
+              const card = window.PuntazoScoreboardCard.build(m, {
+                href: href,
+                myUid: user.uid,
+                locNombre: locNombre,
+                canNombre: canNombre,
+              });
+              $list.appendChild(card);
+              rendered++;
+            }
+            if (!rendered) { showState('empty'); return; }
+            showState('list');
+            $subtitle.textContent = rendered === 1
+              ? '1 partido en total.'
+              : `${rendered} partidos en total.`;
+          } catch (err) {
+            console.error('[mis-partidos] render error', err);
+            showState('error');
+          }
+        }, function (err) {
+          console.error('[mis-partidos] onSnapshot error', err);
+          showState('error');
+        });
+    } catch (e) {
+      console.error('[mis-partidos] query setup error', e);
+      showState('error');
+    }
+  }
+
+  function onAuthReady() {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) { showState('login'); return; }
+    loadAll(user);
+  }
+
+  if ($doLogin) {
+    $doLogin.addEventListener('click', function (e) {
+      e.preventDefault();
+      try { window.PuntazoAuth.signIn(); } catch (_) {}
+    });
+  }
+
+  window.addEventListener('puntazo:auth-ready', onAuthReady);
+  window.addEventListener('puntazo:auth-changed', onAuthReady);
+  if (window.PuntazoAuth && window.PuntazoAuth.currentUser !== undefined) {
+    // Caso ya inicializado al cargar
+    setTimeout(onAuthReady, 0);
+  } else {
+    setTimeout(function () {
+      // Fallback si auth no inicializó en 800ms
+      if ($loading.style.display !== 'none') onAuthReady();
+    }, 800);
+  }
+})();
+</script>
+</body>
+</html>

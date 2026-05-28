@@ -15,6 +15,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/card.js"></script>
+<script src="/assets/scoreboard-card.js"></script>
 <style>
   .perfil-wrap { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
 
@@ -61,7 +62,26 @@
     font-size:0.80rem; font-weight:700; color:rgba(234,242,255,.55);
   }
 
-  .pz-matches-list { display:flex; flex-direction:column; gap:12px; margin-bottom:32px; }
+  .pz-matches-list { display:flex; flex-direction:column; gap:12px; margin-bottom:14px; }
+
+  /* F81: botón "Ver todos mis partidos" debajo de la lista */
+  .pz-matches-seeall {
+    display:block; text-align:center;
+    margin: 0 auto 32px;
+    max-width: 320px;
+    padding: 12px 18px;
+    border-radius: 14px;
+    background: rgba(11, 124, 255, 0.10);
+    border: 1px solid rgba(11, 124, 255, 0.30);
+    color: #cfe2ff;
+    font-family: inherit; font-weight: 800; font-size: 0.92rem;
+    text-decoration: none;
+    transition: background .14s, border-color .14s;
+  }
+  .pz-matches-seeall:hover {
+    background: rgba(11, 124, 255, 0.20);
+    border-color: rgba(11, 124, 255, 0.55);
+  }
 
   .pz-match-card {
     background:rgba(255,255,255,0.055);
@@ -188,6 +208,11 @@
 
       <div id="matchesList" class="pz-matches-list" style="display:none"></div>
 
+      <!-- F81: botón "Ver todos mis partidos" cuando hay más de 3 -->
+      <a id="matchesSeeAll" class="pz-matches-seeall" href="/mis-partidos.html" style="display:none">
+        Ver todos mis partidos →
+      </a>
+
       <div id="matchesEmpty" class="pz-matches-empty" style="display:none">
         <div class="icon">🎾</div>
         <p>Aún no tienes partidos vinculados.<br>
@@ -256,6 +281,14 @@
   const $matchesList    = document.getElementById('matchesList');
   const $matchesEmpty   = document.getElementById('matchesEmpty');
   const $matchesError   = document.getElementById('matchesError');
+  const $matchesSeeAll  = document.getElementById('matchesSeeAll');
+
+  // F81: inyectar CSS de scoreboard-card una sola vez si el helper lo expone.
+  if (window.PuntazoScoreboardCard && window.PuntazoScoreboardCard.CSS_REFERENCE) {
+    const styleEl = document.createElement("style");
+    styleEl.textContent = window.PuntazoScoreboardCard.CSS_REFERENCE;
+    document.head.appendChild(styleEl);
+  }
   const $matchesPerm    = document.getElementById('matchesPermission');
   const $matchesCount   = document.getElementById('matchesCount');
 
@@ -393,60 +426,28 @@
   }
 
   function buildMatchCard(match, claim, cfg, myUid) {
-    const { locNombre, canNombre, ladoNombre } = resolveNamesSync(cfg, match.loc, match.can, match.lado);
-    const startedDate = tsToDate(match.startedAt);
-    const dateStr = startedDate ? formatDateShort(startedDate) : '';
+    // F81: usa el helper window.PuntazoScoreboardCard si está disponible.
+    // Devuelve un <a> envolvente que lleva a mi-partido (active) o resumen
+    // (ended). Si el helper no está, fallback al render legacy.
+    const { locNombre, canNombre } = resolveNamesSync(cfg, match.loc, match.can, match.lado);
     const status = match.status || 'active';
+    let href = `/mi-partido.html?matchId=${encodeURIComponent(match.id)}`;
+    if (status === 'ended') href = `/resumen.html?matchId=${encodeURIComponent(match.id)}`;
 
-    let badgeHtml = '';
-    if (status === 'active') {
-      badgeHtml = '<span class="pz-match-badge is-active"><span class="live-dot"></span>En vivo</span>';
-    } else if (status === 'ended') {
-      badgeHtml = '<span class="pz-match-badge is-ended">Finalizado</span>';
-    } else if (status === 'cancelled') {
-      badgeHtml = '<span class="pz-match-badge is-cancelled">Cancelado</span>';
+    if (window.PuntazoScoreboardCard && typeof window.PuntazoScoreboardCard.build === 'function') {
+      return window.PuntazoScoreboardCard.build(match, {
+        href: href,
+        myUid: myUid,
+        locNombre: locNombre,
+        canNombre: canNombre,
+      });
     }
-
-    let scoreHtml = '';
-    if (status === 'ended') {
-      const s = formatScore(match);
-      scoreHtml = s
-        ? `<div class="pz-match-score">${s}</div>`
-        : `<div class="pz-match-score-empty">Sin marcador registrado</div>`;
-    } else if (status === 'active') {
-      const s = formatScore(match);
-      if (s) scoreHtml = `<div class="pz-match-score">${s}</div>`;
-    }
-
-    const myEquipo = findMyEquipo(match, myUid, claim);
-    const ladoTxt = myEquipo ? ladoLabel(myEquipo) : '';
-    const subParts = [];
-    if (canNombre) subParts.push(canNombre);
-    if (ladoTxt) subParts.push(ladoTxt);
-    const subHtml = subParts.map(escapeHTML).join(' · ');
-
-    let footHtml = '';
-    if (status === 'active') {
-      footHtml = `<a class="pz-match-link" href="/mi-partido.html?matchId=${encodeURIComponent(match.id)}">Volver al partido →</a>`;
-    } else if (status === 'ended') {
-      footHtml = `<a class="pz-match-link" href="/resumen.html?matchId=${encodeURIComponent(match.id)}">Ver resumen →</a>`;
-    } else {
-      footHtml = `<span class="pz-match-link is-disabled">Partido cancelado</span>`;
-    }
-
-    const card = document.createElement('div');
-    card.className = 'pz-match-card';
-    card.innerHTML = `
-      <div class="pz-match-head">
-        <div class="pz-match-date">${escapeHTML(dateStr)}</div>
-        ${badgeHtml}
-      </div>
-      <div class="pz-match-loc">${escapeHTML(locNombre || '—')}</div>
-      ${subHtml ? `<div class="pz-match-sub">${subHtml}</div>` : ''}
-      ${scoreHtml}
-      <div class="pz-match-foot">${footHtml}</div>
-    `;
-    return card;
+    // Fallback minimal (en teoría no debería pasar nunca)
+    const a = document.createElement('a');
+    a.href = href;
+    a.className = 'pz-match-card';
+    a.textContent = (locNombre || match.loc || '—') + ' · ' + (canNombre || match.can || '');
+    return a;
   }
 
   async function fetchMatchById(db, matchId) {
@@ -469,7 +470,10 @@
     $matchesEmpty.style.display   = (which === 'empty')      ? 'block' : 'none';
     $matchesError.style.display   = (which === 'error')      ? 'block' : 'none';
     if ($matchesPerm) $matchesPerm.style.display = (which === 'permission') ? 'block' : 'none';
-    if (which !== 'list') $matchesCount.style.display = 'none';
+    if (which !== 'list') {
+      $matchesCount.style.display = 'none';
+      if ($matchesSeeAll) $matchesSeeAll.style.display = 'none';
+    }
   }
 
   function loadMyMatches(user) {
@@ -511,22 +515,33 @@
             const matches = await Promise.all(claims.map(c => fetchMatchById(db, c.matchId)));
 
             $matchesList.innerHTML = '';
-            let rendered = 0;
+            // F81 Item 12: máximo 3 partidos visibles en perfil. Si hay
+            // más, se activa "Ver todos mis partidos" → mis-partidos.html
+            const MAX_IN_PERFIL = 3;
+            let renderedTotal = 0;
+            let renderedInPerfil = 0;
             for (let i = 0; i < claims.length; i++) {
               const m = matches[i];
               if (!m) continue;
-              const card = buildMatchCard(m, claims[i], cfg, myUid);
-              $matchesList.appendChild(card);
-              rendered++;
+              renderedTotal++;
+              if (renderedInPerfil < MAX_IN_PERFIL) {
+                const card = buildMatchCard(m, claims[i], cfg, myUid);
+                $matchesList.appendChild(card);
+                renderedInPerfil++;
+              }
             }
 
-            if (!rendered) { showMatchesState('empty'); return; }
+            if (!renderedTotal) { showMatchesState('empty'); return; }
 
             showMatchesState('list');
-            $matchesCount.textContent = rendered === 1
+            $matchesCount.textContent = renderedTotal === 1
               ? '1 partido vinculado'
-              : `${rendered} partidos vinculados`;
+              : `${renderedTotal} partidos vinculados`;
             $matchesCount.style.display = 'inline';
+
+            if ($matchesSeeAll) {
+              $matchesSeeAll.style.display = (renderedTotal > MAX_IN_PERFIL) ? 'block' : 'none';
+            }
           } catch (err) {
             console.error('[perfil mis-partidos] render error', err);
             showMatchesState('error');
