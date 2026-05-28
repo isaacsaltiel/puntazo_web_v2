@@ -570,7 +570,7 @@
     </div>
 
     <div id="actionsAuthed" class="entrada-actions" style="display:none">
-      <button id="btnIniciar" class="btn-primary" type="button">🎾 Iniciar partido en esta cancha</button>
+      <button id="btnIniciar" class="btn-primary" type="button">🎾 Configurar partido →</button>
       <a id="lnkSoloClips" class="btn-secondary" href="#">Solo quiero ver los clips</a>
     </div>
 
@@ -832,8 +832,13 @@
         const card = document.createElement("button");
         card.type = "button";
         card.className = "sel-card sel-card--cancha";
-        // Etapa 16.4 F4 (+): ícono hex neón por cancha (B1..B8, ciclo si >8)
-        const iconNum = (canchaIdx % 8) + 1;
+        // F76 fix: el ícono hex se elige por el NÚMERO REAL de la cancha
+        // (extraído de cancha.id, ej. "Cancha4" → 4 → B4.png), NO por su
+        // índice en el array. Antes Interpadel mostraba B1 en Cancha 3
+        // porque idx=0 ⇒ B1. Ahora cada cancha muestra su número real.
+        const canMatch = String(cancha.id || "").match(/(\d+)/);
+        const canNum = canMatch ? parseInt(canMatch[1], 10) : (canchaIdx + 1);
+        const iconNum = (((canNum - 1) % 8) + 8) % 8 + 1; // [1..8] safe
         const iconSrc = "/assets/court-icons/B" + iconNum + ".png";
         card.innerHTML =
           '<img class="court-icon" src="' + iconSrc + '" alt="' + escapeHtml(cancha.nombre) + '" onerror="this.outerHTML=\'<div class=&quot;emoji&quot;>🎾</div>\'">' +
