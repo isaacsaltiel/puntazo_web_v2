@@ -1075,19 +1075,11 @@
   <!-- ── Contenido principal ── -->
   <div id="rsContent" style="display:none">
 
-    <!-- F83 Item 15: marcador inline siempre visible arriba (TV-style).
-         Render via PuntazoScoreboardCard. La foto compartible se ve on-demand. -->
-    <div id="rsScoreboardTop" class="rs-scoreboard-top"></div>
-
-    <!-- F83 Item 15: foto resumen on-demand (oculta por default).
-         Botón "Ver foto resumen" debajo la revela. -->
-    <div class="rs-photo-toggle-wrap">
-      <button id="rsBtnTogglePhoto" type="button" class="rs-photo-toggle">
-        📸 Ver foto resumen
-      </button>
-    </div>
-
-    <div class="rs-card-stage" id="rsCardStage" style="display:none">
+    <!-- F90 BLOQUE 1.B: resumen.html restaurado al flujo A (recién-terminé).
+         Sin scoreboard-top inline ni foto on-demand. La foto compartible
+         es lo principal y aparece directo. La vista de detalle/historial
+         desde perfil vive en detalle.html. -->
+    <div class="rs-card-stage" id="rsCardStage">
       <div class="rs-card-scaler" id="rsCardScaler">
 
         <!-- ★ La tarjeta compartible — único nodo capturado por html2canvas ★ -->
@@ -1156,8 +1148,8 @@
       <input type="file" id="rsPhotoInput" accept="image/*" capture="environment" style="display:none" />
     </div>
 
-    <!-- Controles (fuera de la tarjeta) — F83: visibles sólo cuando la foto está revelada -->
-    <div class="rs-controls" id="rsControls" style="display:none">
+    <!-- Controles (fuera de la tarjeta) -->
+    <div class="rs-controls" id="rsControls">
       <button id="rsBtnShare" class="rs-btn rs-btn-primary" type="button">📤 Compartir</button>
       <button id="rsBtnDownload" class="rs-btn rs-btn-secondary" type="button">⬇️ Descargar resumen</button>
     </div>
@@ -1688,27 +1680,8 @@
   }
 
   // ── Botón Descargar ──
-  // F83 Item 15: toggle de la foto resumen on-demand.
-  (function () {
-    const $btnToggle = document.getElementById("rsBtnTogglePhoto");
-    const $stage = document.getElementById("rsCardStage");
-    const $ctrls = document.getElementById("rsControls");
-    if (!$btnToggle || !$stage) return;
-    let expanded = false;
-    $btnToggle.addEventListener("click", function () {
-      expanded = !expanded;
-      $stage.style.display = expanded ? "" : "none";
-      if ($ctrls) $ctrls.style.display = expanded ? "" : "none";
-      $btnToggle.classList.toggle("is-expanded", expanded);
-      $btnToggle.textContent = expanded ? "Ocultar foto resumen ▲" : "📸 Ver foto resumen";
-      if (expanded) {
-        // Forzar el fit del card al revelarlo (estaba oculto, no se midió bien)
-        setTimeout(function () {
-          try { if (typeof fitCard === "function") fitCard(); } catch (_) {}
-        }, 60);
-      }
-    });
-  })();
+  // F90 BLOQUE 1.B: toggle de foto on-demand removido (vivía en F83).
+  // Foto siempre visible en este flujo (recién terminé).
 
   $btnDownload.addEventListener("click", async function () {
     if ($btnDownload.disabled) return;
@@ -1960,27 +1933,9 @@
 
     // Marcador (dentro de la foto resumen)
     renderScore(match);
-
-    // F83 Item 15: scoreboard inline siempre visible al top (independiente
-    // de la foto resumen). Usa el helper PuntazoScoreboardCard.
-    try {
-      const $top = document.getElementById("rsScoreboardTop");
-      if ($top && window.PuntazoScoreboardCard) {
-        // Inyectar CSS del helper una sola vez
-        if (!document.getElementById("pz-sb-styles")) {
-          const s = document.createElement("style");
-          s.id = "pz-sb-styles";
-          s.textContent = window.PuntazoScoreboardCard.CSS_REFERENCE;
-          document.head.appendChild(s);
-        }
-        const auth = window.PuntazoAuth && window.PuntazoAuth.currentUser;
-        $top.innerHTML = "";
-        $top.appendChild(window.PuntazoScoreboardCard.build(match, {
-          myUid: auth ? auth.uid : null,
-          showLocation: true,
-        }));
-      }
-    } catch (e) { console.warn("[resumen] scoreboard top falló", e); }
+    // F90 BLOQUE 1.B: scoreboard-top y foto on-demand removidos.
+    // Esta página = Flujo A "recién terminé". El detalle desde perfil
+    // (Flujo B) vive en detalle.html.
 
     // Duración = endedAt - startedAt
     const startD = tsToDate(match.startedAt);

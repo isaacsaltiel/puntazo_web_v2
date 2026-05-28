@@ -713,7 +713,9 @@
     const { locNombre, canNombre } = resolveNamesSync(cfg, match.loc, match.can, match.lado);
     const status = match.status || 'active';
     let href = `/mi-partido.html?matchId=${encodeURIComponent(match.id)}`;
-    if (status === 'ended') href = `/resumen.html?matchId=${encodeURIComponent(match.id)}`;
+    // F90 BLOQUE 1.B: desde perfil/mis-partidos, los matches ended van a
+    // detalle.html (Flujo B). resumen.html es solo para "recién terminé".
+    if (status === 'ended') href = `/detalle.html?matchId=${encodeURIComponent(match.id)}`;
 
     if (window.PuntazoScoreboardCard && typeof window.PuntazoScoreboardCard.build === 'function') {
       return window.PuntazoScoreboardCard.build(match, {

@@ -217,8 +217,10 @@
               if (!m) continue;
               const { locNombre, canNombre } = resolveNames(cfg, m.loc, m.can);
               const status = m.status || 'active';
+              // F90 BLOQUE 1.B: ended → detalle.html (Flujo B). resumen.html
+              // queda solo para Flujo A (recién terminé desde mi-partido).
               const href = (status === 'ended')
-                ? `/resumen.html?matchId=${encodeURIComponent(m.id)}`
+                ? `/detalle.html?matchId=${encodeURIComponent(m.id)}`
                 : `/mi-partido.html?matchId=${encodeURIComponent(m.id)}`;
               const card = window.PuntazoScoreboardCard.build(m, {
                 href: href,

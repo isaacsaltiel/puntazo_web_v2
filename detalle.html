@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Detalle del partido · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<link rel="stylesheet" href="/assets/card.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/header.js"></script>
+<script src="/assets/matches.js"></script>
+<script src="/assets/clip-states.js"></script>
+<script src="/assets/card.js"></script>
+<script src="/assets/script.js"></script>
+<script src="/assets/scoreboard-card.js"></script>
+<script src="/assets/identity.js"></script>
+
+<style>
+  html, body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .dt-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 90px 16px 60px;
+  }
+  .dt-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-bottom: 14px;
+    padding: 8px 14px;
+    background: rgba(11, 124, 255, 0.10);
+    border: 1px solid rgba(11, 124, 255, 0.30);
+    border-radius: 999px;
+    color: #cfe2ff;
+    font-family: inherit; font-weight: 700; font-size: 0.86rem;
+    text-decoration: none;
+  }
+  .dt-back:hover { background: rgba(11, 124, 255, 0.20); }
+
+  h1.dt-title {
+    font-size: 1.55rem;
+    font-weight: 900;
+    color: #fff;
+    margin: 0 0 4px;
+    letter-spacing: -0.3px;
+  }
+  .dt-subtitle {
+    font-size: 0.88rem;
+    color: rgba(234, 242, 255, 0.55);
+    margin-bottom: 18px;
+  }
+
+  .dt-scoreboard {
+    margin-bottom: 18px;
+  }
+
+  /* Bloque meta (fecha, duración, club, liga, etc) */
+  .dt-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .dt-meta-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .dt-meta-lbl {
+    font-size: 0.66rem; font-weight: 800;
+    color: rgba(234, 242, 255, 0.55);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .dt-meta-val {
+    font-size: 0.96rem; font-weight: 800; color: #fff;
+    margin-top: 4px;
+  }
+
+  /* Acciones top */
+  .dt-actions {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 20px;
+  }
+  .dt-btn {
+    padding: 10px 16px; border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.30);
+    color: #fff;
+    font-family: inherit; font-weight: 800; font-size: 0.84rem;
+    cursor: pointer; transition: all .14s;
+    display: inline-flex; align-items: center; gap: 6px;
+    text-decoration: none;
+  }
+  .dt-btn:hover { background: rgba(11, 124, 255, 0.18); border-color: rgba(11, 124, 255, 0.45); }
+  .dt-btn-primary {
+    background: linear-gradient(180deg, #0b7cff, #1d4ed8); border-color: transparent;
+  }
+  .dt-btn-primary:hover { background: linear-gradient(180deg, #0b7cff, #1d4ed8); filter: brightness(1.08); }
+
+  /* Foto resumen on-demand */
+  .dt-photo-wrap {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .dt-photo-btn {
+    padding: 12px 22px;
+    border-radius: 999px;
+    border: 1px solid rgba(11, 124, 255, 0.35);
+    background: linear-gradient(180deg, rgba(11,124,255,0.18), rgba(0,79,200,0.10));
+    color: #cfe2ff;
+    font-family: inherit; font-weight: 800; font-size: 0.94rem;
+    cursor: pointer;
+    transition: background .14s;
+  }
+  .dt-photo-btn:hover { background: linear-gradient(180deg, rgba(11,124,255,0.30), rgba(0,79,200,0.16)); }
+
+  /* Frame de la foto resumen cuando abierta */
+  .dt-photo-frame {
+    display: none;
+    margin-top: 12px;
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(0,0,0,0.30);
+  }
+  .dt-photo-frame.is-open { display: block; }
+  .dt-photo-frame iframe {
+    width: 100%;
+    height: 70vh; min-height: 480px; max-height: 800px;
+    border: 0; display: block;
+  }
+  .dt-photo-frame-actions {
+    display: flex; gap: 6px;
+    padding: 10px;
+    background: rgba(0,0,0,0.40);
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  /* Clips */
+  .dt-clips-title {
+    font-size: 1.05rem; font-weight: 900; color: #fff;
+    margin: 8px 0 10px;
+  }
+
+  /* Estados meta */
+  .dt-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(234, 242, 255, 0.65);
+  }
+  .dt-state .icon { font-size: 3rem; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="dt-wrap">
+  <a class="dt-back" href="/perfil.html">← Mi perfil</a>
+
+  <div id="dtLoading" class="dt-state"><div class="icon">⏳</div>Cargando partido…</div>
+  <div id="dtNotFound" class="dt-state" style="display:none"><div class="icon">🔎</div>Partido no encontrado.</div>
+  <div id="dtMissing" class="dt-state" style="display:none"><div class="icon">⚠️</div>Falta <code>?matchId=...</code> en la URL.</div>
+
+  <div id="dtContent" style="display:none">
+    <h1 class="dt-title" id="dtTitle">Detalle del partido</h1>
+    <div class="dt-subtitle" id="dtSubtitle"></div>
+
+    <!-- Scoreboard estilo TV arriba (siempre visible) -->
+    <div class="dt-scoreboard" id="dtScoreboard"></div>
+
+    <!-- Bloque de meta info: club, cancha, modo, duración, etc -->
+    <div class="dt-meta" id="dtMeta"></div>
+
+    <!-- Acciones -->
+    <div class="dt-actions">
+      <a id="dtEditBtn" class="dt-btn" href="#" style="display:none">✏️ Editar marcador y jugadores</a>
+      <a id="dtShareBtn" class="dt-btn" href="#">📤 Compartir partido</a>
+    </div>
+
+    <!-- Foto resumen on-demand (carga el resumen.html en iframe) -->
+    <div class="dt-photo-wrap">
+      <button id="dtPhotoBtn" class="dt-photo-btn" type="button">📸 Ver foto resumen</button>
+      <div id="dtPhotoFrame" class="dt-photo-frame">
+        <iframe id="dtPhotoIframe" src="about:blank" loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <!-- Clips del partido (reusa la pipeline de resumen.html via script.js) -->
+    <div class="dt-clips-title">🎾 Clips del partido</div>
+    <div id="dtClipsList"></div>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  const $loading = document.getElementById('dtLoading');
+  const $notFound = document.getElementById('dtNotFound');
+  const $missing = document.getElementById('dtMissing');
+  const $content = document.getElementById('dtContent');
+  const $title = document.getElementById('dtTitle');
+  const $subtitle = document.getElementById('dtSubtitle');
+  const $scoreboard = document.getElementById('dtScoreboard');
+  const $meta = document.getElementById('dtMeta');
+  const $editBtn = document.getElementById('dtEditBtn');
+  const $shareBtn = document.getElementById('dtShareBtn');
+  const $photoBtn = document.getElementById('dtPhotoBtn');
+  const $photoFrame = document.getElementById('dtPhotoFrame');
+  const $photoIframe = document.getElementById('dtPhotoIframe');
+  const $clipsList = document.getElementById('dtClipsList');
+
+  const params = new URLSearchParams(window.location.search);
+  const matchId = params.get('matchId');
+
+  function show(which) {
+    $loading.style.display  = (which === 'loading')  ? '' : 'none';
+    $notFound.style.display = (which === 'notfound') ? '' : 'none';
+    $missing.style.display  = (which === 'missing')  ? '' : 'none';
+    $content.style.display  = (which === 'content')  ? '' : 'none';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  function tsToDate(ts) {
+    if (!ts) return null;
+    if (ts instanceof Date) return ts;
+    if (typeof ts.toDate === 'function') { try { return ts.toDate(); } catch (_) { return null; } }
+    if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000);
+    if (typeof ts === 'number') return new Date(ts);
+    return null;
+  }
+
+  function fmtDate(d) {
+    if (!d) return '—';
+    const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    return d.getDate() + ' de ' + MESES[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  function fmtTime(d) {
+    if (!d) return '';
+    return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+  function fmtDuration(start, end) {
+    if (!start || !end) return '—';
+    const ms = end.getTime() - start.getTime();
+    const min = Math.round(ms / 60000);
+    if (min < 60) return min + ' min';
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return h + 'h ' + m + 'm';
+  }
+  function modoLabel(modo) {
+    return { partido_3:'Mejor de 3 sets', partido_5:'Mejor de 5 sets', reta:'Reta', libre:'Libre' }[modo] || modo || '—';
+  }
+
+  function renderMeta(match) {
+    const startD = tsToDate(match.startedAt);
+    const endD = tsToDate(match.endedAt);
+    const items = [
+      { lbl:'Fecha', val: fmtDate(startD) },
+      { lbl:'Hora', val: startD ? (fmtTime(startD) + (endD ? ' – ' + fmtTime(endD) : '')) : '—' },
+      { lbl:'Duración', val: fmtDuration(startD, endD) },
+      { lbl:'Modo', val: modoLabel(match.modo) },
+      { lbl:'Club', val: match.loc || '—' },
+      { lbl:'Cancha', val: (match.can || '—') },
+    ];
+    $meta.innerHTML = items.map(function (it) {
+      return '<div class="dt-meta-item">' +
+        '<div class="dt-meta-lbl">' + escapeHtml(it.lbl) + '</div>' +
+        '<div class="dt-meta-val">' + escapeHtml(it.val) + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function renderScoreboard(match) {
+    if (window.PuntazoScoreboardCard && window.PuntazoScoreboardCard.CSS_REFERENCE) {
+      if (!document.getElementById('pz-sb-styles')) {
+        const s = document.createElement('style');
+        s.id = 'pz-sb-styles';
+        s.textContent = window.PuntazoScoreboardCard.CSS_REFERENCE;
+        document.head.appendChild(s);
+      }
+      const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      $scoreboard.innerHTML = '';
+      $scoreboard.appendChild(window.PuntazoScoreboardCard.build(match, {
+        myUid: user ? user.uid : null,
+        showLocation: false,
+      }));
+    }
+  }
+
+  function setupEditButton(match) {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    const isOwner = user && match.userId && user.uid === match.userId;
+    if (isOwner) {
+      $editBtn.style.display = '';
+      $editBtn.href = '/mi-partido.html?matchId=' + encodeURIComponent(match.id) + '&edit=1';
+    }
+  }
+
+  function setupShareButton(match) {
+    $shareBtn.addEventListener('click', async function (e) {
+      e.preventDefault();
+      const url = window.location.origin + '/detalle.html?matchId=' + encodeURIComponent(match.id);
+      if (navigator.share) {
+        try { await navigator.share({ title: 'Partido en Puntazo', url: url }); return; } catch (_) {}
+      }
+      try { await navigator.clipboard.writeText(url); alert('Link copiado: ' + url); }
+      catch (_) { prompt('Copia el link:', url); }
+    });
+  }
+
+  function setupPhotoToggle(match) {
+    let opened = false;
+    $photoBtn.addEventListener('click', function () {
+      opened = !opened;
+      $photoFrame.classList.toggle('is-open', opened);
+      $photoBtn.textContent = opened ? 'Ocultar foto resumen ▲' : '📸 Ver foto resumen';
+      if (opened && $photoIframe.src === 'about:blank') {
+        $photoIframe.src = '/resumen.html?matchId=' + encodeURIComponent(match.id) + '&embed=1';
+      }
+    });
+  }
+
+  async function loadClips(match) {
+    // Reusa el cargador de PuntazoCard si está disponible (igual que resumen)
+    if (!match.loc || !match.can || !match.lado) {
+      $clipsList.innerHTML = '<div class="dt-state">Sin info de cancha para cargar clips.</div>';
+      return;
+    }
+    if (!window.PuntazoMatches || !window.PuntazoMatches.findClipsForMatch) {
+      $clipsList.innerHTML = '<div class="dt-state">Cargador de clips no disponible.</div>';
+      return;
+    }
+    $clipsList.innerHTML = '<div class="dt-state">⏳ Cargando clips…</div>';
+    try {
+      const entries = await window.PuntazoMatches.findClipsForMatch({
+        loc: match.loc, can: match.can, lado: match.lado,
+        startedAt: match.startedAt, endedAt: match.endedAt,
+      });
+      if (!entries || !entries.length) {
+        $clipsList.innerHTML = '<div class="dt-state"><div class="icon">🎾</div>Sin clips para este partido.</div>';
+        return;
+      }
+      $clipsList.innerHTML = '';
+      const grid = document.createElement('div');
+      grid.className = 'cards-grid';
+      entries.forEach(function (entry) {
+        try {
+          const card = window.PuntazoCard.build(entry, {
+            showSave: true, showShare: true, showFullscreen: true,
+            showClubInfo: true,
+          });
+          if (card) grid.appendChild(card);
+        } catch (e) {}
+      });
+      $clipsList.appendChild(grid);
+    } catch (e) {
+      console.error('[detalle] clips error', e);
+      $clipsList.innerHTML = '<div class="dt-state">Error cargando clips.</div>';
+    }
+  }
+
+  async function load() {
+    if (!matchId) { show('missing'); return; }
+    show('loading');
+    try {
+      const match = await window.PuntazoMatches.get(matchId);
+      if (!match) { show('notfound'); return; }
+      const startD = tsToDate(match.startedAt);
+      $title.textContent = 'Partido ' + fmtDate(startD);
+      $subtitle.textContent = match.status === 'active'
+        ? '● En curso'
+        : (match.status === 'cancelled' ? '✕ Cancelado' : 'Finalizado');
+      renderScoreboard(match);
+      renderMeta(match);
+      setupEditButton(match);
+      setupShareButton(match);
+      setupPhotoToggle(match);
+      loadClips(match);
+      show('content');
+    } catch (e) {
+      console.error('[detalle] load error', e);
+      show('notfound');
+    }
+  }
+
+  window.addEventListener('puntazo:auth-ready', load);
+  if (window.PuntazoMatches) load();
+  else setTimeout(load, 800);
+})();
+</script>
+</body>
+</html>
