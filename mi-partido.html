@@ -596,6 +596,14 @@
     justify-content: center;
     gap: 6px;
   }
+  /* F93: sub-label más sutil debajo del nombre del equipo */
+  .mp-court-team-sub {
+    font-size: 0.60rem;
+    font-weight: 700;
+    color: rgba(234,242,255,.45);
+    text-transform: none;
+    letter-spacing: 0.3px;
+  }
   /* Etapa 16.3 — dot por equipo en label */
   .mp-court-team-label::before {
     content: "";
@@ -3106,16 +3114,17 @@
       <span class="toggle-caret" aria-hidden="true">▼</span>
     </button>
     <div id="nuevaJugadoresWrap" style="display:none">
-      <p class="mp-jug-note">Toca un cuadrante para agregar nombres. Doble tap = "Soy yo". Puedes dejarlos vacíos.</p>
+      <p class="mp-jug-note">Toca un cuadrante para agregar nombres. Doble tap = "Soy yo". Toca ⇆ para cambiar de equipo.</p>
       <div class="mp-court-wrap mp-nueva-court-wrap">
-        <div class="mp-court-team-label" id="nuevaTeamTopLabel">Jugadores C · D</div>
+        <!-- F93 Item 9: labels Mi equipo / Equipo rival con sub-labels Yo·Partner / Rival 1·Rival 2 -->
+        <div class="mp-court-team-label" id="nuevaTeamTopLabel">Equipo rival <span class="mp-court-team-sub">Rival 1 · Rival 2</span></div>
         <div class="mp-court-grid mp-court-grid--real" id="nuevaCourtGrid">
           <button type="button" class="mp-slot" data-slot="2" data-equipo="team2"></button>
           <button type="button" class="mp-slot" data-slot="3" data-equipo="team2"></button>
           <button type="button" class="mp-slot" data-slot="0" data-equipo="team1"></button>
           <button type="button" class="mp-slot" data-slot="1" data-equipo="team1"></button>
         </div>
-        <div class="mp-court-team-label" id="nuevaTeamBotLabel">Jugadores A · B</div>
+        <div class="mp-court-team-label" id="nuevaTeamBotLabel">Mi equipo <span class="mp-court-team-sub">Yo · Mi partner</span></div>
       </div>
     </div>
 
@@ -3832,8 +3841,10 @@
       plus.textContent = "+";
       const hint = document.createElement("span");
       hint.className = "slot-hint";
-      // Etapa 16.4 F6: labels Jugador A/B/C/D en lugar de "Equipo X"
-      hint.textContent = "Jugador " + ["A", "B", "C", "D"][idx];
+      // F93 Item 9: hints más humanos según slot (en lugar de Jugador A/B/C/D)
+      //   slot 0 = Yo  ·  slot 1 = Mi partner  ·  slot 2 = Rival 1  ·  slot 3 = Rival 2
+      const HINTS = ["Yo", "Mi partner", "Rival 1", "Rival 2"];
+      hint.textContent = HINTS[idx] || "Jugador";
       btn.appendChild(plus);
       btn.appendChild(hint);
       return;
@@ -3855,6 +3866,19 @@
     name.className = "slot-name";
     name.textContent = j.nombre || (hasUid ? "Yo" : "");
     btn.appendChild(name);
+    // F93 Item 8: botón ⇆ swap en canchita previa (ctx=nueva)
+    // para mover jugadores entre equipos sin drag&drop.
+    if (ctx === "nueva") {
+      const sw = document.createElement("button");
+      sw.type = "button";
+      sw.className = "mp-slot-swap";
+      sw.title = "Cambiar de equipo";
+      sw.textContent = "⇆";
+      sw.setAttribute("aria-label", "Cambiar de equipo");
+      sw.dataset.action = "nueva-swap";
+      sw.dataset.slot = String(idx);
+      btn.appendChild(sw);
+    }
   }
 
   function renderCourt(ctx) {
@@ -4041,17 +4065,115 @@
     closeSheet();
   });
 
+  // F93 Item 8: swap local entre equipos para ctx (nueva/end).
+  // Trabaja sobre playerState[ctx] sin tocar currentMatch.
+  function performNuevaSwap(ctx, srcIdx, dstIdx) {
+    if (srcIdx === dstIdx) return;
+    const arr = playerState[ctx];
+    const src = arr[srcIdx];
+    const dst = arr[dstIdx];
+    const srcEqDefault = SLOT_EQUIPO[srcIdx];
+    const dstEqDefault = SLOT_EQUIPO[dstIdx];
+    const dstHas = !!(dst && (dst.nombre || dst.uid || dst.claimedByUid));
+    if (dstHas) {
+      // Swap: cada uno toma el equipo del nuevo slot.
+      const newDst = { nombre: src.nombre || "", equipo: dstEqDefault };
+      if (src.uid) newDst.uid = src.uid;
+      if (src.claimedByUid) newDst.claimedByUid = src.claimedByUid;
+      const newSrc = { nombre: dst.nombre || "", equipo: srcEqDefault };
+      if (dst.uid) newSrc.uid = dst.uid;
+      if (dst.claimedByUid) newSrc.claimedByUid = dst.claimedByUid;
+      arr[srcIdx] = newSrc;
+      arr[dstIdx] = newDst;
+    } else {
+      // Mover
+      const newDst = { nombre: src.nombre || "", equipo: dstEqDefault };
+      if (src.uid) newDst.uid = src.uid;
+      if (src.claimedByUid) newDst.claimedByUid = src.claimedByUid;
+      arr[dstIdx] = newDst;
+      arr[srcIdx] = { nombre: "", equipo: srcEqDefault };
+    }
+    renderCourt(ctx);
+  }
+
+  function openNuevaSwapFlow(ctx, srcIdx) {
+    if (!playerState[ctx]) return;
+    const srcEqDefault = SLOT_EQUIPO[srcIdx];
+    // Slots del otro equipo
+    const otherIdxs = [0,1,2,3].filter(function (i) { return SLOT_EQUIPO[i] !== srcEqDefault; });
+    const empties = [];
+    const occupied = [];
+    otherIdxs.forEach(function (i) {
+      const j = playerState[ctx][i] || {};
+      const filled = !!(j.nombre || j.uid || j.claimedByUid);
+      if (filled) occupied.push({ idx: i, slot: j });
+      else empties.push(i);
+    });
+    // Caso A: hay espacio → mover directo al primer empty.
+    if (empties.length >= 1 && occupied.length === 0) {
+      performNuevaSwap(ctx, srcIdx, empties[0]);
+      return;
+    }
+    if (empties.length >= 1) {
+      performNuevaSwap(ctx, srcIdx, empties[0]);
+      return;
+    }
+    // Caso B: otro equipo lleno → modal con 2 opciones de intercambio.
+    if (!$moveMenu) return;
+    const srcSlot = playerState[ctx][srcIdx] || {};
+    const srcName = srcSlot.nombre || ["Yo","Mi partner","Rival 1","Rival 2"][srcIdx];
+    $moveMenu.innerHTML = "";
+    const head = document.createElement("div");
+    head.className = "mp-move-menu-head";
+    head.textContent = "¿Con quién intercambiar a " + srcName + "?";
+    $moveMenu.appendChild(head);
+    occupied.forEach(function (o) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = "⇆ Cambiar con " + (o.slot.nombre || ["Yo","Mi partner","Rival 1","Rival 2"][o.idx]);
+      b.addEventListener("click", function () {
+        $moveMenu.classList.remove("is-open");
+        $moveMenu.style.transform = "";
+        performNuevaSwap(ctx, srcIdx, o.idx);
+      });
+      $moveMenu.appendChild(b);
+    });
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.textContent = "Cancelar";
+    cancel.addEventListener("click", function () {
+      $moveMenu.classList.remove("is-open");
+      $moveMenu.style.transform = "";
+    });
+    $moveMenu.appendChild(cancel);
+    $moveMenu.style.left = "50%";
+    $moveMenu.style.top = "50%";
+    $moveMenu.style.transform = "translate(-50%, -50%)";
+    $moveMenu.classList.add("is-open");
+  }
+
   // Bind clicks de la cancha visual a openSheet
   function wireCourt(ctx) {
     const grid = ctx === "nueva"
       ? document.getElementById("nuevaCourtGrid")
       : document.getElementById("endCourtGrid");
     if (!grid) return;
+    // F93 Item 8: click delegate del botón ⇆ swap del slot
+    grid.addEventListener("click", function (e) {
+      const sw = e.target.closest && e.target.closest('[data-action="nueva-swap"]');
+      if (!sw) return;
+      e.stopPropagation();
+      const idx = Number(sw.dataset.slot);
+      if (!Number.isInteger(idx) || idx < 0 || idx > 3) return;
+      openNuevaSwapFlow(ctx, idx);
+    }, true); // capture: antes del handler de openSheet
     // Etapa 16.4 F50: doble-tap detector en form previo (igual que F40 en cancha activa)
     const tapTimers = {};
     grid.addEventListener("click", function (e) {
       const slot = e.target.closest(".mp-slot");
       if (!slot) return;
+      // F93: si el click venía del botón swap, ya se manejó arriba
+      if (e.target.closest && e.target.closest('[data-action="nueva-swap"]')) return;
       const idx = Number(slot.getAttribute("data-slot"));
       if (!Number.isInteger(idx) || idx < 0 || idx > 3) return;
       const j = playerState[ctx][idx] || {};
