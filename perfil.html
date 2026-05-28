@@ -64,6 +64,55 @@
 
   .pz-matches-list { display:flex; flex-direction:column; gap:12px; margin-bottom:14px; }
 
+  /* F82 Item 17: lista de puntazos pendientes (estilo chips densos) */
+  .pz-pending-list {
+    display: flex; flex-direction: column;
+    gap: 8px;
+    margin-bottom: 30px;
+  }
+  .pz-pending-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .pz-pending-state {
+    flex-shrink: 0;
+    font-size: 1.3rem;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: rgba(11, 124, 255, 0.12);
+  }
+  .pz-pending-state.is-visible { background: rgba(34, 197, 94, 0.16); }
+  .pz-pending-state.is-error { background: rgba(255, 80, 80, 0.16); }
+  .pz-pending-state.is-pending { background: rgba(255, 170, 60, 0.16); }
+  .pz-pending-info {
+    flex: 1; min-width: 0;
+  }
+  .pz-pending-title {
+    font-size: 0.92rem; font-weight: 800; color: #fff;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pz-pending-meta {
+    font-size: 0.78rem; color: rgba(234, 242, 255, 0.55);
+    margin-top: 2px;
+  }
+  .pz-pending-action {
+    flex-shrink: 0;
+  }
+  .pz-pending-action a {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.16);
+    border: 1px solid rgba(34, 197, 94, 0.40);
+    color: #9af2c0;
+    text-decoration: none;
+    font-size: 0.74rem; font-weight: 800;
+  }
+
   /* F81: botón "Ver todos mis partidos" debajo de la lista */
   .pz-matches-seeall {
     display:block; text-align:center;
@@ -229,6 +278,23 @@
         ⚙️ Tus partidos están sincronizándose. Si esto persiste, contacta a soporte.
       </div>
 
+      <!-- F82 Item 17 — Mis puntazos pendientes (pulsos digitales solicitados
+           que aún no han llegado a 'visible'). Query a pending_pulses por
+           uid_creator. -->
+      <div class="pz-section-title">
+        <h3>🎯 Mis puntazos pendientes</h3>
+        <span id="pendingCount" class="pz-section-count" style="display:none"></span>
+      </div>
+      <div id="pendingList" class="pz-pending-list" style="display:none"></div>
+      <div id="pendingLoading" class="pz-matches-loading" style="display:none">
+        <div class="empty-icon">⏳</div>
+        <p>Cargando tus puntazos…</p>
+      </div>
+      <div id="pendingEmpty" class="pz-matches-empty" style="display:none">
+        <p>No tienes puntazos pendientes.<br>
+           Cuando pidas uno desde el botón de la app, aparecerá aquí mientras se procesa.</p>
+      </div>
+
       <!-- ── Guardados ── -->
       <div class="pz-section-title">
         <h3>Videos guardados</h3>
@@ -282,6 +348,13 @@
   const $matchesEmpty   = document.getElementById('matchesEmpty');
   const $matchesError   = document.getElementById('matchesError');
   const $matchesSeeAll  = document.getElementById('matchesSeeAll');
+  // F82 Item 17 — Mis puntazos pendientes
+  const $pendingList    = document.getElementById('pendingList');
+  const $pendingLoading = document.getElementById('pendingLoading');
+  const $pendingEmpty   = document.getElementById('pendingEmpty');
+  const $pendingCount   = document.getElementById('pendingCount');
+  let _pendingUnsub = null;
+  const _pendingMatches = new Map(); // matchId → match doc
 
   // F81: inyectar CSS de scoreboard-card una sola vez si el helper lo expone.
   if (window.PuntazoScoreboardCard && window.PuntazoScoreboardCard.CSS_REFERENCE) {
@@ -313,7 +386,115 @@
     }
     $perfilName.textContent = user.displayName || user.email || 'Mi perfil';
     loadMyMatches(user);
+    loadMyPendingPuntazos(user); // F82
     loadSaved(user);
+  }
+
+  // ============================================================
+  // F82 Item 17 — Mis puntazos pendientes (pending_pulses por uid)
+  // ============================================================
+  function pendingStateInfo(doc) {
+    // Decide qué emoji / texto mostrar según el estado del pulso.
+    // El pulso vive en pending_pulses; el estado canónico vive en
+    // clip_states (poblado por la NUC). En esta v1 no hacemos el
+    // join — derivamos del doc del pending_pulse.
+    if (!doc.consumed_at) {
+      return { emoji: "🟡", label: "En cola", cls: "is-pending", note: "Esperando ser procesado" };
+    }
+    // Si consumed_at viejo pero no hay clip_states asociado:
+    const ageMin = doc._ageMin || 0;
+    if (ageMin > 15) {
+      return { emoji: "⚠️", label: "Posiblemente con error", cls: "is-error", note: "Procesado hace más de 15 min, podría requerir ayuda" };
+    }
+    return { emoji: "🟠", label: "Procesando", cls: "is-pending", note: "Tu clip se está procesando" };
+  }
+
+  function showPendingState(which) {
+    $pendingLoading.style.display = (which === 'loading') ? 'block' : 'none';
+    $pendingList.style.display    = (which === 'list')    ? 'flex'  : 'none';
+    $pendingEmpty.style.display   = (which === 'empty')   ? 'block' : 'none';
+    if (which !== 'list') $pendingCount.style.display = 'none';
+  }
+
+  function renderPendingItem(doc, clubLabel) {
+    const info = pendingStateInfo(doc);
+    const item = document.createElement('div');
+    item.className = 'pz-pending-item';
+    const createdDate = tsToDate(doc.created_at);
+    const ago = createdDate ? (function () {
+      const min = Math.floor((Date.now() - createdDate.getTime()) / 60000);
+      if (min < 1) return 'hace instantes';
+      if (min < 60) return 'hace ' + min + ' min';
+      const h = Math.floor(min / 60);
+      if (h < 24) return 'hace ' + h + 'h';
+      const d = Math.floor(h / 24);
+      return 'hace ' + d + 'd';
+    })() : '';
+    const canchaTxt = doc.cancha ? ('Cancha ' + String(doc.cancha).replace(/^\D+/, '')) : '';
+    item.innerHTML = `
+      <div class="pz-pending-state ${info.cls}">${info.emoji}</div>
+      <div class="pz-pending-info">
+        <div class="pz-pending-title">${escapeHTML(info.label)} · ${escapeHTML(clubLabel || doc.club || '')} ${escapeHTML(canchaTxt)}</div>
+        <div class="pz-pending-meta">${escapeHTML(ago)} · ${escapeHTML(info.note)}</div>
+      </div>
+      ${info.cls === 'is-error' ? '<div class="pz-pending-action"><a href="https://wa.me/522206804856?text=' + encodeURIComponent('Hola Puntazo, mi puntazo de ' + (doc.club || '') + ' ' + canchaTxt + ' ' + ago + ' parece no haber subido.') + '" target="_blank">WhatsApp</a></div>' : ''}
+    `;
+    return item;
+  }
+
+  async function loadMyPendingPuntazos(user) {
+    if (_pendingUnsub) { try { _pendingUnsub(); } catch (_) {} _pendingUnsub = null; }
+    const db = (window.PuntazoFirebase && window.PuntazoFirebase.db) ? window.PuntazoFirebase.db() : null;
+    if (!db) return;
+    showPendingState('loading');
+    const cfg = await loadConfig();
+
+    function resolveClubName(locId) {
+      if (cfg && Array.isArray(cfg.locaciones)) {
+        const L = cfg.locaciones.find(x => x.id === locId);
+        if (L) return L.nombre || locId;
+      }
+      return locId || '';
+    }
+
+    try {
+      _pendingUnsub = db.collection('pending_pulses')
+        .where('uid_creator', '==', user.uid)
+        .orderBy('created_at', 'desc')
+        .limit(25)
+        .onSnapshot(function (snap) {
+          const docs = [];
+          snap.forEach(function (d) {
+            const data = d.data() || {};
+            const createdDate = tsToDate(data.created_at);
+            data._ageMin = createdDate ? Math.floor((Date.now() - createdDate.getTime()) / 60000) : 0;
+            // Filtrar los muy viejos (>24h y ya consumed) — son "ya pasaron",
+            // no aportan a "pendientes". Foco: lo que aún espera respuesta.
+            if (data.consumed_at && data._ageMin > 24 * 60) return;
+            docs.push(Object.assign({ _id: d.id }, data));
+          });
+          if (!docs.length) { showPendingState('empty'); return; }
+          $pendingList.innerHTML = '';
+          docs.forEach(function (doc) {
+            const item = renderPendingItem(doc, resolveClubName(doc.club));
+            $pendingList.appendChild(item);
+          });
+          showPendingState('list');
+          $pendingCount.textContent = docs.length === 1
+            ? '1 puntazo en proceso'
+            : (docs.length + ' puntazos en proceso');
+          $pendingCount.style.display = 'inline';
+        }, function (err) {
+          console.warn('[perfil pending] onSnapshot error', err);
+          if (err && err.code === 'failed-precondition') {
+            console.warn('[perfil pending] Firestore índice compuesto requerido para pending_pulses(uid_creator,created_at). Sigue el link en el error de arriba.');
+          }
+          showPendingState('empty'); // graceful: si no se puede, ocultamos
+        });
+    } catch (e) {
+      console.warn('[perfil pending] query setup error', e);
+      showPendingState('empty');
+    }
   }
 
   // ============================================================
