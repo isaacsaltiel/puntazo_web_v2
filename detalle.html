@@ -107,6 +107,53 @@
   }
   .dt-btn-primary:hover { background: linear-gradient(180deg, #0b7cff, #1d4ed8); filter: brightness(1.08); }
 
+  /* F95 BLOQUE 5: aceptación bilateral */
+  .dt-acceptance {
+    margin-bottom: 22px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(255, 170, 60, 0.08);
+    border: 1px solid rgba(255, 170, 60, 0.30);
+  }
+  .dt-acceptance.is-confirmed {
+    background: rgba(34, 197, 94, 0.10);
+    border-color: rgba(34, 197, 94, 0.35);
+  }
+  .dt-acceptance-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px;
+  }
+  .dt-acceptance-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+  }
+  .dt-acceptance-title {
+    font-size: 0.96rem;
+    font-weight: 900;
+    color: #fff;
+  }
+  .dt-acceptance-sub {
+    font-size: 0.78rem;
+    color: rgba(234, 242, 255, 0.65);
+    margin-top: 2px;
+  }
+  .dt-acceptance-actions {
+    display: flex; gap: 8px;
+    flex-wrap: wrap;
+  }
+  .dt-accept-btn {
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(34, 197, 94, 0.45);
+    background: rgba(34, 197, 94, 0.18);
+    color: #9af2c0;
+    font-family: inherit; font-weight: 800; font-size: 0.84rem;
+    cursor: pointer; transition: all .14s;
+  }
+  .dt-accept-btn:hover { background: rgba(34, 197, 94, 0.30); }
+  .dt-accept-btn.is-accepted { background: rgba(34, 197, 94, 0.10); }
+  .dt-accept-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+
   /* Foto resumen on-demand */
   .dt-photo-wrap {
     margin-bottom: 20px;
@@ -186,6 +233,18 @@
     <div class="dt-actions">
       <a id="dtEditBtn" class="dt-btn" href="#" style="display:none">✏️ Editar marcador y jugadores</a>
       <a id="dtShareBtn" class="dt-btn" href="#">📤 Compartir partido</a>
+    </div>
+
+    <!-- F95 BLOQUE 5: aceptación bilateral del marcador -->
+    <div id="dtAcceptanceBlock" class="dt-acceptance" style="display:none">
+      <div class="dt-acceptance-header">
+        <span class="dt-acceptance-icon" id="dtAcceptanceIcon">⏳</span>
+        <div>
+          <div class="dt-acceptance-title" id="dtAcceptanceTitle">Marcador pendiente de aceptación</div>
+          <div class="dt-acceptance-sub" id="dtAcceptanceSub">Que ambos equipos confirmen el marcador hace que sea oficial.</div>
+        </div>
+      </div>
+      <div class="dt-acceptance-actions" id="dtAcceptanceActions"></div>
     </div>
 
     <!-- Foto resumen on-demand (carga el resumen.html en iframe) -->
@@ -325,6 +384,81 @@
     });
   }
 
+  // F95 BLOQUE 5: aceptación bilateral del marcador
+  function renderAcceptanceBlock(match) {
+    const $block = document.getElementById('dtAcceptanceBlock');
+    const $icon = document.getElementById('dtAcceptanceIcon');
+    const $title = document.getElementById('dtAcceptanceTitle');
+    const $sub = document.getElementById('dtAcceptanceSub');
+    const $actions = document.getElementById('dtAcceptanceActions');
+    if (!$block) return;
+
+    // Solo aplicable a partidos terminados con marcador
+    if (match.status !== 'ended' || !match.marcador) { $block.style.display = 'none'; return; }
+    if (!window.PuntazoMatches || !window.PuntazoMatches.getScoreAcceptanceState) {
+      $block.style.display = 'none'; return;
+    }
+
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    const myUid = u ? u.uid : null;
+    const state = window.PuntazoMatches.getScoreAcceptanceState(match, myUid);
+
+    $block.style.display = '';
+    $block.classList.toggle('is-confirmed', state.bothTeamsAccepted);
+
+    if (state.bothTeamsAccepted) {
+      $icon.textContent = '✅';
+      $title.textContent = 'Marcador confirmado por ambos equipos';
+      $sub.textContent = state.acceptedCount + ' de ' + state.totalPlayers + ' jugadores lo han aceptado.';
+    } else if (state.acceptedCount > 0) {
+      $icon.textContent = '⏳';
+      $title.textContent = 'Pendiente del otro equipo';
+      $sub.textContent = state.acceptedCount + ' de ' + state.totalPlayers + ' jugadores ha aceptado. Falta al menos uno del ' + (state.acceptedByTeam1 ? 'equipo 2' : 'equipo 1') + '.';
+    } else {
+      $icon.textContent = '⏳';
+      $title.textContent = 'Marcador pendiente de aceptación';
+      $sub.textContent = 'Que ambos equipos confirmen el marcador hace que sea oficial.';
+    }
+
+    $actions.innerHTML = '';
+    // ¿El user actual está en el match? Solo entonces puede aceptar.
+    const jugadores = Array.isArray(match.jugadores) ? match.jugadores : [];
+    const userIsPlayer = myUid && jugadores.some(function (j) {
+      return j && (j.uid === myUid || j.claimedByUid === myUid);
+    });
+    if (userIsPlayer) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'dt-accept-btn' + (state.myAccepted ? ' is-accepted' : '');
+      btn.textContent = state.myAccepted ? '✓ Aceptaste el marcador' : 'Aceptar marcador';
+      btn.addEventListener('click', async function () {
+        btn.disabled = true;
+        try {
+          if (state.myAccepted) {
+            await window.PuntazoMatches.unacceptScore(match.id, myUid);
+          } else {
+            await window.PuntazoMatches.acceptScore(match.id, myUid);
+          }
+          // Refresca match
+          const fresh = await window.PuntazoMatches.get(match.id);
+          if (fresh) { Object.assign(match, fresh); renderAcceptanceBlock(match); }
+        } catch (e) {
+          console.error('[detalle] acceptScore', e);
+          alert('No se pudo registrar tu aceptación.');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+      $actions.appendChild(btn);
+    } else if (!myUid) {
+      const note = document.createElement('div');
+      note.style.color = 'rgba(234,242,255,0.55)';
+      note.style.fontSize = '0.82rem';
+      note.textContent = 'Inicia sesión y reclama tu slot para poder aceptar.';
+      $actions.appendChild(note);
+    }
+  }
+
   function setupPhotoToggle(match) {
     let opened = false;
     $photoBtn.addEventListener('click', function () {
@@ -391,6 +525,7 @@
       renderMeta(match);
       setupEditButton(match);
       setupShareButton(match);
+      renderAcceptanceBlock(match);
       setupPhotoToggle(match);
       loadClips(match);
       show('content');

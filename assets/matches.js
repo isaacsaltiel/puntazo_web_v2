@@ -1208,6 +1208,50 @@
     return out;
   }
 
+  // ── F95 BLOQUE 5 (item 7): Aceptación bilateral del marcador ──
+  // scoreAcceptedBy = map { uid: true } — quien ha aceptado el marcador.
+  // El "lock" es semántico (UI lo respeta), no enforced en rules todavía
+  // para no romper edición durante migración.
+  async function acceptScore(matchId, uid) {
+    const id = nonEmptyString(matchId, "matchId");
+    const u = nonEmptyString(uid, "uid");
+    const upd = {
+      ["scoreAcceptedBy." + u]: true,
+      updatedAt: FV().serverTimestamp(),
+    };
+    await db().collection(COL).doc(id).update(upd);
+  }
+  async function unacceptScore(matchId, uid) {
+    const id = nonEmptyString(matchId, "matchId");
+    const u = nonEmptyString(uid, "uid");
+    const upd = {
+      ["scoreAcceptedBy." + u]: FV().delete(),
+      updatedAt: FV().serverTimestamp(),
+    };
+    await db().collection(COL).doc(id).update(upd);
+  }
+  // Devuelve { acceptedCount, totalPlayers, acceptedByTeam1, acceptedByTeam2,
+  //            bothTeamsAccepted, myAccepted } dado el match + currentUid.
+  function getScoreAcceptanceState(match, currentUid) {
+    const accBy = (match && match.scoreAcceptedBy) || {};
+    const acceptedUids = Object.keys(accBy).filter(function (k) { return !!accBy[k]; });
+    const jugadores = Array.isArray(match && match.jugadores) ? match.jugadores : [];
+    const t1Uids = jugadores.filter(function (j) { return j && j.uid && j.equipo === "team1"; }).map(function (j) { return j.uid; });
+    const t2Uids = jugadores.filter(function (j) { return j && j.uid && j.equipo === "team2"; }).map(function (j) { return j.uid; });
+    const totalPlayers = t1Uids.length + t2Uids.length;
+    const acceptedByTeam1 = t1Uids.some(function (u) { return acceptedUids.indexOf(u) >= 0; });
+    const acceptedByTeam2 = t2Uids.some(function (u) { return acceptedUids.indexOf(u) >= 0; });
+    return {
+      acceptedCount: acceptedUids.length,
+      totalPlayers: totalPlayers,
+      acceptedUids: acceptedUids,
+      acceptedByTeam1: acceptedByTeam1,
+      acceptedByTeam2: acceptedByTeam2,
+      bothTeamsAccepted: acceptedByTeam1 && acceptedByTeam2,
+      myAccepted: !!(currentUid && acceptedUids.indexOf(currentUid) >= 0),
+    };
+  }
+
   window.PuntazoMatches = {
     create,
     update: updateMatch,
@@ -1224,6 +1268,9 @@
     mergeMatchWithClaims,
     jugadoresBySlot,
     teamLabel,
+    acceptScore,
+    unacceptScore,
+    getScoreAcceptanceState,
     score: {
       validateSet,
       validateTiebreak,

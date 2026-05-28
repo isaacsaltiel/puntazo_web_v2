@@ -60,8 +60,11 @@ service cloud.firestore {
                     && (
                          request.auth.uid == resource.data.userId
                          ||
+                         // F95 BLOQUE 5 (item 7): invitados pueden modificar
+                         // jugadores Y scoreAcceptedBy (para aceptación bilateral
+                         // del marcador). updatedAt es housekeeping.
                          request.resource.data.diff(resource.data).affectedKeys()
-                           .hasOnly(['jugadores', 'updatedAt'])
+                           .hasOnly(['jugadores', 'updatedAt', 'scoreAcceptedBy'])
                        );
 
       allow delete: if false;
