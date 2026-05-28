@@ -29,6 +29,8 @@
 <script src="/assets/clip-states.js"></script>
 <script src="/assets/court-svg.js"></script>
 <script src="/assets/pulses.js"></script>
+<script src="/assets/identity.js"></script>
+<script src="/assets/player-autocomplete.js"></script>
 
 <style>
   /* F77: KO total de doble-tap zoom en mi-partido (mobile-first).
@@ -3912,8 +3914,20 @@
   const $sheetCancel = document.getElementById("mpSheetCancel");
   let _sheetCtx = null, _sheetIdx = -1;
 
+  // F88: attach autocomplete a $sheetInput una sola vez (al primer openSheet).
+  let _sheetAutocompleteAttached = false;
+  function ensureSheetAutocomplete() {
+    if (_sheetAutocompleteAttached) return;
+    if (!window.PuntazoPlayerAutocomplete || !$sheetInput) return;
+    try {
+      window.PuntazoPlayerAutocomplete.attach({ input: $sheetInput });
+      _sheetAutocompleteAttached = true;
+    } catch (_) {}
+  }
+
   function openSheet(ctx, idx) {
     _sheetCtx = ctx; _sheetIdx = idx;
+    ensureSheetAutocomplete();
     const j = playerState[ctx][idx];
     $sheetTitle.textContent = "Agregar jugador al slot";
     $sheetTeamTag.textContent = j.equipo === "team2" ? "Equipo 2" : "Equipo 1";
@@ -4863,8 +4877,22 @@
   const $endTeamEditCancel = document.getElementById("mpEndTeamEditCancel");
   let _endTeamEditTarget = null;
 
+  // F88: attach autocomplete una sola vez a los inputs J1/J2 del sheet
+  // de edit-team del modal terminar.
+  let _endTeamAutocompleteAttached = false;
+  function ensureEndTeamAutocomplete() {
+    if (_endTeamAutocompleteAttached) return;
+    if (!window.PuntazoPlayerAutocomplete) return;
+    try {
+      if ($endTeamEditJ1) window.PuntazoPlayerAutocomplete.attach({ input: $endTeamEditJ1 });
+      if ($endTeamEditJ2) window.PuntazoPlayerAutocomplete.attach({ input: $endTeamEditJ2 });
+      _endTeamAutocompleteAttached = true;
+    } catch (_) {}
+  }
+
   function openEndTeamEditSheet(team) {
     if (!$endTeamEditSheet || !$endTeamEditJ1 || !$endTeamEditJ2) return;
+    ensureEndTeamAutocomplete();
     _endTeamEditTarget = team;
     const arr = playerState["end"] || [];
     const inTeam = arr
