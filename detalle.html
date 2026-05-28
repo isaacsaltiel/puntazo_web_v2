@@ -107,6 +107,83 @@
   }
   .dt-btn-primary:hover { background: linear-gradient(180deg, #0b7cff, #1d4ed8); filter: brightness(1.08); }
 
+  /* F98 P2: overlay "¿Quién eres?" para flow de vinculación */
+  .dt-join-overlay {
+    position: fixed; inset: 0; z-index: 11000;
+    background: rgba(2, 6, 16, 0.88);
+    backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .dt-join-card {
+    background: linear-gradient(180deg, rgba(15,22,38,0.96), rgba(10,18,32,0.98));
+    border: 1px solid rgba(11, 124, 255, 0.40);
+    border-radius: 20px;
+    padding: 28px 22px 22px;
+    max-width: 420px; width: 100%;
+    box-shadow: 0 30px 80px rgba(0,0,0,.60);
+    text-align: center;
+  }
+  .dt-join-icon { font-size: 2.6rem; margin-bottom: 8px; }
+  .dt-join-title { font-size: 1.25rem; font-weight: 900; color: #fff; margin: 0 0 6px; }
+  .dt-join-sub { font-size: 0.88rem; color: rgba(234, 242, 255, 0.65); margin: 0 0 18px; }
+  .dt-join-slots {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 14px;
+  }
+  .dt-join-slot {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(11, 124, 255, 0.35);
+    background: rgba(11, 124, 255, 0.10);
+    color: #fff;
+    font-family: inherit; font-weight: 800; font-size: 0.98rem;
+    cursor: pointer;
+    transition: all .14s;
+    text-align: left;
+  }
+  .dt-join-slot:hover {
+    background: rgba(11, 124, 255, 0.22);
+    border-color: rgba(11, 124, 255, 0.65);
+    transform: translateY(-1px);
+  }
+  .dt-join-slot[disabled] { opacity: 0.50; cursor: not-allowed; }
+  .dt-join-slot-team-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
+  }
+  .dt-join-slot-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dt-join-slot-team {
+    font-size: 0.68rem; font-weight: 700;
+    color: rgba(234, 242, 255, 0.50);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .dt-join-loginreq {
+    padding: 14px;
+    background: rgba(255, 170, 60, 0.08);
+    border: 1px solid rgba(255, 170, 60, 0.30);
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+  .dt-join-loginreq p { font-size: 0.88rem; color: #ffd497; margin: 0 0 10px; }
+  .dt-join-msg {
+    min-height: 18px;
+    font-size: 0.82rem;
+    color: rgba(234, 242, 255, 0.55);
+    margin-bottom: 8px;
+  }
+  .dt-join-msg.ok  { color: #9af2c0; }
+  .dt-join-msg.bad { color: #f87171; }
+  .dt-join-skip {
+    appearance: none; border: none; background: transparent;
+    color: rgba(234, 242, 255, 0.55);
+    font-family: inherit; font-size: 0.84rem; font-weight: 700;
+    cursor: pointer; padding: 6px;
+  }
+  .dt-join-skip:hover { color: #cfe2ff; text-decoration: underline; }
+
   /* F95 BLOQUE 5: aceptación bilateral */
   .dt-acceptance {
     margin-bottom: 22px;
@@ -219,6 +296,22 @@
   <div id="dtNotFound" class="dt-state" style="display:none"><div class="icon">🔎</div>Partido no encontrado.</div>
   <div id="dtMissing" class="dt-state" style="display:none"><div class="icon">⚠️</div>Falta <code>?matchId=...</code> en la URL.</div>
 
+  <!-- F98 P2 (item 4): Overlay "¿Quién eres?" cuando llega vía join=1 -->
+  <div id="dtJoinOverlay" class="dt-join-overlay" style="display:none">
+    <div class="dt-join-card">
+      <div class="dt-join-icon">👋</div>
+      <h2 class="dt-join-title">¿Quién eres en este partido?</h2>
+      <p class="dt-join-sub">Selecciona tu nombre para vincular tu cuenta y validar el marcador.</p>
+      <div id="dtJoinSlots" class="dt-join-slots"></div>
+      <div class="dt-join-loginreq" id="dtJoinLoginReq" style="display:none">
+        <p>Necesitas iniciar sesión primero para reclamar tu slot.</p>
+        <button id="dtJoinDoLogin" type="button" class="dt-btn dt-btn-primary">Iniciar sesión</button>
+      </div>
+      <div id="dtJoinMsg" class="dt-join-msg"></div>
+      <button id="dtJoinSkip" type="button" class="dt-join-skip">Solo ver el partido (sin vincularme)</button>
+    </div>
+  </div>
+
   <div id="dtContent" style="display:none">
     <h1 class="dt-title" id="dtTitle">Detalle del partido</h1>
     <div class="dt-subtitle" id="dtSubtitle"></div>
@@ -282,6 +375,15 @@
 
   const params = new URLSearchParams(window.location.search);
   const matchId = params.get('matchId');
+  const joinFlag = params.get('join') === '1';  // F98 P2: flow "¿Quién eres?"
+
+  // F98 P2: refs del overlay join
+  const $joinOverlay = document.getElementById('dtJoinOverlay');
+  const $joinSlots = document.getElementById('dtJoinSlots');
+  const $joinLoginReq = document.getElementById('dtJoinLoginReq');
+  const $joinDoLogin = document.getElementById('dtJoinDoLogin');
+  const $joinMsg = document.getElementById('dtJoinMsg');
+  const $joinSkip = document.getElementById('dtJoinSkip');
 
   function show(which) {
     $loading.style.display  = (which === 'loading')  ? '' : 'none';
@@ -381,6 +483,105 @@
       }
       try { await navigator.clipboard.writeText(url); alert('Link copiado: ' + url); }
       catch (_) { prompt('Copia el link:', url); }
+    });
+  }
+
+  // F98 P2: flow "¿Quién eres?" cuando viene ?join=1
+  function maybeShowJoinFlow(match) {
+    if (!joinFlag) return;
+    if (!$joinOverlay) return;
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    // Si ya estoy vinculado, salto el flow.
+    if (u) {
+      const myJugIdx = (match.jugadores || []).findIndex(function (j) {
+        return j && (j.uid === u.uid || j.claimedByUid === u.uid);
+      });
+      if (myJugIdx >= 0) return; // ya soy player
+    }
+    // Construir lista de slots disponibles (sin uid + tienen nombre)
+    const jugadores = Array.isArray(match.jugadores) ? match.jugadores : [];
+    const available = jugadores
+      .map(function (j, i) { return Object.assign({ _idx: i }, j); })
+      .filter(function (j) {
+        return j && j.nombre && !j.uid;
+      });
+
+    $joinSlots.innerHTML = '';
+    if (available.length === 0) {
+      $joinMsg.className = 'dt-join-msg';
+      $joinMsg.textContent = 'Este partido ya tiene todos los jugadores vinculados.';
+    } else {
+      available.forEach(function (j) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'dt-join-slot';
+        const teamLabel = j.equipo === 'team2' ? 'Equipo 2' : 'Equipo 1';
+        const teamColor = j.equipo === 'team2' ? 'var(--team2-color,#c8e835)' : 'var(--team1-color,#0B7CFF)';
+        btn.innerHTML =
+          '<span class="dt-join-slot-team-dot" style="background:' + teamColor + ';color:' + teamColor + '"></span>' +
+          '<span class="dt-join-slot-name">Soy ' + escapeHtml(j.nombre) + '</span>' +
+          '<span class="dt-join-slot-team">' + teamLabel + '</span>';
+        btn.addEventListener('click', function () { claimSlot(match, j._idx, j.nombre, btn); });
+        $joinSlots.appendChild(btn);
+      });
+      // Si no estoy logueado, oculto slots y muestro login.
+      if (!u) {
+        $joinSlots.style.display = 'none';
+        $joinLoginReq.style.display = '';
+      } else {
+        $joinSlots.style.display = '';
+        $joinLoginReq.style.display = 'none';
+      }
+    }
+    $joinOverlay.style.display = '';
+  }
+
+  async function claimSlot(match, idx, name, btn) {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!u) { try { window.PuntazoAuth.signIn(); } catch (_) {} return; }
+    btn.disabled = true;
+    $joinMsg.className = 'dt-join-msg';
+    $joinMsg.textContent = 'Vinculando…';
+    try {
+      // Build nueva versión de jugadores con uid asignado al idx
+      const nuevaArr = (match.jugadores || []).map(function (j, i) {
+        if (i !== idx) return j;
+        return Object.assign({}, j, { uid: u.uid });
+      });
+      // Update jugadores + aceptar marcador en el mismo flujo
+      await window.PuntazoMatches.update(match.id, { jugadores: nuevaArr });
+      try { await window.PuntazoMatches.acceptScore(match.id, u.uid); } catch (_) {}
+      $joinMsg.className = 'dt-join-msg ok';
+      $joinMsg.textContent = '✓ Vinculado. Marcador aceptado por ti.';
+      // Cerrar overlay y refrescar match
+      setTimeout(function () {
+        $joinOverlay.style.display = 'none';
+        // Quitar ?join=1 del URL para no re-mostrar al refresh
+        const url = new URL(window.location.href);
+        url.searchParams.delete('join');
+        window.history.replaceState({}, '', url.toString());
+        // Reload del match para que renderAcceptanceBlock vea el cambio
+        load();
+      }, 700);
+    } catch (e) {
+      console.error('[detalle join] claim error', e);
+      $joinMsg.className = 'dt-join-msg bad';
+      $joinMsg.textContent = e && e.message ? e.message : 'No se pudo vincular.';
+      btn.disabled = false;
+    }
+  }
+
+  if ($joinDoLogin) {
+    $joinDoLogin.addEventListener('click', function () {
+      try { window.PuntazoAuth.signIn(); } catch (_) {}
+    });
+  }
+  if ($joinSkip) {
+    $joinSkip.addEventListener('click', function () {
+      $joinOverlay.style.display = 'none';
+      const url = new URL(window.location.href);
+      url.searchParams.delete('join');
+      window.history.replaceState({}, '', url.toString());
     });
   }
 
@@ -529,6 +730,7 @@
       setupPhotoToggle(match);
       loadClips(match);
       show('content');
+      maybeShowJoinFlow(match); // F98 P2: tras render, si ?join=1 mostramos el overlay
     } catch (e) {
       console.error('[detalle] load error', e);
       show('notfound');
