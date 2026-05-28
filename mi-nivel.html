@@ -231,6 +231,51 @@
     font-size: 0.8em;
   }
 
+  /* F99 P3: bloque de estado honesto */
+  .ml-status-block {
+    margin-bottom: 18px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: rgba(255, 170, 60, 0.08);
+    border: 1px solid rgba(255, 170, 60, 0.30);
+  }
+  .ml-status-block.is-rankeado {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.30);
+  }
+  .ml-status-line {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 6px;
+  }
+  .ml-status-emoji { font-size: 1.4rem; flex-shrink: 0; }
+  .ml-status-title { font-size: 0.96rem; font-weight: 900; color: #fff; }
+  .ml-status-detail { font-size: 0.82rem; color: rgba(234, 242, 255, 0.70); line-height: 1.4; }
+  .ml-status-progress {
+    height: 8px;
+    margin-top: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .ml-status-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, rgba(255, 170, 60, 0.5), rgba(255, 170, 60, 0.95));
+    border-radius: 999px;
+    transition: width .4s;
+  }
+  .ml-status-block.is-rankeado .ml-status-progress-fill {
+    background: linear-gradient(90deg, rgba(34, 197, 94, 0.5), rgba(34, 197, 94, 0.95));
+  }
+  .ml-status-pending {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.20);
+    border-radius: 10px;
+    font-size: 0.78rem;
+    color: rgba(234, 242, 255, 0.75);
+  }
+  .ml-status-pending strong { color: #ffd497; }
+
   .ml-loginreq, .ml-empty {
     text-align: center;
     padding: 50px 20px;
@@ -256,6 +301,11 @@
   <div id="mlContent" style="display:none">
     <!-- Hero: bucket emoji gigante -->
     <div class="ml-hero" id="mlHero"></div>
+
+    <!-- F99 P3 (items 5+9+10): bloque que explica el estado real
+         del ranking si el usuario es provisional o si tiene partidos
+         pendientes de validación. -->
+    <div id="mlStatusBlock" class="ml-status-block" style="display:none"></div>
 
     <!-- Stats row -->
     <div class="ml-stats" id="mlStats"></div>
@@ -335,13 +385,8 @@
     if (r.isCalibrating) {
       $hero.innerHTML = `
         <div class="ml-bucket-emoji">🎯</div>
-        <div class="ml-bucket-name">Calibrando</div>
-        <div class="ml-calibrating">
-          Necesitas ${3 - r.matchCount} ${3 - r.matchCount === 1 ? 'partido más' : 'partidos más'} para tener tu nivel oficial.
-          <div class="ml-calibrating-bar">
-            <div class="ml-calibrating-fill" style="width:${(r.matchCount/3)*100}%"></div>
-          </div>
-        </div>
+        <div class="ml-bucket-name">Jugador provisional</div>
+        <div class="ml-range" style="margin-top:8px">Tu nivel oficial aparecerá cuando completes los partidos válidos requeridos.</div>
       `;
       return;
     }
@@ -351,6 +396,79 @@
       <div class="ml-nivel">Nivel <span class="ml-nivel-num">${r.bucket.nivel.toFixed(1)}</span></div>
       <div class="ml-range">Rating <strong>${fmtRange(r.rating, r.RD)}</strong></div>
     `;
+  }
+
+  // F99 P3 (items 9+10): bloque de estado real del ranking.
+  function renderStatusBlock(r) {
+    const $block = document.getElementById('mlStatusBlock');
+    if (!$block) return;
+    const MIN = 3; // Glicko-2 calibration mínimo
+    const rankableCount = r.totalMatchesRankable || 0;
+    const playedCount = r.totalMatchesPlayed || 0;
+    const pending = r.pendingValidation || [];
+
+    // Estado provisional → mostrar progreso N/3
+    if (r.isCalibrating || rankableCount < MIN) {
+      const remaining = Math.max(0, MIN - rankableCount);
+      const pct = Math.min(100, (rankableCount / MIN) * 100);
+      let pendingHtml = '';
+      if (pending.length > 0) {
+        pendingHtml = `
+          <div class="ml-status-pending">
+            🔔 <strong>${pending.length} ${pending.length === 1 ? 'partido pendiente' : 'partidos pendientes'} de validación</strong>.
+            Para que un partido cuente para ranking, al menos un jugador del equipo rival debe vincularse.
+            Comparte el link del partido desde el resumen e invita a los rivales con "Invitar jugadores al partido".
+          </div>
+        `;
+      } else if (playedCount === 0) {
+        pendingHtml = `
+          <div class="ml-status-pending">
+            Aún no tienes partidos terminados. Cuando termines uno, aparecerá aquí.
+          </div>
+        `;
+      }
+      $block.innerHTML = `
+        <div class="ml-status-line">
+          <span class="ml-status-emoji">🎯</span>
+          <span class="ml-status-title">Llevas ${rankableCount} de ${MIN} partidos válidos para ranking</span>
+        </div>
+        <div class="ml-status-detail">
+          ${remaining === 0
+            ? 'Casi listo — tu rating ya se calcula, sigue jugando para tener bucket oficial.'
+            : 'Necesitas <strong>' + remaining + '</strong> ' + (remaining === 1 ? 'partido válido más' : 'partidos válidos más') + ' para aparecer como jugador rankeado oficial.'}
+        </div>
+        <div class="ml-status-progress">
+          <div class="ml-status-progress-fill" style="width:${pct}%"></div>
+        </div>
+        ${pendingHtml}
+      `;
+      $block.classList.remove('is-rankeado');
+      $block.style.display = '';
+      return;
+    }
+
+    // Estado rankeado → resumen + pendientes si los hay
+    let pendingHtml = '';
+    if (pending.length > 0) {
+      pendingHtml = `
+        <div class="ml-status-pending">
+          🔔 <strong>${pending.length} ${pending.length === 1 ? 'partido pendiente' : 'partidos pendientes'} de validación</strong>
+          (no cuentan para ranking aún). Invita a los rivales desde el resumen del partido.
+        </div>
+      `;
+    }
+    $block.innerHTML = `
+      <div class="ml-status-line">
+        <span class="ml-status-emoji">✅</span>
+        <span class="ml-status-title">Jugador rankeado</span>
+      </div>
+      <div class="ml-status-detail">
+        Tu nivel se calcula con ${rankableCount} ${rankableCount === 1 ? 'partido válido' : 'partidos válidos'}.
+      </div>
+      ${pendingHtml}
+    `;
+    $block.classList.add('is-rankeado');
+    $block.style.display = '';
   }
 
   function renderStats(r) {
@@ -442,11 +560,16 @@
     show('loading');
     try {
       const r = await window.PuntazoRankingClient.computeMyRating(user.uid);
-      if (r.matchCount === 0 && r.totalMatchesRankable === 0) {
+      // F99 P3: solo empty si NUNCA terminó ningún partido. Si tiene partidos
+      // jugados aunque ninguno rankable → mostramos content con bloque de
+      // status explicando "necesitas invitar al rival".
+      const played = r.totalMatchesPlayed || 0;
+      if (played === 0 && r.totalMatchesRankable === 0) {
         show('empty');
         return;
       }
       renderHero(r);
+      renderStatusBlock(r); // F99 P3
       renderStats(r);
       renderSparkline(r.history);
       renderHistory(r.history);

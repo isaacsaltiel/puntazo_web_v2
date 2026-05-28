@@ -101,7 +101,12 @@
     return matches;
   }
 
-  // Filtra a matches válidos para ranking (ended + ganador definido).
+  // F99 P3 (item 5): un match cuenta para ranking solo si:
+  //   - status === "ended"
+  //   - tiene marcador con ganador definido (no empate, no null)
+  //   - HAY AL MENOS 1 jugador con uid REAL POR EQUIPO (no inventado)
+  //     Esto cierra "alguien me ganó 6-0 6-0 vs Cristiano Ronaldo" — Cristiano
+  //     no tiene uid → match no cuenta.
   function filterRankable(matches) {
     return matches.filter(function (m) {
       if (!m || m.status !== "ended") return false;
@@ -109,12 +114,41 @@
       if (!ma) return false;
       const w = ma.ganador;
       if (w !== "team1" && w !== "team2") return false;
-      // Necesita al menos 1 jugador con uid por equipo
       const j = Array.isArray(m.jugadores) ? m.jugadores : [];
       const t1 = j.filter(function (x) { return x && x.uid && x.equipo === "team1"; });
       const t2 = j.filter(function (x) { return x && x.uid && x.equipo === "team2"; });
       return t1.length > 0 && t2.length > 0;
     });
+  }
+
+  // F99 P3: clasifica TODOS los matches en buckets para UI honesta.
+  // Devuelve { played, rankable, pendingValidation } por slot.
+  function classifyMatches(allMatches, focusUid) {
+    const played = [];          // todos los ended donde estoy
+    const rankable = [];        // ended + rival vinculado + ganador definido
+    const pendingValidation = []; // ended pero sin rival vinculado → "te falta invitar"
+
+    allMatches.forEach(function (m) {
+      if (!m || m.status !== "ended") return;
+      const jugadores = Array.isArray(m.jugadores) ? m.jugadores : [];
+      const myJ = jugadores.find(function (j) { return j && (j.uid === focusUid || j.claimedByUid === focusUid); });
+      if (!myJ) return; // no estoy en ese match
+      played.push(m);
+
+      const ma = m.marcador;
+      const w = ma && ma.ganador;
+      const hasWinner = (w === "team1" || w === "team2");
+      const t1Uids = jugadores.filter(function (x) { return x && x.uid && x.equipo === "team1"; }).length;
+      const t2Uids = jugadores.filter(function (x) { return x && x.uid && x.equipo === "team2"; }).length;
+      const bothTeamsHaveUid = t1Uids > 0 && t2Uids > 0;
+
+      if (hasWinner && bothTeamsHaveUid) {
+        rankable.push(m);
+      } else {
+        pendingValidation.push(m);
+      }
+    });
+    return { played: played, rankable: rankable, pendingValidation: pendingValidation };
   }
 
   // Procesa lista de matches en orden cronológico ASC y devuelve
@@ -177,7 +211,8 @@
   async function computeMyRating(uid, opts) {
     if (!uid) throw new Error("uid requerido");
     const allMatches = await fetchUserMatches(uid, opts);
-    const rankable = filterRankable(allMatches);
+    const buckets = classifyMatches(allMatches, uid);
+    const rankable = buckets.rankable;
     if (!rankable.length) {
       return {
         rating: PR.INITIAL_RATING,
@@ -188,7 +223,9 @@
         bucket: PR.bucketForRating(PR.conservativeRating(PR.INITIAL_RATING, PR.INITIAL_RD)),
         history: [],
         totalMatchesFetched: allMatches.length,
+        totalMatchesPlayed: buckets.played.length,
         totalMatchesRankable: 0,
+        pendingValidation: buckets.pendingValidation,
       };
     }
     const result = processMatchesCumulative(rankable, uid);
@@ -226,7 +263,9 @@
       wins: wins,
       losses: losses,
       totalMatchesFetched: allMatches.length,
+      totalMatchesPlayed: buckets.played.length,
       totalMatchesRankable: rankable.length,
+      pendingValidation: buckets.pendingValidation, // matches que NO cuentan pero ya se jugaron
     };
   }
 
@@ -251,6 +290,7 @@
   window.PuntazoRankingClient = {
     computeMyRating: computeMyRating,
     countMatchStats: countMatchStats,
+    classifyMatches: classifyMatches,
     _fetchUserMatches: fetchUserMatches,
     _filterRankable: filterRankable,
     _processMatchesCumulative: processMatchesCumulative,
