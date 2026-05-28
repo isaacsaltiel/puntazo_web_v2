@@ -369,6 +369,84 @@
   .pz-flex-grow { flex: 1 1 auto; min-height: 10px; }
 
   /* ════════════════════════════════════════════════════
+     F97 P1 — Acciones reorganizadas (items 2+3+7)
+     - 2 rows con 2 cards hermanas cada una
+     - botón CTA grande de "Ver mi perfil" al final
+  ════════════════════════════════════════════════════ */
+  .rs-actions-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  @media (max-width: 540px) {
+    .rs-actions-row { grid-template-columns: 1fr; }
+  }
+  .rs-act-card {
+    appearance: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    color: #fff;
+    font-family: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .14s, background .14s, border-color .14s;
+    min-height: 78px;
+  }
+  .rs-act-card:hover {
+    background: rgba(11, 124, 255, 0.12);
+    border-color: rgba(11, 124, 255, 0.35);
+    transform: translateY(-1px);
+  }
+  .rs-act-icon {
+    flex-shrink: 0;
+    width: 38px; height: 38px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    background: rgba(11, 124, 255, 0.16);
+    border: 1px solid rgba(11, 124, 255, 0.28);
+    font-size: 1.25rem;
+  }
+  .rs-act-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .rs-act-title { font-size: 0.94rem; font-weight: 900; color: #fff; line-height: 1.2; }
+  .rs-act-sub { font-size: 0.78rem; font-weight: 500; color: rgba(234, 242, 255, 0.60); line-height: 1.3; }
+
+  .rs-secondary-row {
+    margin-top: 10px;
+    display: flex; justify-content: center;
+  }
+
+  /* CTA "Ver mi perfil" final */
+  .rs-btn-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin: 22px 0 4px;
+    padding: 16px 22px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #0b7cff, #1d4ed8);
+    color: #fff;
+    font-family: inherit;
+    font-size: 1.02rem;
+    font-weight: 900;
+    text-decoration: none;
+    box-shadow: 0 14px 36px rgba(11, 124, 255, 0.34);
+    transition: transform .12s, filter .14s;
+    letter-spacing: 0.3px;
+  }
+  .rs-btn-cta:hover { filter: brightness(1.10); transform: translateY(-2px); }
+  .rs-btn-cta:active { transform: scale(0.97); }
+  .rs-btn-cta-arrow { font-size: 1.2rem; }
+
+  /* ════════════════════════════════════════════════════
      CONTROLES (fuera de la tarjeta — NO se capturan)
   ════════════════════════════════════════════════════ */
   .rs-controls {
@@ -1134,31 +1212,59 @@
       </div>
     </div>
 
-    <!-- F76: foto del partido promovida arriba de los controles. Comunica
-         que se puede subir una selfie con tu pareja o una celebración sin
-         sonar cursi. -->
-    <div class="rs-photo-row">
-      <button id="rsBtnPhoto" class="rs-btn-photo" type="button">
-        <span class="rs-btn-photo-icon" aria-hidden="true">📷</span>
-        <span class="rs-btn-photo-body">
-          <span class="rs-btn-photo-title">Súbele una foto al resumen</span>
-          <span class="rs-btn-photo-sub">Una selfie con tu pareja, una del equipo o de la celebración.</span>
+    <!-- F97 P1 (item 2): Acciones del partido reorganizadas.
+         Bloque 1 (HERMANOS): Subir foto | Editar marcador y jugadores
+         Bloque 2 (HERMANOS): Compartir foto resumen | Invitar jugadores
+         Bloque 3 (CTA final): Ver mi perfil → cierre del flujo -->
+    <input type="file" id="rsPhotoInput" accept="image/*" capture="environment" style="display:none" />
+
+    <div class="rs-actions-row" id="rsActionsEdit">
+      <button id="rsBtnPhoto" class="rs-act-card" type="button">
+        <span class="rs-act-icon">📷</span>
+        <span class="rs-act-body">
+          <span class="rs-act-title">Subir foto</span>
+          <span class="rs-act-sub">Sube una selfie con tu pareja, una del equipo o la celebración.</span>
         </span>
       </button>
-      <input type="file" id="rsPhotoInput" accept="image/*" capture="environment" style="display:none" />
+      <a id="rsBtnEdit" class="rs-act-card" href="#" style="display:none">
+        <span class="rs-act-icon">✏️</span>
+        <span class="rs-act-body">
+          <span class="rs-act-title">Editar marcador y jugadores</span>
+          <span class="rs-act-sub">Corrige el resultado o agrega nombres faltantes.</span>
+        </span>
+      </a>
     </div>
 
-    <!-- Controles (fuera de la tarjeta) -->
-    <div class="rs-controls" id="rsControls">
-      <button id="rsBtnShare" class="rs-btn rs-btn-primary" type="button">📤 Compartir</button>
-      <button id="rsBtnDownload" class="rs-btn rs-btn-secondary" type="button">⬇️ Descargar resumen</button>
+    <div class="rs-actions-row" id="rsActionsShare">
+      <button id="rsBtnShare" class="rs-act-card" type="button">
+        <span class="rs-act-icon">📤</span>
+        <span class="rs-act-body">
+          <span class="rs-act-title">Compartir foto resumen</span>
+          <span class="rs-act-sub">Manda la imagen del partido por WhatsApp / IG / etc.</span>
+        </span>
+      </button>
+      <button id="rsBtnInvite" class="rs-act-card" type="button">
+        <span class="rs-act-icon">👥</span>
+        <span class="rs-act-body">
+          <span class="rs-act-title">Invitar jugadores al partido</span>
+          <span class="rs-act-sub">Para que se vinculen, validen el marcador y cuente en ranking.</span>
+        </span>
+      </button>
     </div>
-    <!-- Etapa 16.4 F16: edición post-partido (discreto, owner-only se evalúa
-         al cargar; redirige a mi-partido.html?matchId=X&edit=1 que abre el modal) -->
-    <div class="rs-edit-row">
-      <a id="rsBtnEdit" class="rs-btn-edit" href="#" style="display:none">✏️ Editar marcador y jugadores</a>
+
+    <!-- Botón secundario "descargar" como acción tertiaria -->
+    <div class="rs-secondary-row">
+      <button id="rsBtnDownload" class="rs-btn rs-btn-secondary" type="button">⬇️ Descargar imagen</button>
     </div>
+
     <div id="rsFeedback" class="rs-feedback"></div>
+
+    <!-- F97 P1 (item 7): CTA grande de salida — "Ver mi perfil" arriba,
+         no escondido al fondo. Cierre claro del flujo. -->
+    <a id="rsBtnVerPerfil" class="rs-btn-cta" href="/perfil.html">
+      <span>Terminar y ver mi perfil</span>
+      <span class="rs-btn-cta-arrow">→</span>
+    </a>
 
     <!-- Estado de tus clips (Etapa 13 — R3.1) -->
     <div id="rsClipStates" class="rs-clip-states" style="display:none">
@@ -1708,6 +1814,34 @@
   // Web Share API con archivos: iOS Safari 15+, Android Chrome.
   // SIEMPRE se chequea navigator.canShare({files}) antes; en desktop y
   // navegadores sin soporte → fallback obligatorio a descarga.
+  // F97 P2 (item 3+4): Compartir partido / invitar jugadores.
+  // Distinto de compartir foto. Manda link a detalle.html?join=1
+  // donde el invitado verá el marcador y elegirá quién es.
+  const $btnInvite = document.getElementById("rsBtnInvite");
+  if ($btnInvite) {
+    $btnInvite.addEventListener("click", async function () {
+      if (!currentMatch || !currentMatch.id) {
+        setFeedback("Aún no se cargó el partido.", "bad");
+        return;
+      }
+      const url = window.location.origin + "/detalle.html?matchId=" +
+                  encodeURIComponent(currentMatch.id) + "&join=1";
+      const txt = 'Únete a este partido en Puntazo (marcador, jugadores, validar resultado): ' + url;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "Mi partido en Puntazo", text: txt, url: url });
+          return;
+        }
+      } catch (_) { /* user canceló o no hay share */ }
+      try {
+        await navigator.clipboard.writeText(url);
+        setFeedback("Link copiado al portapapeles. Pégalo a tus rivales para que se vinculen.", "ok");
+      } catch (_) {
+        prompt("Copia el link y mándaselo a los demás:", url);
+      }
+    });
+  }
+
   $btnShare.addEventListener("click", async function () {
     if ($btnShare.disabled) return;
     $btnShare.disabled = true;
