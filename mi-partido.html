@@ -7483,6 +7483,7 @@
       if (!currentMatch || !currentMatch.id) return;
       $liveOvClose.disabled = true;
       $liveOvClose.textContent = "Cerrando…";
+      const matchIdAtClose = currentMatch.id;
       try {
         const m = liveBuildSafeMarcador(currentMatch);
         // Construir marcador final compatible con el modal "terminar":
@@ -7493,19 +7494,19 @@
         if (Array.isArray(m.tiebreak) && m.tiebreak.some(function (t) { return t != null; })) {
           finalMarcador.tiebreak = m.tiebreak.map(function (t) { return t || { team1: 0, team2: 0 }; });
         }
-        await window.PuntazoMatches.end(currentMatch.id, {
+        await window.PuntazoMatches.end(matchIdAtClose, {
           marcador: finalMarcador,
           modo: currentMatch.modo,
         });
+        // F90 Item 1+11: cerrar TODOS los overlays (finished + FS marcador)
+        // y redirigir directo a resumen. No dejar al user atorado en FS.
         liveCloseFinishedOverlay();
-        // Refrescar match
-        const fresh = await window.PuntazoMatches.get(currentMatch.id);
-        if (fresh) await renderMatch(fresh);
-        if ($successBanner) $successBanner.classList.add("is-visible");
+        try { if (typeof closeFullscreenScoreboard === "function") closeFullscreenScoreboard(); } catch (_) {}
+        // Redirect a resumen (NUNCA detalle — Flujo A: recién-terminé)
+        window.location.href = "/resumen.html?matchId=" + encodeURIComponent(matchIdAtClose);
       } catch (e) {
         console.error("[mi-partido 16.2] end via live overlay failed", e);
         showToast("No se pudo cerrar el partido: " + (e && e.message ? e.message : "error"), "bad", 2800);
-      } finally {
         $liveOvClose.disabled = false;
         $liveOvClose.textContent = "Cerrar partido";
       }
