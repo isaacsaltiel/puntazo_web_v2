@@ -49,6 +49,9 @@
     overflow: hidden;
     -webkit-text-size-adjust: 100%;
     position: relative;
+    /* F77: KO doble-tap zoom (mobile-first) */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
   /* Etapa 16.3 — fondo dividido por equipo + respiración sutil */
   body::before {
