@@ -2400,83 +2400,109 @@
   }
 
   /* ════════════════════════════════════════════════════════════════
-     Etapa 16.4 F54: orientación LANDSCAPE del FS marcador
-     Detección automática vía media query (orientation: landscape).
-     Reorganiza el shell para aprovechar el ancho: header arriba,
-     debajo 3 columnas (pad E1 | score+P central | pad E2).
+     F94 BLOQUE 4 (Item 10): rediseño LANDSCAPE FS — "cabina de control"
+     Layout 3 columnas SIMÉTRICAS (1fr 1fr 1fr):
+       header full-width arriba
+       padl (equipo izq: nombre arriba + botones abajo)
+       center (marcador arriba + Puntazo abajo, alineados al centro)
+       padr (equipo der: nombre arriba + botones abajo)
      ════════════════════════════════════════════════════════════════ */
   @media (orientation: landscape) and (max-height: 600px) {
     .mp-fs-shell {
       display: grid;
-      grid-template-columns: 1fr 1.4fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr; /* SIMETRICO */
       grid-template-rows: auto 1fr;
       grid-template-areas:
         "header header header"
         "padl   center  padr";
-      gap: 10px;
-      padding: 10px 12px 14px;
+      gap: 8px;
+      padding: 6px 10px 8px;
+      height: 100dvh;
+      box-sizing: border-box;
     }
     .mp-fs-header {
       grid-area: header;
-      padding: 4px 0 8px;
-      gap: 10px;
+      padding: 2px 0 4px;
+      gap: 8px;
     }
-    .mp-fs-logo { height: 26px; }
-    .mp-fs-venue { font-size: 0.78rem; }
-    .mp-fs-timer { font-size: 0.82rem; }
+    .mp-fs-logo { height: 22px; }
+    .mp-fs-venue { font-size: 0.74rem; }
+    .mp-fs-timer { font-size: 0.78rem; }
 
-    /* Centro: score + botón P + label + undo apilados verticales */
+    /* Centro: score arriba, P abajo, alineados con space-between */
     .mp-fs-center-stack {
       grid-area: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
+      justify-content: space-between;
+      height: 100%;
+      padding: 4px 0 2px;
       min-width: 0;
+      gap: 4px;
     }
     /* Score: ocultamos los nombres laterales (ya están en los pad labels) */
     .mp-fs-score {
       grid-template-columns: 1fr;
-      padding: 4px 0;
+      padding: 2px 0;
       gap: 4px;
+      width: 100%;
     }
     .mp-fs-score > .mp-fs-team { display: none; }
     .mp-fs-numbers { grid-column: 1; }
-    .mp-fs-num { font-size: 1.50rem; }
-    .mp-fs-num--xl { font-size: 2.10rem; }
+    .mp-fs-num { font-size: 1.55rem; }
+    .mp-fs-num--xl { font-size: 2.20rem; }
     .mp-fs-row { gap: 10px; }
-    .mp-fs-row-label { font-size: 0.58rem; }
-    .mp-fs-hint { font-size: 0.70rem; margin-top: 2px; }
+    .mp-fs-row-label { font-size: 0.56rem; }
+    .mp-fs-hint { display: none; } /* en landscape el hint estorba la simetria */
 
-    /* Botón P más chico en landscape */
-    .mp-fs-puntazo-row { margin: 6px 0 0; gap: 6px; }
-    .mp-fs-puntazo-btn { width: 92px; height: 92px; }
-    .mp-fs-puntazo-label { font-size: 0.66rem; letter-spacing: 1.2px; }
-    .mp-fs-clip-feedback { font-size: 0.68rem; min-height: 14px; }
-
-    /* Pads de equipo a los lados, no abajo */
-    .mp-fs-teams {
-      display: contents;
+    /* Botón P centrado, no apriete los lados */
+    .mp-fs-puntazo-row {
+      margin: 0;
+      gap: 4px;
+      flex-shrink: 0;
     }
+    .mp-fs-puntazo-btn { width: 78px; height: 78px; }
+    .mp-fs-puntazo-label { font-size: 0.62rem; letter-spacing: 1.0px; }
+    .mp-fs-clip-feedback { font-size: 0.66rem; min-height: 12px; }
+
+    /* Pads de equipo a los lados — nombre arriba, botones llenando abajo */
+    .mp-fs-teams { display: contents; }
     .mp-fs-team-pad[data-team="team1"] { grid-area: padl; }
     .mp-fs-team-pad[data-team="team2"] { grid-area: padr; }
     .mp-fs-team-pad {
-      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      padding: 6px 6px;
       gap: 6px;
+      height: 100%;
       max-height: 100%;
       overflow: hidden;
     }
-    .mp-fs-team-pad-grid {
-      grid-template-rows: minmax(40px, 1fr) minmax(54px, 1fr) minmax(40px, 1fr);
-      gap: 5px;
+    .mp-fs-team-pad-label {
+      flex: 0 0 auto;
+      font-size: 0.66rem;
+      letter-spacing: 0.6px;
+      text-align: center;
+      padding: 2px 2px;
     }
-    .mp-fs-team-pad .mp-live-pad-btn { min-height: 40px; font-size: 0.84rem; }
-    .mp-fs-team-pad .mp-live-pad-btn.pad-game { font-size: 0.98rem; }
+    .mp-fs-team-pad-grid {
+      flex: 1 1 auto;
+      display: grid;
+      grid-template-rows: 1fr 1.2fr 1fr;
+      gap: 5px;
+      min-height: 0;
+    }
+    .mp-fs-team-pad .mp-live-pad-btn {
+      min-height: 38px;
+      font-size: 0.86rem;
+    }
+    .mp-fs-team-pad .mp-live-pad-btn.pad-game { font-size: 1.02rem; min-height: 44px; }
+    .mp-fs-team-pad .mp-live-pad-btn.pad-set  { font-size: 0.82rem; min-height: 36px; }
 
-    /* Undo abajo del centro */
-    .mp-fs-undo-row { margin-top: 4px; }
-    .mp-live-undo-btn { min-height: 34px; padding: 6px 14px; font-size: 0.76rem; }
+    /* Undo en el centro abajo (junto al P) */
+    .mp-fs-undo-row { margin-top: 2px; }
+    .mp-live-undo-btn { min-height: 30px; padding: 4px 12px; font-size: 0.72rem; }
   }
 
   /* ── Etapa 16.4 F12: fondo dinámico con la imagen de la cancha ── */
