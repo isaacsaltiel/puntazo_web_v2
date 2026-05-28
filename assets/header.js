@@ -4,6 +4,16 @@
   if (window.__PZ_HEADER_LOADED__) return;
   window.__PZ_HEADER_LOADED__ = true;
 
+  // F101: si header.js se carga en <head> antes de que exista #nav-root
+  // en el body, diferimos hasta DOMContentLoaded. Sin esto, las páginas
+  // nuevas (grupos, amigos, mi-nivel, detalle, etc) cargaban sin header.
+  if (!document.getElementById("nav-root") && document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootHeader);
+    return;
+  }
+  bootHeader();
+
+  function bootHeader() {
   const root = document.getElementById("nav-root");
   if (!root) { console.warn("[Puntazo Header] No existe #nav-root"); return; }
 
@@ -331,4 +341,5 @@
       setTimeout(poll, 80);
     })();
   }
+  } // end bootHeader (F101)
 })();

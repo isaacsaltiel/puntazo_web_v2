@@ -205,15 +205,44 @@
               });
             });
 
-            if (!claims.length) { showState('empty'); return; }
+            // F101 fix: ADEMÁS de claims, traer matches owned por mí.
+            const byMatchId = new Map();
+            try {
+              const ownedSnap = await db.collection('matches')
+                .where('userId', '==', user.uid)
+                .orderBy('startedAt', 'desc')
+                .limit(100)
+                .get();
+              ownedSnap.forEach(function (d) {
+                const data = Object.assign({ id: d.id }, d.data());
+                byMatchId.set(d.id, data);
+                _matchCache.set(d.id, data);
+              });
+            } catch (e) {
+              console.warn('[mis-partidos] owned query fallo', e);
+            }
 
             const cfg = await cfgP;
-            const matches = await Promise.all(claims.map(c => fetchMatchById(db, c.matchId)));
+            // Fetch los claimed que no estén ya en owned
+            const toFetch = claims.filter(function (c) { return !byMatchId.has(c.matchId); });
+            const fetched = await Promise.all(toFetch.map(c => fetchMatchById(db, c.matchId)));
+            toFetch.forEach(function (c, i) {
+              const m = fetched[i];
+              if (m) byMatchId.set(m.id, m);
+            });
+
+            if (!byMatchId.size) { showState('empty'); return; }
+
+            const matchesList = Array.from(byMatchId.values()).sort(function (a, b) {
+              const ta = (a.startedAt && a.startedAt.toDate) ? a.startedAt.toDate() : new Date(0);
+              const tb = (b.startedAt && b.startedAt.toDate) ? b.startedAt.toDate() : new Date(0);
+              return tb - ta;
+            });
 
             $list.innerHTML = '';
             let rendered = 0;
-            for (let i = 0; i < claims.length; i++) {
-              const m = matches[i];
+            for (let i = 0; i < matchesList.length; i++) {
+              const m = matchesList[i];
               if (!m) continue;
               const { locNombre, canNombre } = resolveNames(cfg, m.loc, m.can);
               const status = m.status || 'active';

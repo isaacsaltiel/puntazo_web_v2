@@ -792,23 +792,63 @@
               });
             });
 
-            if (!claims.length) { showMatchesState('empty'); return; }
+            // F101: ADEMÁS de los claims, traer matches donde YO soy
+            // el creator (userId == myUid). Sin esto, mis propios partidos
+            // como owner no aparecían en "Mis partidos".
+            let ownedMatches = [];
+            try {
+              const ownedSnap = await db.collection('matches')
+                .where('userId', '==', myUid)
+                .orderBy('startedAt', 'desc')
+                .limit(20)
+                .get();
+              ownedSnap.forEach(function (d) {
+                ownedMatches.push(Object.assign({ id: d.id }, d.data()));
+                // Cachear para fetchMatchById no duplique fetch
+                _matchCache.set(d.id, Object.assign({ id: d.id }, d.data()));
+              });
+            } catch (e) {
+              console.warn('[perfil mis-partidos] owned query fallo', e);
+            }
 
             const cfg = await cfgP;
-            const matches = await Promise.all(claims.map(c => fetchMatchById(db, c.matchId)));
+
+            // Dedupe por matchId: si está en claims Y en owned, usar el doc cacheado
+            const byMatchId = new Map();
+            // Primero owned (más fresco, sin necesidad de fetch)
+            ownedMatches.forEach(function (m) {
+              byMatchId.set(m.id, { match: m, claim: null });
+            });
+            // Después claims que no estén ya en owned
+            const claimsToFetch = claims.filter(function (c) { return !byMatchId.has(c.matchId); });
+            const fetched = await Promise.all(claimsToFetch.map(c => fetchMatchById(db, c.matchId)));
+            claimsToFetch.forEach(function (c, i) {
+              const m = fetched[i];
+              if (m) byMatchId.set(m.id, { match: m, claim: c });
+            });
+            // Para los claims donde el match SÍ estaba en owned, ajusto el claim
+            claims.forEach(function (c) {
+              if (byMatchId.has(c.matchId) && !byMatchId.get(c.matchId).claim) {
+                byMatchId.get(c.matchId).claim = c;
+              }
+            });
+
+            // Ordenar por startedAt desc
+            const allMatches = Array.from(byMatchId.values()).sort(function (a, b) {
+              const ta = (a.match.startedAt && a.match.startedAt.toDate) ? a.match.startedAt.toDate() : new Date(0);
+              const tb = (b.match.startedAt && b.match.startedAt.toDate) ? b.match.startedAt.toDate() : new Date(0);
+              return tb - ta;
+            });
 
             $matchesList.innerHTML = '';
-            // F81 Item 12: máximo 3 partidos visibles en perfil. Si hay
-            // más, se activa "Ver todos mis partidos" → mis-partidos.html
             const MAX_IN_PERFIL = 3;
             let renderedTotal = 0;
             let renderedInPerfil = 0;
-            for (let i = 0; i < claims.length; i++) {
-              const m = matches[i];
-              if (!m) continue;
+            for (let i = 0; i < allMatches.length; i++) {
+              const item = allMatches[i];
               renderedTotal++;
               if (renderedInPerfil < MAX_IN_PERFIL) {
-                const card = buildMatchCard(m, claims[i], cfg, myUid);
+                const card = buildMatchCard(item.match, item.claim, cfg, myUid);
                 $matchesList.appendChild(card);
                 renderedInPerfil++;
               }
@@ -818,8 +858,8 @@
 
             showMatchesState('list');
             $matchesCount.textContent = renderedTotal === 1
-              ? '1 partido vinculado'
-              : `${renderedTotal} partidos vinculados`;
+              ? '1 partido'
+              : (renderedTotal + ' partidos');
             $matchesCount.style.display = 'inline';
 
             if ($matchesSeeAll) {

@@ -54,51 +54,66 @@
     return null;
   }
 
-  // Trae los matches asociados al user via collectionGroup claims.
-  // Cap por defecto 100 matches más recientes.
+  // F101 fix: combina 2 fuentes de matches del user:
+  //   1) matches.where(userId == uid)        — partidos que CREÓ
+  //   2) collectionGroup(claims).where(uid)  — partidos donde RECLAMÓ slot
+  // Sin (1), los partidos donde el user es owner pero no claimed no
+  // aparecían (bug "no me sale en Mis partidos"). Dedupe por matchId.
   async function fetchUserMatches(uid, opts) {
     opts = opts || {};
     const limit = opts.limit || 100;
     const D = db();
     if (!D) return [];
 
-    let claimsSnap;
+    const matchById = new Map();
+
+    // (1) matches creados por mí
     try {
-      claimsSnap = await D.collectionGroup("claims")
+      const ownedSnap = await D.collection("matches")
+        .where("userId", "==", uid)
+        .orderBy("startedAt", "desc")
+        .limit(limit)
+        .get();
+      ownedSnap.forEach(function (d) {
+        matchById.set(d.id, Object.assign({ id: d.id }, d.data()));
+      });
+    } catch (e) {
+      console.warn("[ranking-client] owned query fallo", e);
+    }
+
+    // (2) matches reclamados via claims
+    let matchIds = [];
+    try {
+      const claimsSnap = await D.collectionGroup("claims")
         .where("uid", "==", uid)
         .orderBy("claimedAt", "desc")
         .limit(limit)
         .get();
+      claimsSnap.forEach(function (d) {
+        const parent = d.ref.parent && d.ref.parent.parent;
+        if (parent && !matchById.has(parent.id)) matchIds.push(parent.id);
+      });
     } catch (e) {
       console.warn("[ranking-client] claims query fallo", e);
-      return [];
     }
 
-    const matchIds = [];
-    claimsSnap.forEach(function (d) {
-      const parent = d.ref.parent && d.ref.parent.parent;
-      if (parent) matchIds.push(parent.id);
-    });
-    if (!matchIds.length) return [];
-
-    // Fetch en paralelo (cap por batches de 30 para no saturar)
-    const batches = [];
-    for (let i = 0; i < matchIds.length; i += 30) {
-      batches.push(matchIds.slice(i, i + 30));
+    // Fetch los claimed que aún no tenemos
+    if (matchIds.length) {
+      const batches = [];
+      for (let i = 0; i < matchIds.length; i += 30) batches.push(matchIds.slice(i, i + 30));
+      for (const batch of batches) {
+        const fetched = await Promise.all(batch.map(function (id) {
+          return D.collection("matches").doc(id).get()
+            .then(function (snap) {
+              if (!snap.exists) return null;
+              return Object.assign({ id: snap.id }, snap.data());
+            })
+            .catch(function () { return null; });
+        }));
+        fetched.forEach(function (m) { if (m) matchById.set(m.id, m); });
+      }
     }
-    const matches = [];
-    for (const batch of batches) {
-      const fetched = await Promise.all(batch.map(function (id) {
-        return D.collection("matches").doc(id).get()
-          .then(function (snap) {
-            if (!snap.exists) return null;
-            return Object.assign({ id: snap.id }, snap.data());
-          })
-          .catch(function () { return null; });
-      }));
-      fetched.forEach(function (m) { if (m) matches.push(m); });
-    }
-    return matches;
+    return Array.from(matchById.values());
   }
 
   // F99 P3 (item 5): un match cuenta para ranking solo si:
@@ -121,18 +136,23 @@
     });
   }
 
-  // F99 P3: clasifica TODOS los matches en buckets para UI honesta.
-  // Devuelve { played, rankable, pendingValidation } por slot.
+  // F99 P3 + F101: clasifica TODOS los matches en buckets.
+  //   played            = ended donde figuro (como jugador con uid O como owner)
+  //   rankable          = played + ganador definido + ≥1 uid por equipo + YO vinculado en jugadores[]
+  //   pendingValidation = played pero NO rankable (falta vincular rival o falta yo mismo)
   function classifyMatches(allMatches, focusUid) {
-    const played = [];          // todos los ended donde estoy
-    const rankable = [];        // ended + rival vinculado + ganador definido
-    const pendingValidation = []; // ended pero sin rival vinculado → "te falta invitar"
+    const played = [];
+    const rankable = [];
+    const pendingValidation = [];
 
     allMatches.forEach(function (m) {
       if (!m || m.status !== "ended") return;
       const jugadores = Array.isArray(m.jugadores) ? m.jugadores : [];
       const myJ = jugadores.find(function (j) { return j && (j.uid === focusUid || j.claimedByUid === focusUid); });
-      if (!myJ) return; // no estoy en ese match
+      const isOwner = m.userId === focusUid;
+      // F101: si NO estoy en jugadores[] pero soy owner → todavía cuenta como "played"
+      // (es mi partido aunque no me haya puesto en ningún slot todavía).
+      if (!myJ && !isOwner) return;
       played.push(m);
 
       const ma = m.marcador;
@@ -142,7 +162,8 @@
       const t2Uids = jugadores.filter(function (x) { return x && x.uid && x.equipo === "team2"; }).length;
       const bothTeamsHaveUid = t1Uids > 0 && t2Uids > 0;
 
-      if (hasWinner && bothTeamsHaveUid) {
+      // Rankable requiere que YO esté vinculado en jugadores[] (sino el motor no sabe mi equipo).
+      if (hasWinner && bothTeamsHaveUid && myJ) {
         rankable.push(m);
       } else {
         pendingValidation.push(m);
