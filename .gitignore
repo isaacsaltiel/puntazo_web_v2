@@ -22,6 +22,9 @@ $RECYCLE.BIN/
 *.swp
 *~
 
+# ─── Claude Code worktrees efímeros / cache local ─────────────
+.claude/
+
 # ─── Python ───────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
