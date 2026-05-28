@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Editar mi perfil · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/header.js"></script>
+<script src="/assets/identity.js"></script>
+
+<style>
+  html, body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pe-wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 90px 16px 60px;
+  }
+  .pe-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-bottom: 14px;
+    padding: 8px 14px;
+    background: rgba(11, 124, 255, 0.10);
+    border: 1px solid rgba(11, 124, 255, 0.30);
+    border-radius: 999px;
+    color: #cfe2ff;
+    font-family: inherit; font-weight: 700; font-size: 0.86rem;
+    text-decoration: none;
+  }
+  h1 { font-size: 1.55rem; font-weight: 900; color: #fff; margin: 0 0 18px; letter-spacing: -0.3px; }
+
+  .pe-section {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 18px 18px 14px;
+    margin-bottom: 14px;
+  }
+  .pe-section h3 {
+    font-size: 0.92rem; font-weight: 800;
+    color: rgba(234, 242, 255, 0.85);
+    margin: 0 0 12px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  .pe-field {
+    margin-bottom: 14px;
+  }
+  .pe-field:last-child { margin-bottom: 0; }
+  .pe-label {
+    display: block;
+    font-size: 0.82rem; font-weight: 700;
+    color: rgba(234, 242, 255, 0.65);
+    margin-bottom: 6px;
+  }
+  .pe-input, .pe-textarea, .pe-select {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.30);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    outline: none;
+    transition: border-color .14s, background .14s;
+  }
+  .pe-input:focus, .pe-textarea:focus, .pe-select:focus {
+    border-color: rgba(11, 124, 255, 0.55);
+    background: rgba(0, 79, 200, 0.10);
+  }
+  .pe-textarea { min-height: 84px; resize: vertical; }
+  .pe-hint {
+    font-size: 0.74rem; color: rgba(234, 242, 255, 0.45);
+    margin-top: 4px;
+  }
+  .pe-handle-row {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .pe-handle-prefix {
+    color: rgba(234, 242, 255, 0.45);
+    font-size: 0.95rem; font-weight: 800;
+    padding: 12px 6px 12px 0;
+  }
+  .pe-handle-status {
+    font-size: 0.78rem; font-weight: 700;
+    margin-top: 6px;
+    min-height: 18px;
+  }
+  .pe-handle-status.is-ok    { color: #4ade80; }
+  .pe-handle-status.is-bad   { color: #f87171; }
+  .pe-handle-status.is-info  { color: rgba(234, 242, 255, 0.55); }
+
+  .pe-actions {
+    display: flex; gap: 10px;
+    margin-top: 22px;
+  }
+  .pe-btn {
+    flex: 1;
+    padding: 14px 18px;
+    border: none;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.98rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform .12s, filter .14s;
+  }
+  .pe-btn-primary {
+    background: linear-gradient(180deg, #0b7cff, #1d4ed8);
+    color: #fff;
+    box-shadow: 0 10px 28px rgba(11,124,255,0.32);
+  }
+  .pe-btn-primary:hover { filter: brightness(1.08); }
+  .pe-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+  .pe-btn-secondary {
+    background: rgba(255,255,255,0.06);
+    color: #cfe2ff;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .pe-btn:active { transform: scale(0.98); }
+
+  .pe-msg {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    display: none;
+  }
+  .pe-msg.is-visible { display: block; }
+  .pe-msg.ok  { background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.30); color: #c8f7dc; }
+  .pe-msg.bad { background: rgba(255,80,80,.10); border: 1px solid rgba(255,80,80,.25); color: #ffd5d5; }
+
+  .pe-loginreq, .pe-loading {
+    text-align: center;
+    padding: 50px 20px;
+    color: rgba(234, 242, 255, 0.70);
+  }
+  .pe-loginreq a { color: #6fb2ff; font-weight: 800; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="pe-wrap">
+  <a class="pe-back" href="/perfil.html">← Mi perfil</a>
+  <h1>Editar mi perfil</h1>
+
+  <div id="peLoading" class="pe-loading">⏳ Cargando…</div>
+  <div id="peLoginReq" class="pe-loginreq" style="display:none">
+    Necesitas <a href="#" id="peDoLogin">iniciar sesión</a> para editar tu perfil.
+  </div>
+
+  <div id="peForm" style="display:none">
+    <div class="pe-section">
+      <h3>Identidad</h3>
+      <div class="pe-field">
+        <label class="pe-label" for="peDisplayName">Nombre para mostrar</label>
+        <input id="peDisplayName" type="text" class="pe-input" maxlength="60" placeholder="Cómo te ven los demás" />
+        <div class="pe-hint">El nombre con el que apareces en los partidos.</div>
+      </div>
+      <div class="pe-field">
+        <label class="pe-label" for="peHandle">Handle (único)</label>
+        <div class="pe-handle-row">
+          <span class="pe-handle-prefix">@</span>
+          <input id="peHandle" type="text" class="pe-input" maxlength="20" placeholder="tu_handle" autocomplete="off" />
+        </div>
+        <div id="peHandleStatus" class="pe-handle-status is-info">Solo letras minúsculas, números y guión bajo (3–20 chars). Sirve para que te encuentren.</div>
+      </div>
+      <div class="pe-field">
+        <label class="pe-label" for="peRealName">Nombre real (opcional, solo visible a amigos)</label>
+        <input id="peRealName" type="text" class="pe-input" maxlength="80" placeholder="Tu nombre completo" />
+      </div>
+      <div class="pe-field">
+        <label class="pe-label" for="peBio">Bio (140 chars)</label>
+        <textarea id="peBio" class="pe-textarea" maxlength="140" placeholder="Algo sobre ti como jugador…"></textarea>
+      </div>
+      <div class="pe-field">
+        <label class="pe-label" for="peHomeClub">Club principal</label>
+        <input id="peHomeClub" type="text" class="pe-input" maxlength="60" placeholder="Ej: BreakPoint" />
+      </div>
+    </div>
+
+    <div class="pe-section">
+      <h3>Privacidad</h3>
+      <div class="pe-field">
+        <label class="pe-label" for="pePrivacyProfile">¿Quién ve mi perfil?</label>
+        <select id="pePrivacyProfile" class="pe-select">
+          <option value="public">🌍 Público (cualquiera)</option>
+          <option value="friends">👥 Solo amigos</option>
+          <option value="private">🔒 Solo yo</option>
+        </select>
+      </div>
+      <div class="pe-field">
+        <label class="pe-label" for="pePrivacyClips">¿Quién ve mis clips?</label>
+        <select id="pePrivacyClips" class="pe-select">
+          <option value="public">🌍 Público</option>
+          <option value="friends">👥 Solo amigos</option>
+          <option value="private">🔒 Solo yo</option>
+        </select>
+      </div>
+      <div class="pe-field">
+        <label class="pe-label" for="pePrivacyMatches">¿Quién ve mis partidos?</label>
+        <select id="pePrivacyMatches" class="pe-select">
+          <option value="public">🌍 Público</option>
+          <option value="friends">👥 Solo amigos</option>
+          <option value="private">🔒 Solo yo</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="pe-actions">
+      <button id="peSave" class="pe-btn pe-btn-primary" type="button">Guardar cambios</button>
+      <a href="/perfil.html" class="pe-btn pe-btn-secondary" style="text-align:center;text-decoration:none;line-height:1.4">Cancelar</a>
+    </div>
+    <div id="peMsg" class="pe-msg"></div>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  const $loading = document.getElementById('peLoading');
+  const $loginReq = document.getElementById('peLoginReq');
+  const $form = document.getElementById('peForm');
+  const $doLogin = document.getElementById('peDoLogin');
+
+  const $displayName = document.getElementById('peDisplayName');
+  const $handle = document.getElementById('peHandle');
+  const $handleStatus = document.getElementById('peHandleStatus');
+  const $realName = document.getElementById('peRealName');
+  const $bio = document.getElementById('peBio');
+  const $homeClub = document.getElementById('peHomeClub');
+  const $privProfile = document.getElementById('pePrivacyProfile');
+  const $privClips = document.getElementById('pePrivacyClips');
+  const $privMatches = document.getElementById('pePrivacyMatches');
+  const $save = document.getElementById('peSave');
+  const $msg = document.getElementById('peMsg');
+
+  let _initialHandle = '';
+  let _handleCheckTimer = null;
+  let _handleLastChecked = '';
+  let _handleAvailable = true;
+
+  function show(which) {
+    $loading.style.display = (which === 'loading') ? '' : 'none';
+    $loginReq.style.display = (which === 'login') ? '' : 'none';
+    $form.style.display = (which === 'form') ? '' : 'none';
+  }
+
+  function setMsg(text, cls) {
+    if (!text) { $msg.className = 'pe-msg'; $msg.textContent = ''; return; }
+    $msg.className = 'pe-msg is-visible ' + (cls || '');
+    $msg.textContent = text;
+  }
+
+  function setHandleStatus(text, cls) {
+    $handleStatus.className = 'pe-handle-status ' + (cls || 'is-info');
+    $handleStatus.textContent = text || '';
+  }
+
+  async function checkHandleNow() {
+    const raw = $handle.value;
+    const h = window.PuntazoIdentity.normalizeHandle(raw);
+    if (h !== raw.toLowerCase()) $handle.value = h;
+    if (h === _initialHandle) {
+      setHandleStatus('Sin cambios.', 'is-info');
+      _handleAvailable = true;
+      return;
+    }
+    if (!h) {
+      setHandleStatus('Sin handle.', 'is-info');
+      _handleAvailable = true; // permitir borrar handle
+      return;
+    }
+    if (h === _handleLastChecked) return; // ya checado
+    setHandleStatus('Verificando…', 'is-info');
+    const r = await window.PuntazoIdentity.checkHandleAvailable(h);
+    _handleLastChecked = h;
+    if (r.available) {
+      setHandleStatus(r.ownedByMe ? 'Ya es tuyo.' : '✓ Disponible.', 'is-ok');
+      _handleAvailable = true;
+    } else {
+      setHandleStatus('✗ ' + (r.error || 'No disponible'), 'is-bad');
+      _handleAvailable = false;
+    }
+  }
+
+  $handle.addEventListener('input', function () {
+    setHandleStatus('Verificando…', 'is-info');
+    if (_handleCheckTimer) clearTimeout(_handleCheckTimer);
+    _handleCheckTimer = setTimeout(checkHandleNow, 450);
+  });
+
+  async function load() {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!u) { show('login'); return; }
+    show('loading');
+    try {
+      // ensureProfile garantizó que existe (vía identity.js auto-bootstrap)
+      const p = await window.PuntazoIdentity.getMyProfile();
+      if (!p) {
+        setMsg('No se pudo cargar tu perfil.', 'bad');
+        return;
+      }
+      $displayName.value = p.displayName || '';
+      $handle.value = p.handle || '';
+      _initialHandle = p.handle || '';
+      $realName.value = p.realName || '';
+      $bio.value = p.bio || '';
+      $homeClub.value = p.homeClub || '';
+      $privProfile.value = (p.privacy && p.privacy.profile) || 'public';
+      $privClips.value = (p.privacy && p.privacy.clips) || 'public';
+      $privMatches.value = (p.privacy && p.privacy.matches) || 'public';
+      show('form');
+    } catch (e) {
+      console.error('[perfil-editar] load failed', e);
+      setMsg('Error al cargar.', 'bad');
+    }
+  }
+
+  $save.addEventListener('click', async function () {
+    setMsg('', '');
+    $save.disabled = true;
+    $save.textContent = 'Guardando…';
+    try {
+      // Guardar cambios de perfil (sin handle)
+      const newHandle = window.PuntazoIdentity.normalizeHandle($handle.value);
+      const changes = {
+        displayName: $displayName.value.trim(),
+        realName: $realName.value.trim(),
+        bio: $bio.value.trim(),
+        homeClub: $homeClub.value.trim(),
+        privacy: {
+          profile: $privProfile.value,
+          clips: $privClips.value,
+          matches: $privMatches.value,
+        },
+      };
+      await window.PuntazoIdentity.updateMyProfile(changes);
+
+      // Handle: si cambió, reservar / liberar.
+      if (newHandle !== _initialHandle) {
+        if (!_handleAvailable) {
+          throw new Error('El handle no está disponible. Elige otro.');
+        }
+        if (!newHandle) {
+          await window.PuntazoIdentity.releaseMyHandle();
+        } else {
+          const hr = await window.PuntazoIdentity.setMyHandle(newHandle);
+          if (!hr.ok) throw new Error(hr.error || 'No se pudo guardar el handle');
+        }
+        _initialHandle = newHandle;
+      }
+      setMsg('✓ Perfil actualizado.', 'ok');
+      // Volver al perfil después de un beat
+      setTimeout(function () { window.location.href = '/perfil.html'; }, 900);
+    } catch (e) {
+      console.error('[perfil-editar] save error', e);
+      setMsg(e && e.message ? e.message : 'No se pudo guardar.', 'bad');
+    } finally {
+      $save.disabled = false;
+      $save.textContent = 'Guardar cambios';
+    }
+  });
+
+  if ($doLogin) {
+    $doLogin.addEventListener('click', function (e) {
+      e.preventDefault();
+      try { window.PuntazoAuth.signIn(); } catch (_) {}
+    });
+  }
+
+  window.addEventListener('puntazo:auth-ready', load);
+  window.addEventListener('puntazo:auth-changed', load);
+  setTimeout(function () {
+    if ($loading.style.display !== 'none') load();
+  }, 800);
+})();
+</script>
+</body>
+</html>
