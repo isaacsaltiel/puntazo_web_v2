@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Mi nivel · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/header.js"></script>
+<script src="/assets/ranking.js"></script>
+<script src="/assets/ranking-client.js"></script>
+
+<style>
+  html, body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ml-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 90px 16px 60px;
+  }
+  .ml-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-bottom: 14px;
+    padding: 8px 14px;
+    background: rgba(11, 124, 255, 0.10);
+    border: 1px solid rgba(11, 124, 255, 0.30);
+    border-radius: 999px;
+    color: #cfe2ff;
+    font-family: inherit; font-weight: 700; font-size: 0.86rem;
+    text-decoration: none;
+  }
+  .ml-back:hover { background: rgba(11, 124, 255, 0.20); }
+
+  /* Hero: bucket emoji gigante + rating */
+  .ml-hero {
+    background:
+      radial-gradient(800px 400px at 30% 0%, rgba(11,124,255,0.20), transparent 60%),
+      radial-gradient(800px 400px at 70% 100%, rgba(34,197,94,0.10), transparent 60%),
+      rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 22px;
+    padding: 32px 22px 26px;
+    text-align: center;
+    margin-bottom: 18px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.45);
+  }
+  .ml-hero-loading {
+    color: rgba(234, 242, 255, 0.55);
+    font-size: 1.05rem;
+    padding: 60px 20px;
+  }
+  .ml-bucket-emoji {
+    font-size: clamp(78px, 18vw, 130px);
+    line-height: 1;
+    display: inline-block;
+    filter: drop-shadow(0 0 20px rgba(11, 124, 255, 0.45));
+    margin-bottom: 8px;
+  }
+  .ml-bucket-name {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .ml-nivel {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #ffd97a;
+    letter-spacing: 0.5px;
+  }
+  .ml-nivel-num {
+    font-size: 2.2rem;
+    color: #ffd97a;
+    font-weight: 900;
+    text-shadow: 0 0 18px rgba(255, 217, 122, 0.45);
+  }
+  .ml-range {
+    margin-top: 14px;
+    font-size: 0.86rem;
+    color: rgba(234, 242, 255, 0.55);
+    font-variant-numeric: tabular-nums;
+  }
+  .ml-range strong { color: #cfe2ff; }
+
+  /* Calibración */
+  .ml-calibrating {
+    margin-top: 14px;
+    padding: 12px 16px;
+    background: rgba(255, 170, 60, 0.10);
+    border: 1px solid rgba(255, 170, 60, 0.35);
+    border-radius: 14px;
+    color: #ffd497;
+    font-size: 0.92rem;
+    font-weight: 700;
+  }
+  .ml-calibrating-bar {
+    margin-top: 8px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 170, 60, 0.18);
+    overflow: hidden;
+  }
+  .ml-calibrating-fill {
+    height: 100%;
+    background: linear-gradient(90deg, rgba(255, 170, 60, 0.45), rgba(255, 170, 60, 0.85));
+    border-radius: 999px;
+    transition: width .4s;
+  }
+
+  /* Stats cards row */
+  .ml-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .ml-stat {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .ml-stat-val {
+    font-size: 1.55rem;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.1;
+  }
+  .ml-stat-lbl {
+    font-size: 0.72rem;
+    color: rgba(234, 242, 255, 0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+    font-weight: 700;
+  }
+
+  /* Sparkline */
+  .ml-spark {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 18px 16px;
+    margin-bottom: 22px;
+  }
+  .ml-spark-title {
+    font-size: 0.78rem;
+    color: rgba(234, 242, 255, 0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .ml-spark svg { width: 100%; height: 80px; display: block; }
+
+  /* History list */
+  .ml-history-title {
+    font-size: 1.05rem; font-weight: 900;
+    color: #fff;
+    margin: 0 0 12px;
+  }
+  .ml-history {
+    display: flex; flex-direction: column;
+    gap: 8px;
+    margin-bottom: 22px;
+  }
+  .ml-history-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+  }
+  .ml-history-result {
+    flex-shrink: 0;
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    font-size: 1.05rem; font-weight: 900;
+    color: #fff;
+  }
+  .ml-history-result.win { background: rgba(34, 197, 94, 0.18); color: #9af2c0; }
+  .ml-history-result.loss { background: rgba(255, 80, 80, 0.18); color: #ffb1a3; }
+  .ml-history-info {
+    flex: 1; min-width: 0;
+  }
+  .ml-history-vs {
+    font-size: 0.92rem; font-weight: 800; color: #fff;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .ml-history-meta {
+    font-size: 0.74rem; color: rgba(234, 242, 255, 0.55);
+    margin-top: 2px;
+  }
+  .ml-history-delta {
+    flex-shrink: 0;
+    font-size: 0.96rem; font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .ml-history-delta.up { background: rgba(34, 197, 94, 0.16); color: #4ade80; }
+  .ml-history-delta.down { background: rgba(255, 80, 80, 0.16); color: #f87171; }
+
+  /* Disclaimer cliente-side */
+  .ml-disclaimer {
+    margin-top: 24px;
+    padding: 12px 16px;
+    background: rgba(11, 124, 255, 0.06);
+    border: 1px solid rgba(11, 124, 255, 0.18);
+    border-radius: 14px;
+    font-size: 0.78rem; color: rgba(234, 242, 255, 0.65);
+    line-height: 1.5;
+  }
+  .ml-disclaimer code {
+    background: rgba(0,0,0,0.3);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+  }
+
+  .ml-loginreq, .ml-empty {
+    text-align: center;
+    padding: 50px 20px;
+    color: rgba(234, 242, 255, 0.70);
+  }
+  .ml-loginreq a, .ml-empty a {
+    color: #6fb2ff; text-decoration: none; font-weight: 800;
+  }
+  .ml-empty .icon { font-size: 3rem; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="ml-wrap">
+  <a class="ml-back" href="/perfil.html">← Mi perfil</a>
+
+  <div id="mlLoading" class="ml-hero ml-hero-loading">
+    ⏳ Calculando tu nivel…
+  </div>
+
+  <div id="mlContent" style="display:none">
+    <!-- Hero: bucket emoji gigante -->
+    <div class="ml-hero" id="mlHero"></div>
+
+    <!-- Stats row -->
+    <div class="ml-stats" id="mlStats"></div>
+
+    <!-- Sparkline -->
+    <div class="ml-spark" id="mlSparkWrap" style="display:none">
+      <div class="ml-spark-title">Evolución del rating</div>
+      <svg id="mlSpark" viewBox="0 0 400 80" preserveAspectRatio="none"></svg>
+    </div>
+
+    <!-- Historia de matches -->
+    <h2 class="ml-history-title">Tus últimos partidos</h2>
+    <div class="ml-history" id="mlHistory"></div>
+
+    <!-- Disclaimer -->
+    <div class="ml-disclaimer">
+      🧪 <b>Versión preview</b>. Tu rating se calcula en tu propio dispositivo
+      a partir de tus partidos. Los ratings de tus oponentes se estiman
+      localmente y pueden no coincidir con los suyos. Cuando se active el
+      cálculo global en servidor (próximamente), todos los ratings serán
+      definitivos y comparables entre usuarios.
+    </div>
+  </div>
+
+  <div id="mlLoginReq" class="ml-loginreq" style="display:none">
+    Necesitas <a href="#" id="mlDoLogin">iniciar sesión</a> para ver tu nivel.
+  </div>
+
+  <div id="mlEmpty" class="ml-empty" style="display:none">
+    <div class="icon">🎾</div>
+    <p><b>Aún no tienes partidos para calcular nivel.</b><br>
+    Juega tu primer partido en <a href="/entrada.html">entrada</a> o reclama
+    tu slot en algún partido en curso. Después de 3 partidos terminados,
+    tu rating oficial aparecerá aquí.</p>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  const $loading  = document.getElementById('mlLoading');
+  const $content  = document.getElementById('mlContent');
+  const $loginReq = document.getElementById('mlLoginReq');
+  const $empty    = document.getElementById('mlEmpty');
+  const $doLogin  = document.getElementById('mlDoLogin');
+  const $hero     = document.getElementById('mlHero');
+  const $stats    = document.getElementById('mlStats');
+  const $sparkWrap= document.getElementById('mlSparkWrap');
+  const $spark    = document.getElementById('mlSpark');
+  const $history  = document.getElementById('mlHistory');
+
+  function show(which) {
+    $loading.style.display  = (which === 'loading') ? '' : 'none';
+    $content.style.display  = (which === 'content') ? '' : 'none';
+    $loginReq.style.display = (which === 'login')   ? '' : 'none';
+    $empty.style.display    = (which === 'empty')   ? '' : 'none';
+  }
+
+  function fmtRange(r, rd) {
+    return Math.round(r) + ' ± ' + Math.round(rd);
+  }
+
+  function fmtRelDate(d) {
+    if (!d) return '';
+    const min = Math.floor((Date.now() - d.getTime()) / 60000);
+    if (min < 60) return 'hace ' + min + ' min';
+    const h = Math.floor(min / 60);
+    if (h < 24) return 'hace ' + h + 'h';
+    const days = Math.floor(h / 24);
+    if (days < 7) return 'hace ' + days + 'd';
+    const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    return d.getDate() + ' ' + MESES[d.getMonth()];
+  }
+
+  function renderHero(r) {
+    if (r.isCalibrating) {
+      $hero.innerHTML = `
+        <div class="ml-bucket-emoji">🎯</div>
+        <div class="ml-bucket-name">Calibrando</div>
+        <div class="ml-calibrating">
+          Necesitas ${3 - r.matchCount} ${3 - r.matchCount === 1 ? 'partido más' : 'partidos más'} para tener tu nivel oficial.
+          <div class="ml-calibrating-bar">
+            <div class="ml-calibrating-fill" style="width:${(r.matchCount/3)*100}%"></div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+    $hero.innerHTML = `
+      <div class="ml-bucket-emoji">${r.bucket.emoji}</div>
+      <div class="ml-bucket-name">${r.bucket.name}</div>
+      <div class="ml-nivel">Nivel <span class="ml-nivel-num">${r.bucket.nivel.toFixed(1)}</span></div>
+      <div class="ml-range">Rating <strong>${fmtRange(r.rating, r.RD)}</strong></div>
+    `;
+  }
+
+  function renderStats(r) {
+    const winRate = (r.wins + r.losses) > 0
+      ? Math.round(r.wins / (r.wins + r.losses) * 100)
+      : 0;
+    $stats.innerHTML = `
+      <div class="ml-stat">
+        <div class="ml-stat-val">${r.matchCount}</div>
+        <div class="ml-stat-lbl">Partidos</div>
+      </div>
+      <div class="ml-stat">
+        <div class="ml-stat-val">${r.wins}-${r.losses}</div>
+        <div class="ml-stat-lbl">Wins-Losses</div>
+      </div>
+      <div class="ml-stat">
+        <div class="ml-stat-val">${winRate}%</div>
+        <div class="ml-stat-lbl">Win rate</div>
+      </div>
+    `;
+  }
+
+  function renderSparkline(history) {
+    if (history.length < 2) {
+      $sparkWrap.style.display = 'none';
+      return;
+    }
+    const ratings = history.map(h => h.ratingAfter);
+    const min = Math.min(...ratings);
+    const max = Math.max(...ratings);
+    const range = Math.max(50, max - min); // mínimo 50 para evitar línea plana
+    const padding = 5;
+    const w = 400, h = 80;
+    const innerW = w - padding * 2;
+    const innerH = h - padding * 2;
+    const points = ratings.map((r, i) => {
+      const x = padding + (i / (ratings.length - 1)) * innerW;
+      const y = padding + (1 - (r - min) / range) * innerH;
+      return [x, y];
+    });
+    const pathD = points.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const fillD = pathD + ' L' + points[points.length-1][0].toFixed(1) + ',' + (h - padding) + ' L' + padding + ',' + (h - padding) + ' Z';
+    $spark.innerHTML = `
+      <defs>
+        <linearGradient id="mlSparkGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(11,124,255,0.45)" />
+          <stop offset="100%" stop-color="rgba(11,124,255,0)" />
+        </linearGradient>
+      </defs>
+      <path d="${fillD}" fill="url(#mlSparkGrad)" stroke="none"/>
+      <path d="${pathD}" fill="none" stroke="#0B7CFF" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+      ${points.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.5" fill="#cfe2ff"/>`).join('')}
+    `;
+    $sparkWrap.style.display = '';
+  }
+
+  function renderHistory(history) {
+    if (!history.length) {
+      $history.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(234,242,255,0.55)">Sin partidos válidos para ranking.</div>';
+      return;
+    }
+    // Newest first
+    const reversed = history.slice().reverse();
+    $history.innerHTML = reversed.map(h => {
+      const opps = h.opponents.length ? h.opponents.slice(0, 2).join(' / ') : 'Sin nombres';
+      const delta = Math.round(h.delta);
+      const deltaStr = (delta >= 0 ? '+' : '') + delta;
+      const deltaClass = delta >= 0 ? 'up' : 'down';
+      return `
+        <div class="ml-history-item">
+          <div class="ml-history-result ${h.ganaste ? 'win' : 'loss'}">${h.ganaste ? '✓' : '✗'}</div>
+          <div class="ml-history-info">
+            <div class="ml-history-vs">vs ${escapeHtml(opps)}</div>
+            <div class="ml-history-meta">${fmtRelDate(h.date)}${h.loc ? ' · ' + escapeHtml(h.loc) : ''}</div>
+          </div>
+          <div class="ml-history-delta ${deltaClass}">${deltaStr}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
+    }[c]));
+  }
+
+  async function compute(user) {
+    show('loading');
+    try {
+      const r = await window.PuntazoRankingClient.computeMyRating(user.uid);
+      if (r.matchCount === 0 && r.totalMatchesRankable === 0) {
+        show('empty');
+        return;
+      }
+      renderHero(r);
+      renderStats(r);
+      renderSparkline(r.history);
+      renderHistory(r.history);
+      show('content');
+    } catch (e) {
+      console.error('[mi-nivel] error', e);
+      show('empty');
+    }
+  }
+
+  function onAuthReady() {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) { show('login'); return; }
+    compute(user);
+  }
+
+  if ($doLogin) {
+    $doLogin.addEventListener('click', function (e) {
+      e.preventDefault();
+      try { window.PuntazoAuth.signIn(); } catch (_) {}
+    });
+  }
+
+  window.addEventListener('puntazo:auth-ready', onAuthReady);
+  window.addEventListener('puntazo:auth-changed', onAuthReady);
+  setTimeout(function () {
+    if ($loading.style.display !== 'none' && !$content.style.display) {
+      onAuthReady();
+    }
+  }, 800);
+})();
+</script>
+</body>
+</html>

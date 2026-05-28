@@ -64,6 +64,36 @@
 
   .pz-matches-list { display:flex; flex-direction:column; gap:12px; margin-bottom:14px; }
 
+  /* F85: link a "Mi nivel" */
+  .pz-nivel-link {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 28px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(11,124,255,0.18), rgba(0,79,200,0.10));
+    border: 1px solid rgba(11,124,255,0.30);
+    text-decoration: none;
+    color: #fff;
+    transition: transform .14s, background .14s, border-color .14s;
+  }
+  .pz-nivel-link:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgba(11,124,255,0.28), rgba(0,79,200,0.14));
+    border-color: rgba(11,124,255,0.55);
+  }
+  .pz-nivel-emoji {
+    font-size: 2.1rem;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 10px rgba(11,124,255,0.40));
+  }
+  .pz-nivel-text { flex: 1; min-width: 0; }
+  .pz-nivel-title { font-size: 1.05rem; font-weight: 900; color: #fff; }
+  .pz-nivel-sub { font-size: 0.82rem; color: rgba(234,242,255,0.65); margin-top: 2px; }
+  .pz-nivel-arrow {
+    font-size: 1.4rem; color: rgba(11,124,255,0.85);
+    flex-shrink: 0;
+  }
+
   /* F82 Item 17: lista de puntazos pendientes (estilo chips densos) */
   .pz-pending-list {
     display: flex; flex-direction: column;
@@ -243,6 +273,16 @@
           <div id="perfilName" class="perfil-name">Mi perfil</div>
         </div>
       </div>
+
+      <!-- F85: link a "Mi nivel" (cliente-side ranking preview) -->
+      <a href="/mi-nivel.html" class="pz-nivel-link">
+        <span class="pz-nivel-emoji">🎯</span>
+        <div class="pz-nivel-text">
+          <div class="pz-nivel-title">Ver mi nivel</div>
+          <div class="pz-nivel-sub">Ranking, win rate, evolución de tus partidos</div>
+        </div>
+        <span class="pz-nivel-arrow">→</span>
+      </a>
 
       <!-- ── Etapa 15.7 — Mis partidos ── -->
       <div class="pz-section-title">
