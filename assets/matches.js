@@ -231,21 +231,15 @@
     // 7-5
     if (t1 === 7 && t2 === 5) return { state: "valid", winner: "team1" };
     if (t2 === 7 && t1 === 5) return { state: "valid", winner: "team2" };
-    // 7-6 con tiebreak
-    if ((t1 === 7 && t2 === 6) || (t2 === 7 && t1 === 6)) {
-      if (!tb) return { state: "incomplete", winner: null, hint: "Falta el tiebreak." };
-      const tbR = validateTiebreak(tb.team1, tb.team2);
-      if (tbR.state !== "valid") {
-        return { state: "invalid", winner: null, error: tbR.error || "Tiebreak inválido." };
-      }
-      const setWinner = t1 === 7 ? "team1" : "team2";
-      if (tbR.winner !== setWinner) {
-        return { state: "invalid", winner: null, error: "El ganador del tiebreak no coincide con el set." };
-      }
-      return { state: "valid", winner: setWinner };
+    // F79: TIEBREAK DESACTIVADO. 7-6 ahora es válido SIN tb (game extra
+    // resuelve el set). 6-6 sigue siendo incomplete (alguien debe ganar el
+    // siguiente game). El argumento `tb` queda ignorado silenciosamente.
+    if (t1 === 7 && t2 === 6) return { state: "valid", winner: "team1" };
+    if (t2 === 7 && t1 === 6) return { state: "valid", winner: "team2" };
+    // 6-6 → incompleto, ganador del siguiente game cierra 7-6
+    if (t1 === 6 && t2 === 6) {
+      return { state: "incomplete", winner: null, hint: "Empate 6-6. Sigan jugando: el siguiente game cierra el set 7-6." };
     }
-    // 6-6 → falta tiebreak
-    if (t1 === 6 && t2 === 6) return { state: "needsTiebreak", winner: null };
     // Casos imposibles bajo regla de pádel
     if (t1 === 7 || t2 === 7) {
       return { state: "invalid", winner: null, error: "7 sólo es válido como 7-5 o 7-6." };
@@ -449,7 +443,13 @@
   function _otherTeam(t) { return t === "team1" ? "team2" : "team1"; }
 
   function _isTiebreakSet(current) {
-    return current && current.team1Games === 6 && current.team2Games === 6;
+    // F79: TIEBREAK DESACTIVADO INTEGRALMENTE. Antes 6-6 disparaba modo
+    // tiebreak (game largo a 7 con diff>=2). Ahora siempre retorna false
+    // → al llegar a 6-6, el siguiente game cierra el set 7-6 sin tb.
+    // El motor procesa esos puntos como un game normal de 4 puntos
+    // (deuce sigue funcionando dentro del game). Más simple para users
+    // que no entendían cómo registrar tiebreak.
+    return false;
   }
 
   // _applyGameWin: cierra un game ganado por `winner`. Mutates m.current

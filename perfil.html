@@ -351,9 +351,30 @@
     return cells.join('<span class="pz-score-sep">·</span>');
   }
 
+  function findMyEquipo(match, myUid, claim) {
+    // F78 fix bug equipos 1v1: retorna directamente "team1" o "team2"
+    // consultando j.equipo (autoritativo), NO derivando del slot index.
+    // Esto cubre el caso array=[Pedro:team1, Carlos:team2] donde Carlos
+    // está en slot 1 pero su equipo es team2.
+    if (match && Array.isArray(match.jugadores)) {
+      for (let i = 0; i < match.jugadores.length; i++) {
+        const j = match.jugadores[i];
+        if (j && (j.uid === myUid || j.claimedByUid === myUid)) {
+          if (j.equipo === "team1" || j.equipo === "team2") return j.equipo;
+          // Fallback legacy: deriva del slot index sólo si no hay campo equipo
+          return (i === 2 || i === 3) ? "team2" : "team1";
+        }
+      }
+    }
+    if (claim && Number.isInteger(claim.slot)) {
+      return (claim.slot === 2 || claim.slot === 3) ? "team2" : "team1";
+    }
+    return null;
+  }
+
   function findMySlot(match, myUid, claim) {
-    // 1) Si el doc tiene jugadores[i].uid === myUid, usar ese (puesto por dueño).
-    // 2) Si no, usar el slot del claim (Etapa 15.5+).
+    // Devuelve el ÍNDICE en match.jugadores donde está el user (no el slot
+    // visual de la cancha — para eso usar findMyEquipo).
     if (match && Array.isArray(match.jugadores)) {
       for (let i = 0; i < match.jugadores.length; i++) {
         const j = match.jugadores[i];
@@ -363,10 +384,11 @@
     return (claim && Number.isInteger(claim.slot)) ? claim.slot : null;
   }
 
-  function ladoLabel(slotIdx) {
-    // Slots 0,1 = Equipo 1 ; 2,3 = Equipo 2 (convención LEGACY_INDEX_TO_TEAM).
-    if (slotIdx === 0 || slotIdx === 1) return 'Equipo 1';
-    if (slotIdx === 2 || slotIdx === 3) return 'Equipo 2';
+  function ladoLabel(equipo) {
+    // F78: ahora recibe team1/team2 directamente (no slotIdx), evita el bug
+    // de derivar mal cuando hay length<4 con jugadores en distintos equipos.
+    if (equipo === "team1") return 'Equipo 1';
+    if (equipo === "team2") return 'Equipo 2';
     return '';
   }
 
@@ -396,8 +418,8 @@
       if (s) scoreHtml = `<div class="pz-match-score">${s}</div>`;
     }
 
-    const slotIdx = findMySlot(match, myUid, claim);
-    const ladoTxt = (slotIdx != null) ? ladoLabel(slotIdx) : '';
+    const myEquipo = findMyEquipo(match, myUid, claim);
+    const ladoTxt = myEquipo ? ladoLabel(myEquipo) : '';
     const subParts = [];
     if (canNombre) subParts.push(canNombre);
     if (ladoTxt) subParts.push(ladoTxt);

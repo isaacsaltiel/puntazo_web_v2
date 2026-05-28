@@ -3713,13 +3713,15 @@
   function setPlayerStateFromMatch(ctx, jugadoresFromMatch) {
     playerState[ctx] = emptyJugadoresArray();
     if (!Array.isArray(jugadoresFromMatch)) { renderCourt(ctx); return; }
-    // Reasignar a slots por posición preservando equipo si viene.
-    // El doc ya viene normalizado por matches.js (con `equipo`), así que
-    // intentamos respetar primero el slot por índice; si el doc tiene >4
-    // elementos los truncamos a 4 (raro pero defensivo).
-    const arr = jugadoresFromMatch.slice(0, 4);
-    for (let i = 0; i < arr.length; i++) {
-      const src = arr[i] || {};
+    // F78 fix bug equipos 1v1: distribuir respetando j.equipo, no índice.
+    // Si el array tiene length 2 con [Pedro:team1, Carlos:team2], iterar
+    // por índice ponía Carlos en slot 1 (visualmente team1). Ahora usamos
+    // jugadoresBySlot() que coloca team1 en slots [0,1] y team2 en [2,3].
+    const distributed = (window.PuntazoMatches && window.PuntazoMatches.jugadoresBySlot)
+      ? window.PuntazoMatches.jugadoresBySlot(jugadoresFromMatch)
+      : jugadoresFromMatch.slice(0, 4);
+    for (let i = 0; i < distributed.length && i < 4; i++) {
+      const src = distributed[i] || {};
       const defaultEq = SLOT_EQUIPO[i];
       const eq = (src.equipo === "team1" || src.equipo === "team2") ? src.equipo : defaultEq;
       playerState[ctx][i] = {
@@ -4560,16 +4562,12 @@
         plus.type = "button"; plus.className = "mp-score-pm"; plus.textContent = "+";
         minus.addEventListener("click", function () {
           s[k] = clamp(s[k] - 1, 0, 7);
-          // si baja de 6-6, limpiar tiebreak
-          if (!(s.t1 === 6 && s.t2 === 6) && !((s.t1 === 7 && s.t2 === 6) || (s.t1 === 6 && s.t2 === 7))) s.tb = null;
+          s.tb = null; // F79: tiebreak desactivado, nunca seteamos s.tb
           rebuildScoreArea();
         });
         plus.addEventListener("click", function () {
           s[k] = clamp(s[k] + 1, 0, 7);
-          if (s.t1 === 6 && s.t2 === 6 && !s.tb) s.tb = { t1: 0, t2: 0 };
-          if ((s.t1 === 7 && s.t2 === 6) || (s.t1 === 6 && s.t2 === 7)) {
-            if (!s.tb) s.tb = { t1: 0, t2: 0 };
-          }
+          s.tb = null; // F79: tiebreak desactivado
           rebuildScoreArea();
         });
         ctrl.appendChild(minus); ctrl.appendChild(val); ctrl.appendChild(plus);
@@ -4579,8 +4577,8 @@
       });
       setBox.appendChild(row);
 
-      // Tiebreak: cuando games son 6-6 o 7-6/6-7
-      const showTb = (s.t1 === 6 && s.t2 === 6) || (s.t1 === 7 && s.t2 === 6) || (s.t1 === 6 && s.t2 === 7);
+      // F79: TIEBREAK DESACTIVADO INTEGRALMENTE. Bloque tb nunca se muestra.
+      const showTb = false;
       if (showTb) {
         if (!s.tb) s.tb = { t1: 0, t2: 0 };
         const tbBlock = document.createElement("div");
