@@ -145,9 +145,9 @@ html, body {
 .btn-puntazo-img {
   width:100%; height:100%;
   object-fit:contain; display:block;
-  filter:
-    drop-shadow(0 8px 24px rgba(11,124,255,.55))
-    drop-shadow(0 3px 8px rgba(0,0,0,.55));
+  /* F75: glow centrado (sin offset Y) para que no se vea círculo
+     asimétrico atrás del P. */
+  filter: drop-shadow(0 0 28px rgba(11,124,255,.45));
   pointer-events:none;
 }
 
@@ -206,6 +206,35 @@ html, body {
 .btn-bottom {
   display:flex; flex-direction:column;
   gap:10px; align-items:center;
+}
+
+/* F75: bloquecitos con los puntazos de la sesión actual.
+   Lista horizontal scrolleable, chips chicos aesthetic, máx 10 visibles. */
+.puntazos-log {
+  width:100%;
+  max-width:560px;
+  display:flex; flex-wrap:wrap;
+  gap:6px;
+  justify-content:center;
+  min-height:28px;
+}
+.puntazo-chip {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 11px;
+  border-radius:999px;
+  background:rgba(11,124,255,.14);
+  border:1px solid rgba(11,124,255,.32);
+  color:rgba(234,242,255,.92);
+  font-size:.72rem; font-weight:700;
+  letter-spacing:.2px;
+  white-space:nowrap;
+  animation:chipIn .35s cubic-bezier(.2,.8,.2,1);
+}
+.puntazo-chip .chip-ord { color:#fff; font-weight:900; }
+.puntazo-chip .chip-time { color:rgba(234,242,255,.72); font-weight:600; font-variant-numeric:tabular-nums; }
+@keyframes chipIn {
+  from { opacity:0; transform:scale(.7) translateY(6px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
 }
 .confirm-text {
   min-height:20px;
@@ -290,6 +319,7 @@ html, body {
   <!-- Bottom -->
   <div class="btn-bottom">
     <div id="confirmText" class="confirm-text">Toca el botón para registrar tu Puntazo</div>
+    <div id="puntazosLog" class="puntazos-log"></div>
     <a id="btnSeeVideos" class="btn-see-videos" href="#">▶ Ver mis puntazos en esta cancha</a>
   </div>
 
@@ -314,6 +344,7 @@ html, body {
   const $ripple        = document.getElementById('ripple');
   const $cooldownRing  = document.getElementById('cooldownRing');
   const $btnSeeVideos  = document.getElementById('btnSeeVideos');
+  const $puntazosLog   = document.getElementById('puntazosLog');
 
   // ── Context (siempre via query params; si faltan, redirect al selector) ──
   function getQueryParam(name) {
@@ -473,6 +504,53 @@ html, body {
     setTimeout(() => { $confetti.innerHTML = ''; }, 1600);
   }
 
+  // ── Puntazos log (chips de sesión, persistido en localStorage 6h) ──
+  const LOG_KEY = 'pz_btn_log_' + LOC + '_' + CAN;
+  const LOG_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+  const LOG_MAX = 30;
+
+  function ordinal(n) {
+    const map = {1:'1er',2:'2do',3:'3er',4:'4to',5:'5to',6:'6to',7:'7mo',8:'8vo',9:'9no',10:'10mo'};
+    return map[n] || (n + 'o');
+  }
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function fmtHM(ts) {
+    const d = new Date(ts);
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+  function loadLog() {
+    try {
+      const raw = localStorage.getItem(LOG_KEY);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return [];
+      const cutoff = Date.now() - LOG_TTL_MS;
+      const filtered = arr.filter(t => typeof t === 'number' && t >= cutoff);
+      if (filtered.length !== arr.length) saveLog(filtered);
+      return filtered;
+    } catch (_) { return []; }
+  }
+  function saveLog(arr) {
+    try { localStorage.setItem(LOG_KEY, JSON.stringify(arr.slice(-LOG_MAX))); } catch (_) {}
+  }
+  function pushLog(ts) {
+    const arr = loadLog();
+    arr.push(ts);
+    saveLog(arr);
+    renderLog();
+  }
+  function renderLog() {
+    if (!$puntazosLog) return;
+    const arr = loadLog();
+    if (!arr.length) { $puntazosLog.innerHTML = ''; return; }
+    $puntazosLog.innerHTML = arr.map((ts, i) =>
+      '<span class="puntazo-chip">' +
+        '<span class="chip-ord">' + ordinal(i + 1) + ' Puntazo</span>' +
+        '<span class="chip-time">' + fmtHM(ts) + '</span>' +
+      '</span>'
+    ).join('');
+  }
+
   // ── Click principal ──
   $bigBtn.addEventListener('click', async function (evt) {
     if (busy) return;
@@ -502,6 +580,7 @@ html, body {
       playSuccess();
       vibe([40, 60, 40]);
       setState('success');
+      pushLog(Date.now());
       setTimeout(startCooldown, 800);
     } catch (err) {
       console.error('[boton]', err);
@@ -559,6 +638,7 @@ html, body {
   // ── Boot ──
   (async function boot() {
     await resolveHud();
+    renderLog();
     setState('idle');
     $loader.classList.add('is-hidden');
     $app.style.visibility = 'visible';
