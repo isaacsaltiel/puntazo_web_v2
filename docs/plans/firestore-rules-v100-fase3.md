@@ -7,6 +7,15 @@
 >
 > Después de pegar, dale **Publicar**.
 
+> **⚠️ ACTUALIZADO 2026-05-29 (F96)**: el set que pegaste antes tenía
+> un bug. La query `collectionGroup('claims')` que usan perfil.html /
+> mis-partidos.html / mi-nivel.html devolvía `permission-denied`
+> porque el bloque anidado de claims SOLO cubre acceso por path
+> explícito, NO collectionGroup. Por eso "Mis partidos" salía vacío
+> y "Mi nivel" se quedaba en calculando. Este nuevo bloque agrega
+> `match /{path=**}/claims/{claimUid}` y `match /{path=**}/members/{memberUid}`.
+> **Re-pega el bloque completo de abajo.**
+
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -88,6 +97,20 @@ service cloud.firestore {
                         || request.auth.uid == get(/databases/$(database)/documents/matches/$(matchId)).data.userId
                       );
       }
+    }
+
+    // ════════════════════════════════════════════════════
+    // F96 CRITICAL FIX — collectionGroup('claims') para Mis partidos
+    // ════════════════════════════════════════════════════
+    // El bloque anidado match /matches/{matchId}/claims/{claimUid}
+    // SOLO aplica a queries por path explícito. Las queries
+    // collectionGroup('claims').where('uid','==',myUid) usadas en
+    // perfil.html, mis-partidos.html y mi-nivel.html requieren UN
+    // BLOQUE SEPARADO de collectionGroup. Sin esto: permission-denied
+    // y los partidos terminados NUNCA aparecen en Mi Perfil aunque sí
+    // estén guardados en Firestore.
+    match /{path=**}/claims/{claimUid} {
+      allow read: if true;
     }
 
     // ════════════════════════════════════════════════════
@@ -215,6 +238,13 @@ service cloud.firestore {
           || request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.admins
         );
       }
+    }
+
+    // F96: collectionGroup('members') para grupos.html "Mis grupos".
+    // Sin esto, la query .collectionGroup('members').where('uid','==',myUid)
+    // de listMyGroups falla con permission-denied.
+    match /{path=**}/members/{memberUid} {
+      allow read: if signedIn();
     }
 
     // ════════════════════════════════════════════════════
