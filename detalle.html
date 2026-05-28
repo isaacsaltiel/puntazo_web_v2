@@ -737,9 +737,16 @@
     }
   }
 
+  // F100 P4: fix race auth-ready (también dispara con cualquier cambio)
   window.addEventListener('puntazo:auth-ready', load);
-  if (window.PuntazoMatches) load();
-  else setTimeout(load, 800);
+  window.addEventListener('puntazo:auth-changed', load);
+  if (window.PuntazoMatches && window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+    load();
+  } else if (window.PuntazoMatches) {
+    setTimeout(load, 400);
+  } else {
+    setTimeout(load, 800);
+  }
 })();
 </script>
 </body>

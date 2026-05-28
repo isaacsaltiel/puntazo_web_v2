@@ -593,13 +593,16 @@
     });
   }
 
+  // F100 P4: fix race auth-ready
   window.addEventListener('puntazo:auth-ready', onAuthReady);
   window.addEventListener('puntazo:auth-changed', onAuthReady);
-  setTimeout(function () {
-    if ($loading.style.display !== 'none' && !$content.style.display) {
-      onAuthReady();
-    }
-  }, 800);
+  if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+    onAuthReady();
+  } else {
+    setTimeout(function () {
+      if ($loading.style.display !== 'none' && !$content.style.display) onAuthReady();
+    }, 800);
+  }
 })();
 </script>
 </body>

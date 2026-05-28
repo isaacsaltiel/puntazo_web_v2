@@ -402,6 +402,12 @@
       return state.currentUser;
     }
   });
+  // F100 P4: expose isBootstrapped para que páginas que cargan tarde puedan
+  // saber si auth ya disparó auth-ready (y por tanto el evento no llegará
+  // de nuevo). Evita el race de "ya tengo sesión pero la página dice login".
+  Object.defineProperty(window.PuntazoAuth, "isBootstrapped", {
+    get: function () { return !!state.isBootstrapped; }
+  });
 
   initAuth();
 })();

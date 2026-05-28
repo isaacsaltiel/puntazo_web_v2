@@ -284,9 +284,14 @@
     try { window.PuntazoAuth.signIn(); } catch (_) {}
   });
 
+  // F100 P4: fix race auth-ready
   window.addEventListener('puntazo:auth-ready', refresh);
   window.addEventListener('puntazo:auth-changed', refresh);
-  setTimeout(function () { if ($loading.style.display !== 'none') refresh(); }, 800);
+  if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+    refresh();
+  } else {
+    setTimeout(function () { if ($loading.style.display !== 'none') refresh(); }, 800);
+  }
 })();
 </script>
 </body>

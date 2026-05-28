@@ -204,9 +204,16 @@
     });
   }
 
+  // F100 P4: si auth YA bootstrapped (porque el script cargó tarde y
+  // el evento auth-ready ya pasó), refrescar inmediato. Si no, esperar
+  // el evento. Cubre el bug de "me pide login aunque ya estoy logueado".
   window.addEventListener('puntazo:auth-ready', refresh);
   window.addEventListener('puntazo:auth-changed', refresh);
-  setTimeout(function () { if ($loading.style.display !== 'none') refresh(); }, 800);
+  if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+    refresh();
+  } else {
+    setTimeout(function () { if ($loading.style.display !== 'none') refresh(); }, 800);
+  }
 })();
 </script>
 </body>
