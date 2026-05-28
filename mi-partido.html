@@ -281,6 +281,29 @@
     font-size: 0.78rem; font-weight: 700;
     color: rgba(234, 242, 255, 0.65);
   }
+  /* F92 Item 5: input + botón "Soy yo" al lado */
+  .mp-end-team-edit-input-wrap {
+    display: flex; align-items: stretch; gap: 8px;
+  }
+  .mp-end-team-edit-input-wrap input { flex: 1; min-width: 0; }
+  .mp-end-team-edit-me {
+    flex-shrink: 0;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(11, 124, 255, 0.40);
+    background: rgba(11, 124, 255, 0.16);
+    color: #cfe2ff;
+    font-family: inherit; font-weight: 800; font-size: 0.78rem;
+    cursor: pointer;
+    transition: background .14s, border-color .14s;
+    white-space: nowrap;
+  }
+  .mp-end-team-edit-me:hover { background: rgba(11, 124, 255, 0.30); }
+  .mp-end-team-edit-me.is-mine {
+    background: rgba(34, 197, 94, 0.20);
+    border-color: rgba(34, 197, 94, 0.50);
+    color: #9af2c0;
+  }
 
   .mp-set-row {
     display: grid;
@@ -3470,18 +3493,25 @@
   </div>
 </div>
 
-<!-- ── F80 Item 8: sheet para editar nombres del equipo (modal terminar) ── -->
+<!-- ── F80 Item 8 + F92 Item 5: sheet edita nombres del equipo + "Ese soy yo" ── -->
 <div id="mpEndTeamEditSheet" class="mp-sheet-backdrop">
   <div class="mp-sheet" role="dialog" aria-modal="true">
     <h3 id="mpEndTeamEditTitle">Equipo</h3>
     <div class="mp-end-team-edit-row">
       <label class="mp-end-team-edit-label">Jugador 1</label>
-      <input type="text" class="mp-sheet-input" id="mpEndTeamEditJ1" placeholder="Nombre (opcional)" maxlength="80" autocomplete="off">
+      <div class="mp-end-team-edit-input-wrap">
+        <input type="text" class="mp-sheet-input" id="mpEndTeamEditJ1" placeholder="Nombre (opcional)" maxlength="80" autocomplete="off">
+        <button type="button" class="mp-end-team-edit-me" data-end-me="0">👤 Soy yo</button>
+      </div>
     </div>
     <div class="mp-end-team-edit-row">
       <label class="mp-end-team-edit-label">Jugador 2</label>
-      <input type="text" class="mp-sheet-input" id="mpEndTeamEditJ2" placeholder="Nombre (opcional)" maxlength="80" autocomplete="off">
+      <div class="mp-end-team-edit-input-wrap">
+        <input type="text" class="mp-sheet-input" id="mpEndTeamEditJ2" placeholder="Nombre (opcional)" maxlength="80" autocomplete="off">
+        <button type="button" class="mp-end-team-edit-me" data-end-me="1">👤 Soy yo</button>
+      </div>
     </div>
+    <div id="mpEndTeamEditMsg" class="mp-msg" style="margin-top:8px"></div>
     <div class="mp-sheet-actions">
       <button type="button" id="mpEndTeamEditSave" class="mp-sheet-btn primary">Guardar</button>
       <button type="button" id="mpEndTeamEditCancel" class="mp-sheet-btn secondary">Cancelar</button>
@@ -4779,16 +4809,25 @@
       $endScoreArea.appendChild(setBox);
     });
 
-    // Botón "Agregar set" — deshabilitado si ya hay ganador o último set inválido.
-    const addBtn = document.createElement("button");
-    addBtn.type = "button";
-    addBtn.className = "mp-add-set";
-    addBtn.textContent = "+ Agregar set";
+    // F92 Item 6: AUTO-AGREGAR siguiente set si el último es válido y el
+    // partido aún NO está completo. Evita que el user tenga que clickear
+    // "Agregar set" manualmente cada vez. No agrega si ya hay ganador.
     const last = endScoreState.sets[endScoreState.sets.length - 1];
     const lastValidated = last ? live.validatedSets[live.validatedSets.length - 1] : null;
     const canAdd = !live.complete && (!last || (lastValidated && lastValidated.state === "valid"));
+    if (canAdd && lastValidated && lastValidated.state === "valid") {
+      // Auto-agrega y re-renderiza. Termina la función actual; nuevo render
+      // construye todo desde cero con el set vacío al final.
+      endScoreState.sets.push(emptySet());
+      rebuildScoreArea();
+      return;
+    }
+    // Si no auto-agregamos, dejamos el botón manual de respaldo.
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "mp-add-set";
+    addBtn.textContent = live.complete ? "Partido completo" : "+ Agregar set";
     addBtn.disabled = !canAdd;
-    if (live.complete) addBtn.textContent = "Partido completo";
     addBtn.addEventListener("click", function () {
       endScoreState.sets.push(emptySet());
       rebuildScoreArea();
@@ -4875,7 +4914,11 @@
   const $endTeamEditJ2     = document.getElementById("mpEndTeamEditJ2");
   const $endTeamEditSave   = document.getElementById("mpEndTeamEditSave");
   const $endTeamEditCancel = document.getElementById("mpEndTeamEditCancel");
+  const $endTeamEditMsg    = document.getElementById("mpEndTeamEditMsg");
   let _endTeamEditTarget = null;
+  // F92 Item 5: state local del "Ese soy yo" en el sheet abierto.
+  // _endTeamMeSelected = 0 (input J1) | 1 (input J2) | null
+  let _endTeamMeSelected = null;
 
   // F88: attach autocomplete una sola vez a los inputs J1/J2 del sheet
   // de edit-team del modal terminar.
@@ -4894,6 +4937,8 @@
     if (!$endTeamEditSheet || !$endTeamEditJ1 || !$endTeamEditJ2) return;
     ensureEndTeamAutocomplete();
     _endTeamEditTarget = team;
+    _endTeamMeSelected = null;
+    if ($endTeamEditMsg) { $endTeamEditMsg.textContent = ""; $endTeamEditMsg.className = "mp-msg"; }
     const arr = playerState["end"] || [];
     const inTeam = arr
       .map(function (j, i) { return Object.assign({ _idx: i }, j); })
@@ -4901,8 +4946,27 @@
     $endTeamEditTitle.textContent = team === "team1" ? "Editar Mi equipo" : "Editar Equipo rival";
     $endTeamEditJ1.value = (inTeam[0] && inTeam[0].nombre) || "";
     $endTeamEditJ2.value = (inTeam[1] && inTeam[1].nombre) || "";
+    // F92 Item 5: marcar "Soy yo" si el jugador con mi uid está en este equipo
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (user) {
+      inTeam.forEach(function (j, idx) {
+        if (j.uid === user.uid && idx < 2) _endTeamMeSelected = idx;
+      });
+    }
+    renderEndTeamMeButtons();
     $endTeamEditSheet.classList.add("is-open");
     setTimeout(function () { try { $endTeamEditJ1.focus(); $endTeamEditJ1.select(); } catch (_) {} }, 50);
+  }
+
+  // F92 Item 5: pinta el estado de los botones "Soy yo".
+  function renderEndTeamMeButtons() {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    document.querySelectorAll('[data-end-me]').forEach(function (btn) {
+      const isMe = (Number(btn.dataset.endMe) === _endTeamMeSelected);
+      btn.classList.toggle("is-mine", isMe);
+      btn.textContent = isMe ? "✓ Soy yo" : (user ? "👤 Soy yo" : "🔒 Inicia sesión");
+      btn.disabled = !user;
+    });
   }
 
   function closeEndTeamEditSheet() {
@@ -4934,23 +4998,43 @@
         if (names[i]) newArr[idx].nombre = names[i];
       }
     }
+    // F92 Item 5: si el user marcó "Soy yo" en J1 o J2, el uid se aplicará
+    // al jugador correspondiente. Como cambiar equipo del user puede
+    // requerir quitar uid de otros slots (un user solo puede estar en 1).
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    const myUid = user ? user.uid : null;
+    const meIdx = (myUid && _endTeamMeSelected != null) ? _endTeamMeSelected : -1;
+
     if (team === "team1") {
       fillTeam("team1", [j1, j2].filter(Boolean), 0);
       const otherNames = otherSlots.filter(function (s) { return s.nombre; }).map(function (s) { return s.nombre; });
       fillTeam("team2", otherNames, 2);
-      // Preservar uid/claimedByUid del other team
+      // Preservar uid/claimedByUid del other team (excepto si el user
+      // se está moviendo a este equipo: quitamos su uid del other).
       otherSlots.forEach(function (s, i) {
-        if (i < 2 && s.uid) newArr[2 + i].uid = s.uid;
+        if (i < 2 && s.uid) {
+          if (myUid && meIdx >= 0 && s.uid === myUid) return; // se mueve, no preservar
+          newArr[2 + i].uid = s.uid;
+        }
         if (i < 2 && s.claimedByUid) newArr[2 + i].claimedByUid = s.claimedByUid;
       });
+      if (meIdx >= 0 && meIdx < 2 && newArr[meIdx].nombre) {
+        newArr[meIdx].uid = myUid;
+      }
     } else {
       fillTeam("team2", [j1, j2].filter(Boolean), 2);
       const otherNames = otherSlots.filter(function (s) { return s.nombre; }).map(function (s) { return s.nombre; });
       fillTeam("team1", otherNames, 0);
       otherSlots.forEach(function (s, i) {
-        if (i < 2 && s.uid) newArr[0 + i].uid = s.uid;
+        if (i < 2 && s.uid) {
+          if (myUid && meIdx >= 0 && s.uid === myUid) return;
+          newArr[0 + i].uid = s.uid;
+        }
         if (i < 2 && s.claimedByUid) newArr[0 + i].claimedByUid = s.claimedByUid;
       });
+      if (meIdx >= 0 && meIdx < 2 && newArr[2 + meIdx].nombre) {
+        newArr[2 + meIdx].uid = myUid;
+      }
     }
     playerState["end"] = newArr;
     renderEndTvScore();
@@ -4958,11 +5042,32 @@
     closeEndTeamEditSheet();
   }
 
+  // F92 Item 3: cuenta de jugadores con nombre por equipo.
+  function endTeamNameCount(teamKey) {
+    const arr = playerState["end"] || [];
+    return arr.filter(function (j) {
+      return j && j.equipo === teamKey && j.nombre && String(j.nombre).trim();
+    }).length;
+  }
+  // F92 Item 3: label del botón según count.
+  //   0 → Agregar  ·  1 → Editar o agregar  ·  2 → Editar
+  function endEditButtonLabel(count) {
+    if (count === 0) return "+ Agregar";
+    if (count === 1) return "✎ Editar o agregar";
+    return "✎ Editar";
+  }
   function renderEndTvScore() {
     const $t1 = document.getElementById("mpEndTeam1Name");
     const $t2 = document.getElementById("mpEndTeam2Name");
     if ($t1) $t1.textContent = endTeamDisplayName("team1");
     if ($t2) $t2.textContent = endTeamDisplayName("team2");
+    // F92 Item 3: actualizar labels de los botones
+    const c1 = endTeamNameCount("team1");
+    const c2 = endTeamNameCount("team2");
+    const $btn1 = document.querySelector('[data-end-edit="team1"] .mp-end-tvscore-edit');
+    const $btn2 = document.querySelector('[data-end-edit="team2"] .mp-end-tvscore-edit');
+    if ($btn1) $btn1.textContent = endEditButtonLabel(c1);
+    if ($btn2) $btn2.textContent = endEditButtonLabel(c2);
   }
 
   // F80 Item 7 — modo summary toggle
@@ -5024,9 +5129,15 @@
         endScoreState.ganadorReta = prev.ganador;
       }
     }
-    // En modos de sets, garantizar al menos un set en blanco si no hay nada.
-    if (isSetMode() && endScoreState.sets.length === 0) {
-      endScoreState.sets.push(emptySet());
+    // F92 Item 6: en modos de sets, pre-poblar sets mínimos según modo:
+    //   partido_3 → 2 sets visibles
+    //   partido_5 → 3 sets visibles
+    // El resto se auto-agrega cuando hagan falta (en rebuildScoreArea).
+    if (isSetMode()) {
+      const minSets = (matchModo === "partido_5") ? 3 : 2;
+      while (endScoreState.sets.length < minSets) {
+        endScoreState.sets.push(emptySet());
+      }
     }
     rebuildScoreArea();
     $modalMsg.className = "mp-msg";
@@ -5076,6 +5187,31 @@
   }
   if ($endTeamEditSave) $endTeamEditSave.addEventListener("click", saveEndTeamEdit);
   if ($endTeamEditCancel) $endTeamEditCancel.addEventListener("click", closeEndTeamEditSheet);
+  // F92 Item 5: click en cualquier botón "Soy yo" del sheet edit-team.
+  // Toggle entre J1, J2 y ninguno.
+  if ($endTeamEditSheet) {
+    $endTeamEditSheet.addEventListener("click", function (e) {
+      const btn = e.target.closest && e.target.closest('[data-end-me]');
+      if (!btn) return;
+      const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      if (!user) {
+        try { window.PuntazoAuth.requireAuth(function () { renderEndTeamMeButtons(); }); } catch (_) {}
+        return;
+      }
+      const idx = Number(btn.dataset.endMe);
+      _endTeamMeSelected = (_endTeamMeSelected === idx) ? null : idx;
+      renderEndTeamMeButtons();
+      if ($endTeamEditMsg) {
+        if (_endTeamMeSelected != null) {
+          $endTeamEditMsg.className = "mp-msg is-visible info";
+          $endTeamEditMsg.textContent = "Te vincularás a Jugador " + (_endTeamMeSelected + 1) + " de este equipo al guardar.";
+        } else {
+          $endTeamEditMsg.className = "mp-msg";
+          $endTeamEditMsg.textContent = "";
+        }
+      }
+    });
+  }
   if ($endTeamEditSheet) {
     $endTeamEditSheet.addEventListener("click", function (e) {
       if (e.target === $endTeamEditSheet) closeEndTeamEditSheet();
