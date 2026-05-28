@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Grupo · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/header.js"></script>
+<script src="/assets/identity.js"></script>
+<script src="/assets/groups.js"></script>
+
+<style>
+  html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .gr-wrap { max-width: 720px; margin: 0 auto; padding: 90px 16px 60px; }
+  .gr-back { display:inline-flex; align-items:center; gap:6px; margin-bottom:14px; padding:8px 14px; background:rgba(11,124,255,.10); border:1px solid rgba(11,124,255,.30); border-radius:999px; color:#cfe2ff; font-weight:700; font-size:.86rem; text-decoration:none; }
+
+  .gr-header {
+    background:rgba(11,124,255,.10);
+    border:1px solid rgba(11,124,255,.30);
+    border-radius:18px;
+    padding:22px 22px 18px;
+    margin-bottom:18px;
+  }
+  .gr-header-icon { font-size:2.2rem; margin-bottom:8px; }
+  .gr-header-name { font-size:1.6rem; font-weight:900; color:#fff; margin-bottom:4px; }
+  .gr-header-desc { color:rgba(234,242,255,.65); font-size:.92rem; margin-bottom:10px; }
+  .gr-header-meta { color:rgba(234,242,255,.55); font-size:.82rem; font-weight:700; }
+
+  .gr-actions { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .gr-btn {
+    padding:10px 16px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(0,0,0,.30); color:#fff;
+    font-family:inherit; font-weight:800; font-size:.84rem;
+    cursor:pointer; transition:all .14s; text-decoration:none;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .gr-btn:hover { background:rgba(11,124,255,.20); border-color:rgba(11,124,255,.55); }
+  .gr-btn-primary { background:linear-gradient(180deg, #0b7cff, #1d4ed8); border-color:transparent; }
+  .gr-btn-primary:hover { filter:brightness(1.08); background:linear-gradient(180deg, #0b7cff, #1d4ed8); }
+  .gr-btn-danger { color:#ffb1a3; border-color:rgba(255,80,80,.30); }
+  .gr-btn-danger:hover { background:rgba(255,80,80,.16); border-color:rgba(255,80,80,.55); }
+
+  .gr-section-title {
+    font-size:.94rem; font-weight:800; color:rgba(234,242,255,.85);
+    margin:20px 0 10px; text-transform:uppercase; letter-spacing:.5px;
+  }
+  .gr-members { display:flex; flex-direction:column; gap:8px; }
+  .gr-member {
+    display:flex; align-items:center; gap:12px;
+    padding:11px 14px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;
+  }
+  .gr-member-avatar {
+    width:38px; height:38px; border-radius:50%;
+    background:rgba(0,79,200,.35); display:flex; align-items:center; justify-content:center;
+    font-weight:900; color:#fff; flex-shrink:0; overflow:hidden;
+  }
+  .gr-member-avatar img { width:100%; height:100%; object-fit:cover; }
+  .gr-member-info { flex:1; min-width:0; }
+  .gr-member-name { font-size:.96rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gr-member-meta { font-size:.74rem; color:rgba(234,242,255,.55); }
+  .gr-member-role {
+    font-size:.66rem; font-weight:900;
+    padding:3px 8px; border-radius:999px;
+    background:rgba(255, 217, 122, .14); color:#ffd97a;
+    border:1px solid rgba(255, 217, 122, .35);
+    text-transform:uppercase; letter-spacing:.5px;
+  }
+
+  .gr-invite {
+    margin-top:18px; padding:14px 16px;
+    background:rgba(34,197,94,.08); border:1px solid rgba(34,197,94,.30);
+    border-radius:12px;
+    color:#c8f7dc; font-size:.84rem;
+  }
+  .gr-invite-link {
+    margin-top:8px;
+    padding:8px 10px; background:rgba(0,0,0,.30);
+    border-radius:8px;
+    font-family:'Monaco','Menlo',monospace; font-size:.74rem;
+    word-break:break-all;
+    color:#9af2c0;
+  }
+  .gr-invite-actions { display:flex; gap:8px; margin-top:8px; }
+  .gr-invite-actions button {
+    padding:8px 12px; border-radius:8px;
+    border:1px solid rgba(34,197,94,.40); background:rgba(34,197,94,.16);
+    color:#9af2c0; font-family:inherit; font-weight:800; font-size:.8rem;
+    cursor:pointer; transition:all .14s;
+  }
+  .gr-invite-actions button:hover { background:rgba(34,197,94,.30); }
+
+  .gr-loading, .gr-error, .gr-notmember {
+    text-align:center; padding:40px 20px;
+    color:rgba(234,242,255,.70);
+  }
+  .gr-notmember h2 { color:#fff; font-size:1.2rem; margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="gr-wrap">
+  <a class="gr-back" href="/grupos.html">← Mis grupos</a>
+
+  <div id="grLoading" class="gr-loading">⏳ Cargando…</div>
+  <div id="grError" class="gr-error" style="display:none">No pudimos cargar este grupo.</div>
+
+  <div id="grNotMember" class="gr-notmember" style="display:none">
+    <h2 id="grNmName">Grupo</h2>
+    <p>No eres miembro de este grupo aún.</p>
+    <button id="grJoinBtn" class="gr-btn gr-btn-primary" type="button">Unirme al grupo</button>
+  </div>
+
+  <div id="grContent" style="display:none">
+    <div class="gr-header">
+      <div class="gr-header-icon" id="grIcon">👥</div>
+      <div class="gr-header-name" id="grName">Grupo</div>
+      <div class="gr-header-desc" id="grDesc"></div>
+      <div class="gr-header-meta" id="grMeta"></div>
+      <div class="gr-actions">
+        <button id="grShareBtn" class="gr-btn gr-btn-primary" type="button">📤 Compartir grupo</button>
+        <button id="grLeaveBtn" class="gr-btn gr-btn-danger" type="button">Salir del grupo</button>
+      </div>
+    </div>
+
+    <div id="grInviteBlock" class="gr-invite" style="display:none">
+      <b>Link de invitación al grupo:</b>
+      <div id="grInviteLink" class="gr-invite-link"></div>
+      <div class="gr-invite-actions">
+        <button id="grCopyBtn" type="button">Copiar link</button>
+        <button id="grWhatsappBtn" type="button">Enviar por WhatsApp</button>
+      </div>
+    </div>
+
+    <div class="gr-section-title">Miembros (<span id="grMemberCount">0</span>)</div>
+    <div id="grMembers" class="gr-members"></div>
+
+    <div class="gr-section-title">Ranking interno</div>
+    <div class="gr-loading">
+      🚧 Próximamente. El ranking filtrado por miembros del grupo se calcula
+      en servidor (Cloud Function). Por ahora cada miembro ve su nivel
+      global en <a href="/mi-nivel.html" style="color:#6fb2ff;font-weight:800">Mi nivel</a>.
+    </div>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const params = new URLSearchParams(window.location.search);
+  const groupId = params.get('groupId');
+  const inviteCode = params.get('invite');
+
+  const $loading = document.getElementById('grLoading');
+  const $error = document.getElementById('grError');
+  const $notMember = document.getElementById('grNotMember');
+  const $content = document.getElementById('grContent');
+  const $nmName = document.getElementById('grNmName');
+  const $joinBtn = document.getElementById('grJoinBtn');
+
+  function show(which) {
+    $loading.style.display   = (which === 'loading') ? '' : 'none';
+    $error.style.display     = (which === 'error')   ? '' : 'none';
+    $notMember.style.display = (which === 'notmember') ? '' : 'none';
+    $content.style.display   = (which === 'content') ? '' : 'none';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
+    }[c]));
+  }
+  function typeIcon(t) {
+    return { friends:'👤', residencial:'🏘️', club:'🎾', liga:'🏆' }[t] || '👥';
+  }
+
+  async function loadAndRender() {
+    if (!groupId) { show('error'); return; }
+    show('loading');
+    try {
+      const group = await window.PuntazoGroups.getGroup(groupId);
+      if (!group) { show('error'); return; }
+      const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      const members = await window.PuntazoGroups.listGroupMembers(groupId);
+      const isMember = u && members.some(function (m) { return m.uid === u.uid; });
+      const isAdmin = u && Array.isArray(group.admins) && group.admins.indexOf(u.uid) >= 0;
+
+      if (!isMember) {
+        $nmName.textContent = group.name;
+        show('notmember');
+        $joinBtn.onclick = async function () {
+          if (!u) { try { window.PuntazoAuth.signIn(); } catch (_) {} return; }
+          $joinBtn.disabled = true;
+          try {
+            await window.PuntazoGroups.joinGroup(groupId);
+            loadAndRender();
+          } catch (e) {
+            console.error('[grupo] join', e);
+            $joinBtn.disabled = false;
+            alert('No se pudo unir al grupo.');
+          }
+        };
+        return;
+      }
+
+      // Render content
+      document.getElementById('grIcon').textContent = typeIcon(group.type);
+      document.getElementById('grName').textContent = group.name;
+      document.getElementById('grDesc').textContent = group.description || '';
+      document.getElementById('grMeta').textContent = (members.length + ' miembro' + (members.length !== 1 ? 's' : '') + ' · ' + (group.matchCount || 0) + ' partidos');
+      document.getElementById('grMemberCount').textContent = members.length;
+
+      // Members
+      const $members = document.getElementById('grMembers');
+      $members.innerHTML = members.map(function (m) {
+        const initial = (m.displayName || 'Y').charAt(0).toUpperCase();
+        const photo = m.photoURL
+          ? '<img src="' + escapeHtml(m.photoURL) + '" alt="" referrerpolicy="no-referrer" />'
+          : initial;
+        const role = (group.admins || []).indexOf(m.uid) >= 0
+          ? '<span class="gr-member-role">Admin</span>'
+          : '';
+        return '<div class="gr-member">' +
+          '<div class="gr-member-avatar">' + photo + '</div>' +
+          '<div class="gr-member-info">' +
+            '<div class="gr-member-name">' + escapeHtml(m.displayName || 'Sin nombre') + '</div>' +
+            '<div class="gr-member-meta">' + (m.uid === (u && u.uid) ? 'Tú' : '') + '</div>' +
+          '</div>' +
+          role +
+        '</div>';
+      }).join('');
+
+      // Share / leave
+      document.getElementById('grShareBtn').onclick = function () {
+        const link = window.PuntazoGroups.generateInviteLink(groupId, group.inviteCode);
+        document.getElementById('grInviteLink').textContent = link;
+        document.getElementById('grInviteBlock').style.display = '';
+      };
+      document.getElementById('grCopyBtn').onclick = function () {
+        const link = window.PuntazoGroups.generateInviteLink(groupId, group.inviteCode);
+        navigator.clipboard.writeText(link).then(function () {
+          alert('Link copiado.');
+        }).catch(function () { alert('No se pudo copiar.'); });
+      };
+      document.getElementById('grWhatsappBtn').onclick = function () {
+        const link = window.PuntazoGroups.generateInviteLink(groupId, group.inviteCode);
+        const text = 'Únete a mi grupo "' + group.name + '" en Puntazo: ' + link;
+        window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+      };
+      document.getElementById('grLeaveBtn').onclick = async function () {
+        if (!confirm('¿Salir del grupo "' + group.name + '"?')) return;
+        try {
+          await window.PuntazoGroups.leaveGroup(groupId);
+          window.location.href = '/grupos.html';
+        } catch (e) {
+          alert('No se pudo salir.');
+        }
+      };
+
+      show('content');
+    } catch (e) {
+      console.error('[grupo] error', e);
+      show('error');
+    }
+  }
+
+  window.addEventListener('puntazo:auth-ready', loadAndRender);
+  window.addEventListener('puntazo:auth-changed', loadAndRender);
+  setTimeout(function () { if ($loading.style.display !== 'none') loadAndRender(); }, 800);
+})();
+</script>
+</body>
+</html>

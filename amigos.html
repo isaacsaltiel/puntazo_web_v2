@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Amigos · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/header.js"></script>
+<script src="/assets/identity.js"></script>
+<script src="/assets/friends.js"></script>
+
+<style>
+  html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .am-wrap { max-width: 720px; margin: 0 auto; padding: 90px 16px 60px; }
+  .am-back { display:inline-flex; align-items:center; gap:6px; margin-bottom:14px; padding:8px 14px; background:rgba(11,124,255,.10); border:1px solid rgba(11,124,255,.30); border-radius:999px; color:#cfe2ff; font-weight:700; font-size:.86rem; text-decoration:none; }
+  h1 { font-size:1.55rem; font-weight:900; color:#fff; margin:0 0 18px; }
+
+  .am-search {
+    margin-bottom:20px;
+    display:flex; gap:8px;
+  }
+  .am-search input {
+    flex:1; padding:12px 14px; border-radius:12px;
+    border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.30);
+    color:#fff; font-family:inherit; font-size:.96rem; font-weight:600;
+  }
+  .am-search input:focus { outline:none; border-color:rgba(11,124,255,.55); }
+  .am-search button {
+    padding:12px 18px; border-radius:12px;
+    background:linear-gradient(180deg, #0b7cff, #1d4ed8);
+    color:#fff; border:none; font-family:inherit; font-weight:900; cursor:pointer;
+  }
+
+  .am-section-title { font-size:.94rem; font-weight:800; color:rgba(234,242,255,.85); margin:18px 0 10px; text-transform:uppercase; letter-spacing:.5px; }
+  .am-list { display:flex; flex-direction:column; gap:8px; margin-bottom:24px; }
+  .am-item {
+    display:flex; align-items:center; gap:12px;
+    padding:11px 14px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;
+  }
+  .am-item-avatar {
+    width:42px; height:42px; border-radius:50%;
+    background:rgba(0,79,200,.35); display:flex; align-items:center; justify-content:center;
+    font-weight:900; color:#fff; flex-shrink:0; overflow:hidden;
+  }
+  .am-item-avatar img { width:100%; height:100%; object-fit:cover; }
+  .am-item-info { flex:1; min-width:0; }
+  .am-item-name { font-size:.98rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .am-item-handle { font-size:.78rem; color:rgba(234,242,255,.55); }
+  .am-item-actions { display:flex; gap:6px; flex-shrink:0; }
+  .am-btn-mini {
+    padding:7px 12px; border-radius:999px;
+    font-family:inherit; font-weight:800; font-size:.74rem;
+    cursor:pointer; transition:all .14s; border:1px solid transparent;
+  }
+  .am-btn-accept { background:rgba(34,197,94,.18); color:#9af2c0; border-color:rgba(34,197,94,.40); }
+  .am-btn-accept:hover { background:rgba(34,197,94,.30); }
+  .am-btn-reject { background:rgba(255,80,80,.12); color:#ffb1a3; border-color:rgba(255,80,80,.35); }
+  .am-btn-reject:hover { background:rgba(255,80,80,.24); }
+  .am-btn-remove { background:transparent; color:rgba(234,242,255,.45); border-color:rgba(255,255,255,.10); }
+  .am-btn-remove:hover { color:#ffb1a3; border-color:rgba(255,80,80,.35); }
+
+  .am-empty, .am-loading, .am-loginreq, .am-msg {
+    text-align:center; padding:20px;
+    color:rgba(234,242,255,.60);
+    font-size:.92rem;
+  }
+  .am-loginreq a { color:#6fb2ff; font-weight:800; text-decoration:none; }
+  .am-msg.bad { color:#f87171; }
+  .am-msg.ok  { color:#9af2c0; }
+</style>
+</head>
+<body>
+
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="am-wrap">
+  <a class="am-back" href="/perfil.html">← Mi perfil</a>
+  <h1>👥 Mis amigos</h1>
+
+  <div class="am-search">
+    <input type="text" id="amSearch" placeholder="Buscar por handle (ej: isaac)" maxlength="20" autocomplete="off" />
+    <button id="amSearchBtn" type="button">Buscar</button>
+  </div>
+  <div id="amSearchResult" class="am-msg"></div>
+
+  <div id="amLoginReq" class="am-loginreq" style="display:none">
+    Necesitas <a href="#" id="amDoLogin">iniciar sesión</a> para tener amigos.
+  </div>
+
+  <div id="amPanels" style="display:none">
+    <div id="amPendingSection" style="display:none">
+      <div class="am-section-title">Solicitudes pendientes (<span id="amPendingCount">0</span>)</div>
+      <div id="amPending" class="am-list"></div>
+    </div>
+
+    <div class="am-section-title">Mis amigos (<span id="amFriendsCount">0</span>)</div>
+    <div id="amFriends" class="am-list"></div>
+    <div id="amFriendsEmpty" class="am-empty" style="display:none">
+      Aún no tienes amigos en Puntazo.<br>Busca a alguien por handle arriba.
+    </div>
+  </div>
+
+  <div id="amLoading" class="am-loading">⏳ Cargando…</div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  const $search = document.getElementById('amSearch');
+  const $searchBtn = document.getElementById('amSearchBtn');
+  const $searchResult = document.getElementById('amSearchResult');
+  const $loading = document.getElementById('amLoading');
+  const $panels = document.getElementById('amPanels');
+  const $loginReq = document.getElementById('amLoginReq');
+  const $doLogin = document.getElementById('amDoLogin');
+  const $pendingSec = document.getElementById('amPendingSection');
+  const $pending = document.getElementById('amPending');
+  const $pendingCount = document.getElementById('amPendingCount');
+  const $friends = document.getElementById('amFriends');
+  const $friendsEmpty = document.getElementById('amFriendsEmpty');
+  const $friendsCount = document.getElementById('amFriendsCount');
+
+  function show(which) {
+    $loading.style.display  = (which === 'loading') ? '' : 'none';
+    $panels.style.display   = (which === 'panels')  ? '' : 'none';
+    $loginReq.style.display = (which === 'login')   ? '' : 'none';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
+    }[c]));
+  }
+
+  function avatarHtml(profile) {
+    if (profile && profile.photoURL) {
+      return '<img src="' + escapeHtml(profile.photoURL) + '" alt="" referrerpolicy="no-referrer" />';
+    }
+    const initial = (profile && profile.displayName ? profile.displayName.charAt(0).toUpperCase() : '?');
+    return initial;
+  }
+
+  function nameHtml(profile, uid) {
+    if (profile && profile.displayName) return escapeHtml(profile.displayName);
+    if (profile && profile.handle) return '@' + escapeHtml(profile.handle);
+    return '<span style="color:rgba(234,242,255,.45)">Usuario ' + escapeHtml(uid.slice(0, 6)) + '…</span>';
+  }
+
+  function handleHtml(profile) {
+    if (profile && profile.handle) return '@' + escapeHtml(profile.handle);
+    return '';
+  }
+
+  async function refresh() {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!u) { show('login'); return; }
+    show('loading');
+    try {
+      const [friends, pending] = await Promise.all([
+        window.PuntazoFriends.listMyFriends(),
+        window.PuntazoFriends.listPendingRequests(),
+      ]);
+
+      if (pending.length) {
+        $pendingSec.style.display = '';
+        $pendingCount.textContent = pending.length;
+        $pending.innerHTML = pending.map(function (r) {
+          return '<div class="am-item">' +
+            '<div class="am-item-avatar">' + avatarHtml(r.profile) + '</div>' +
+            '<div class="am-item-info">' +
+              '<div class="am-item-name">' + nameHtml(r.profile, r.fromUid) + '</div>' +
+              '<div class="am-item-handle">' + handleHtml(r.profile) + ' · solicitó ser tu amigo</div>' +
+            '</div>' +
+            '<div class="am-item-actions">' +
+              '<button class="am-btn-mini am-btn-accept" data-action="accept" data-fid="' + escapeHtml(r.friendshipId) + '">Aceptar</button>' +
+              '<button class="am-btn-mini am-btn-reject" data-action="reject" data-fid="' + escapeHtml(r.friendshipId) + '">Rechazar</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      } else {
+        $pendingSec.style.display = 'none';
+      }
+
+      $friendsCount.textContent = friends.length;
+      if (!friends.length) {
+        $friends.innerHTML = '';
+        $friendsEmpty.style.display = '';
+      } else {
+        $friendsEmpty.style.display = 'none';
+        $friends.innerHTML = friends.map(function (f) {
+          return '<div class="am-item">' +
+            '<div class="am-item-avatar">' + avatarHtml(f.profile) + '</div>' +
+            '<div class="am-item-info">' +
+              '<div class="am-item-name">' + nameHtml(f.profile, f.friendUid) + '</div>' +
+              '<div class="am-item-handle">' + handleHtml(f.profile) + '</div>' +
+            '</div>' +
+            '<div class="am-item-actions">' +
+              '<button class="am-btn-mini am-btn-remove" data-action="remove" data-uid="' + escapeHtml(f.friendUid) + '">Quitar</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+      show('panels');
+    } catch (e) {
+      console.error('[amigos] refresh error', e);
+      show('panels');
+    }
+  }
+
+  // Delegated click handler
+  document.body.addEventListener('click', async function (e) {
+    const btn = e.target.closest && e.target.closest('.am-btn-mini');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    btn.disabled = true;
+    try {
+      if (action === 'accept') {
+        await window.PuntazoFriends.acceptFriendRequest(btn.dataset.fid);
+      } else if (action === 'reject') {
+        await window.PuntazoFriends.rejectFriendRequest(btn.dataset.fid);
+      } else if (action === 'remove') {
+        if (!confirm('¿Quitar este amigo?')) { btn.disabled = false; return; }
+        await window.PuntazoFriends.removeFriend(btn.dataset.uid);
+      }
+      refresh();
+    } catch (err) {
+      console.error('[amigos]', err);
+      alert(err && err.message ? err.message : 'Error');
+      btn.disabled = false;
+    }
+  });
+
+  $searchBtn.addEventListener('click', async function () {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!u) { show('login'); return; }
+    const h = window.PuntazoIdentity.normalizeHandle($search.value);
+    if (!h) { $searchResult.className='am-msg bad'; $searchResult.textContent='Escribe un handle.'; return; }
+    $searchResult.className='am-msg'; $searchResult.textContent='Buscando…';
+    const profile = await window.PuntazoIdentity.findByHandle(h);
+    if (!profile) { $searchResult.className='am-msg bad'; $searchResult.textContent='No encontré @' + h; return; }
+    if (profile.uid === u.uid) { $searchResult.className='am-msg'; $searchResult.textContent='Ese eres tú 😊'; return; }
+    const status = await window.PuntazoFriends.getFriendshipStatus(profile.uid);
+    if (status === 'accepted') {
+      $searchResult.className='am-msg ok'; $searchResult.textContent='Ya son amigos.';
+      return;
+    }
+    if (status === 'pending_out') {
+      $searchResult.className='am-msg'; $searchResult.textContent='Ya le enviaste solicitud, espera respuesta.';
+      return;
+    }
+    if (status === 'pending_in') {
+      $searchResult.className='am-msg'; $searchResult.textContent='Esa persona ya te envió solicitud — revisa arriba.';
+      return;
+    }
+    // Send request
+    try {
+      await window.PuntazoFriends.sendFriendRequest(profile.uid);
+      $searchResult.className='am-msg ok';
+      $searchResult.textContent='✓ Solicitud enviada a ' + (profile.displayName || '@' + h);
+      $search.value = '';
+    } catch (e) {
+      $searchResult.className='am-msg bad';
+      $searchResult.textContent = e && e.message ? e.message : 'No se pudo enviar.';
+    }
+  });
+  $search.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); $searchBtn.click(); }
+  });
+
+  if ($doLogin) $doLogin.addEventListener('click', function (e) {
+    e.preventDefault();
+    try { window.PuntazoAuth.signIn(); } catch (_) {}
+  });
+
+  window.addEventListener('puntazo:auth-ready', refresh);
+  window.addEventListener('puntazo:auth-changed', refresh);
+  setTimeout(function () { if ($loading.style.display !== 'none') refresh(); }, 800);
+})();
+</script>
+</body>
+</html>

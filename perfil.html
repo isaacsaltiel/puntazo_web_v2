@@ -105,6 +105,36 @@
     flex-shrink: 0;
   }
 
+  /* F87: grid de accesos sociales (grupos + amigos) */
+  .pz-social-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 480px) {
+    .pz-social-grid { grid-template-columns: 1fr; }
+  }
+  .pz-social-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 14px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.10);
+    text-decoration: none;
+    color: #fff;
+    transition: transform .14s, background .14s, border-color .14s;
+  }
+  .pz-social-card:hover {
+    transform: translateY(-2px);
+    background: rgba(11,124,255,.10);
+    border-color: rgba(11,124,255,.35);
+  }
+  .pz-social-emoji { font-size:1.7rem; flex-shrink:0; }
+  .pz-social-text { flex:1; min-width:0; }
+  .pz-social-title { font-size:.96rem; font-weight:900; color:#fff; }
+  .pz-social-sub { font-size:.74rem; color:rgba(234,242,255,.55); margin-top:2px; }
+
   /* F82 Item 17: lista de puntazos pendientes (estilo chips densos) */
   .pz-pending-list {
     display: flex; flex-direction: column;
@@ -295,6 +325,24 @@
         </div>
         <span class="pz-nivel-arrow">→</span>
       </a>
+
+      <!-- F87: grid de accesos a social (grupos + amigos) -->
+      <div class="pz-social-grid">
+        <a href="/grupos.html" class="pz-social-card">
+          <span class="pz-social-emoji">👥</span>
+          <div class="pz-social-text">
+            <div class="pz-social-title">Mis grupos</div>
+            <div class="pz-social-sub">Ligas de amigos, ranking interno</div>
+          </div>
+        </a>
+        <a href="/amigos.html" class="pz-social-card">
+          <span class="pz-social-emoji">🤝</span>
+          <div class="pz-social-text">
+            <div class="pz-social-title">Mis amigos</div>
+            <div class="pz-social-sub">Conecta con otros jugadores</div>
+          </div>
+        </a>
+      </div>
 
       <!-- ── Etapa 15.7 — Mis partidos ── -->
       <div class="pz-section-title">

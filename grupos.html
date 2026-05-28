@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Mis grupos · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/header.js"></script>
+<script src="/assets/identity.js"></script>
+<script src="/assets/groups.js"></script>
+
+<style>
+  html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .gp-wrap { max-width: 720px; margin: 0 auto; padding: 90px 16px 60px; }
+  .gp-back { display:inline-flex; align-items:center; gap:6px; margin-bottom:14px; padding:8px 14px; background:rgba(11,124,255,.10); border:1px solid rgba(11,124,255,.30); border-radius:999px; color:#cfe2ff; font-weight:700; font-size:.86rem; text-decoration:none; }
+  h1 { font-size:1.55rem; font-weight:900; color:#fff; margin:0 0 18px; }
+
+  .gp-create-card {
+    background: linear-gradient(135deg, rgba(11,124,255,0.18), rgba(0,79,200,0.10));
+    border: 1px solid rgba(11,124,255,0.30);
+    border-radius: 16px;
+    padding: 18px 18px 14px;
+    margin-bottom: 20px;
+  }
+  .gp-create-card h3 { font-size:.94rem; font-weight:800; color:#fff; margin:0 0 12px; text-transform:uppercase; letter-spacing:.5px; }
+  .gp-create-form { display:flex; flex-direction:column; gap:10px; }
+  .gp-create-form input, .gp-create-form select {
+    width:100%; padding:11px 14px; border-radius:10px;
+    border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.30);
+    color:#fff; font-family:inherit; font-size:.95rem; font-weight:600;
+  }
+  .gp-create-form input:focus, .gp-create-form select:focus { outline:none; border-color:rgba(11,124,255,.55); }
+  .gp-create-btn {
+    margin-top:6px;
+    padding:12px; border:none; border-radius:10px;
+    background:linear-gradient(180deg, #0b7cff, #1d4ed8);
+    color:#fff; font-family:inherit; font-weight:900; font-size:.95rem;
+    cursor:pointer; transition:filter .14s;
+  }
+  .gp-create-btn:hover { filter:brightness(1.08); }
+  .gp-create-btn:disabled { opacity:.55; cursor:not-allowed; }
+
+  .gp-list { display:flex; flex-direction:column; gap:10px; margin-bottom:30px; }
+  .gp-card {
+    display:flex; align-items:center; gap:14px;
+    padding:14px 16px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:14px;
+    text-decoration:none; color:inherit;
+    transition:transform .14s, border-color .14s;
+  }
+  .gp-card:hover { transform:translateY(-2px); border-color:rgba(11,124,255,.35); }
+  .gp-card-icon {
+    width:42px; height:42px; border-radius:50%;
+    background:rgba(11,124,255,.18);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.3rem; flex-shrink:0;
+  }
+  .gp-card-info { flex:1; min-width:0; }
+  .gp-card-name { font-size:1.02rem; font-weight:900; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gp-card-meta { font-size:.78rem; color:rgba(234,242,255,.55); margin-top:2px; }
+  .gp-card-arrow { color:rgba(11,124,255,.85); font-size:1.3rem; flex-shrink:0; }
+
+  .gp-empty, .gp-loading, .gp-loginreq {
+    text-align:center; padding:30px 20px;
+    color:rgba(234,242,255,.65);
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:14px;
+  }
+  .gp-loginreq a { color:#6fb2ff; font-weight:800; text-decoration:none; }
+  .gp-msg { margin-top:10px; font-size:.82rem; font-weight:700; min-height:18px; }
+  .gp-msg.ok { color:#9af2c0; }
+  .gp-msg.bad { color:#f87171; }
+</style>
+</head>
+<body>
+
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="gp-wrap">
+  <a class="gp-back" href="/perfil.html">← Mi perfil</a>
+  <h1>👥 Mis grupos</h1>
+
+  <div class="gp-create-card">
+    <h3>Crear nuevo grupo</h3>
+    <div class="gp-create-form">
+      <input type="text" id="gpName" placeholder="Nombre del grupo (ej: Los Martes del Resi)" maxlength="60" />
+      <input type="text" id="gpDesc" placeholder="Descripción (opcional)" maxlength="280" />
+      <select id="gpType">
+        <option value="friends">👤 Liga de amigos</option>
+        <option value="residencial">🏘️ Liga del residencial</option>
+        <option value="club">🎾 Liga del club</option>
+        <option value="liga">🏆 Liga formal</option>
+      </select>
+      <button id="gpCreateBtn" class="gp-create-btn" type="button">Crear grupo</button>
+      <div id="gpMsg" class="gp-msg"></div>
+    </div>
+  </div>
+
+  <h3 style="font-size:.94rem; font-weight:800; color:rgba(234,242,255,.85); margin:0 0 10px; text-transform:uppercase; letter-spacing:.5px;">Mis grupos actuales</h3>
+
+  <div id="gpLoading" class="gp-loading">⏳ Cargando…</div>
+  <div id="gpList" class="gp-list" style="display:none"></div>
+  <div id="gpEmpty" class="gp-empty" style="display:none">
+    Aún no perteneces a ningún grupo. Crea uno arriba o pídele a un amigo que te comparta el link de su grupo.
+  </div>
+  <div id="gpLoginReq" class="gp-loginreq" style="display:none">
+    Necesitas <a href="#" id="gpDoLogin">iniciar sesión</a> para ver tus grupos.
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const $name = document.getElementById('gpName');
+  const $desc = document.getElementById('gpDesc');
+  const $type = document.getElementById('gpType');
+  const $createBtn = document.getElementById('gpCreateBtn');
+  const $msg = document.getElementById('gpMsg');
+  const $list = document.getElementById('gpList');
+  const $loading = document.getElementById('gpLoading');
+  const $empty = document.getElementById('gpEmpty');
+  const $loginReq = document.getElementById('gpLoginReq');
+  const $doLogin = document.getElementById('gpDoLogin');
+
+  function show(which) {
+    $loading.style.display  = (which === 'loading') ? '' : 'none';
+    $list.style.display     = (which === 'list')    ? '' : 'none';
+    $empty.style.display    = (which === 'empty')   ? '' : 'none';
+    $loginReq.style.display = (which === 'login')   ? '' : 'none';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
+    }[c]));
+  }
+
+  function typeIcon(t) {
+    return { friends:'👤', residencial:'🏘️', club:'🎾', liga:'🏆' }[t] || '👥';
+  }
+
+  async function refresh() {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!u) { show('login'); return; }
+    show('loading');
+    try {
+      const groups = await window.PuntazoGroups.listMyGroups();
+      if (!groups.length) { show('empty'); return; }
+      $list.innerHTML = groups.map(function (g) {
+        return '<a class="gp-card" href="/grupo.html?groupId=' + encodeURIComponent(g.groupId) + '">' +
+          '<div class="gp-card-icon">' + typeIcon(g.type) + '</div>' +
+          '<div class="gp-card-info">' +
+            '<div class="gp-card-name">' + escapeHtml(g.name || 'Sin nombre') + '</div>' +
+            '<div class="gp-card-meta">' + (g.memberCount || 1) + ' miembros · ' + (g.matchCount || 0) + ' partidos</div>' +
+          '</div>' +
+          '<div class="gp-card-arrow">→</div>' +
+        '</a>';
+      }).join('');
+      show('list');
+    } catch (e) {
+      console.error('[grupos] refresh error', e);
+      show('empty');
+    }
+  }
+
+  $createBtn.addEventListener('click', async function () {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!u) { show('login'); return; }
+    const name = $name.value.trim();
+    if (!name) { $msg.className='gp-msg bad'; $msg.textContent='Pon un nombre.'; return; }
+    $createBtn.disabled = true;
+    $createBtn.textContent = 'Creando…';
+    $msg.textContent = '';
+    try {
+      const groupId = await window.PuntazoGroups.createGroup({
+        name: name, description: $desc.value.trim(), type: $type.value,
+      });
+      $msg.className='gp-msg ok'; $msg.textContent='✓ Grupo creado, te llevamos…';
+      setTimeout(function () { window.location.href = '/grupo.html?groupId=' + encodeURIComponent(groupId); }, 600);
+    } catch (e) {
+      console.error('[grupos] create', e);
+      $msg.className='gp-msg bad'; $msg.textContent = e && e.message ? e.message : 'Error creando grupo.';
+    } finally {
+      $createBtn.disabled = false;
+      $createBtn.textContent = 'Crear grupo';
+    }
+  });
+
+  if ($doLogin) {
+    $doLogin.addEventListener('click', function (e) {
+      e.preventDefault();
+      try { window.PuntazoAuth.signIn(); } catch (_) {}
+    });
+  }
+
+  window.addEventListener('puntazo:auth-ready', refresh);
+  window.addEventListener('puntazo:auth-changed', refresh);
+  setTimeout(function () { if ($loading.style.display !== 'none') refresh(); }, 800);
+})();
+</script>
+</body>
+</html>
