@@ -32,12 +32,13 @@
     --border2: rgba(255,255,255,0.09);
     --radius: 18px;
 
-    /* Paleta de los 5 jugadores (B1..B5) */
-    --p1: #0B7CFF;   --p1-bg: rgba(11,124,255,0.22);   --p1-bd: rgba(11,124,255,0.65);   --p1-ink: #ffffff;
-    --p2: #33B6FF;   --p2-bg: rgba(51,182,255,0.24);   --p2-bd: rgba(51,182,255,0.70);   --p2-ink: #042033;
-    --p3: #2DD4BF;   --p3-bg: rgba(45,212,191,0.24);   --p3-bd: rgba(45,212,191,0.70);   --p3-ink: #042b26;
-    --p4: #84CC16;   --p4-bg: rgba(132,204,22,0.24);   --p4-bd: rgba(132,204,22,0.70);   --p4-ink: #18260a;
-    --p5: #FACC15;   --p5-bg: rgba(250,204,21,0.28);   --p5-bd: rgba(250,204,21,0.75);   --p5-ink: #2a2200;
+    /* Paleta de los 5 jugadores (iconos cancha nuevos: azul / amarillo /
+       morado / naranja / verde lima). */
+    --p1: #1F7DFF;   --p1-bg: rgba(31,125,255,0.22);   --p1-bd: rgba(31,125,255,0.70);   --p1-ink: #ffffff;
+    --p2: #FCE600;   --p2-bg: rgba(252,230,0,0.22);    --p2-bd: rgba(252,230,0,0.75);    --p2-ink: #2a2300;
+    --p3: #A855F7;   --p3-bg: rgba(168,85,247,0.24);   --p3-bd: rgba(168,85,247,0.70);   --p3-ink: #ffffff;
+    --p4: #FF7A1F;   --p4-bg: rgba(255,122,31,0.24);   --p4-bd: rgba(255,122,31,0.72);   --p4-ink: #2b1100;
+    --p5: #84F22E;   --p5-bg: rgba(132,242,46,0.22);   --p5-bd: rgba(132,242,46,0.70);   --p5-ink: #102600;
 
     --warn: #f59e0b;
     --warn-bg: rgba(245,158,11,0.14);
@@ -183,11 +184,11 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .pt.p1 { background: var(--p1-bg); border-color: var(--p1-bd); color: #fff; }
-  .pt.p2 { background: var(--p2-bg); border-color: var(--p2-bd); color: #cfeaff; }
-  .pt.p3 { background: var(--p3-bg); border-color: var(--p3-bd); color: #c7faf2; }
-  .pt.p4 { background: var(--p4-bg); border-color: var(--p4-bd); color: #e0f5b5; }
-  .pt.p5 { background: var(--p5-bg); border-color: var(--p5-bd); color: #fff5b0; }
+  .pt.p1 { background: var(--p1-bg); border-color: var(--p1-bd); color: #cfe3ff; }
+  .pt.p2 { background: var(--p2-bg); border-color: var(--p2-bd); color: #fff7a8; }
+  .pt.p3 { background: var(--p3-bg); border-color: var(--p3-bd); color: #ecd2ff; }
+  .pt.p4 { background: var(--p4-bg); border-color: var(--p4-bd); color: #ffd9b8; }
+  .pt.p5 { background: var(--p5-bg); border-color: var(--p5-bd); color: #d4f9af; }
 
   .pt.solid.p1 { background: var(--p1); color: #fff; border-color: transparent; }
   .pt.solid.p2 { background: var(--p2); color: var(--p2-ink); border-color: transparent; }
@@ -731,7 +732,18 @@
     50%      { box-shadow: 0 0 0 1px rgba(250,204,21,0.85) inset, 0 0 28px rgba(250,204,21,0.45); }
   }
   .t5-cal-row {
-    transition: transform .28s cubic-bezier(.4,.2,.2,1), background .25s ease, border-color .25s ease, box-shadow .25s ease;
+    transition: background .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  /* FLIP corto al reordenar (subir/bajar bloque en el modal) */
+  .t5-cal-row.is-flip {
+    animation: t5CalFlip 260ms cubic-bezier(.32,.12,.20,1) both;
+    position: relative;
+    z-index: 5;
+  }
+  @keyframes t5CalFlip {
+    0%   { transform: translateY(var(--cal-from-y)) scale(1); }
+    55%  { transform: translateY(calc(var(--cal-from-y) * -0.05)) scale(1.02); }
+    100% { transform: translateY(0) scale(1); }
   }
   .t5-cal-rank {
     display: inline-flex; align-items: center; justify-content: center;
@@ -1573,7 +1585,10 @@
       const isCurrent = pos === S.current && !done;
       const isMoved = lastMovedSchedIdx === schedIdx && !done;
 
-      const row = el("div", { class: `t5-cal-row ${done ? "is-done" : ""} ${isCurrent ? "is-current" : ""} ${isMoved ? "is-moved" : ""}` });
+      const row = el("div", {
+        class: `t5-cal-row ${done ? "is-done" : ""} ${isCurrent ? "is-current" : ""} ${isMoved ? "is-moved" : ""}`,
+        "data-sched": String(schedIdx),
+      });
 
       row.appendChild(el("div", { class: "t5-cal-rank" }, [String(pos + 1)]));
 
@@ -1614,6 +1629,18 @@
   function moveOrder(from, to) {
     if (from < 0 || to < 0 || from >= S.order.length || to >= S.order.length) return;
     if (S.matches[S.order[from]] || S.matches[S.order[to]]) return; // bloquea fijos
+
+    // 1) Snapshot de posiciones actuales (FLIP "First")
+    const listEl = document.getElementById("t5CalList");
+    const beforeTopBySched = {};
+    if (listEl) {
+      Array.from(listEl.querySelectorAll(".t5-cal-row")).forEach(r => {
+        const k = r.getAttribute("data-sched");
+        if (k != null) beforeTopBySched[k] = r.getBoundingClientRect().top;
+      });
+    }
+
+    // 2) Mutar estado y re-render
     const movedSched = S.order[from];
     S.order[from] = S.order[to];
     S.order[to] = movedSched;
@@ -1621,8 +1648,28 @@
     S.current = nextPositionInOrder();
     saveState();
     rerenderCalendarList();
-    // sincroniza la vista activa (preview/between muestran el calendario también)
-    // pero solo si NO estamos en match-activo (no queremos perder el stepper)
+
+    // 3) Aplicar FLIP a las filas que cambiaron de Y
+    requestAnimationFrame(() => {
+      const list2 = document.getElementById("t5CalList");
+      if (!list2) return;
+      Array.from(list2.querySelectorAll(".t5-cal-row")).forEach(row => {
+        const k = row.getAttribute("data-sched");
+        const before = beforeTopBySched[k];
+        if (before == null) return;
+        const after = row.getBoundingClientRect().top;
+        const dy = before - after;
+        if (Math.abs(dy) < 1) return;
+        row.style.setProperty("--cal-from-y", dy + "px");
+        row.classList.add("is-flip");
+        row.addEventListener("animationend", () => {
+          row.classList.remove("is-flip");
+          row.style.removeProperty("--cal-from-y");
+        }, { once: true });
+      });
+    });
+
+    // Sincroniza la vista activa (preview/between muestran el calendario también)
     if (S.view === "preview" || S.view === "between") render();
   }
 
