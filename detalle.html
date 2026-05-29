@@ -184,6 +184,88 @@
   }
   .dt-join-skip:hover { color: #cfe2ff; text-decoration: underline; }
 
+  /* F103: bloque inline "¿Eres uno de los jugadores?" — siempre visible
+     si user no vinculado. Mucho más detectable que un overlay. */
+  .dt-claim {
+    margin-bottom: 22px;
+    padding: 18px 18px 16px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(11,124,255,0.20), rgba(0,79,200,0.12));
+    border: 2px solid rgba(11,124,255,0.45);
+    box-shadow: 0 12px 32px rgba(11,124,255,0.18);
+  }
+  .dt-claim-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px;
+  }
+  .dt-claim-icon { font-size: 1.9rem; flex-shrink: 0; }
+  .dt-claim-title {
+    font-size: 1.08rem; font-weight: 900; color: #fff;
+    line-height: 1.2;
+  }
+  .dt-claim-sub {
+    font-size: 0.82rem; color: rgba(234,242,255,0.75);
+    margin-top: 3px;
+  }
+  .dt-claim-slots {
+    display: flex; flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .dt-claim-slot {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(0,0,0,0.30);
+    color: #fff;
+    font-family: inherit; font-weight: 800; font-size: 1rem;
+    cursor: pointer;
+    transition: all .14s;
+    text-align: left;
+  }
+  .dt-claim-slot:hover {
+    background: rgba(11,124,255,0.30);
+    border-color: rgba(11,124,255,0.65);
+    transform: translateY(-1px);
+  }
+  .dt-claim-slot[disabled] { opacity: 0.50; cursor: not-allowed; }
+  .dt-claim-slot-dot {
+    width: 11px; height: 11px; border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
+  }
+  .dt-claim-slot-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dt-claim-slot-team {
+    font-size: 0.68rem; font-weight: 700;
+    color: rgba(234,242,255,0.55);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .dt-claim-loginreq {
+    padding: 14px;
+    background: rgba(0,0,0,0.30);
+    border-radius: 12px;
+    text-align: center;
+  }
+  .dt-claim-loginreq p {
+    font-size: 0.92rem; color: rgba(234,242,255,0.85);
+    margin: 0 0 10px;
+  }
+  .dt-claim-msg {
+    margin-top: 10px;
+    min-height: 18px;
+    font-size: 0.82rem;
+    color: rgba(234,242,255,0.55);
+  }
+  .dt-claim-msg.ok { color: #9af2c0; }
+  .dt-claim-msg.bad { color: #f87171; }
+  .dt-claim-allfull {
+    padding: 14px;
+    text-align: center;
+    color: rgba(234,242,255,0.65);
+    font-size: 0.88rem;
+  }
+
   /* F95 BLOQUE 5: aceptación bilateral */
   .dt-acceptance {
     margin-bottom: 22px;
@@ -326,6 +408,25 @@
     <div class="dt-actions">
       <a id="dtEditBtn" class="dt-btn" href="#" style="display:none">✏️ Editar marcador y jugadores</a>
       <a id="dtShareBtn" class="dt-btn" href="#">📤 Compartir partido</a>
+    </div>
+
+    <!-- F103 Issue 1+2: bloque "¿Eres uno de los jugadores?" SIEMPRE visible
+         si el user no está vinculado al match Y hay slots disponibles.
+         NO depende del query param ?join=1 — esto era el bug. -->
+    <div id="dtClaimBlock" class="dt-claim" style="display:none">
+      <div class="dt-claim-header">
+        <span class="dt-claim-icon">👋</span>
+        <div>
+          <div class="dt-claim-title">¿Eres uno de los jugadores?</div>
+          <div class="dt-claim-sub" id="dtClaimSub">Vincula tu cuenta para validar el marcador y que cuente en tu ranking.</div>
+        </div>
+      </div>
+      <div id="dtClaimSlots" class="dt-claim-slots"></div>
+      <div class="dt-claim-loginreq" id="dtClaimLoginReq" style="display:none">
+        <p>Inicia sesión para reclamar tu slot.</p>
+        <button id="dtClaimDoLogin" type="button" class="dt-btn dt-btn-primary">Iniciar sesión con Google</button>
+      </div>
+      <div id="dtClaimMsg" class="dt-claim-msg"></div>
     </div>
 
     <!-- F95 BLOQUE 5: aceptación bilateral del marcador -->
@@ -486,121 +587,120 @@
     });
   }
 
-  // F98 P2: flow "¿Quién eres?" cuando viene ?join=1
-  function maybeShowJoinFlow(match) {
-    if (!joinFlag) return;
-    if (!$joinOverlay) return;
+  // F103 Issue 1+2: bloque inline "¿Eres uno de los jugadores?" SIEMPRE
+  // visible cuando el user no está vinculado y hay slots disponibles.
+  // NO depende del query param ?join=1 — eso era el bug original
+  // (WhatsApp/Android perdían el flag, el overlay nunca aparecía).
+  function renderClaimBlock(match) {
+    const $block = document.getElementById('dtClaimBlock');
+    const $slots = document.getElementById('dtClaimSlots');
+    const $loginReq = document.getElementById('dtClaimLoginReq');
+    const $msg = document.getElementById('dtClaimMsg');
+    if (!$block) return;
+
     const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
-    // Si ya estoy vinculado, salto el flow.
+
+    // Si ya estoy vinculado, NO mostrar bloque.
     if (u) {
       const myJugIdx = (match.jugadores || []).findIndex(function (j) {
         return j && (j.uid === u.uid || j.claimedByUid === u.uid);
       });
-      if (myJugIdx >= 0) return; // ya soy player
+      if (myJugIdx >= 0) { $block.style.display = 'none'; return; }
     }
-    // Construir lista de slots disponibles (sin uid + tienen nombre)
+
+    // Slots disponibles: tienen nombre Y no tienen uid.
     const jugadores = Array.isArray(match.jugadores) ? match.jugadores : [];
     const available = jugadores
       .map(function (j, i) { return Object.assign({ _idx: i }, j); })
-      .filter(function (j) {
-        return j && j.nombre && !j.uid;
-      });
+      .filter(function (j) { return j && j.nombre && !j.uid; });
 
-    $joinSlots.innerHTML = '';
+    $slots.innerHTML = '';
+    $loginReq.style.display = 'none';
+    if ($msg) { $msg.className = 'dt-claim-msg'; $msg.textContent = ''; }
+
     if (available.length === 0) {
-      $joinMsg.className = 'dt-join-msg';
-      $joinMsg.textContent = 'Este partido ya tiene todos los jugadores vinculados.';
-    } else {
-      available.forEach(function (j) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'dt-join-slot';
-        const teamLabel = j.equipo === 'team2' ? 'Equipo 2' : 'Equipo 1';
-        const teamColor = j.equipo === 'team2' ? 'var(--team2-color,#c8e835)' : 'var(--team1-color,#0B7CFF)';
-        btn.innerHTML =
-          '<span class="dt-join-slot-team-dot" style="background:' + teamColor + ';color:' + teamColor + '"></span>' +
-          '<span class="dt-join-slot-name">Soy ' + escapeHtml(j.nombre) + '</span>' +
-          '<span class="dt-join-slot-team">' + teamLabel + '</span>';
-        btn.addEventListener('click', function () { claimSlot(match, j._idx, j.nombre, btn); });
-        $joinSlots.appendChild(btn);
-      });
-      // Si no estoy logueado, oculto slots y muestro login.
-      if (!u) {
-        $joinSlots.style.display = 'none';
-        $joinLoginReq.style.display = '';
-      } else {
-        $joinSlots.style.display = '';
-        $joinLoginReq.style.display = 'none';
-      }
+      // Todos los nombres ya están vinculados — mostrar mensaje y ocultar
+      // bloque si no hay nada más que hacer.
+      const note = document.createElement('div');
+      note.className = 'dt-claim-allfull';
+      note.textContent = 'Todos los jugadores de este partido ya están vinculados.';
+      $slots.appendChild(note);
+      $block.style.display = '';
+      return;
     }
-    $joinOverlay.style.display = '';
+
+    available.forEach(function (j) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'dt-claim-slot';
+      const teamLabel = j.equipo === 'team2' ? 'Equipo 2' : 'Equipo 1';
+      const teamColor = j.equipo === 'team2' ? 'var(--team2-color,#c8e835)' : 'var(--team1-color,#0B7CFF)';
+      btn.innerHTML =
+        '<span class="dt-claim-slot-dot" style="background:' + teamColor + ';color:' + teamColor + '"></span>' +
+        '<span class="dt-claim-slot-name">Soy ' + escapeHtml(j.nombre) + '</span>' +
+        '<span class="dt-claim-slot-team">' + teamLabel + '</span>';
+      btn.addEventListener('click', function () {
+        if (!u) {
+          // Mostrar loginreq inline. Botón ya hizo "intent" claro.
+          $loginReq.style.display = '';
+          if ($msg) { $msg.className = 'dt-claim-msg'; $msg.textContent = 'Para reclamar este slot necesitas iniciar sesión.'; }
+          return;
+        }
+        claimMatchSlot(match, j._idx, j.nombre, btn);
+      });
+      $slots.appendChild(btn);
+    });
+
+    // Si no hay user, mostrar loginreq desde el inicio (más obvio).
+    if (!u) {
+      $loginReq.style.display = '';
+    }
+    $block.style.display = '';
   }
 
-  async function claimSlot(match, idx, name, btn) {
+  async function claimMatchSlot(match, idx, name, btn) {
     const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
-    if (!u) { try { window.PuntazoAuth.signIn(); } catch (_) {} return; }
+    if (!u) return;
+    const $msg = document.getElementById('dtClaimMsg');
     btn.disabled = true;
-    $joinMsg.className = 'dt-join-msg';
-    $joinMsg.textContent = 'Vinculando…';
+    if ($msg) { $msg.className = 'dt-claim-msg'; $msg.textContent = 'Vinculando…'; }
     try {
-      // Build nueva versión de jugadores con uid asignado al idx
       const nuevaArr = (match.jugadores || []).map(function (j, i) {
         if (i !== idx) return j;
         return Object.assign({}, j, { uid: u.uid });
       });
-      // Update jugadores + aceptar marcador en el mismo flujo
       await window.PuntazoMatches.update(match.id, { jugadores: nuevaArr });
       try { await window.PuntazoMatches.acceptScore(match.id, u.uid); } catch (_) {}
-      $joinMsg.className = 'dt-join-msg ok';
-      $joinMsg.textContent = '✓ Vinculado. Marcador aceptado por ti.';
-      // Cerrar overlay y refrescar match
+      if ($msg) { $msg.className = 'dt-claim-msg ok'; $msg.textContent = '✓ Vinculado. Marcador aceptado por ti.'; }
       setTimeout(function () {
-        $joinOverlay.style.display = 'none';
-        // Quitar ?join=1 del URL para no re-mostrar al refresh
+        // Quitar ?join=1 si estaba
         const url = new URL(window.location.href);
         url.searchParams.delete('join');
         window.history.replaceState({}, '', url.toString());
-        // Reload del match para que renderAcceptanceBlock vea el cambio
         load();
       }, 700);
     } catch (e) {
-      console.error('[detalle join] claim error', e);
-      $joinMsg.className = 'dt-join-msg bad';
-      $joinMsg.textContent = e && e.message ? e.message : 'No se pudo vincular.';
+      console.error('[detalle claim]', e);
+      if ($msg) { $msg.className = 'dt-claim-msg bad'; $msg.textContent = e && e.message ? e.message : 'No se pudo vincular.'; }
       btn.disabled = false;
     }
   }
 
-  if ($joinDoLogin) {
-    $joinDoLogin.addEventListener('click', function () {
-      // F101 fix bug #2: usar requireAuth (no signIn directo) para que
-      // dispare el modal estándar de "necesitas crear cuenta" con el
-      // botón Google. Tras login, callback re-ejecuta load() para que
-      // el overlay se re-pinte mostrando los slots (ya con user).
+  // Botón login del bloque inline
+  document.addEventListener('click', function (e) {
+    const t = e.target;
+    if (t && t.id === 'dtClaimDoLogin') {
       if (!window.PuntazoAuth || typeof window.PuntazoAuth.requireAuth !== 'function') {
-        alert('Módulo de auth no disponible. Recarga la página.');
+        alert('Auth no disponible. Recarga.');
         return;
       }
       try {
-        window.PuntazoAuth.requireAuth(function () {
-          // Tras login exitoso, recargar match para re-renderizar overlay
-          // con los slots habilitados (ya hay user).
-          load();
-        });
-      } catch (e) {
-        console.error('[detalle join] login error', e);
-        alert('No se pudo abrir el login. Intenta desde el botón ☰ del header.');
+        window.PuntazoAuth.requireAuth(function () { load(); });
+      } catch (err) {
+        alert('No se pudo abrir el login. Recarga la página.');
       }
-    });
-  }
-  if ($joinSkip) {
-    $joinSkip.addEventListener('click', function () {
-      $joinOverlay.style.display = 'none';
-      const url = new URL(window.location.href);
-      url.searchParams.delete('join');
-      window.history.replaceState({}, '', url.toString());
-    });
-  }
+    }
+  });
 
   // F95 BLOQUE 5: aceptación bilateral del marcador
   function renderAcceptanceBlock(match) {
@@ -743,11 +843,11 @@
       renderMeta(match);
       setupEditButton(match);
       setupShareButton(match);
+      renderClaimBlock(match); // F103: siempre evaluar si user puede vincularse
       renderAcceptanceBlock(match);
       setupPhotoToggle(match);
       loadClips(match);
       show('content');
-      maybeShowJoinFlow(match); // F98 P2: tras render, si ?join=1 mostramos el overlay
     } catch (e) {
       console.error('[detalle] load error', e);
       show('notfound');
