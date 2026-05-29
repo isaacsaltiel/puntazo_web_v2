@@ -721,16 +721,6 @@
   }
   .t5-cal-row.is-done { background: rgba(11,124,255,0.08); border-color: rgba(11,124,255,0.28); }
   .t5-cal-row.is-current { border-color: rgba(11,124,255,0.55); box-shadow: 0 0 0 1px rgba(11,124,255,0.45) inset; }
-  .t5-cal-row.is-moved {
-    border-color: rgba(250,204,21,0.75);
-    background: rgba(250,204,21,0.10);
-    box-shadow: 0 0 0 1px rgba(250,204,21,0.55) inset, 0 0 22px rgba(250,204,21,0.30);
-    animation: t5movedPulse 1.6s ease-in-out infinite;
-  }
-  @keyframes t5movedPulse {
-    0%, 100% { box-shadow: 0 0 0 1px rgba(250,204,21,0.45) inset, 0 0 18px rgba(250,204,21,0.22); }
-    50%      { box-shadow: 0 0 0 1px rgba(250,204,21,0.85) inset, 0 0 28px rgba(250,204,21,0.45); }
-  }
   .t5-cal-row {
     transition: background .25s ease, border-color .25s ease, box-shadow .25s ease;
   }
@@ -1244,7 +1234,6 @@
   /* ── Estado ── */
   let S = null;
   let tableExpanded = false;
-  let lastMovedSchedIdx = null; // resaltado del último match movido en el modal
   // Animación de cambio de posición (FLIP). Efímera, no persiste.
   // Forma: { prevRank: { idx → posición previa } }
   let pendingAnim = null;
@@ -1548,7 +1537,7 @@
       el("button", { class: "t5-modal-close", type: "button", onClick: closeModal }, ["×"]),
     ]));
     modal.appendChild(el("div", { class: "t5-modal-sub" }, [
-      "Reordena los partidos pendientes con las flechas. El último movido queda resaltado en amarillo. Los que ya tienen resultado quedan fijos."
+      "Reordena los partidos pendientes con las flechas. Los que ya tienen resultado quedan fijos."
     ]));
 
     const list = el("div", { id: "t5CalList" });
@@ -1566,7 +1555,6 @@
   function closeModal() {
     const slot = document.getElementById("t5ModalSlot");
     if (slot) slot.innerHTML = "";
-    lastMovedSchedIdx = null;
   }
 
   function rerenderCalendarList() {
@@ -1583,10 +1571,9 @@
       const m = S.matches[schedIdx];
       const done = !!m;
       const isCurrent = pos === S.current && !done;
-      const isMoved = lastMovedSchedIdx === schedIdx && !done;
 
       const row = el("div", {
-        class: `t5-cal-row ${done ? "is-done" : ""} ${isCurrent ? "is-current" : ""} ${isMoved ? "is-moved" : ""}`,
+        class: `t5-cal-row ${done ? "is-done" : ""} ${isCurrent ? "is-current" : ""}`,
         "data-sched": String(schedIdx),
       });
 
@@ -1644,7 +1631,6 @@
     const movedSched = S.order[from];
     S.order[from] = S.order[to];
     S.order[to] = movedSched;
-    lastMovedSchedIdx = movedSched;
     S.current = nextPositionInOrder();
     saveState();
     rerenderCalendarList();
