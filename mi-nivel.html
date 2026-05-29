@@ -276,6 +276,20 @@
   }
   .ml-status-pending strong { color: #ffd497; }
 
+  /* F107 Issue 10: estado vacío de history con copy humano */
+  .ml-history-empty {
+    margin: 4px 0 22px;
+    padding: 22px 18px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    text-align: center;
+    color: rgba(234, 242, 255, 0.70);
+    font-size: 0.88rem; line-height: 1.5;
+  }
+  .ml-history-empty .icon { font-size: 1.6rem; display: block; margin-bottom: 6px; }
+  .ml-history-empty strong { color: #fff; }
+
   .ml-loginreq, .ml-empty {
     text-align: center;
     padding: 50px 20px;
@@ -319,14 +333,13 @@
     <!-- Historia de matches -->
     <h2 class="ml-history-title">Tus últimos partidos</h2>
     <div class="ml-history" id="mlHistory"></div>
+    <!-- F107 Issue 10: mensaje cuando history está vacío -->
+    <div id="mlHistoryEmpty" class="ml-history-empty" style="display:none"></div>
 
-    <!-- Disclaimer -->
+    <!-- F107: nota suave (sin jerga técnica) -->
     <div class="ml-disclaimer">
-      🧪 <b>Versión preview</b>. Tu rating se calcula en tu propio dispositivo
-      a partir de tus partidos. Los ratings de tus oponentes se estiman
-      localmente y pueden no coincidir con los suyos. Cuando se active el
-      cálculo global en servidor (próximamente), todos los ratings serán
-      definitivos y comparables entre usuarios.
+      Tu rating se actualiza con cada partido validado. A más partidos
+      con rivales reales, más preciso.
     </div>
   </div>
 
@@ -336,10 +349,9 @@
 
   <div id="mlEmpty" class="ml-empty" style="display:none">
     <div class="icon">🎾</div>
-    <p><b>Aún no tienes partidos para calcular nivel.</b><br>
-    Juega tu primer partido en <a href="/entrada.html">entrada</a> o reclama
-    tu slot en algún partido en curso. Después de 3 partidos terminados,
-    tu rating oficial aparecerá aquí.</p>
+    <p><b>Aún no tienes partidos para calcular tu nivel.</b><br>
+    Juega tu primer partido desde <a href="/entrada.html">la entrada</a>
+    o reclama tu slot si un amigo te comparte el link de su partido.</p>
   </div>
 </main>
 
@@ -526,10 +538,22 @@
   }
 
   function renderHistory(history) {
+    const $empty = document.getElementById('mlHistoryEmpty');
     if (!history.length) {
-      $history.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(234,242,255,0.55)">Sin partidos válidos para ranking.</div>';
+      // F107 Issue 10: copy humano explicando POR QUÉ está vacío.
+      $history.innerHTML = '';
+      $history.style.display = 'none';
+      if ($empty) {
+        $empty.innerHTML = '<span class="icon">🎾</span>' +
+          '<strong>Tus partidos aparecerán aquí cuando estén validados.</strong><br>' +
+          'Un partido se valida cuando al menos un jugador del equipo rival se vincula. ' +
+          'Comparte el link del partido desde el resumen para invitar a tus rivales.';
+        $empty.style.display = '';
+      }
       return;
     }
+    $history.style.display = '';
+    if ($empty) $empty.style.display = 'none';
     // Newest first
     const reversed = history.slice().reverse();
     $history.innerHTML = reversed.map(h => {
