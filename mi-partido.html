@@ -497,6 +497,48 @@
     50% { opacity: 1; transform: scale(1.10); }
   }
 
+  /* F115: aviso de expiración del partido (visible solo cuando el partido
+     pasó su duración esperada). Inline en el mpTimerBox, no modal. */
+  .mp-expiry-hint {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: linear-gradient(180deg, rgba(240,104,69,.18), rgba(240,104,69,.06));
+    border: 1px solid rgba(240,104,69,.50);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    animation: mpExpiryIn .3s ease-out;
+  }
+  .mp-expiry-hint > span {
+    flex: 1;
+    min-width: 160px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: rgba(255, 235, 220, .95);
+    line-height: 1.35;
+  }
+  .mp-expiry-btn {
+    background: rgba(240,104,69,.30);
+    border: 1px solid rgba(240,104,69,.65);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 800;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s;
+  }
+  .mp-expiry-btn:hover { background: rgba(240,104,69,.45); }
+  .mp-expiry-btn:disabled { opacity: .55; cursor: wait; }
+  @keyframes mpExpiryIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
   /* ── Banner de éxito post-terminar ── */
   .mp-success-banner {
     display: none;
@@ -3182,6 +3224,13 @@
           <span>🎬 <span id="mpClipCount">—</span> Puntazos capturados</span>
         </div>
       </div>
+      <!-- F115: aviso de expiración. Visible solo cuando el partido pasa
+           el tiempo esperado (1h partido_3, 2h partido_5). Solo el dueño
+           del partido lo ve (no invitados). -->
+      <div id="mpExpiryHint" class="mp-expiry-hint" style="display:none">
+        <span id="mpExpiryText">⏰ Este partido lleva mucho tiempo activo</span>
+        <button id="mpExpiryEndBtn" type="button" class="mp-expiry-btn">Terminar ahora</button>
+      </div>
     </div>
 
     <!-- Etapa 16.4 F9: bloque mpCard de ubicación (loc/cancha/lado) eliminado.
@@ -4264,6 +4313,8 @@
     function tick() {
       const elapsed = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
       if ($timer) $timer.textContent = formatHMS(elapsed);
+      // F115: check de expiración cada segundo (es solo una resta, cheap).
+      maybeShowExpiryHint();
     }
     tick();
     _timerId = setInterval(tick, 1000);
@@ -4271,6 +4322,50 @@
 
   function stopTimer() {
     if (_timerId) { clearInterval(_timerId); _timerId = null; }
+    // Ocultar hint si paramos timer (partido terminado/cancelado)
+    const hint = document.getElementById("mpExpiryHint");
+    if (hint) hint.style.display = "none";
+  }
+
+  // F115: muestra el aviso "Este partido lleva mucho tiempo activo" cuando
+  // el partido pasa su duración esperada. Solo cuando soy dueño y el match
+  // está active. El botón reabre el modal estándar de "Terminar partido".
+  let _expiryWired = false;
+  function maybeShowExpiryHint() {
+    const hint = document.getElementById("mpExpiryHint");
+    const text = document.getElementById("mpExpiryText");
+    if (!hint || !text) return;
+    if (!currentMatch || currentMatch.status !== "active") { hint.style.display = "none"; return; }
+    // Solo el dueño cierra el partido — no mostrar a invitados.
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user || user.uid !== currentMatch.userId) { hint.style.display = "none"; return; }
+    if (!window.PuntazoMatches || !window.PuntazoMatches.isMatchExpired) return;
+    const expired = window.PuntazoMatches.isMatchExpired(currentMatch);
+    const remaining = window.PuntazoMatches.getMatchTimeRemainingMs(currentMatch);
+    if (expired) {
+      const ageM = Math.floor((window.PuntazoMatches.getMatchAgeMs(currentMatch) || 0) / 60000);
+      const hh = Math.floor(ageM / 60);
+      const mm = ageM - hh * 60;
+      const ageLabel = hh > 0 ? `${hh}h${mm ? " " + mm + "min" : ""}` : `${mm}min`;
+      text.textContent = `⏰ Lleva ${ageLabel} activo. ¿Lo cerramos?`;
+      hint.style.display = "flex";
+    } else if (remaining != null && remaining <= 15 * 60 * 1000) {
+      const remM = Math.max(0, Math.ceil(remaining / 60000));
+      text.textContent = `⏳ Quedan ~${remM}min antes del cierre sugerido.`;
+      hint.style.display = "flex";
+    } else {
+      hint.style.display = "none";
+    }
+    if (!_expiryWired) {
+      const btn = document.getElementById("mpExpiryEndBtn");
+      if (btn) {
+        btn.addEventListener("click", function () {
+          // Reutiliza el flujo modal estándar de "Terminar partido".
+          if ($btnEnd) $btnEnd.click();
+        });
+        _expiryWired = true;
+      }
+    }
   }
 
   async function pollClipsOnce() {

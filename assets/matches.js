@@ -403,6 +403,38 @@
     return null; // reta/libre/otros: el caller decide
   }
 
+  // F115: duración máxima esperada por modo. Después de esto el partido
+  // está "expirado" y se ofrece auto-cierre. Conservador: las cifras
+  // cubren el peor caso (3 sets a 7-6 con muchos puntos).
+  function maxMatchDurationMs(modo) {
+    if (modo === "partido_5") return 2 * 60 * 60 * 1000; // 2h
+    if (modo === "partido_3") return 1 * 60 * 60 * 1000; // 1h
+    return 90 * 60 * 1000;                                // default 1h30m
+  }
+
+  // Edad del partido en ms (basado en startedAt). Devuelve null si no hay timestamp.
+  function getMatchAgeMs(match) {
+    if (!match) return null;
+    const startedMs = toMillis(match.startedAt);
+    if (!startedMs) return null;
+    return Math.max(0, Date.now() - startedMs);
+  }
+
+  // ¿el partido ya pasó su duración máxima esperada?
+  function isMatchExpired(match) {
+    if (!match || match.status !== "active") return false;
+    const age = getMatchAgeMs(match);
+    if (age == null) return false;
+    return age > maxMatchDurationMs(match.modo);
+  }
+
+  // ms restantes hasta expiración. Negativo si ya expiró. null si no hay timestamp.
+  function getMatchTimeRemainingMs(match) {
+    const age = getMatchAgeMs(match);
+    if (age == null) return null;
+    return maxMatchDurationMs(match && match.modo) - age;
+  }
+
   // _countSetsWon: cuenta sets ganados por cada equipo (basado en games por set).
   function _countSetsWon(sets) {
     let t1 = 0, t2 = 0;
@@ -1290,6 +1322,11 @@
     },
     MODOS: MODOS_VALIDOS.slice(),
     DEPORTES: DEPORTES_VALIDOS.slice(),
+    // F115: helpers de expiración / auto-cierre
+    maxMatchDurationMs: maxMatchDurationMs,
+    getMatchAgeMs: getMatchAgeMs,
+    getMatchTimeRemainingMs: getMatchTimeRemainingMs,
+    isMatchExpired: isMatchExpired,
     _parseFromName: parseFromName,
     _toMillis: toMillis,
     _normalizeMatchFromDoc: normalizeMatchFromDoc,
