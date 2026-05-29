@@ -124,6 +124,12 @@ service cloud.firestore {
     // ════════════════════════════════════════════════════
     // EXISTENTE — Pulsos pendientes desde web (R4)
     // ════════════════════════════════════════════════════
+    // R6 (Worker D, 2026-05-29): el listener de la NUC ahora escribe
+    // los siguientes campos cuando consume o cierra un doc — sigue
+    // bypaseado por el admin SDK, no afecta a reglas, pero documentado
+    // para que una futura regla "fields-only" en update NO rompa el
+    // listener:
+    //   consumed_at, consumed_by, error_reason, processed_video_url
     match /pending_pulses/{pulseId} {
       allow create: if request.resource.data.club is string
                     && request.resource.data.club.size() > 0
@@ -139,6 +145,19 @@ service cloud.firestore {
                   && resource.data.uid_creator == request.auth.uid;
 
       allow update, delete: if false;
+    }
+
+    // ════════════════════════════════════════════════════
+    // NUEVO R6 (Worker D, 2026-05-29) — Heartbeat del sistema del club
+    // ════════════════════════════════════════════════════
+    // Cada NUC escribe un doc por club (id=clubId) cada 30s con su
+    // estado vivo: status, lastSeenAt, pendingQueue, nvrConnected,
+    // version. La web lo lee para mostrar "sistema offline" cuando
+    // lastSeenAt > 5min. Solo el admin SDK del runner escribe — desde
+    // cualquier cliente queda denegado.
+    match /nuc_heartbeat/{clubId} {
+      allow read: if true;
+      allow write: if false;
     }
 
     // ════════════════════════════════════════════════════
@@ -330,6 +349,7 @@ service cloud.firestore {
 - `handles/{handle}`
 - `groups/{groupId}` + `members/`
 - `friendships/{friendshipId}`
+- `nuc_heartbeat/{clubId}` (R6, Worker D — read público, write solo admin SDK del runner)
 
 **Catch-all**: queda al final (DENY por default para colecciones no listadas).
 
