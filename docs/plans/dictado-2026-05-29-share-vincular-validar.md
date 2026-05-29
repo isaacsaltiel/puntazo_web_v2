@@ -179,3 +179,53 @@ debe ser un **camino feliz a prueba de balas**.
 7. ✅ Recuperar partido activo — F105
 8. ✅ No 2 partidos activos — F105
 9. ✅ Textos mi-nivel limpios — F107
+
+---
+
+## 🔥 SIGUIENTE ITERACIÓN (post-2026-05-30) — Nueva sesión
+
+Tras prueba real con 2 cuentas, Isaac detectó bugs + pidió 3 features
+adicionales. Ver [vinculacion-combinaciones-analisis.md](vinculacion-combinaciones-analisis.md)
+para el análisis completo.
+
+### BUG CRÍTICO: vinculación desde detalle no aparece en perfil del invitado
+- Cuenta B se vincula via `detalle.html`, acepta marcador.
+- En **detalle** se ve bien (vinculación funcionó).
+- En **perfil de cuenta B**: NO aparece. Tampoco en Mi nivel.
+- **Causa**: `claimMatchSlot()` solo updatea `jugadores[i].uid` PERO no
+  crea documento `matches/{id}/claims/{uid}`. Los queries de perfil
+  usan `collectionGroup('claims')` que no encuentra nada.
+- **Fix planeado**: `claimMatchSlot()` debe llamar también
+  `PuntazoMatches.claimSlot()` para crear el doc en claims/.
+- **Bonus**: backfill script para matches viejos donde quedó solo
+  `jugadores[i].uid` sin claim.
+
+### FEATURE: notificaciones push al teléfono
+- **Sí se puede** con Web Push + FCM:
+  - Android Chrome → directo.
+  - iOS Safari 16.4+ → requiere PWA install primero.
+- Setup: Service Worker + VAPID key + Cloud Function para envío.
+- Eventos a notificar: te claimaron slot, alguien aceptó marcador,
+  bucket cambió, clip listo.
+- **Decisión**: hacerlo cuando flow de vinculación esté 100% sólido.
+
+### FEATURE: auto-terminar por timeout
+- 3 sets → 1h máximo.
+- 5 sets → 2h máximo.
+- Aviso 15 min antes "¿Sigues activo?" con CTA extender.
+- Si no responde → `status="ended"` automático.
+
+### FEATURE: recordatorio de partido pendiente
+- Next visit al sitio: modal "Tu partido en X sigue activo desde
+  hace Y. ¿Registrar resultado?"
+- Implementación: chequeo en perfil.html / entrada.html, threshold
+  contra `startedAt` del match active más antiguo.
+
+### Orden de implementación recomendado para próxima sesión
+
+1. **F108**: fix bug crítico vinculación (resolver primero, todo
+   depende de esto).
+2. **F109**: backfill script (1 ejecución manual).
+3. **F110**: auto-terminar + recordatorio (mismo dominio).
+4. **F111**: notificaciones push (más infra, hacerlo cuando lo
+   anterior esté sólido).
