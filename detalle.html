@@ -671,6 +671,33 @@
     });
   }
 
+  // F110: auto-heal para matches creados ANTES del fix de F110.
+  // Si el user ya está en jugadores[i].uid pero NO tiene claim doc,
+  // crear el claim doc silenciosamente. Eso retroalimenta los queries
+  // de perfil/mis-partidos/mi-nivel para matches viejos.
+  // Idempotente (claimSlot hace .set() — sobrescribe si ya existe).
+  async function autoHealClaim(match) {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!u || !match) return;
+    const jugadores = Array.isArray(match.jugadores) ? match.jugadores : [];
+    const myIdx = jugadores.findIndex(function (j) { return j && j.uid === u.uid; });
+    if (myIdx < 0) return; // no soy player vinculado por uid
+    try {
+      // Verificar si claim doc ya existe
+      const D = window.PuntazoFirebase && window.PuntazoFirebase.db();
+      if (!D) return;
+      const ref = D.collection('matches').doc(match.id).collection('claims').doc(u.uid);
+      const snap = await ref.get();
+      if (snap.exists) return; // ya está, nothing to heal
+      // Crear claim doc
+      const j = jugadores[myIdx];
+      await window.PuntazoMatches.claimSlot(match.id, myIdx, (j && j.nombre) || u.displayName || '');
+      console.log('[detalle autoHeal] claim doc backfilled para uid ' + u.uid + ' en match ' + match.id);
+    } catch (e) {
+      console.warn('[detalle autoHeal] no se pudo backfill claim:', e && e.code ? e.code : e);
+    }
+  }
+
   // F103 Issue 1+2: bloque inline "¿Eres uno de los jugadores?" SIEMPRE
   // visible cuando el user no está vinculado y hay slots disponibles.
   // NO depende del query param ?join=1 — eso era el bug original
@@ -749,12 +776,27 @@
     btn.disabled = true;
     if ($msg) { $msg.className = 'dt-claim-msg'; $msg.textContent = 'Vinculando…'; }
     try {
+      // 1) Update jugadores[idx].uid en el match doc
       const nuevaArr = (match.jugadores || []).map(function (j, i) {
         if (i !== idx) return j;
         return Object.assign({}, j, { uid: u.uid });
       });
       await window.PuntazoMatches.update(match.id, { jugadores: nuevaArr });
+
+      // 2) F110 BUG FIX CRÍTICO: crear claim doc en matches/{id}/claims/{uid}.
+      // Sin esto, perfil/mis-partidos/mi-nivel NO veían el match para el
+      // user porque sus queries usan collectionGroup('claims').where(uid).
+      // Doc completo: docs/plans/vinculacion-combinaciones-analisis.md
+      try {
+        await window.PuntazoMatches.claimSlot(match.id, idx, name || u.displayName || '');
+      } catch (claimErr) {
+        // No fatal — el update de jugadores ya pasó. Loguear y seguir.
+        console.warn('[detalle claim] claimSlot doc falló (vinculación parcial):', claimErr);
+      }
+
+      // 3) Aceptar marcador (idempotente)
       try { await window.PuntazoMatches.acceptScore(match.id, u.uid); } catch (_) {}
+
       if ($msg) { $msg.className = 'dt-claim-msg ok'; $msg.textContent = '✓ Vinculado. Marcador aceptado por ti.'; }
       setTimeout(function () {
         // Quitar ?join=1 si estaba
@@ -933,6 +975,8 @@
       setupPhotoToggle(match);
       loadClips(match);
       show('content');
+      // F110: auto-heal silencioso de claim docs para matches viejos
+      autoHealClaim(match);
     } catch (e) {
       console.error('[detalle] load error', e);
       show('notfound');
