@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Marcador libre · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --bg:#050914; --text:#eaf2ff; --muted:rgba(234,242,255,.55);
+    --t1:#0b7cff; --t1d:#004FC8;
+    --t2:#c8e835; --t2d:#9ec628;
+    --gray:rgba(120,130,145,.30); --gray-h:rgba(120,130,145,.45);
+    --undo:#f06845;
+    --line:rgba(255,255,255,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;background:var(--bg);color:var(--text);
+    font-family:'Montserrat',system-ui,sans-serif;
+    -webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  .wrap{max-width:520px;margin:0 auto;padding:20px 14px 80px;}
+  .back{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;
+    background:rgba(11,124,255,.10);border:1px solid rgba(11,124,255,.30);
+    border-radius:999px;color:#6fb2ff;text-decoration:none;
+    font-size:.78rem;font-weight:700;margin-bottom:14px;}
+  h1{font-size:1.3rem;font-weight:900;margin:0 0 4px;color:#fff;letter-spacing:-.3px;}
+  .sub{font-size:.84rem;color:var(--muted);margin-bottom:18px;}
+
+  .names{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+  .name-input{padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+    background:rgba(255,255,255,.04);color:#fff;font-family:inherit;
+    font-size:.92rem;font-weight:800;text-align:center;
+    transition:border-color .15s;}
+  .name-input:focus{outline:none;border-color:rgba(11,124,255,.55);}
+  .name-input[data-team="1"]{border-left:3px solid var(--t1d);}
+  .name-input[data-team="2"]{border-left:3px solid var(--t2d);}
+
+  .scoreboard{
+    display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;
+    border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    background:rgba(255,255,255,.02);margin-bottom:18px;
+  }
+  .scoreboard .h, .scoreboard .c{
+    padding:12px 8px;text-align:center;border-bottom:1px solid var(--line);
+    font-size:.78rem;font-weight:700;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.5px;
+  }
+  .scoreboard .h{background:rgba(0,0,0,.18);}
+  .scoreboard .team-cell{
+    text-align:left;font-size:.92rem;font-weight:900;color:#fff;
+    padding-left:14px;border-right:1px solid var(--line);
+    text-transform:none;letter-spacing:0;
+  }
+  .scoreboard .team-cell[data-team="1"]{border-left:4px solid var(--t1d);}
+  .scoreboard .team-cell[data-team="2"]{border-left:4px solid var(--t2d);}
+  .scoreboard .c{font-size:1.1rem;font-weight:900;color:#fff;
+    font-variant-numeric:tabular-nums;}
+  .scoreboard .c.points{font-size:1.4rem;color:#ffe27a;}
+  .scoreboard .row-last .h, .scoreboard .row-last .c{border-bottom:none;}
+
+  .controls{display:grid;gap:14px;}
+  .team-block{
+    border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    background:rgba(255,255,255,.02);
+  }
+  .team-block[data-team="1"]{border-left:4px solid var(--t1d);}
+  .team-block[data-team="2"]{border-left:4px solid var(--t2d);}
+  .team-block h3{
+    padding:10px 14px;font-size:.88rem;font-weight:900;color:#fff;
+    background:rgba(0,0,0,.18);border-bottom:1px solid var(--line);
+    letter-spacing:-.2px;
+  }
+  .team-grid{display:grid;grid-template-columns:7fr 3fr;gap:6px;padding:10px;}
+  .btn{padding:14px 10px;border-radius:10px;border:none;cursor:pointer;
+    font-family:inherit;font-weight:900;font-size:.92rem;
+    color:#fff;letter-spacing:.3px;transition:transform .08s,filter .15s;
+    text-align:center;}
+  .btn:active{transform:scale(.96);filter:brightness(1.15);}
+  .btn.punto{background:var(--gray);}
+  .btn.punto:hover{background:var(--gray-h);}
+  .btn.game-1{background:linear-gradient(180deg,var(--t1),var(--t1d));}
+  .btn.game-2{background:linear-gradient(180deg,var(--t2),var(--t2d));color:#0a1428;}
+  .btn.set-1{background:rgba(11,124,255,.50);}
+  .btn.set-2{background:rgba(200,232,53,.50);color:#0a1428;}
+  .btn.undo{background:transparent;border:1px solid var(--undo);color:var(--undo);
+    font-size:1.1rem;font-weight:900;}
+  .btn.undo:hover{background:rgba(240,104,69,.12);}
+
+  .bar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+  .bar button{flex:1;min-width:120px;padding:11px 12px;border-radius:10px;
+    border:1px solid var(--line);background:rgba(255,255,255,.04);
+    color:var(--text);font-family:inherit;font-weight:700;font-size:.86rem;
+    cursor:pointer;transition:background .15s;}
+  .bar button:hover{background:rgba(255,255,255,.08);}
+  .bar button.danger{border-color:rgba(240,104,69,.45);
+    background:rgba(240,104,69,.10);color:#ffb09a;}
+  .bar button.danger:hover{background:rgba(240,104,69,.20);}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a href="/herramientas.html" class="back">← Volver</a>
+  <h1>Marcador libre</h1>
+  <p class="sub">Lleva el marcador en cualquier cancha. Se guarda local (sigue ahí si cierras la pestaña).</p>
+
+  <div class="names">
+    <input id="n1" class="name-input" data-team="1" type="text" placeholder="Equipo 1" maxlength="22" />
+    <input id="n2" class="name-input" data-team="2" type="text" placeholder="Equipo 2" maxlength="22" />
+  </div>
+
+  <div class="scoreboard">
+    <div class="h"></div>
+    <div class="h">Sets</div>
+    <div class="h">Games</div>
+    <div class="h">Puntos</div>
+
+    <div class="c team-cell" data-team="1" id="lbl1">Equipo 1</div>
+    <div class="c" id="s1">0</div>
+    <div class="c" id="g1">0</div>
+    <div class="c points" id="p1">0</div>
+
+    <div class="c team-cell row-last" data-team="2" id="lbl2">Equipo 2</div>
+    <div class="c row-last" id="s2">0</div>
+    <div class="c row-last" id="g2">0</div>
+    <div class="c row-last points" id="p2">0</div>
+  </div>
+
+  <div class="controls">
+    <div class="team-block" data-team="1">
+      <h3 id="h1">Equipo 1</h3>
+      <div class="team-grid">
+        <button class="btn punto" data-act="punto" data-team="1">+ PUNTO</button>
+        <button class="btn undo" data-act="undo" data-team="1">−</button>
+        <button class="btn game-1" data-act="game" data-team="1">+ GAME</button>
+        <button class="btn undo" data-act="undoGame" data-team="1">−</button>
+        <button class="btn set-1" data-act="set" data-team="1">+ SET</button>
+        <button class="btn undo" data-act="undoSet" data-team="1">−</button>
+      </div>
+    </div>
+
+    <div class="team-block" data-team="2">
+      <h3 id="h2">Equipo 2</h3>
+      <div class="team-grid">
+        <button class="btn punto" data-act="punto" data-team="2">+ PUNTO</button>
+        <button class="btn undo" data-act="undo" data-team="2">−</button>
+        <button class="btn game-2" data-act="game" data-team="2">+ GAME</button>
+        <button class="btn undo" data-act="undoGame" data-team="2">−</button>
+        <button class="btn set-2" data-act="set" data-team="2">+ SET</button>
+        <button class="btn undo" data-act="undoSet" data-team="2">−</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bar">
+    <button id="btnReset" class="danger">↺ Reiniciar partido</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const KEY = 'pz.marcador.libre.v1';
+  const POINTS_LADDER = ['0', '15', '30', '40'];
+
+  // State: sets array of [g1, g2] for closed sets; current = { g:[0,0], p:[0,0] }
+  let S = load() || {
+    n1: '', n2: '',
+    sets: [],            // [[g1,g2], ...]
+    current: { g:[0,0], p:[0,0] },
+    history: [],         // stack of actions for undo
+  };
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (_) {}
+  }
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return null;
+      const o = JSON.parse(raw);
+      if (!o || !Array.isArray(o.sets) || !o.current) return null;
+      o.history = o.history || [];
+      return o;
+    } catch (_) { return null; }
+  }
+
+  // ── Scoring (padel sencillo, sin tiebreak: ganas 6 con dif 2, o 7-5/7-6) ──
+  function pointsLabel(team) {
+    const me = S.current.p[team];
+    const you = S.current.p[1 - team];
+    // Ventaja / iguales después de 3-3
+    if (me >= 3 && you >= 3) {
+      if (me === you) return 'Iguales';
+      if (me === you + 1) return 'Ventaja';
+      if (me === you - 1) return '—';
+    }
+    return POINTS_LADDER[Math.min(me, 3)] || '0';
+  }
+
+  function addPoint(team) {
+    pushHist({ type:'punto', team:team, snap: snap() });
+    S.current.p[team]++;
+    // Checa cierre de game
+    const me = S.current.p[team];
+    const you = S.current.p[1 - team];
+    let gameClosed = false;
+    if (me >= 4 && me - you >= 2) gameClosed = true;
+    if (gameClosed) {
+      S.current.g[team]++;
+      S.current.p = [0, 0];
+      maybeCloseSet();
+    }
+    save(); render();
+  }
+
+  function maybeCloseSet() {
+    const g1 = S.current.g[0], g2 = S.current.g[1];
+    let winner = -1;
+    if (g1 >= 6 && g1 - g2 >= 2) winner = 0;
+    else if (g2 >= 6 && g2 - g1 >= 2) winner = 1;
+    else if (g1 === 7 && (g2 === 5 || g2 === 6)) winner = 0;
+    else if (g2 === 7 && (g1 === 5 || g1 === 6)) winner = 1;
+    if (winner >= 0) {
+      S.sets.push([g1, g2]);
+      S.current.g = [0, 0];
+      S.current.p = [0, 0];
+    }
+  }
+
+  function addGame(team) {
+    pushHist({ type:'game', team:team, snap: snap() });
+    S.current.g[team]++;
+    S.current.p = [0, 0];
+    maybeCloseSet();
+    save(); render();
+  }
+
+  function addSet(team) {
+    pushHist({ type:'set', team:team, snap: snap() });
+    // Cierra set con marcador típico ganador (6 o el actual si ya hay)
+    const myG = S.current.g[team];
+    const youG = S.current.g[1 - team];
+    let scoreMe = Math.max(6, myG);
+    let scoreYou = Math.min(youG, scoreMe - 2);
+    if (scoreYou < 0) scoreYou = 0;
+    const pair = team === 0 ? [scoreMe, scoreYou] : [scoreYou, scoreMe];
+    S.sets.push(pair);
+    S.current = { g:[0,0], p:[0,0] };
+    save(); render();
+  }
+
+  function snap() { return JSON.parse(JSON.stringify({ sets:S.sets, current:S.current })); }
+  function pushHist(entry) { S.history.push(entry); if (S.history.length > 200) S.history.shift(); }
+
+  function undoLast() {
+    if (!S.history.length) return;
+    const last = S.history.pop();
+    if (last && last.snap) {
+      S.sets = last.snap.sets;
+      S.current = last.snap.current;
+    }
+    save(); render();
+  }
+
+  function reset() {
+    if (!confirm('¿Reiniciar el partido? Se pierden todos los sets y games.')) return;
+    S = { n1: S.n1, n2: S.n2, sets:[], current:{g:[0,0],p:[0,0]}, history:[] };
+    save(); render();
+  }
+
+  // ── Render ──
+  function setsWon(team) {
+    return S.sets.filter(p => p[team] > p[1 - team]).length;
+  }
+  function render() {
+    const n1 = S.n1 || 'Equipo 1';
+    const n2 = S.n2 || 'Equipo 2';
+    document.getElementById('lbl1').textContent = n1;
+    document.getElementById('lbl2').textContent = n2;
+    document.getElementById('h1').textContent = n1;
+    document.getElementById('h2').textContent = n2;
+    document.getElementById('s1').textContent = setsWon(0);
+    document.getElementById('s2').textContent = setsWon(1);
+    document.getElementById('g1').textContent = S.current.g[0];
+    document.getElementById('g2').textContent = S.current.g[1];
+    document.getElementById('p1').textContent = pointsLabel(0);
+    document.getElementById('p2').textContent = pointsLabel(1);
+  }
+
+  // ── Wiring ──
+  const $n1 = document.getElementById('n1');
+  const $n2 = document.getElementById('n2');
+  $n1.value = S.n1 || '';
+  $n2.value = S.n2 || '';
+  $n1.addEventListener('input', e => { S.n1 = e.target.value; save(); render(); });
+  $n2.addEventListener('input', e => { S.n2 = e.target.value; save(); render(); });
+
+  document.querySelectorAll('button[data-act]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const act = btn.getAttribute('data-act');
+      const team = parseInt(btn.getAttribute('data-team'), 10) - 1;
+      if (act === 'punto') addPoint(team);
+      else if (act === 'undo') undoLast();
+      else if (act === 'game') addGame(team);
+      else if (act === 'undoGame') undoLast();
+      else if (act === 'set') addSet(team);
+      else if (act === 'undoSet') undoLast();
+    });
+  });
+
+  document.getElementById('btnReset').addEventListener('click', reset);
+
+  render();
+})();
+</script>
+</body>
+</html>

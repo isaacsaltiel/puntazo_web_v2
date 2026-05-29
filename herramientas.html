@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Herramientas · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/header.js"></script>
+
+<style>
+  html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .hw-wrap { max-width: 720px; margin: 0 auto; padding: 90px 16px 60px; }
+  .hw-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-bottom: 14px; padding: 8px 14px;
+    background: rgba(11, 124, 255, 0.10);
+    border: 1px solid rgba(11, 124, 255, 0.30);
+    border-radius: 999px;
+    color: #6fb2ff; text-decoration: none;
+    font-size: .82rem; font-weight: 700;
+  }
+  .hw-header { margin-bottom: 22px; }
+  .hw-header h1 {
+    font-size: 1.55rem; font-weight: 900; color: #fff;
+    margin: 0 0 6px; letter-spacing: -0.3px;
+  }
+  .hw-header p {
+    font-size: .94rem; color: rgba(234,242,255,.60);
+    margin: 0; line-height: 1.4;
+  }
+  .hw-grid { display: grid; gap: 12px; }
+  .hw-card {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 18px 18px 16px;
+    background: linear-gradient(180deg, rgba(11,124,255,.10), rgba(255,255,255,.03));
+    border: 1px solid rgba(11,124,255,.28);
+    border-radius: 16px;
+    color: inherit; text-decoration: none;
+    transition: transform .12s, border-color .15s, background .15s;
+  }
+  .hw-card:hover {
+    border-color: rgba(11,124,255,.55);
+    background: linear-gradient(180deg, rgba(11,124,255,.18), rgba(255,255,255,.04));
+    transform: translateY(-1px);
+  }
+  .hw-card .ico {
+    font-size: 1.6rem; line-height: 1;
+  }
+  .hw-card h3 {
+    margin: 0; font-size: 1.05rem; font-weight: 900; color: #fff;
+    letter-spacing: -.2px;
+  }
+  .hw-card p {
+    margin: 0; font-size: .88rem; color: rgba(234,242,255,.62);
+    line-height: 1.4;
+  }
+  .hw-card .badge {
+    align-self: flex-start;
+    font-size: .68rem; font-weight: 800;
+    padding: 3px 8px; border-radius: 999px;
+    background: rgba(255,215,90,.15);
+    border: 1px solid rgba(255,215,90,.40);
+    color: rgba(255,235,160,.95);
+    letter-spacing: .3px; text-transform: uppercase;
+  }
+  .hw-note {
+    margin-top: 24px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,.03);
+    border: 1px dashed rgba(234,242,255,.15);
+    border-radius: 12px;
+    font-size: .82rem; color: rgba(234,242,255,.55);
+    line-height: 1.5;
+  }
+  .hw-note strong { color: rgba(234,242,255,.85); font-weight: 800; }
+  .hw-note a { color: #6fb2ff; }
+</style>
+</head>
+<body>
+
+<div data-puntazo-header data-active="herramientas"></div>
+
+<div class="hw-wrap">
+  <a href="/entrada.html" class="hw-back">← Volver</a>
+
+  <div class="hw-header">
+    <h1>Herramientas Puntazo</h1>
+    <p>Puntazo es más que cámaras en tu club. Estas herramientas funcionan en cualquier cancha — incluso si tu club no tiene Puntazo instalado.</p>
+  </div>
+
+  <div class="hw-grid">
+    <a href="/marcador.html" class="hw-card">
+      <span class="ico">🎯</span>
+      <h3>Marcador libre</h3>
+      <p>Lleva el marcador de un partido en cualquier cancha. Sets, games y puntos con un toque. Sin login.</p>
+    </a>
+
+    <a href="/tablero.html?modo=demo" class="hw-card">
+      <span class="ico">📺</span>
+      <h3>Tablero proyector</h3>
+      <p>Vista grande estilo TV para mostrar el marcador en una tablet o monitor. Ideal para torneos casuales.</p>
+    </a>
+
+    <a href="/torneo5.html" class="hw-card">
+      <span class="ico">🏆</span>
+      <h3>Torneo 5 jugadores</h3>
+      <p>Formato clásico: 5 partidos, cada quien juega 4 y descansa 1. Sorteo automático, tabla en vivo, resumen final compartible.</p>
+    </a>
+  </div>
+
+  <div class="hw-note">
+    <strong>¿Quieres Puntazo en tu club?</strong> Si juegas seguido en una cancha y te gustaría tener videos automáticos de tus mejores puntos, escríbenos a <a href="mailto:hola@puntazoclips.com">hola@puntazoclips.com</a>. Instalamos cámaras y todo el sistema.
+  </div>
+</div>
+
+</body>
+</html>
