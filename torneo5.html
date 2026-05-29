@@ -16,6 +16,13 @@
 <!-- html2canvas para resumen final compartible -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
+<!-- Firebase compat SDK + módulos Puntazo (mismo patrón que el resto de páginas) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+
 <style>
   /* ══════════════════════════════════════════════════════════════
      TORNEO 5 · estilos
@@ -165,6 +172,48 @@
     border-radius: var(--radius);
     padding: 14px;
     margin-bottom: 12px;
+  }
+
+  /* ── Vista 'Continuar torneo' ── */
+  .t5-welcome-card {
+    background: linear-gradient(180deg, rgba(11,124,255,0.18), rgba(11,124,255,0.06));
+    border: 1px solid rgba(11,124,255,0.42);
+    border-radius: var(--radius);
+    padding: 22px 18px 20px;
+    margin-bottom: 14px;
+    text-align: center;
+    box-shadow: 0 16px 38px rgba(11,124,255,0.20);
+  }
+  .t5-welcome-icon {
+    font-size: 2.4rem;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .t5-welcome-card h2 {
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .t5-welcome-card .meta {
+    color: rgba(234,242,255,0.78);
+    font-size: 0.92rem;
+    margin-bottom: 16px;
+  }
+  .t5-welcome-card .meta strong { color: #fff; font-weight: 800; }
+  .t5-welcome-note {
+    margin-top: 12px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .t5-welcome-note .link-inline {
+    color: var(--blue3);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    font-weight: 700;
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -724,15 +773,15 @@
   .t5-cal-row {
     transition: background .25s ease, border-color .25s ease, box-shadow .25s ease;
   }
-  /* FLIP corto al reordenar (subir/bajar bloque en el modal) */
+  /* FLIP al reordenar (subir/bajar bloque en el modal) */
   .t5-cal-row.is-flip {
-    animation: t5CalFlip 260ms cubic-bezier(.32,.12,.20,1) both;
+    animation: t5CalFlip 780ms cubic-bezier(.32,.12,.20,1) both;
     position: relative;
     z-index: 5;
   }
   @keyframes t5CalFlip {
     0%   { transform: translateY(var(--cal-from-y)) scale(1); }
-    55%  { transform: translateY(calc(var(--cal-from-y) * -0.05)) scale(1.02); }
+    62%  { transform: translateY(calc(var(--cal-from-y) * -0.05)) scale(1.03); }
     100% { transform: translateY(0) scale(1); }
   }
   .t5-cal-rank {
@@ -1237,6 +1286,10 @@
   // Animación de cambio de posición (FLIP). Efímera, no persiste.
   // Forma: { prevRank: { idx → posición previa } }
   let pendingAnim = null;
+  // Pantalla "Continuar torneo en curso" tras un refresh / nueva sesión.
+  // Se enciende en el bootstrap si hay progreso; se apaga al elegir
+  // continuar o empezar uno nuevo. NO persiste en localStorage.
+  let showWelcome = false;
 
   function defaultState() {
     return {
@@ -1263,8 +1316,122 @@
       return null;
     } catch (_) { return null; }
   }
-  function saveState() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_){} }
+  function saveState() {
+    S._updatedAtMs = Date.now();
+    try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_){}
+    cloudSyncDebounced();
+  }
   function clearState() { try { localStorage.removeItem(LS_KEY); } catch(_){} }
+
+  /* ══════════════════════════════════════════════════════════
+     CLOUD SYNC (Firestore) — degradación graceful:
+     - Si no hay user logueado → solo localStorage.
+     - Si hay user → 1 doc por usuario en users/{uid}/torneos5/active.
+     - bgPhoto NO se sube (puede pesar mucho como dataURL), queda local.
+     - Escrituras debounced 1500ms para no saturar.
+     ══════════════════════════════════════════════════════════ */
+  const CLOUD_DEBOUNCE_MS = 1500;
+  let _cloudTimer = null;
+
+  function currentUser() {
+    return (window.PuntazoAuth && window.PuntazoAuth.currentUser) || null;
+  }
+  function cloudDocRef(uid) {
+    try {
+      const db = window.PuntazoFirebase && window.PuntazoFirebase.db();
+      if (!db) return null;
+      return db.collection("users").doc(uid).collection("torneos5").doc("active");
+    } catch (_) { return null; }
+  }
+
+  function hasProgress(state) {
+    if (!state) return false;
+    if (state.players && state.players.some(p => p.name && p.name.length > 0)) return true;
+    if (state.matches && state.matches.some(Boolean)) return true;
+    return state.view && state.view !== "setup";
+  }
+
+  function cloudSyncDebounced() {
+    const user = currentUser();
+    if (!user) return;
+    clearTimeout(_cloudTimer);
+    _cloudTimer = setTimeout(cloudSyncNow, CLOUD_DEBOUNCE_MS);
+  }
+
+  function cloudSyncNow() {
+    const user = currentUser();
+    if (!user) return;
+    const ref = cloudDocRef(user.uid);
+    if (!ref) return;
+    // No subir bgPhoto (puede ser un dataURL grande).
+    const payload = Object.assign({}, S, {
+      userId: user.uid,
+      bgPhoto: null,
+      _updatedAtMs: S._updatedAtMs || Date.now(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    ref.set(payload, { merge: false }).catch(err => {
+      console.warn("[Torneo5] cloud save fail:", err && err.message || err);
+    });
+  }
+
+  async function cloudLoad() {
+    const user = currentUser();
+    if (!user) return null;
+    const ref = cloudDocRef(user.uid);
+    if (!ref) return null;
+    try {
+      const snap = await ref.get();
+      if (!snap.exists) return null;
+      return snap.data();
+    } catch (err) {
+      console.warn("[Torneo5] cloud load fail:", err && err.message || err);
+      return null;
+    }
+  }
+
+  async function cloudClear() {
+    const user = currentUser();
+    if (!user) return;
+    const ref = cloudDocRef(user.uid);
+    if (!ref) return;
+    try { await ref.delete(); } catch (err) {
+      console.warn("[Torneo5] cloud clear fail:", err && err.message || err);
+    }
+  }
+
+  /* Decide qué state mantener entre local y cloud, preservando bgPhoto local. */
+  function mergeLocalCloud(localS, cloudS) {
+    if (!cloudS) return localS;
+    if (!localS) return Object.assign({}, cloudS, { bgPhoto: null });
+    const localAt = localS._updatedAtMs || 0;
+    const cloudAt = cloudS._updatedAtMs || 0;
+    if (cloudAt > localAt) {
+      return Object.assign({}, cloudS, { bgPhoto: localS.bgPhoto || null });
+    }
+    return localS;
+  }
+
+  async function syncAfterAuthChange() {
+    // Disparado al loguearse: sube el local si tiene progreso, o baja el cloud
+    // si es más nuevo (caso: empezaste en otro dispositivo).
+    if (!currentUser()) return;
+    const cloud = await cloudLoad();
+    if (!cloud) {
+      if (hasProgress(S)) cloudSyncNow();
+      return;
+    }
+    const cloudAt = cloud._updatedAtMs || 0;
+    const localAt = (S && S._updatedAtMs) || 0;
+    if (cloudAt > localAt) {
+      const merged = mergeLocalCloud(S, cloud);
+      S = merged;
+      try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_){}
+      render();
+    } else if (hasProgress(S)) {
+      cloudSyncNow();
+    }
+  }
 
   /* ── Lógica de scoring ── */
   function recomputeTotals() {
@@ -1378,21 +1545,86 @@
 
   function render() {
     document.getElementById("t5BtnReset")
-      .classList.toggle("hidden", S.view === "setup" && matchesPlayedCount() === 0);
+      .classList.toggle("hidden", (S.view === "setup" && matchesPlayedCount() === 0) || showWelcome);
 
     root().innerHTML = "";
     let view;
-    switch (S.view) {
-      case "setup":   view = viewSetup();   break;
-      case "preview": view = viewPreview(); break;
-      case "match":   view = viewMatch();   break;
-      case "between": view = viewBetween(); break;
-      case "final":   view = viewFinal();   break;
-      default:        view = viewSetup();
+    if (showWelcome) {
+      view = viewWelcome();
+    } else {
+      switch (S.view) {
+        case "setup":   view = viewSetup();   break;
+        case "preview": view = viewPreview(); break;
+        case "match":   view = viewMatch();   break;
+        case "between": view = viewBetween(); break;
+        case "final":   view = viewFinal();   break;
+        default:        view = viewSetup();
+      }
     }
     view.classList.add("t5-view");
     root().appendChild(view);
     window.scrollTo({ top: 0, behavior: "instant" });
+  }
+
+  /* ── WELCOME (Continuar torneo en curso) ── */
+  function viewWelcome() {
+    const r = el("div");
+
+    r.appendChild(el("div", { class: "t5-hero" }, [
+      el("span", { class: "t5-hero-tag" }, ["Modo de juego"]),
+      el("h1", null, ["Torneo 5 jugadores"]),
+      el("p", null, ["Tienes un torneo en curso."]),
+    ]));
+
+    // Resumen del torneo en curso
+    const played = matchesPlayedCount();
+    const totalOrder = (S.order && S.order.length) || 5;
+    let phase;
+    if (S.view === "final" || played >= totalOrder) {
+      phase = "Resumen final disponible";
+    } else if (played === 0) {
+      phase = "Listo para empezar el Match 1";
+    } else {
+      const nextPos = nextPositionInOrder();
+      phase = `Match ${Math.min(nextPos + 1, totalOrder)} de ${totalOrder} pendiente`;
+    }
+
+    const names = (S.players || []).map(p => p.name).filter(Boolean);
+    const card = el("div", { class: "t5-welcome-card" }, [
+      el("div", { class: "t5-welcome-icon" }, ["🎾"]),
+      el("h2", null, ["Continuar torneo"]),
+      el("div", { class: "meta" }, [
+        document.createTextNode(phase),
+        el("br"),
+        names.length ? el("strong", null, [names.join(" · ")]) : el("span", { class: "muted" }, ["Sin nombres registrados aún"]),
+      ]),
+      el("button", {
+        class: "t5-btn-primary", type: "button",
+        onClick: () => { showWelcome = false; render(); },
+      }, ["Continuar →"]),
+      el("div", { class: "t5-welcome-note" }, [
+        el("button", {
+          class: "link-inline", type: "button",
+          onClick: () => {
+            if (!confirm("¿Empezar un torneo nuevo? Se perderá el progreso del actual.")) return;
+            clearState();
+            cloudClear();
+            S = defaultState();
+            saveState();
+            tableExpanded = false;
+            showWelcome = false;
+            setView("setup");
+          },
+        }, ["Empezar uno nuevo"]),
+        document.createTextNode(" si no quieres seguir con éste."),
+      ]),
+      currentUser() ? null : el("div", { class: "t5-welcome-note", style: "margin-top:8px" }, [
+        "Inicia sesión desde otra página de Puntazo para no perderlo si cambias de dispositivo.",
+      ]),
+    ]);
+    r.appendChild(card);
+
+    return r;
   }
 
   /* ── SETUP ── */
@@ -2081,7 +2313,12 @@
         class: "t5-action-card", type: "button",
         onClick: () => {
           if (confirm("¿Jugar otro Torneo 5? Se borrarán los datos del actual.")) {
-            clearState(); S = defaultState(); saveState(); tableExpanded = false;
+            clearState();
+            cloudClear();
+            S = defaultState();
+            saveState();
+            tableExpanded = false;
+            showWelcome = false;
             setView("setup");
           }
         },
@@ -2248,19 +2485,67 @@
   }
 
   /* ══════════════════════════════════════════════════════════
-     INIT
+     INIT — flujo con cloud sync (degradación graceful sin user)
      ══════════════════════════════════════════════════════════ */
   function init() {
     S = loadState() || defaultState();
-    saveState();
+    // Encender pantalla "Continuar torneo" si hay progreso al cargar.
+    showWelcome = hasProgress(S);
 
     document.getElementById("t5BtnReset").addEventListener("click", () => {
       if (confirm("¿Abandonar este torneo? Se perderán los datos.")) {
-        clearState(); S = defaultState(); tableExpanded = false; setView("setup");
+        clearState();
+        cloudClear();
+        S = defaultState();
+        tableExpanded = false;
+        showWelcome = false;
+        setView("setup");
       }
     });
 
+    // Render inicial inmediato con lo local; el cloud se mezcla cuando llegue.
+    saveState();
     render();
+
+    // Cuando auth quede listo, baja del cloud si hay algo más nuevo
+    // (escenario: empezaste en otro dispositivo).
+    function onAuthReady() {
+      const user = currentUser();
+      if (!user) return; // sin sesión → solo local
+      cloudLoad().then(cloud => {
+        if (!cloud) {
+          // Cloud vacío. Si tengo local con progreso, súbelo.
+          if (hasProgress(S)) cloudSyncNow();
+          return;
+        }
+        const cloudAt = cloud._updatedAtMs || 0;
+        const localAt = (S && S._updatedAtMs) || 0;
+        if (cloudAt > localAt) {
+          // El cloud es más nuevo → adopto, preservo bgPhoto local.
+          S = mergeLocalCloud(S, cloud);
+          try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_){}
+          showWelcome = hasProgress(S);
+          render();
+        } else if (hasProgress(S) && localAt > cloudAt) {
+          cloudSyncNow();
+        }
+      });
+    }
+
+    if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+      onAuthReady();
+    } else {
+      window.addEventListener("puntazo:auth-ready", onAuthReady, { once: true });
+      // Fallback si auth-ready tarda mucho
+      setTimeout(() => {
+        if (window.PuntazoAuth && window.PuntazoAuth.currentUser) onAuthReady();
+      }, 5000);
+    }
+
+    // Login/logout durante la sesión actual: re-sincronizar.
+    window.addEventListener("puntazo:auth-changed", () => {
+      syncAfterAuthChange();
+    });
   }
 
   if (document.readyState === "loading") {
