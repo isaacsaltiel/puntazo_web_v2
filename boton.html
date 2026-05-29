@@ -46,6 +46,28 @@ html, body {
     radial-gradient(800px 700px at 45% 95%, rgba(34,197,94,.06), transparent 55%),
     linear-gradient(180deg, #050914, #060b1a 55%, #050914);
 }
+/* F111-C: fondo con icono de la cancha (B1..B8) según el número.
+   Se inyecta vía JS una vez resolvemos canNum del query param.
+   Overlay oscuro arriba para mantener legibilidad del botón central. */
+.bg-court {
+  position:fixed; inset:0; z-index:0;
+  background-position:center; background-size:cover; background-repeat:no-repeat;
+  opacity:0; transition:opacity .6s ease;
+  animation:botonBgBreathe 18s ease-in-out infinite;
+  pointer-events:none;
+}
+.bg-court.ready { opacity:1; }
+.bg-court::after {
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(180deg,
+    rgba(2,6,16,0.78) 0%,
+    rgba(2,6,16,0.55) 40%,
+    rgba(2,6,16,0.85) 100%);
+}
+@keyframes botonBgBreathe {
+  0%, 100% { transform:scale(1.00); }
+  50%      { transform:scale(1.04); }
+}
 .bg-grid {
   position:fixed; inset:-40px; z-index:0;
   background-image:
@@ -277,6 +299,7 @@ html, body {
 <body>
 
 <div class="bg"></div>
+<div id="bgCourt" class="bg-court"></div>
 <div class="bg-grid"></div>
 <div id="flash" class="flash"></div>
 <div id="confetti" class="confetti"></div>
@@ -359,6 +382,25 @@ html, body {
     window.location.replace('/entrada.html?modo=boton');
     return;
   }
+
+  // F111-C: número de cancha (1..N) → icono B{n}.png como fondo. Mapeo 1..8
+  // con módulo para canchas >8 (mismo criterio que entrada.html).
+  const _canMatch = CAN.match(/(\d+)/);
+  const _canNum = _canMatch ? parseInt(_canMatch[1], 10) : 1;
+  const _iconNum = (((_canNum - 1) % 8) + 8) % 8 + 1; // [1..8] safe
+  (function applyCourtBg() {
+    try {
+      const el = document.getElementById('bgCourt');
+      if (!el) return;
+      const url = '/assets/court-icons/B' + _iconNum + '.png';
+      const img = new Image();
+      img.onload = function () {
+        el.style.backgroundImage = "url('" + url + "')";
+        el.classList.add('ready');
+      };
+      img.src = url;
+    } catch (_) {}
+  })();
 
   // ── Estado ──
   let busy = false;
