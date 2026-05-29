@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Sortear parejas · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --bg:#050914; --text:#eaf2ff; --muted:rgba(234,242,255,.55);
+    --line:rgba(255,255,255,.10);
+    --t1:#0b7cff; --t1d:#004FC8;
+    --t2:#c8e835; --t2d:#9ec628;
+    --gold:#ffd75a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{min-height:100%;background:var(--bg);color:var(--text);
+    font-family:'Montserrat',system-ui,sans-serif;
+    -webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  .wrap{max-width:520px;margin:0 auto;padding:20px 14px 80px;}
+  .back{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;
+    background:rgba(11,124,255,.10);border:1px solid rgba(11,124,255,.30);
+    border-radius:999px;color:#6fb2ff;text-decoration:none;
+    font-size:.78rem;font-weight:700;margin-bottom:14px;}
+  h1{font-size:1.45rem;font-weight:900;margin:0 0 4px;color:#fff;letter-spacing:-.3px;}
+  .sub{font-size:.86rem;color:var(--muted);margin-bottom:18px;line-height:1.45;}
+  .hero{margin-bottom:18px;}
+  .hero .tag{
+    display:inline-block;padding:4px 10px;font-size:.66rem;font-weight:900;
+    letter-spacing:.6px;text-transform:uppercase;
+    background:rgba(11,124,255,.14);border:1px solid rgba(11,124,255,.35);
+    color:#9fc7ff;border-radius:999px;margin-bottom:8px;
+  }
+
+  .card{
+    background:rgba(255,255,255,.03);border:1px solid var(--line);
+    border-radius:14px;padding:14px;margin-bottom:14px;
+  }
+  .card h2{font-size:.96rem;font-weight:900;color:#fff;margin:0 0 10px;}
+
+  .player-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+  .player-row{display:flex;gap:8px;align-items:center;}
+  .player-row .num{
+    width:28px;height:28px;flex:0 0 28px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:.74rem;font-weight:900;color:#fff;
+    background:rgba(11,124,255,.20);border:1px solid rgba(11,124,255,.45);
+  }
+  .player-row input{
+    flex:1;min-width:0;padding:10px 12px;border-radius:10px;
+    border:1px solid var(--line);background:rgba(0,0,0,.20);
+    color:#fff;font-family:inherit;font-size:.92rem;font-weight:700;
+  }
+  .player-row input:focus{outline:none;border-color:rgba(11,124,255,.55);}
+  .player-row .rm{
+    background:transparent;border:1px solid rgba(240,104,69,.45);
+    color:#f06845;width:28px;height:28px;border-radius:8px;
+    cursor:pointer;font-size:1rem;font-weight:900;
+  }
+  .row-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .btn-secondary{
+    padding:10px 14px;border-radius:10px;border:1px solid var(--line);
+    background:rgba(255,255,255,.04);color:var(--text);
+    font-family:inherit;font-weight:700;font-size:.84rem;cursor:pointer;
+  }
+  .btn-secondary:disabled{opacity:.4;cursor:not-allowed;}
+
+  .btn-sort{
+    width:100%;padding:18px;border-radius:14px;border:none;
+    background:linear-gradient(180deg,#ffd75a,#f6b73a);
+    color:#3a2900;font-family:inherit;font-weight:900;font-size:1.05rem;
+    letter-spacing:.5px;cursor:pointer;
+    box-shadow:0 16px 40px rgba(255,200,80,.30);
+    transition:transform .1s,filter .15s;
+    margin-bottom:14px;
+  }
+  .btn-sort:active{transform:scale(.97);}
+  .btn-sort:disabled{opacity:.5;cursor:not-allowed;}
+
+  /* Result */
+  .teams{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;
+  }
+  .team{
+    padding:14px 12px;border-radius:14px;
+    display:flex;flex-direction:column;gap:8px;
+    align-items:center;text-align:center;
+    border:1px solid var(--line);
+    animation:teamReveal .45s cubic-bezier(.2,.8,.2,1);
+  }
+  .team[data-side="A"]{
+    background:linear-gradient(180deg,rgba(11,124,255,.18),rgba(11,124,255,.06));
+    border-color:rgba(11,124,255,.45);
+  }
+  .team[data-side="B"]{
+    background:linear-gradient(180deg,rgba(200,232,53,.18),rgba(200,232,53,.06));
+    border-color:rgba(200,232,53,.45);
+  }
+  .team .label{
+    font-size:.72rem;font-weight:900;letter-spacing:.5px;
+    text-transform:uppercase;
+  }
+  .team[data-side="A"] .label{color:#9fc7ff;}
+  .team[data-side="B"] .label{color:#d8e76f;}
+  .team .player{
+    padding:9px 6px;border-radius:8px;font-size:.95rem;font-weight:900;
+    color:#fff;background:rgba(0,0,0,.20);width:100%;
+  }
+  .team[data-side="B"] .player{color:#1a2210;background:rgba(200,232,53,.30);}
+  @keyframes teamReveal{
+    from{opacity:0;transform:scale(.88);}
+    to{opacity:1;transform:scale(1);}
+  }
+
+  /* Multiple courts result */
+  .court-block{margin-bottom:14px;}
+  .court-block h3{
+    font-size:.78rem;font-weight:900;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px;
+  }
+
+  .descansa{
+    background:rgba(255,255,255,.04);border:1px dashed var(--line);
+    border-radius:10px;padding:10px 12px;text-align:center;
+    font-size:.86rem;color:var(--muted);font-weight:700;
+    animation:teamReveal .45s cubic-bezier(.2,.8,.2,1);
+  }
+  .descansa strong{color:#fff;font-weight:900;}
+
+  .actbar{display:flex;gap:8px;flex-wrap:wrap;}
+  .actbar button{
+    flex:1;min-width:140px;padding:11px;border-radius:10px;
+    background:rgba(255,255,255,.04);border:1px solid var(--line);
+    color:var(--text);font-family:inherit;font-weight:700;font-size:.84rem;
+    cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back" href="/herramientas.html">← Volver</a>
+
+  <div class="hero">
+    <span class="tag">Modo de juego</span>
+    <h1>Sortear parejas</h1>
+    <p class="sub">Mete nombres, le das al botón dorado y te sortea quién juega con quién. Útil cuando son 4-8 y nadie quiere decidir.</p>
+  </div>
+
+  <div class="card">
+    <h2>Jugadores</h2>
+    <div id="rows" class="player-rows"></div>
+    <div class="row-actions">
+      <button id="btnAdd" class="btn-secondary" type="button">+ Agregar</button>
+      <button id="btnRm" class="btn-secondary" type="button">− Quitar último</button>
+      <button id="btnClear" class="btn-secondary" type="button">Limpiar nombres</button>
+    </div>
+  </div>
+
+  <button id="btnSort" class="btn-sort" type="button">🎲 Sortear</button>
+
+  <div id="result"></div>
+
+  <div id="actbar" class="actbar" style="display:none">
+    <button id="btnAgain" type="button">🎲 Sortear de nuevo</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const LS_KEY = "pz.sortear.names.v1";
+  let names = loadNames();
+  if (!names.length) names = ["", "", "", ""];
+
+  const $rows = document.getElementById("rows");
+  const $btnAdd = document.getElementById("btnAdd");
+  const $btnRm = document.getElementById("btnRm");
+  const $btnClear = document.getElementById("btnClear");
+  const $btnSort = document.getElementById("btnSort");
+  const $btnAgain = document.getElementById("btnAgain");
+  const $result = document.getElementById("result");
+  const $actbar = document.getElementById("actbar");
+
+  function loadNames() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch (_) { return []; }
+  }
+  function saveNames() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(names)); } catch (_) {}
+  }
+
+  function renderRows() {
+    $rows.innerHTML = "";
+    names.forEach((nm, i) => {
+      const row = document.createElement("div");
+      row.className = "player-row";
+      row.innerHTML =
+        '<div class="num">' + (i + 1) + '</div>' +
+        '<input type="text" maxlength="20" placeholder="Jugador ' + (i + 1) + '" value="' + escAttr(nm) + '">' +
+        (names.length > 2 ? '<button class="rm" type="button" title="Quitar">×</button>' : '');
+      const inp = row.querySelector("input");
+      inp.addEventListener("input", (e) => { names[i] = e.target.value.trim(); saveNames(); updateSortBtn(); });
+      const rm = row.querySelector(".rm");
+      if (rm) rm.addEventListener("click", () => { names.splice(i, 1); saveNames(); renderRows(); updateSortBtn(); });
+      $rows.appendChild(row);
+    });
+    $btnAdd.disabled = names.length >= 12;
+    $btnRm.disabled = names.length <= 2;
+    updateSortBtn();
+  }
+
+  function updateSortBtn() {
+    const valid = names.filter(n => n && n.trim().length).length;
+    $btnSort.disabled = valid < 4;
+    $btnSort.textContent = valid < 4
+      ? `🎲 Sortear (faltan ${4 - valid} jugadores)`
+      : "🎲 Sortear";
+  }
+
+  function escAttr(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+      ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  }
+  function escHTML(s) { return escAttr(s); }
+
+  function shuffle(arr) {
+    const out = arr.slice();
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  }
+
+  function sort() {
+    const valid = names.map(n => (n || "").trim()).filter(Boolean);
+    if (valid.length < 4) return;
+    const shuffled = shuffle(valid);
+
+    $result.innerHTML = "";
+
+    // Si son 4: 1 cancha. Si son 5+: forma N canchas de 4, el resto descansa.
+    const fullCourts = Math.floor(shuffled.length / 4);
+    const resto = shuffled.length - fullCourts * 4;
+
+    for (let c = 0; c < fullCourts; c++) {
+      const block = document.createElement("div");
+      block.className = "court-block";
+      if (fullCourts > 1) {
+        const h3 = document.createElement("h3");
+        h3.textContent = "Cancha " + (c + 1);
+        block.appendChild(h3);
+      }
+      const teams = document.createElement("div");
+      teams.className = "teams";
+      const base = c * 4;
+      teams.innerHTML =
+        '<div class="team" data-side="A">' +
+          '<span class="label">Equipo A</span>' +
+          '<div class="player">' + escHTML(shuffled[base + 0]) + '</div>' +
+          '<div class="player">' + escHTML(shuffled[base + 1]) + '</div>' +
+        '</div>' +
+        '<div class="team" data-side="B">' +
+          '<span class="label">Equipo B</span>' +
+          '<div class="player">' + escHTML(shuffled[base + 2]) + '</div>' +
+          '<div class="player">' + escHTML(shuffled[base + 3]) + '</div>' +
+        '</div>';
+      block.appendChild(teams);
+      $result.appendChild(block);
+    }
+
+    if (resto > 0) {
+      const restoNames = shuffled.slice(fullCourts * 4);
+      const d = document.createElement("div");
+      d.className = "descansa";
+      d.innerHTML = (resto === 1
+        ? "Descansa: <strong>" + escHTML(restoNames[0]) + "</strong>"
+        : "Descansan: <strong>" + restoNames.map(escHTML).join("</strong> · <strong>") + "</strong>");
+      $result.appendChild(d);
+    }
+
+    $actbar.style.display = "flex";
+  }
+
+  $btnAdd.addEventListener("click", () => {
+    if (names.length >= 12) return;
+    names.push("");
+    saveNames(); renderRows();
+  });
+  $btnRm.addEventListener("click", () => {
+    if (names.length <= 2) return;
+    names.pop();
+    saveNames(); renderRows();
+  });
+  $btnClear.addEventListener("click", () => {
+    if (!confirm("¿Limpiar todos los nombres?")) return;
+    names = names.map(() => "");
+    saveNames(); renderRows();
+    $result.innerHTML = "";
+    $actbar.style.display = "none";
+  });
+  $btnSort.addEventListener("click", sort);
+  $btnAgain.addEventListener("click", sort);
+
+  renderRows();
+})();
+</script>
+</body>
+</html>
