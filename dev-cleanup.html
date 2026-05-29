@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<base href="/" />
+<title>Dev · Cleanup partidos activos</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/matches.js"></script>
+<script src="/assets/clubs-catalog.js"></script>
+
+<style>
+  :root{
+    --bg:#050914; --text:#eaf2ff; --muted:rgba(234,242,255,.55);
+    --line:rgba(255,255,255,.10); --bad:#f06845; --ok:#22c55e;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
+  .wrap{max-width:920px;margin:0 auto;padding:28px 16px 80px;}
+  h1{font-size:1.5rem;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:.92rem;margin:0 0 18px;}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 18px;}
+  button{font-family:inherit;font-size:.92rem;font-weight:700;cursor:pointer;
+    padding:10px 16px;border-radius:10px;border:1px solid var(--line);
+    background:rgba(11,124,255,.14);color:var(--text);transition:all .15s;}
+  button:hover{background:rgba(11,124,255,.24);}
+  button.danger{background:rgba(240,104,69,.18);border-color:rgba(240,104,69,.45);}
+  button.danger:hover{background:rgba(240,104,69,.32);}
+  button:disabled{opacity:.4;cursor:not-allowed;}
+  .row{display:grid;grid-template-columns:1fr auto;gap:12px;
+    padding:12px 14px;border:1px solid var(--line);border-radius:10px;
+    margin-bottom:8px;align-items:center;background:rgba(255,255,255,.02);}
+  .row .meta{font-size:.88rem;color:var(--muted);}
+  .row .title{font-weight:700;color:#fff;margin-bottom:2px;}
+  .row .id{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.72rem;
+    color:rgba(234,242,255,.40);}
+  .row a{color:#6fb2ff;text-decoration:none;font-size:.82rem;margin-left:8px;}
+  .row.done{opacity:.5;}
+  .row.done .title::before{content:"✓ ";color:var(--ok);}
+  .row.fail{border-color:rgba(240,104,69,.55);}
+  .row.fail .title::before{content:"✗ ";color:var(--bad);}
+  #msg{padding:10px 12px;border-radius:8px;background:rgba(11,124,255,.10);
+    border:1px solid rgba(11,124,255,.28);font-size:.88rem;margin-bottom:14px;
+    display:none;}
+  #msg.show{display:block;}
+  .counter{font-size:.86rem;color:var(--muted);margin-left:auto;}
+  .empty{text-align:center;padding:40px 20px;color:var(--muted);}
+  .login{text-align:center;padding:40px 20px;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>Dev · Cleanup partidos activos</h1>
+  <p class="sub">Cierra en bloque todos los partidos con <code>status=active</code> que tú creaste.
+    No toca partidos de otros usuarios. Cada cierre llama <code>PuntazoMatches.end()</code>
+    (igual que el botón "Terminar partido"), seteando <code>status=ended</code> + <code>endedAt</code> + recálculo de <code>clipCount</code>.</p>
+
+  <div id="msg"></div>
+
+  <div id="loginBox" class="login" style="display:none">
+    <p>Necesitas iniciar sesión con Google.</p>
+    <button id="btnLogin">Iniciar sesión</button>
+  </div>
+
+  <div id="loadingBox" class="empty">Cargando…</div>
+
+  <div id="emptyBox" class="empty" style="display:none">
+    No hay partidos activos a tu nombre. Nada que limpiar 🎉
+  </div>
+
+  <div id="mainBox" style="display:none">
+    <div class="bar">
+      <button id="btnAll" class="danger">Terminar TODOS</button>
+      <button id="btnReload">Recargar lista</button>
+      <span class="counter" id="counter"></span>
+    </div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const $msg      = document.getElementById('msg');
+  const $loginBox = document.getElementById('loginBox');
+  const $loading  = document.getElementById('loadingBox');
+  const $empty    = document.getElementById('emptyBox');
+  const $main     = document.getElementById('mainBox');
+  const $list     = document.getElementById('list');
+  const $btnAll   = document.getElementById('btnAll');
+  const $btnReload= document.getElementById('btnReload');
+  const $btnLogin = document.getElementById('btnLogin');
+  const $counter  = document.getElementById('counter');
+
+  let activeMatches = [];
+  let clubsCache = null;
+
+  function showMsg(text, isError) {
+    $msg.textContent = text || '';
+    $msg.className = text ? ('show' + (isError ? ' err' : '')) : '';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])
+    );
+  }
+
+  async function resolveClubCancha(loc, can) {
+    try {
+      if (!clubsCache && window.PuntazoClubs && PuntazoClubs.getCatalog) {
+        clubsCache = await PuntazoClubs.getCatalog();
+      }
+      const club = clubsCache && (clubsCache.clubs || []).find(c => c.id === loc);
+      if (!club) return loc + ' · ' + can;
+      const cancha = (club.canchas || []).find(c => c.id === can);
+      return (club.nombre || loc) + ' · ' + (cancha ? (cancha.nombre || can) : can);
+    } catch (_) {
+      return loc + ' · ' + can;
+    }
+  }
+
+  function fmtDate(ts) {
+    if (!ts) return '—';
+    const ms = typeof ts === 'number' ? ts
+             : (ts.toMillis ? ts.toMillis()
+             : (ts.seconds ? ts.seconds * 1000 : null));
+    if (!ms) return '—';
+    const d = new Date(ms);
+    return d.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+  }
+
+  function renderRow(m, label) {
+    const div = document.createElement('div');
+    div.className = 'row';
+    div.id = 'row-' + m.id;
+    div.innerHTML =
+      '<div>' +
+        '<div class="title">' + escapeHtml(label) + '</div>' +
+        '<div class="meta">' +
+          'Iniciado: ' + escapeHtml(fmtDate(m.startedAt)) +
+          ' · clips: ' + (m.clipCount || 0) +
+          ' · modo: ' + escapeHtml(m.modo || 'partido_3') +
+          '<a href="/mi-partido.html?matchId=' + encodeURIComponent(m.id) + '" target="_blank">abrir</a>' +
+        '</div>' +
+        '<div class="id">' + escapeHtml(m.id) + '</div>' +
+      '</div>' +
+      '<div>' +
+        '<button class="danger" data-id="' + escapeHtml(m.id) + '">Terminar</button>' +
+      '</div>';
+    return div;
+  }
+
+  async function loadAll(user) {
+    $loading.style.display = 'block';
+    $main.style.display = 'none';
+    $empty.style.display = 'none';
+    try {
+      const items = await window.PuntazoMatches.listByUser(user.uid, {
+        status: 'active',
+        limit: 200,
+      });
+      activeMatches = items || [];
+      $loading.style.display = 'none';
+
+      if (!activeMatches.length) {
+        $empty.style.display = 'block';
+        return;
+      }
+
+      $list.innerHTML = '';
+      for (const m of activeMatches) {
+        const label = await resolveClubCancha(m.loc, m.can);
+        $list.appendChild(renderRow(m, label));
+      }
+      $counter.textContent = activeMatches.length + ' activos';
+      $main.style.display = 'block';
+
+      $list.querySelectorAll('button[data-id]').forEach(btn => {
+        btn.addEventListener('click', () => endOne(btn.getAttribute('data-id'), btn));
+      });
+    } catch (e) {
+      console.error('[cleanup] load error', e);
+      $loading.style.display = 'none';
+      showMsg('Error cargando: ' + (e && e.message ? e.message : e), true);
+    }
+  }
+
+  async function endOne(matchId, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Cerrando…'; }
+    const $row = document.getElementById('row-' + matchId);
+    try {
+      await window.PuntazoMatches.end(matchId);
+      if ($row) $row.classList.add('done');
+      if (btn) btn.textContent = '✓ Terminado';
+      return true;
+    } catch (e) {
+      console.error('[cleanup] end failed for', matchId, e);
+      if ($row) $row.classList.add('fail');
+      if (btn) { btn.disabled = false; btn.textContent = 'Reintentar'; }
+      return false;
+    }
+  }
+
+  async function endAll() {
+    const total = activeMatches.length;
+    if (!total) return;
+    if (!confirm('¿Terminar los ' + total + ' partidos activos? No se puede deshacer (se reabren manualmente desde Firestore).')) return;
+
+    $btnAll.disabled = true;
+    $btnReload.disabled = true;
+    let done = 0, fail = 0;
+
+    for (const m of activeMatches) {
+      const btn = $list.querySelector('button[data-id="' + m.id + '"]');
+      const ok = await endOne(m.id, btn);
+      if (ok) done++; else fail++;
+      $counter.textContent = done + '/' + total + ' cerrados' + (fail ? ' · ' + fail + ' fallaron' : '');
+    }
+
+    showMsg('Listo: ' + done + ' terminados' + (fail ? ', ' + fail + ' con error (ver consola)' : '') + '.');
+    $btnReload.disabled = false;
+  }
+
+  $btnAll.addEventListener('click', endAll);
+  $btnReload.addEventListener('click', () => {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (u) loadAll(u);
+  });
+  $btnLogin.addEventListener('click', () => {
+    try { window.PuntazoAuth.signIn(); } catch (_) {}
+  });
+
+  function onAuthReady() {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) {
+      $loading.style.display = 'none';
+      $loginBox.style.display = 'block';
+      return;
+    }
+    $loginBox.style.display = 'none';
+    loadAll(user);
+  }
+
+  window.addEventListener('puntazo:auth-ready', onAuthReady);
+  window.addEventListener('puntazo:auth-changed', onAuthReady);
+  if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+    onAuthReady();
+  } else {
+    setTimeout(() => { if ($loading.style.display !== 'none') onAuthReady(); }, 1000);
+  }
+})();
+</script>
+</body>
+</html>
