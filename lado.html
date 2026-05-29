@@ -36,6 +36,23 @@
    LADO.HTML — Estilos específicos de esta página
 ═══════════════════════════════════════════════════ */
 
+/* F111-A: fondo con foto de cancha (B-extern.png) blureado.
+   Sobrescribe .page-bg para esta página. Mantiene contraste con
+   overlay oscuro para que el contenido siga siendo legible. */
+.page-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(2,6,16,0.78) 0%, rgba(2,6,16,0.55) 40%, rgba(2,6,16,0.85) 100%),
+    url('/assets/court-icons/B-extern.png') center/cover no-repeat;
+  filter: blur(0px);
+  /* leve animación de respiración para que se sienta vivo sin distraer */
+  animation: ladoBgBreathe 18s ease-in-out infinite;
+}
+@keyframes ladoBgBreathe {
+  0%, 100% { transform: scale(1.00); }
+  50%      { transform: scale(1.04); }
+}
+
 /* ── Breadcrumb / título de página ── */
 .page-title {
   margin: 0 0 18px;

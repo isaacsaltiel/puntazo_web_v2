@@ -691,11 +691,14 @@
   // R5: ?modo=boton → selector reusable que termina en /boton.html
   // (registrar puntazos sin crear partido).
   const modoBoton = (params.modo || "").trim().toLowerCase() === "boton";
+  // F111-B: ?modo=clips → mismo selector visual pero termina en /lado.html
+  // (ver clips ya capturados, sin crear partido ni botón).
+  const modoClips = (params.modo || "").trim().toLowerCase() === "clips";
 
   // Si el QR físico viejo apunta sin un lado pero con loc/can, tratamos como
   // selector parcial. Más limpio para el caso real: si vienen los 3 → flow viejo.
-  // En modo boton ignoramos hasFullParams (siempre pasa por el selector).
-  const hasFullParams = !modoBoton && loc && can && lado;
+  // En modo boton/clips ignoramos hasFullParams (siempre pasa por el selector).
+  const hasFullParams = !modoBoton && !modoClips && loc && can && lado;
 
   // ---------- SELECTOR FLOW ----------
   //
@@ -737,10 +740,13 @@
 
     if (selectorState.step === "clubs") {
       $selBack.style.display = "none";
-      // R5: copy distinto si venimos en modo "solo botón"
+      // Copy distinto según modo
       if (modoBoton) {
         $selTitle.textContent = "Elige tu club";
         $selSub.textContent = "Para registrar puntazos sin crear partido";
+      } else if (modoClips) {
+        $selTitle.textContent = "¿Dónde están tus clips?";
+        $selSub.textContent = "Elige el club donde jugaste";
       } else {
         $selTitle.textContent = "Elige tu club";
         $selSub.textContent = "Toca el club donde estás jugando";
@@ -896,6 +902,18 @@
       const qs = "?loc=" + encodeURIComponent(club.id) +
                  "&can=" + encodeURIComponent(cancha.id);
       window.location.href = "/boton.html" + qs;
+      return;
+    }
+    // F111-B: modoClips → directo a /lado.html (ver clips ya capturados).
+    // El primer lado de la cancha es el que servimos por default (entrada
+    // viejo no pide elegir lado por UX — internamente todas las canchas
+    // tienen 1 lado salvo Scorpion).
+    if (modoClips) {
+      const qs = "?loc=" + encodeURIComponent(club.id) +
+                 "&can=" + encodeURIComponent(cancha.id) +
+                 "&lado=" + encodeURIComponent(ld.id) +
+                 "&pg=0";
+      window.location.href = "/lado.html" + qs;
       return;
     }
     // Flow normal: URL canónica para entrada.html.

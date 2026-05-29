@@ -5,151 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <base href="/" />
 <title>Puntazo · Canchas</title>
-
 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
+
+<!-- F111-B: locacion.html legacy redirect → selector visual nuevo en
+     entrada.html?modo=clips (mismo selector que usa entrada para iniciar
+     partido, pero termina en lado.html). Preserva ?loc= si vino. -->
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-7HTMSTJ035');
-</script>
-
-<link rel="apple-touch-icon" sizes="57x57"   href="/assets/icons/apple-icon-57x57.png" />
-<link rel="apple-touch-icon" sizes="60x60"   href="/assets/icons/apple-icon-60x60.png" />
-<link rel="apple-touch-icon" sizes="72x72"   href="/assets/icons/apple-icon-72x72.png" />
-<link rel="apple-touch-icon" sizes="76x76"   href="/assets/icons/apple-icon-76x76.png" />
-<link rel="apple-touch-icon" sizes="114x114" href="/assets/icons/apple-icon-114x114.png" />
-<link rel="apple-touch-icon" sizes="120x120" href="/assets/icons/apple-icon-120x120.png" />
-<link rel="apple-touch-icon" sizes="144x144" href="/assets/icons/apple-icon-144x144.png" />
-<link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/apple-icon-152x152.png" />
-<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
-<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/android-icon-192x192.png" />
-<link rel="icon" type="image/png" sizes="32x32"   href="/assets/icons/favicon-32x32.png" />
-<link rel="icon" type="image/png" sizes="96x96"   href="/assets/icons/favicon-96x96.png" />
-<link rel="icon" type="image/png" sizes="16x16"   href="/assets/icons/favicon-16x16.png" />
-<link rel="manifest" href="/assets/icons/manifest.json" />
-<meta name="msapplication-TileColor" content="#004FC8" />
-<meta name="msapplication-TileImage" content="/assets/icons/ms-icon-144x144.png" />
-<meta name="theme-color" content="#050914" />
-
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
-
-<!-- CSS CENTRALIZADO -->
-<link rel="stylesheet" href="assets/estilo.css" />
-</head>
-<body>
-
-<div class="page-bg"></div>
-
-<!-- Shared header -->
-<div id="nav-root" data-nav-variant="internal"></div>
-<script src="/assets/header.js"></script>
-
-<main>
-
-  <!-- Breadcrumb + recover mini — FUERA de #canchas-lista -->
-  <div class="breadcrumb-row">
-    <div class="breadcrumb">
-      <a href="index.html">Locaciones</a>
-      <span class="breadcrumb-sep">›</span>
-      <span class="breadcrumb-current" id="nombre-locacion">Club</span>
-    </div>
-    <a
-      href="https://forms.gle/TsGHKaSjBnpu65SQA"
-      target="_blank" rel="noopener"
-      class="recover-mini"
-      onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'locacion_top'});}catch(e){}"
-    >¿No aparece tu clip? Recuperar →</a>
-  </div>
-
-  <!-- Botón volver — vuelve a la lista de exploración -->
-  <a href="explorar.html" id="btn-volver" class="btn-back">← Regresar a locaciones</a>
-
-  <!-- Header -->
-  <div class="page-header">
-    <div class="page-tag">Selecciona tu cancha</div>
-    <h1 id="titulo-locacion">Canchas</h1>
-    <p>Elige la cancha donde jugaste para ver tus clips de hoy.</p>
-  </div>
-
-  <!-- El script.js llena este <ul> con <li><a class="link-blanco"> -->
-  <ul id="canchas-lista">
-    <div class="loading-wrap">
-      <div class="spinner"></div>
-      Cargando canchas...
-    </div>
-  </ul>
-
-  <p class="note-24h">Los videos se borran pasadas 24 horas de subida.</p>
-</main>
-
-<footer>
-  <a href="inicio.html" class="foot-logo">
-    <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
-  </a>
-  <div class="foot-note">
-    ¿Faltó un clip?
-    <a href="https://forms.gle/TsGHKaSjBnpu65SQA" target="_blank" rel="noopener"
-      onclick="try{gtag('event','recuperar_puntazo_click',{event_category:'Support',event_label:'locacion_footer'});}catch(e){}">Recupéralo aquí</a>
-  </div>
-  <div class="foot-links">
-    <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
-    <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
-    <a href="https://wa.me/522206804856?text=Hola%20Puntazo!" target="_blank" rel="noopener">WhatsApp</a>
-  </div>
-  <span class="foot-copy">© 2026 Puntazo – Todos los derechos reservados</span>
-</footer>
-
-<script src="assets/script.js"></script>
-
-<!-- Navbar mobile + sync título -->
-<script>
-  const menuToggle = document.getElementById('menu-toggle');
-  const navMenu = document.getElementById('nav-menu');
-  menuToggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    navMenu.classList.toggle('show');
-  });
-  document.addEventListener('click', (e) => {
-    if (navMenu.classList.contains('show') && !navMenu.contains(e.target) && e.target !== menuToggle) {
-      navMenu.classList.remove('show');
-    }
-  });
-  window.addEventListener('scroll', () => {
-    if (navMenu.classList.contains('show')) navMenu.classList.remove('show');
-  });
-
-  // Sync: cuando el script llena #nombre-locacion, actualizar el h1
-  const nombreEl = document.getElementById('nombre-locacion');
-  const tituloEl = document.getElementById('titulo-locacion');
-  if (nombreEl && tituloEl) {
-    const obs = new MutationObserver(() => {
-      const name = nombreEl.textContent.trim();
-      if (name && name !== 'Club') {
-        tituloEl.textContent = name;
-      }
-    });
-    obs.observe(nombreEl, { childList: true, characterData: true, subtree: true });
+(function () {
+  try {
+    var p = new URLSearchParams(window.location.search);
+    var qs = "?modo=clips";
+    if (p.get("loc")) qs += "&loc=" + encodeURIComponent(p.get("loc"));
+    if (p.get("can")) qs += "&can=" + encodeURIComponent(p.get("can"));
+    window.location.replace("/entrada.html" + qs);
+  } catch (e) {
+    window.location.replace("/entrada.html?modo=clips");
   }
+})();
 </script>
-
-<script>
-  // Auth-guard for static nav links in this page
-  document.addEventListener('click', function (e) {
-    try {
-      const a = e.target.closest && e.target.closest('a[data-auth-only]');
-      if (!a) return;
-      const user = (window.PuntazoAuth && window.PuntazoAuth.currentUser) || (window.firebase && window.firebase.auth && window.firebase.auth().currentUser);
-      if (user) return;
-      e.preventDefault();
-      if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === 'function') {
-        window.PuntazoAuth.signIn();
-      }
-    } catch (err) {}
-  }, false);
-</script>
+<meta http-equiv="refresh" content="0; url=/entrada.html?modo=clips" />
+</head>
+<body style="background:#050914;color:#eaf2ff;font-family:system-ui;text-align:center;padding:60px 20px;">
+  <p>Redirigiendo… si no carga, <a href="/entrada.html?modo=clips" style="color:#6fb2ff">toca aquí</a>.</p>
 </body>
 </html>
