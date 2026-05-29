@@ -184,6 +184,35 @@
   }
   .dt-join-skip:hover { color: #cfe2ff; text-decoration: underline; }
 
+  /* F104 Issue 5: pill de estado para ranking arriba del scoreboard */
+  .dt-rank-status {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    margin-bottom: 14px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+  .dt-rank-status.is-valid {
+    background: rgba(34, 197, 94, 0.10);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    color: #c8f7dc;
+  }
+  .dt-rank-status.is-partial {
+    background: rgba(11, 124, 255, 0.10);
+    border: 1px solid rgba(11, 124, 255, 0.35);
+    color: #cfe2ff;
+  }
+  .dt-rank-status.is-pending {
+    background: rgba(255, 170, 60, 0.10);
+    border: 1px solid rgba(255, 170, 60, 0.35);
+    color: #ffd497;
+  }
+  .dt-rank-status-icon { font-size: 1.3rem; flex-shrink: 0; }
+  .dt-rank-status-text { flex: 1; }
+  .dt-rank-status-text strong { color: #fff; font-weight: 900; }
+
   /* F103: bloque inline "¿Eres uno de los jugadores?" — siempre visible
      si user no vinculado. Mucho más detectable que un overlay. */
   .dt-claim {
@@ -398,6 +427,9 @@
     <h1 class="dt-title" id="dtTitle">Detalle del partido</h1>
     <div class="dt-subtitle" id="dtSubtitle"></div>
 
+    <!-- F104 Issue 5: estado del partido para ranking — siempre visible -->
+    <div id="dtRankStatus" class="dt-rank-status" style="display:none"></div>
+
     <!-- Scoreboard estilo TV arriba (siempre visible) -->
     <div class="dt-scoreboard" id="dtScoreboard"></div>
 
@@ -547,6 +579,58 @@
         '<div class="dt-meta-val">' + escapeHtml(it.val) + '</div>' +
       '</div>';
     }).join('');
+  }
+
+  // F104 Issue 5: estado de validación del partido para ranking.
+  // 3 buckets honestos según vinculación + aceptación:
+  //   pending  → falta vincular rival (no cuenta para ranking)
+  //   partial  → ya hay rival vinculado pero falta que algún equipo acepte
+  //   valid    → ambos equipos aceptaron → cuenta para ranking
+  function renderRankStatus(match) {
+    const $block = document.getElementById('dtRankStatus');
+    if (!$block) return;
+    if (match.status !== 'ended') { $block.style.display = 'none'; return; }
+
+    const jugadores = Array.isArray(match.jugadores) ? match.jugadores : [];
+    const t1Uids = jugadores.filter(function (j) { return j && j.uid && j.equipo === 'team1'; }).length;
+    const t2Uids = jugadores.filter(function (j) { return j && j.uid && j.equipo === 'team2'; }).length;
+    const bothTeamsHaveUid = t1Uids > 0 && t2Uids > 0;
+
+    let cls, icon, text;
+
+    if (!bothTeamsHaveUid) {
+      cls = 'is-pending';
+      icon = '🟡';
+      const missingTeam = t1Uids === 0 ? 'Equipo 1' : 'Equipo 2';
+      text = '<strong>Pendiente de validación.</strong> Falta que un jugador del ' + missingTeam +
+             ' se vincule para que este partido cuente en ranking. Usa <em>Compartir partido</em> abajo.';
+    } else if (window.PuntazoMatches && window.PuntazoMatches.getScoreAcceptanceState) {
+      const state = window.PuntazoMatches.getScoreAcceptanceState(match, null);
+      if (state.bothTeamsAccepted) {
+        cls = 'is-valid';
+        icon = '✅';
+        text = '<strong>Marcador validado.</strong> Aceptado por ambos equipos. Este partido cuenta para ranking.';
+      } else if (state.acceptedCount > 0) {
+        cls = 'is-partial';
+        icon = '🔵';
+        const missingTeam = state.acceptedByTeam1 ? 'Equipo 2' : 'Equipo 1';
+        text = '<strong>Pendiente del otro equipo.</strong> Falta que alguien del ' + missingTeam +
+               ' acepte el marcador.';
+      } else {
+        cls = 'is-partial';
+        icon = '🔵';
+        text = '<strong>Listo para validar.</strong> Ambos equipos están vinculados. Falta que alguien acepte el marcador.';
+      }
+    } else {
+      cls = 'is-partial';
+      icon = '🔵';
+      text = 'Ambos equipos vinculados. Pendiente de aceptación.';
+    }
+
+    $block.className = 'dt-rank-status ' + cls;
+    $block.innerHTML = '<span class="dt-rank-status-icon">' + icon + '</span>' +
+                       '<span class="dt-rank-status-text">' + text + '</span>';
+    $block.style.display = '';
   }
 
   function renderScoreboard(match) {
@@ -839,6 +923,7 @@
       $subtitle.textContent = match.status === 'active'
         ? '● En curso'
         : (match.status === 'cancelled' ? '✕ Cancelado' : 'Finalizado');
+      renderRankStatus(match);  // F104: estado validación para ranking arriba
       renderScoreboard(match);
       renderMeta(match);
       setupEditButton(match);
