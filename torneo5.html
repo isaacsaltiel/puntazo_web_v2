@@ -1618,8 +1618,25 @@
         }, ["Empezar uno nuevo"]),
         document.createTextNode(" si no quieres seguir con éste."),
       ]),
+      // F114: botón inline de sign-in. Sin meter header.js para no romper
+      // el inmersivo de Torneo 5 — solo lo mínimo para que el usuario pueda
+      // habilitar cloud sync sin tener que salir a otra página.
       currentUser() ? null : el("div", { class: "t5-welcome-note", style: "margin-top:8px" }, [
-        "Inicia sesión desde otra página de Puntazo para no perderlo si cambias de dispositivo.",
+        el("button", {
+          class: "link-inline", type: "button",
+          onClick: () => {
+            try {
+              if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === "function") {
+                window.PuntazoAuth.signIn();
+              } else {
+                alert("No se pudo iniciar sesión. Intenta desde otra página de Puntazo.");
+              }
+            } catch (e) {
+              console.warn("[torneo5] signIn falló:", e);
+            }
+          },
+        }, ["Inicia sesión"]),
+        document.createTextNode(" para no perderlo si cambias de dispositivo."),
       ]),
     ]);
     r.appendChild(card);
@@ -2543,8 +2560,10 @@
     }
 
     // Login/logout durante la sesión actual: re-sincronizar.
+    // F114: además re-render siempre, así el botón "Inicia sesión" del
+    // welcome desaparece al loguearse aunque cloud no haya cambiado nada.
     window.addEventListener("puntazo:auth-changed", () => {
-      syncAfterAuthChange();
+      syncAfterAuthChange().finally(() => render());
     });
   }
 

@@ -174,6 +174,18 @@ service cloud.firestore {
                          .hasOnly(['read','readAt']);
         allow delete: if isMe(uid);
       }
+
+      // ────────────────────────────────────────────────────
+      // F114 — Torneo 5 jugadores (modo de juego standalone)
+      // docId="active" guarda el torneo en curso del usuario.
+      // Si en el futuro quiere historial, basta crear otros docId
+      // sin cambiar reglas. Sub-path ya scoped por {uid}, no hay
+      // riesgo cross-user. bgPhoto se queda en localStorage —
+      // foto custom puede pasarse del límite 1MB de Firestore.
+      // ────────────────────────────────────────────────────
+      match /torneos5/{docId} {
+        allow read, write: if isMe(uid);
+      }
     }
 
     // ════════════════════════════════════════════════════
@@ -314,7 +326,7 @@ service cloud.firestore {
 - `pending_pulses/`
 
 **Agregado nuevo**:
-- `users/{uid}` + `recentPlayers/` + `notifications/`
+- `users/{uid}` + `recentPlayers/` + `notifications/` + `torneos5/` (F114)
 - `handles/{handle}`
 - `groups/{groupId}` + `members/`
 - `friendships/{friendshipId}`

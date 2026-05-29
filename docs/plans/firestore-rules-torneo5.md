@@ -1,6 +1,13 @@
-# Firestore rules — Torneo 5 (F113)
+# Firestore rules — Torneo 5 (F113) — **SUPERSEDED por F114**
 
-**Fecha**: 2026-05-29
+> ⚠️ **Este doc quedó obsoleto el 2026-05-29 con F114.** La regla de
+> `torneos5/` se integró DENTRO del bloque `match /users/{uid}` ya
+> existente en [firestore-rules-v100-fase3.md](firestore-rules-v100-fase3.md),
+> junto a `recentPlayers/` y `notifications/`. **No pegues el bloque
+> separado de abajo** — usa el bloque completo de v100 Fase 3 que ya
+> lo incluye. Este archivo se conserva como contexto histórico.
+
+**Fecha original**: 2026-05-29
 **Para pegar en**: Firebase Console → puntazo-clips → Firestore → Rules
 **Bloque a agregar**: dentro de `match /databases/{database}/documents`
 
