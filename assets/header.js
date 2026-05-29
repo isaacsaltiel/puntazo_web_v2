@@ -299,9 +299,95 @@
       await ensureScript("/assets/auth.js",          () => !!window.PuntazoAuth);
       if (window.PuntazoAuth && typeof window.PuntazoAuth.init === "function") await window.PuntazoAuth.init();
       attachAuthGuard();
+      // F105 Issues 7+8: banner "Tienes partido activo" en todas las páginas
+      checkActiveMatchBanner();
+      window.addEventListener("puntazo:auth-changed", checkActiveMatchBanner);
     } catch (err) {
       console.error("[Puntazo Header] Error cargando auth:", err);
     }
+  }
+
+  // F105: chequea match active del user y muestra banner persistente.
+  // Se ejecuta tras bootstrapAuth, y cada vez que cambia el user.
+  let _activeBannerEl = null;
+  let _activeBannerLastMatchId = null;
+  async function checkActiveMatchBanner() {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!u) { hideActiveBanner(); return; }
+    // No mostrar el banner si ya estás DENTRO del partido activo
+    const path = (window.location.pathname || "").toLowerCase();
+    if (path.endsWith("/mi-partido.html") || path.endsWith("mi-partido.html")) {
+      hideActiveBanner();
+      return;
+    }
+    try {
+      if (!window.PuntazoFirebase || typeof window.PuntazoFirebase.db !== "function") return;
+      const snap = await window.PuntazoFirebase.db()
+        .collection("matches")
+        .where("userId", "==", u.uid)
+        .where("status", "==", "active")
+        .orderBy("startedAt", "desc")
+        .limit(1)
+        .get();
+      if (snap.empty) { hideActiveBanner(); return; }
+      const doc = snap.docs[0];
+      showActiveBanner(doc.id, doc.data());
+    } catch (e) {
+      // failed-precondition probable (índice). No bloquear UI.
+      console.warn("[Puntazo Header] active match check fallo:", e && e.code ? e.code : e);
+    }
+  }
+  function showActiveBanner(matchId, data) {
+    if (_activeBannerLastMatchId === matchId && _activeBannerEl) return;
+    _activeBannerLastMatchId = matchId;
+    hideActiveBanner();
+    const b = document.createElement("a");
+    b.id = "pz-active-banner";
+    b.href = "/mi-partido.html?matchId=" + encodeURIComponent(matchId);
+    b.innerHTML = '<span class="pz-active-banner-dot"></span>' +
+      '<span class="pz-active-banner-text">Tienes un partido en curso</span>' +
+      '<span class="pz-active-banner-arrow">Volver al partido →</span>';
+    // Inyectar styles una sola vez
+    if (!document.getElementById("pz-active-banner-styles")) {
+      const s = document.createElement("style");
+      s.id = "pz-active-banner-styles";
+      s.textContent = `
+        #pz-active-banner {
+          position: fixed; top: 0; left: 0; right: 0; z-index: 9500;
+          display: flex; align-items: center; justify-content: center;
+          gap: 12px; padding: 9px 18px;
+          background: linear-gradient(90deg, rgba(34,197,94,0.94), rgba(22,163,74,0.94));
+          color: #fff; font-family: 'Montserrat', sans-serif;
+          font-size: 0.84rem; font-weight: 800;
+          text-decoration: none;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.30);
+          backdrop-filter: blur(8px);
+        }
+        #pz-active-banner:hover { filter: brightness(1.08); }
+        .pz-active-banner-dot {
+          width: 9px; height: 9px; border-radius: 50%;
+          background: #fff;
+          box-shadow: 0 0 8px rgba(255,255,255,0.95);
+          animation: pz-active-pulse 1.5s infinite;
+        }
+        @keyframes pz-active-pulse { 0%,100% { opacity:1 } 50% { opacity: 0.45 } }
+        .pz-active-banner-arrow { opacity: 0.92; font-weight: 700; }
+        @media (max-width: 480px) {
+          .pz-active-banner-text { display: none; }
+        }
+        body { padding-top: 40px; }
+      `;
+      document.head.appendChild(s);
+    }
+    document.body.appendChild(b);
+    _activeBannerEl = b;
+  }
+  function hideActiveBanner() {
+    if (_activeBannerEl) { try { _activeBannerEl.remove(); } catch (_) {} _activeBannerEl = null; }
+    _activeBannerLastMatchId = null;
+    // remove body padding-top regla (sólo si inyectamos)
+    const s = document.getElementById("pz-active-banner-styles");
+    if (s) { try { s.remove(); } catch (_) {} }
   }
 
   function attachAuthGuard() {

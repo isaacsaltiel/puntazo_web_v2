@@ -968,15 +968,47 @@
   }
 
   // ---------- handlers de la vista ready ----------
-  $btnIniciar.addEventListener("click", function () {
+  $btnIniciar.addEventListener("click", async function () {
     const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     if (!user) {
       showMsg("Necesitas iniciar sesión primero.", "error");
       return;
     }
     $btnIniciar.disabled = true;
-    $btnIniciar.textContent = "Abriendo…";
+    $btnIniciar.textContent = "Verificando…";
     showMsg("", "info");
+
+    // F105 Issue 8: bloquear 2do partido activo. Si ya hay uno active del
+    // user, pedir confirmación antes de crear otro o llevarlo de vuelta.
+    try {
+      const D = window.PuntazoFirebase && window.PuntazoFirebase.db && window.PuntazoFirebase.db();
+      if (D) {
+        const snap = await D.collection("matches")
+          .where("userId", "==", user.uid)
+          .where("status", "==", "active")
+          .orderBy("startedAt", "desc")
+          .limit(1).get();
+        if (!snap.empty) {
+          const activeDoc = snap.docs[0];
+          const ok = window.confirm(
+            "Ya tienes un partido activo. ¿Qué quieres hacer?\n\n" +
+            "OK = Volver a tu partido activo\n" +
+            "Cancelar = Quedarme aquí (termina el otro antes de crear uno nuevo)"
+          );
+          $btnIniciar.disabled = false;
+          $btnIniciar.textContent = "🎾 Configurar partido →";
+          if (ok) {
+            window.location.href = "/mi-partido.html?matchId=" + encodeURIComponent(activeDoc.id);
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("[entrada] check active fallo (no bloqueo):", e && e.code ? e.code : e);
+      // Si la query falla por índice, seguimos al flow normal — no bloqueamos.
+    }
+
+    $btnIniciar.textContent = "Abriendo…";
     const qs = "?nueva=1&loc=" + encodeURIComponent(loc) +
                "&can=" + encodeURIComponent(can) +
                "&lado=" + encodeURIComponent(lado);
