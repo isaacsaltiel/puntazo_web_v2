@@ -25,6 +25,10 @@
 <!-- F119: pulses.js para el botón Puntazo flotante cuando torneo5
      se abre con ?loc=&can= (porque vienen de un club con cámaras). -->
 <script src="/assets/pulses.js"></script>
+<!-- F121: header consistente con el resto del sitio (variant "embedded"
+     = back + logo + auth slot, sin nav links que distraigan del modo
+     de juego). El back es dinámico: confirma si hay torneo en curso. -->
+<script src="/assets/header.js"></script>
 
 <style>
   /* ══════════════════════════════════════════════════════════════
@@ -100,32 +104,26 @@
     position: relative; z-index: 2;
     max-width: 560px;
     margin: 0 auto;
-    padding: 22px 16px 60px;
+    /* F121: padding-top aumentado de 22px → 72px para librar el header
+       embedded fijo (52px altura + 20px aire). En mobile el header es un
+       poco más bajo, pero 72px es safe en ambos. */
+    padding: 72px 16px 60px;
     min-height: 100vh;
   }
 
-  /* ── Top bar ── */
+  /* F121: t5-top redefinido. Antes tenía t5-brand (Puntazo · Torneo 5)
+     duplicando identidad con el nuevo header embedded. Ahora solo contiene
+     el botón "✕ Abandonar" alineado a la derecha. Cuando el botón está
+     hidden, la barra colapsa visualmente. */
   .t5-top {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 8px;
+    margin-bottom: 12px;
+    min-height: 0;
   }
-  .t5-brand {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-weight: 900; letter-spacing: 0.3px;
-    color: #fff; text-decoration: none;
-  }
-  .t5-brand-dot {
-    width: 10px; height: 10px; border-radius: 50%;
-    background: var(--blue2);
-    box-shadow: 0 0 12px rgba(11,124,255,0.7);
-  }
-  .t5-brand-text { font-size: 0.92rem; }
-  .t5-brand-sub {
-    font-size: 0.62rem; font-weight: 800;
-    color: rgba(11,124,255,0.95);
-    letter-spacing: 1.6px;
-    text-transform: uppercase;
+  .t5-top:empty,
+  .t5-top:has(> .hidden:only-child) {
+    margin-bottom: 0;
   }
   .t5-top-actions { display: flex; gap: 8px; }
   .t5-btn-ghost {
@@ -1310,13 +1308,17 @@
   <div class="countdown" id="t5PuntazoCountdown"></div>
 </button>
 
+<!-- F121: header consistente con el resto del sitio (variant embedded
+     = back + logo + auth, sin nav links). El data-back-to se actualiza
+     dinámicamente desde JS si vienen con ?loc=&can= (apunta a entrada
+     con esos params). -->
+<div id="nav-root" data-nav-variant="embedded" data-back-to="/herramientas.html"></div>
+
 <div class="t5-app">
   <div class="t5-top">
-    <a class="t5-brand" href="/">
-      <span class="t5-brand-dot"></span>
-      <span class="t5-brand-text">Puntazo</span>
-      <span class="t5-brand-sub">· Torneo 5</span>
-    </a>
+    <!-- F121: t5-brand removido (duplicaba la identidad con el nuevo
+         header embedded). Solo queda el botón "Abandonar" alineado a
+         la derecha, hidden por default; se muestra cuando hay progreso. -->
     <div class="t5-top-actions">
       <button id="t5BtnReset" class="t5-btn-ghost danger hidden" type="button">✕ Abandonar</button>
     </div>
@@ -2642,6 +2644,48 @@
 
     // F119: setup del botón Puntazo flotante (solo si vienen con loc+can).
     setupPuntazoFab();
+
+    // F121: setup del back button del header embedded
+    //   - data-back-to dinámico: si vienen con ?loc=&can=, vuelve a
+    //     /entrada con esos params; sino, a /herramientas.
+    //   - Si hay torneo en curso (hasProgress), confirma antes de salir.
+    setupEmbeddedBackButton();
+  }
+
+  function setupEmbeddedBackButton() {
+    const root = document.getElementById("nav-root");
+    if (!root) return;
+    try {
+      const p = new URLSearchParams(window.location.search);
+      const loc = (p.get("loc") || "").trim();
+      const can = (p.get("can") || "").trim();
+      if (loc && can) {
+        // Vuelven al club donde estaban: el flujo natural es /entrada con
+        // el ready view ya resuelto. Si no había lado seleccionado todavía,
+        // entrada hace el redirect a su selector.
+        const qs = "?loc=" + encodeURIComponent(loc) + "&can=" + encodeURIComponent(can);
+        root.setAttribute("data-back-to", "/entrada.html" + qs);
+      }
+    } catch (_) {}
+
+    // Re-renderiza el header si ya estaba renderizado, para que tome el
+    // nuevo data-back-to (orden: header.js boot puede correr ANTES que
+    // este script si está en <head>; el atributo ya quedó actualizado y
+    // solo el link href necesita refrescarse).
+    const backLink = root.querySelector("[data-back]");
+    if (backLink) {
+      backLink.setAttribute("href", root.getAttribute("data-back-to"));
+    }
+
+    // Listener del evento cancelable: confirma si hay torneo en curso.
+    window.addEventListener("puntazo:before-back", function (e) {
+      try {
+        if (typeof hasProgress === "function" && hasProgress(S)) {
+          const ok = confirm("¿Salir del torneo? Tu progreso se guarda en este dispositivo y puedes seguir cuando vuelvas.");
+          if (!ok) { e.preventDefault(); return; }
+        }
+      } catch (_) { /* si algo falla, dejamos pasar */ }
+    });
   }
 
   // ══════════════════════════════════════════════════════════════

@@ -4,7 +4,71 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <base href="/" />
-<title>Puntazo · Tecnología deportiva</title>
+<title>Puntazo · Captura tus mejores puntos de pádel automáticamente</title>
+
+<!-- F121: SEO base. Description optimizada para CTR (≤155 chars) y
+     keywords del nicho padel-tech. Canonical URL para evitar split. -->
+<meta name="description" content="Toca el botón en la cancha y en 60 segundos tienes tu mejor puntazo en HD listo para compartir. Sin apps. Sin esperas. Solo en clubs con Puntazo." />
+<meta name="keywords" content="puntazo, padel, clips de padel, replay padel, video padel automatico, padel mexico, paddle, deporte tecnologia, padel social" />
+<meta name="author" content="Puntazo" />
+<link rel="canonical" href="https://puntazoclips.com/" />
+
+<!-- F121: Open Graph para previews en WhatsApp / Facebook / LinkedIn. -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Puntazo" />
+<meta property="og:title" content="Puntazo · Captura tus mejores puntos de pádel" />
+<meta property="og:description" content="Toca un botón cuando juegues un puntazo. En 60 segundos tienes tu clip HD listo para compartir. Sin apps que descargar." />
+<meta property="og:url" content="https://puntazoclips.com/" />
+<meta property="og:image" content="https://puntazoclips.com/assets/logo.png" />
+<meta property="og:image:alt" content="Puntazo · Tecnología deportiva para pádel" />
+<meta property="og:locale" content="es_MX" />
+
+<!-- F121: Twitter Card. TODO: cuando exista og-card 1200x630 optimizada,
+     cambiar a 'summary_large_image' y apuntar al asset nuevo. Por ahora
+     usamos summary con logo. -->
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Puntazo · Captura tus mejores puntos de pádel" />
+<meta name="twitter:description" content="Toca un botón. En 60 segundos tienes tu clip HD listo para compartir." />
+<meta name="twitter:image" content="https://puntazoclips.com/assets/logo.png" />
+<meta name="twitter:image:alt" content="Puntazo · Tecnología deportiva para pádel" />
+
+<!-- F121: structured data (schema.org) — Organization + WebSite con
+     SearchAction. Ayuda a Google a entender la marca y abre sitelinks. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://puntazoclips.com/#org",
+      "name": "Puntazo",
+      "alternateName": "Puntazo Clips",
+      "url": "https://puntazoclips.com",
+      "logo": "https://puntazoclips.com/assets/logo.png",
+      "description": "Plataforma de captura automática de puntos de pádel en clubs. Toca un botón y tu mejor jugada queda guardada en HD lista para compartir.",
+      "sameAs": [
+        "https://tiktok.com/@puntazoclips",
+        "https://instagram.com/puntazoclips"
+      ],
+      "contactPoint": [{
+        "@type": "ContactPoint",
+        "telephone": "+52-220-680-4856",
+        "contactType": "Sales",
+        "areaServed": "MX",
+        "availableLanguage": ["Spanish", "English"]
+      }]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://puntazoclips.com/#site",
+      "url": "https://puntazoclips.com",
+      "name": "Puntazo",
+      "publisher": { "@id": "https://puntazoclips.com/#org" },
+      "inLanguage": "es-MX"
+    }
+  ]
+}
+</script>
 
 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
@@ -558,12 +622,113 @@
 }
 
 @media (max-width:600px){
-  .hero{padding:3.25rem 1rem 1.25rem;min-height:calc(100vh - 56px);} 
+  .hero{padding:3.25rem 1rem 1.25rem;min-height:calc(100vh - 56px);}
   .hero h1{font-size:2.6rem;line-height:1.02}
   .hero-sub{font-size:0.95rem;margin-bottom:0.9rem}
   .hero-primary .btn-primary{width:100%;padding:1rem 1.25rem;font-size:1rem}
   .hero-secondaries{flex-direction:row;gap:0.6rem}
   .hero-secondaries .btn-outline,.hero-secondaries .btn-live{padding:0.75rem 1rem}
+}
+
+/* ══════════════════════════════════════════════════════════
+   F121 — Modos y herramientas (reemplaza "Lo nuevo")
+   Cards visuales con badges (Con clips / Estable / Beta) por modo.
+   Grid responsive 1-2-3 columnas según viewport.
+   ══════════════════════════════════════════════════════════ */
+.modes-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:1rem;
+  max-width:1100px;
+  margin:1.5rem auto 0;
+}
+.mode-card{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:18px 18px 16px;
+  border-radius:16px;
+  background:linear-gradient(180deg, rgba(11,124,255,0.06), rgba(255,255,255,0.02));
+  border:1px solid rgba(11,124,255,0.18);
+  text-decoration:none;color:inherit;
+  transition:transform .14s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+  position:relative;overflow:hidden;
+}
+.mode-card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg, transparent, rgba(11,124,255,0.55), transparent);
+  opacity:0;transition:opacity .2s;
+}
+.mode-card:hover{
+  transform:translateY(-2px);
+  border-color:rgba(11,124,255,0.45);
+  background:linear-gradient(180deg, rgba(11,124,255,0.12), rgba(255,255,255,0.03));
+  box-shadow:0 18px 38px rgba(0,79,200,0.10);
+}
+.mode-card:hover::before{opacity:1;}
+.mode-card--primary{
+  border-color:rgba(11,124,255,0.45);
+  background:linear-gradient(180deg, rgba(11,124,255,0.16), rgba(11,124,255,0.04));
+}
+.mode-card--primary::before{opacity:1;}
+.mode-icon{
+  font-size:1.8rem;line-height:1;flex-shrink:0;
+  width:46px;height:46px;border-radius:12px;
+  background:rgba(11,124,255,0.10);
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.mode-body{flex:1;min-width:0;}
+.mode-head{
+  display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;
+}
+.mode-head h3{
+  font-size:1rem;font-weight:800;color:#fff;margin:0;letter-spacing:-0.2px;
+}
+.mode-card p{
+  font-size:0.84rem;color:rgba(234,242,255,0.62);line-height:1.4;margin:0;
+}
+.mode-badge{
+  font-size:0.6rem;font-weight:900;letter-spacing:0.5px;text-transform:uppercase;
+  padding:3px 7px;border-radius:999px;white-space:nowrap;
+}
+.mode-badge--live{
+  color:#d8f1ff;background:rgba(11,124,255,0.18);border:1px solid rgba(11,124,255,0.45);
+}
+.mode-badge--stable{
+  color:rgba(180,240,200,0.95);background:rgba(34,197,94,0.14);border:1px solid rgba(34,197,94,0.42);
+}
+.mode-badge--beta{
+  color:rgba(220,195,255,0.95);background:rgba(180,120,255,0.16);border:1px solid rgba(180,120,255,0.45);
+}
+.modes-note{
+  margin:1.5rem auto 0;max-width:760px;
+  padding:14px 18px;border-radius:12px;
+  background:rgba(255,255,255,0.03);border:1px dashed rgba(234,242,255,0.15);
+  font-size:0.86rem;color:rgba(234,242,255,0.65);text-align:center;line-height:1.5;
+}
+.modes-note strong{color:#fff;font-weight:800;}
+.modes-note-link{
+  display:inline-block;margin-top:4px;color:#6fb2ff;
+  text-decoration:none;font-weight:800;
+}
+.modes-note-link:hover{color:#9fcfff;}
+@media (max-width:600px){
+  .modes-grid{grid-template-columns:1fr;gap:0.7rem;}
+  .mode-card{padding:14px 14px 12px;gap:12px;}
+  .mode-icon{width:42px;height:42px;font-size:1.55rem;}
+  .mode-head h3{font-size:0.94rem;}
+}
+
+/* F121: clubs con logo real en vez de emoji.
+   .loc-icon ya define 44x44 + bg azul; agregamos variante con imagen. */
+.loc-icon--has-img{
+  background:rgba(255,255,255,0.06);
+  padding:4px;
+  overflow:hidden;
+}
+.loc-icon--has-img img{
+  width:100%;height:100%;
+  object-fit:contain;
+  border-radius:8px;
+  display:block;
 }
 </style>
 
@@ -596,14 +761,87 @@
   </div>
 </div>
 
-<!-- Novedades / Anuncios -->
-<div class="section-wrap fade-section" id="novedades">
-  <div class="section-tag">Novedades</div>
-  <div class="section-title">Lo nuevo: partidos digitales</div>
-  <p class="section-sub">Inicia por QR, lleva marcador, comparte resumen estilo Strava. Tu partido completo, de la entrada al resumen, en un solo flujo.</p>
-  <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-top:0.75rem;">
-    <a href="entrada.html" class="btn-secondary" onclick="try{gtag('event','novedades_cta_iniciar',{event_category:'CTA'});}catch(e){}">Iniciar partido</a>
-    <a href="explorar.html" class="btn-secondary" onclick="try{gtag('event','novedades_cta_clips',{event_category:'CTA'});}catch(e){}">Explorar clips</a>
+<!-- F121: Modos y herramientas (reemplaza "Lo nuevo: partidos digitales").
+     Showcase visual de los 6 modos shipeados: el partido oficial con
+     clips reales (solo en clubs con cámaras) + 5 herramientas standalone
+     que funcionan en cualquier cancha. -->
+<div class="section-wrap fade-section" id="modos">
+  <div class="section-tag">Modos y herramientas</div>
+  <div class="section-title">No solo es un botón:<br>es una plataforma de juego.</div>
+  <p class="section-sub">Más allá del partido oficial con clips, Puntazo trae herramientas para sortear parejas, llevar marcador, organizar torneos y mucho más. Funcionan en cualquier cancha — incluso si tu club no tiene Puntazo instalado.</p>
+
+  <div class="modes-grid">
+
+    <a href="entrada.html" class="mode-card mode-card--primary" onclick="try{gtag('event','modes_card_click',{event_category:'CTA',event_label:'partido_oficial'});}catch(e){}">
+      <div class="mode-icon" aria-hidden="true">🎾</div>
+      <div class="mode-body">
+        <div class="mode-head">
+          <h3>Partido oficial</h3>
+          <span class="mode-badge mode-badge--live">Con clips</span>
+        </div>
+        <p>Inicia, captura puntazos con el botón y comparte el resumen. Solo en clubs con Puntazo instalado.</p>
+      </div>
+    </a>
+
+    <a href="torneo5.html" class="mode-card" onclick="try{gtag('event','modes_card_click',{event_category:'CTA',event_label:'torneo5'});}catch(e){}">
+      <div class="mode-icon" aria-hidden="true">🏆</div>
+      <div class="mode-body">
+        <div class="mode-head">
+          <h3>Torneo 5 jugadores</h3>
+          <span class="mode-badge mode-badge--stable">Estable</span>
+        </div>
+        <p>5 partidos, cada quien juega 4 y descansa 1. Sorteo automático, tabla en vivo, resumen final compartible.</p>
+      </div>
+    </a>
+
+    <a href="king.html" class="mode-card" onclick="try{gtag('event','modes_card_click',{event_category:'CTA',event_label:'king'});}catch(e){}">
+      <div class="mode-icon" aria-hidden="true">👑</div>
+      <div class="mode-body">
+        <div class="mode-head">
+          <h3>King of the Court</h3>
+          <span class="mode-badge mode-badge--beta">Beta</span>
+        </div>
+        <p>4-12 jugadores con cola. Ganadores se quedan, perdedores al final de la fila. Leaderboard en vivo.</p>
+      </div>
+    </a>
+
+    <a href="americano.html" class="mode-card" onclick="try{gtag('event','modes_card_click',{event_category:'CTA',event_label:'americano'});}catch(e){}">
+      <div class="mode-icon" aria-hidden="true">🔄</div>
+      <div class="mode-body">
+        <div class="mode-head">
+          <h3>Americano</h3>
+          <span class="mode-badge mode-badge--beta">Beta</span>
+        </div>
+        <p>4 jugadores, 3 rondas con todas las combinaciones de parejas. Gana el del puntaje individual más alto.</p>
+      </div>
+    </a>
+
+    <a href="sortear.html" class="mode-card" onclick="try{gtag('event','modes_card_click',{event_category:'CTA',event_label:'sortear'});}catch(e){}">
+      <div class="mode-icon" aria-hidden="true">🎲</div>
+      <div class="mode-body">
+        <div class="mode-head">
+          <h3>Sortear parejas</h3>
+          <span class="mode-badge mode-badge--beta">Beta</span>
+        </div>
+        <p>Mete los nombres, le das al botón dorado y arma equipos al azar. Si son más de 4, organiza canchas y descansos.</p>
+      </div>
+    </a>
+
+    <a href="marcador.html" class="mode-card" onclick="try{gtag('event','modes_card_click',{event_category:'CTA',event_label:'marcador'});}catch(e){}">
+      <div class="mode-icon" aria-hidden="true">🎯</div>
+      <div class="mode-body">
+        <div class="mode-head">
+          <h3>Marcador libre</h3>
+          <span class="mode-badge mode-badge--beta">Beta</span>
+        </div>
+        <p>Lleva el marcador en cualquier cancha. Sets, games y puntos con un toque. Sin login, persiste local.</p>
+      </div>
+    </a>
+  </div>
+
+  <div class="modes-note">
+    <strong>¿No tienes Puntazo en tu club?</strong> Las herramientas marcadas como Estable o Beta funcionan en cualquier cancha. Solo el partido oficial con clips requiere las cámaras instaladas.<br>
+    <a href="/herramientas.html" class="modes-note-link" onclick="try{gtag('event','modes_ver_todas_click',{event_category:'CTA'});}catch(e){}">Ver todas las herramientas →</a>
   </div>
 </div>
 
@@ -754,8 +992,8 @@
       </div>
 
       <div class="vision-item">
-        <h4>Modos americano y torneo <span class="tag-sm tag-dev">Dev</span></h4>
-        <p>Liga regular, americano rotatorio y bracket de torneo. Tu club lleva la temporada completa dentro de Puntazo.</p>
+        <h4>Torneo, americano y retas <span class="tag-sm tag-live">Live</span></h4>
+        <p>Torneo 5 jugadores, Americano y King of the Court ya están en vivo. Liga regular y brackets formales son lo que sigue.</p>
       </div>
 
       <div class="vision-item">
@@ -840,12 +1078,26 @@
 <div class="section-wrap fade-section" id="locaciones">
   <div class="section-tag">Locaciones</div>
   <div class="section-title">Ya activos en<br>estos clubs.</div>
-  <p class="section-sub">Interpadel, Scorpion y Breakpoint ya son parte de Puntazo. Escanea el QR en tu cancha, inicia tu partido digital y revive cada puntazo en segundos.</p>
+  <p class="section-sub">Interpadel, BreakPoint, Scorpion y WellStreet ya son parte de Puntazo. Escanea el QR en tu cancha, inicia tu partido y revive cada puntazo en segundos.</p>
 
   <div class="locs-grid">
+    <!-- F121: logos reales (assets/logos/) en vez de emojis. onerror cae a
+         emoji original si la imagen no carga. Los assets son ~0.7-1.5MB
+         cada uno — pendiente optimizar a versiones 200x200 ≤ 30KB. -->
     <div class="loc-card">
-      <div class="loc-icon">🎾</div>
+      <div class="loc-icon loc-icon--has-img">
+        <img src="/assets/logos/interpadel.png" alt="Interpadel" loading="lazy"
+             onerror="this.outerHTML='🎾';">
+      </div>
       <h4>Interpadel</h4>
+      <p>Activo · Escanea el QR en cancha</p>
+    </div>
+    <div class="loc-card">
+      <div class="loc-icon loc-icon--has-img">
+        <img src="/assets/logos/breakpoint.png" alt="BreakPoint" loading="lazy"
+             onerror="this.outerHTML='⚡';">
+      </div>
+      <h4>BreakPoint</h4>
       <p>Activo · Escanea el QR en cancha</p>
     </div>
     <div class="loc-card">
@@ -854,17 +1106,16 @@
       <p>Activo · Escanea el QR en cancha</p>
     </div>
     <div class="loc-card">
-      <div class="loc-icon">⚡</div>
-      <h4>Breakpoint</h4>
+      <div class="loc-icon loc-icon--has-img">
+        <img src="/assets/logos/wellstreet.png" alt="WellStreet" loading="lazy"
+             onerror="this.outerHTML='🏟';">
+      </div>
+      <h4>WellStreet</h4>
       <p>Activo · Escanea el QR en cancha</p>
     </div>
     <div class="loc-coming">
       <div class="plus-icon">+</div>
-      <p>Tu club aquí · Próximamente</p>
-    </div>
-    <div class="loc-coming">
-      <div class="plus-icon">+</div>
-      <p>Próximamente en tu ciudad</p>
+      <p>Tu club aquí · Habla con nosotros</p>
     </div>
   </div>
 </div>
@@ -903,36 +1154,19 @@
 </footer>
 
 <script>
-  const menuToggle = document.getElementById('menu-toggle');
-  const navMenu = document.getElementById('nav-menu');
-
-  menuToggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    navMenu.classList.toggle('show');
-  });
-
-  document.addEventListener('click', (e) => {
-    if (navMenu.classList.contains('show') && !navMenu.contains(e.target) && e.target !== menuToggle) {
-      navMenu.classList.remove('show');
-    }
-  });
-
-  window.addEventListener('scroll', () => {
-    if (navMenu.classList.contains('show')) navMenu.classList.remove('show');
-  });
-
-  function closeMenu() {
-    navMenu.classList.remove('show');
-  }
-
-  const observer = new IntersectionObserver(
+  // F121: limpieza. Toda la lógica de menu-toggle / close-on-scroll /
+  // close-on-outside-click ya vive en header.js (event delegation
+  // robusta). Aquí solo queda el IntersectionObserver de fade-section
+  // que pinta las secciones al hacer scroll. La función closeMenu
+  // también la define header.js como window.closeMenu, así que los
+  // onclick="closeMenu()" en los nav links siguen funcionando.
+  const _observer = new IntersectionObserver(
     entries => entries.forEach(e => {
       if (e.isIntersecting) e.target.classList.add('visible');
     }),
     { threshold: 0.1 }
   );
-
-  document.querySelectorAll('.fade-section').forEach(s => observer.observe(s));
+  document.querySelectorAll('.fade-section').forEach(s => _observer.observe(s));
 </script>
 
 </body>

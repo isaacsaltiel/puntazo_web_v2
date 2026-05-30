@@ -79,12 +79,37 @@
       .pz-nav-right{display:flex;align-items:center;gap:.6rem;}
       .site-header{position:relative;}
 
+      /* ── F121: variant "embedded" para modos de juego inmersivos
+         (torneo5, king, americano). Mismo logo + auth pero SIN
+         nav links/CTAs. Back button explícito con destino dinámico. ── */
+      .site-header--embedded{
+        padding:0.7rem 16px;
+        min-height:52px;
+        gap:10px;
+        z-index:4500; /* debajo del FAB Puntazo (z-index 5000) */
+      }
+      .site-header--embedded .logo-link img{height:26px;}
+      .pz-back-btn{
+        appearance:none;border:none;background:rgba(255,255,255,0.06);
+        border:1px solid rgba(255,255,255,0.10);
+        width:38px;height:38px;border-radius:999px;cursor:pointer;
+        display:inline-flex;align-items:center;justify-content:center;
+        color:#eaf2ff;text-decoration:none;flex-shrink:0;
+        transition:background .15s, border-color .15s, transform .12s;
+      }
+      .pz-back-btn:hover{background:rgba(11,124,255,0.18);border-color:rgba(11,124,255,0.45);}
+      .pz-back-btn:active{transform:scale(0.94);}
+      .pz-back-btn svg{display:block;}
+      .pz-nav-right--embedded{display:flex;align-items:center;gap:.6rem;}
+
       @media(max-width:860px){
         .pz-nav-right--internal{right:52px;}
         .pz-auth-login-btn{padding:0.55rem 0.85rem;font-size:0.76rem;}
         .pz-auth-avatar{width:34px;height:34px;}
         .pz-auth-dropdown{right:-8px;min-width:210px;}
         .pz-phone-cta,.pz-clips-cta{font-size:.78rem;padding:.58rem .88rem;}
+        .site-header--embedded{padding:0.62rem 12px;}
+        .pz-back-btn{width:36px;height:36px;}
       }
       @media(max-width:640px){
         .pz-phone-cta{display:none;}
@@ -149,6 +174,46 @@
             <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Abrir menú" onclick="window.toggleNavMenu(event)">☰</button>
           </div>
         </nav>`;
+      try { window.dispatchEvent(new CustomEvent("puntazo:header-rendered")); } catch {}
+      return;
+    }
+
+    // F121: variant "embedded" — para modos de juego inmersivos
+    // (torneo5, futuros king/americano cloud-sync). Misma identidad
+    // visual (logo + auth + glassmorphism) pero sin nav links/CTAs
+    // que distraigan del modo de juego. Back button explícito con
+    // destino dinámico via data-back-to.
+    if (variant === "embedded") {
+      const backTo = root.dataset.backTo || "/herramientas.html";
+      root.innerHTML = `
+        <header class="site-header site-header--embedded">
+          <a href="${escapeHTML(backTo)}" class="pz-back-btn" data-back aria-label="Salir">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <a href="landing.html" class="logo-link">
+            <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
+          </a>
+          <div class="pz-nav-right pz-nav-right--embedded">
+            <div class="pz-auth-slot" data-auth-slot></div>
+          </div>
+        </header>`;
+      // Back button: emite evento cancelable antes de navegar para que la
+      // página (ej. torneo5) pueda confirmar "¿salir?" si hay progreso.
+      const backBtn = root.querySelector("[data-back]");
+      if (backBtn) {
+        backBtn.addEventListener("click", function (e) {
+          const target = backBtn.getAttribute("href");
+          const evt = new CustomEvent("puntazo:before-back", {
+            cancelable: true,
+            detail: { to: target },
+          });
+          const proceed = window.dispatchEvent(evt);
+          if (!proceed) { e.preventDefault(); return; }
+          // Default: dejar que el browser navegue.
+        });
+      }
       try { window.dispatchEvent(new CustomEvent("puntazo:header-rendered")); } catch {}
       return;
     }
