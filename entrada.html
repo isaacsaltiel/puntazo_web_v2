@@ -309,6 +309,39 @@
     color: #fff;
   }
 
+  /* F119: link sutil a /herramientas con loc+can. Estilo muy bajo perfil
+     para no competir con los CTAs primarios. */
+  .entrada-tools-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-decoration: none;
+    padding: 10px 12px 6px;
+    margin-top: 4px;
+    border-radius: 12px;
+    transition: background .15s;
+  }
+  .entrada-tools-link span {
+    font-size: 0.74rem;
+    color: rgba(234, 242, 255, 0.46);
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .entrada-tools-link strong {
+    font-size: 0.82rem;
+    color: #6fb2ff;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+  }
+  .entrada-tools-link:hover {
+    background: rgba(11, 124, 255, 0.06);
+  }
+  .entrada-tools-link:hover strong {
+    color: #9fcfff;
+  }
+
   .entrada-footer {
     margin-top: 26px;
     text-align: center;
@@ -573,6 +606,13 @@
     <div id="actionsAuthed" class="entrada-actions" style="display:none">
       <button id="btnIniciar" class="btn-primary" type="button">🎾 Configurar partido →</button>
       <a id="lnkSoloClips" class="btn-secondary" href="#">Solo quiero ver los clips</a>
+      <!-- F119: link sutil a herramientas (sortear, marcador, torneo 5, etc).
+           Pasa loc+can para que herramientas propague el contexto a los
+           modos que lo entienden (Torneo 5 muestra botón Puntazo round). -->
+      <a id="lnkHerramientas" class="entrada-tools-link" href="#">
+        <span>¿Sortear parejas, llevar marcador o armar un torneo?</span>
+        <strong>Ver herramientas →</strong>
+      </a>
     </div>
 
     <div id="actionsGuest" class="entrada-actions" style="display:none">
@@ -1069,6 +1109,15 @@
                       "&lado=" + encodeURIComponent(lado);
     $lnkSoloClips.href = "/lado.html" + ladoQuery;
     $lnkInvitado.href = "/lado.html" + ladoQuery;
+
+    // F119: link a herramientas con loc+can (sin lado — herramientas no
+    // necesita lado, solo el contexto de club/cancha para que el botón
+    // Puntazo round funcione en Torneo 5 / tablero).
+    const $lnkHerramientas = document.getElementById("lnkHerramientas");
+    if ($lnkHerramientas) {
+      $lnkHerramientas.href = "/herramientas.html?loc=" + encodeURIComponent(loc) +
+                              "&can=" + encodeURIComponent(can);
+    }
 
     // Etapa 16.4 F44: mostrar el contenedor INMEDIATAMENTE (header + bg cancha)
     // sin esperar a auth. Antes el header solo se renderizaba después del

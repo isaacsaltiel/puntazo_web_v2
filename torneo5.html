@@ -22,6 +22,9 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/auth.js"></script>
+<!-- F119: pulses.js para el botón Puntazo flotante cuando torneo5
+     se abre con ?loc=&can= (porque vienen de un club con cámaras). -->
+<script src="/assets/pulses.js"></script>
 
 <style>
   /* ══════════════════════════════════════════════════════════════
@@ -1231,12 +1234,81 @@
     60%  { transform: scale(1.18) translateY(0); }
     100% { opacity: 1; transform: scale(1) translateY(0); }
   }
+
+  /* ══════════════════════════════════════════════════════════════
+     F119 — Botón Puntazo flotante (solo cuando hay ?loc=&can= en URL,
+     o sea cuando vienen de un club con cámaras instaladas).
+     ══════════════════════════════════════════════════════════════ */
+  .t5-puntazo-fab {
+    position: fixed;
+    right: 18px; bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    z-index: 5000;
+    width: 84px; height: 84px;
+    border-radius: 999px; border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    transition: transform .14s ease, filter .14s ease;
+    display: none; /* se muestra desde JS si hay loc+can */
+  }
+  .t5-puntazo-fab.is-active { display: block; }
+  .t5-puntazo-fab img {
+    width: 100%; height: 100%; display: block;
+    object-fit: contain;
+    filter: drop-shadow(0 0 24px rgba(11,124,255,0.45));
+    pointer-events: none;
+    border-radius: 999px;
+  }
+  .t5-puntazo-fab.pressed { transform: scale(0.92); filter: brightness(.88); }
+  .t5-puntazo-fab.success img { filter: drop-shadow(0 0 30px rgba(34,197,94,0.65)); }
+  .t5-puntazo-fab.disabled-cooldown { cursor: not-allowed; }
+  .t5-puntazo-fab.disabled-cooldown img { filter: grayscale(.45) brightness(.78); }
+  .t5-puntazo-fab .countdown {
+    position: absolute; left: 0; right: 0; bottom: 26%;
+    text-align: center; pointer-events: none;
+    font-size: 0.92rem; font-weight: 900; color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,.8), 0 0 12px rgba(11,124,255,.65);
+    display: none;
+  }
+  .t5-puntazo-fab.disabled-cooldown .countdown { display: block; }
+  .t5-puntazo-flash {
+    position: fixed; inset: 0; z-index: 4900; pointer-events: none;
+    background: radial-gradient(circle at 50% 50%, rgba(34,197,94,.45), rgba(34,197,94,0) 70%);
+    opacity: 0; transition: opacity .35s;
+  }
+  .t5-puntazo-flash.on { opacity: 1; }
+  .t5-puntazo-toast {
+    position: fixed;
+    right: 18px; bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+    z-index: 5100;
+    padding: 8px 14px; border-radius: 999px;
+    background: rgba(34,197,94,.92); color: #0a1428;
+    font-size: 0.82rem; font-weight: 900; letter-spacing: .3px;
+    box-shadow: 0 12px 32px rgba(34,197,94,.45);
+    pointer-events: none;
+    animation: t5PuntazoToastIn .35s cubic-bezier(.2,.8,.2,1);
+  }
+  .t5-puntazo-toast.is-error {
+    background: rgba(240,104,69,.92); color: #fff;
+  }
+  @keyframes t5PuntazoToastIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 </style>
 </head>
 <body>
 
 <div class="page-bg"></div>
 <div class="t5-bg" aria-hidden="true"></div>
+
+<!-- F119: botón Puntazo flotante. Solo visible si vienen de
+     /entrada con ?loc=&can= (o sea: están en un club con cámaras). -->
+<div id="t5PuntazoFlash" class="t5-puntazo-flash" aria-hidden="true"></div>
+<button id="t5PuntazoFab" class="t5-puntazo-fab" type="button" aria-label="Pedir Puntazo">
+  <img src="/assets/img/puntazo_boton_redondo.png" alt="Puntazo" />
+  <div class="countdown" id="t5PuntazoCountdown"></div>
+</button>
 
 <div class="t5-app">
   <div class="t5-top">
@@ -1564,6 +1636,8 @@
     view.classList.add("t5-view");
     root().appendChild(view);
     window.scrollTo({ top: 0, behavior: "instant" });
+    // F119: visibilidad del FAB depende de la view
+    try { applyPuntazoFabVisibility(); } catch (_) {}
   }
 
   /* ── WELCOME (Continuar torneo en curso) ── */
@@ -2563,8 +2637,118 @@
     // F114: además re-render siempre, así el botón "Inicia sesión" del
     // welcome desaparece al loguearse aunque cloud no haya cambiado nada.
     window.addEventListener("puntazo:auth-changed", () => {
-      syncAfterAuthChange().finally(() => render());
+      syncAfterAuthChange().finally(() => { render(); applyPuntazoFabVisibility(); });
     });
+
+    // F119: setup del botón Puntazo flotante (solo si vienen con loc+can).
+    setupPuntazoFab();
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // F119 — Botón Puntazo flotante (solo si vienen de un club con cámaras)
+  // ══════════════════════════════════════════════════════════════
+  let _pzClubCtx = null;          // { loc, can } o null
+  let _pzCooldownTimer = null;
+  let _pzCooldownStart = 0;
+  const PZ_COOLDOWN_MS = 9000;
+
+  function setupPuntazoFab() {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      const loc = (p.get("loc") || "").trim();
+      const can = (p.get("can") || "").trim();
+      if (!loc || !can) return;             // sin club → no se muestra
+      _pzClubCtx = { loc: loc, can: can };
+      const fab = document.getElementById("t5PuntazoFab");
+      if (!fab) return;
+      fab.addEventListener("click", onPuntazoFabClick);
+      applyPuntazoFabVisibility();
+    } catch (e) {
+      console.warn("[t5] setupPuntazoFab", e);
+    }
+  }
+
+  function applyPuntazoFabVisibility() {
+    const fab = document.getElementById("t5PuntazoFab");
+    if (!fab) return;
+    // Solo visible cuando NO estamos en welcome/setup/final (es decir,
+    // durante el torneo activo: preview, match, between).
+    const isActiveView = !showWelcome && S && (S.view === "preview" || S.view === "match" || S.view === "between");
+    if (_pzClubCtx && isActiveView) {
+      fab.classList.add("is-active");
+    } else {
+      fab.classList.remove("is-active");
+    }
+  }
+
+  async function onPuntazoFabClick(evt) {
+    const fab = document.getElementById("t5PuntazoFab");
+    if (!fab || fab.classList.contains("disabled-cooldown")) return;
+    if (!_pzClubCtx) return;
+    if (!window.PuntazoPulses || typeof window.PuntazoPulses.requestPulse !== "function") {
+      pzToast("Error: módulo de Puntazo no disponible", true);
+      return;
+    }
+    fab.classList.add("pressed");
+    setTimeout(() => fab.classList.remove("pressed"), 140);
+    try {
+      await window.PuntazoPulses.requestPulse({
+        loc: _pzClubCtx.loc,
+        can: _pzClubCtx.can,
+        source: "web_torneo5",
+      });
+      // Flash + toast + cooldown
+      const flash = document.getElementById("t5PuntazoFlash");
+      if (flash) {
+        flash.classList.add("on");
+        setTimeout(() => flash.classList.remove("on"), 420);
+      }
+      fab.classList.add("success");
+      setTimeout(() => fab.classList.remove("success"), 800);
+      pzToast("🎯 ¡Puntazo!");
+      try { if (navigator.vibrate) navigator.vibrate([40, 60, 40]); } catch (_) {}
+      startPzCooldown();
+    } catch (err) {
+      console.warn("[t5] puntazo fab error", err);
+      pzToast("No se pudo registrar: " + (err && err.message ? err.message : "error"), true);
+      try { if (navigator.vibrate) navigator.vibrate(80); } catch (_) {}
+    }
+  }
+
+  function startPzCooldown() {
+    const fab = document.getElementById("t5PuntazoFab");
+    const cd = document.getElementById("t5PuntazoCountdown");
+    if (!fab || !cd) return;
+    fab.classList.add("disabled-cooldown");
+    _pzCooldownStart = Date.now();
+    function tick() {
+      const elapsed = Date.now() - _pzCooldownStart;
+      const remaining = Math.max(0, Math.ceil((PZ_COOLDOWN_MS - elapsed) / 1000));
+      cd.textContent = remaining > 0 ? remaining + "s" : "";
+      if (elapsed < PZ_COOLDOWN_MS) {
+        _pzCooldownTimer = requestAnimationFrame(tick);
+      } else {
+        endPzCooldown();
+      }
+    }
+    _pzCooldownTimer = requestAnimationFrame(tick);
+  }
+
+  function endPzCooldown() {
+    const fab = document.getElementById("t5PuntazoFab");
+    const cd = document.getElementById("t5PuntazoCountdown");
+    if (fab) fab.classList.remove("disabled-cooldown");
+    if (cd) cd.textContent = "";
+  }
+
+  function pzToast(msg, isError) {
+    const old = document.querySelector(".t5-puntazo-toast");
+    if (old) old.remove();
+    const t = document.createElement("div");
+    t.className = "t5-puntazo-toast" + (isError ? " is-error" : "");
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2400);
   }
 
   if (document.readyState === "loading") {
