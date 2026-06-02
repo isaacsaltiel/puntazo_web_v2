@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Editar clip — Puntazo</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
+<link rel="stylesheet" href="/assets/estilo.css" />
+
+<!-- Firebase + core (para enviar la edición a la NUC vía pending_pulses) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/card.js"></script>
+<script src="/assets/pulses.js"></script>
+
+<style>
+  :root { --pz-orange:#EA5B0C; --pz-ink:#0b1018; --pz-line:rgba(255,255,255,.14); }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#070b12; color:#eef2f8;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-tap-highlight-color:transparent; }
+  .ed-wrap { max-width:760px; margin:0 auto; padding:16px 14px 60px; }
+  h1 { font-size:1.25rem; margin:6px 0 2px; }
+  .ed-sub { color:#9fb0c4; font-size:.85rem; margin:0 0 16px; }
+
+  /* ── Video + overlay de encuadre ── */
+  .ed-stage { position:relative; width:100%; background:#000; border-radius:14px;
+    overflow:hidden; border:1px solid var(--pz-line); }
+  .ed-stage video { display:block; width:100%; height:auto; }
+  .ed-crop { position:absolute; border:2px solid var(--pz-orange);
+    box-shadow:0 0 0 9999px rgba(0,0,0,.45); cursor:move; touch-action:none;
+    display:none; }
+  .ed-crop.is-on { display:block; }
+  .ed-crop-handle { position:absolute; width:22px; height:22px; right:-11px; bottom:-11px;
+    background:var(--pz-orange); border-radius:50%; cursor:nwse-resize; touch-action:none;
+    border:2px solid #fff; }
+  .ed-crop-tag { position:absolute; top:-24px; left:0; background:var(--pz-orange);
+    color:#fff; font-size:.7rem; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+
+  /* ── Timeline de recorte ── */
+  .ed-tl { position:relative; height:46px; margin:16px 0 6px; background:#111824;
+    border-radius:10px; border:1px solid var(--pz-line); touch-action:none; }
+  .ed-tl-sel { position:absolute; top:0; bottom:0; background:rgba(234,91,12,.22);
+    border-left:3px solid var(--pz-orange); border-right:3px solid var(--pz-orange); }
+  .ed-tl-handle { position:absolute; top:-4px; width:18px; height:54px; margin-left:-9px;
+    background:var(--pz-orange); border-radius:6px; cursor:ew-resize; touch-action:none;
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:.7rem; }
+  .ed-tl-play { position:absolute; top:0; bottom:0; width:2px; background:#fff; pointer-events:none; }
+  .ed-times { display:flex; justify-content:space-between; color:#9fb0c4; font-size:.78rem; }
+
+  .ed-row { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
+  .ed-btn { flex:1; min-width:120px; padding:11px 12px; border-radius:10px;
+    border:1px solid var(--pz-line); background:#141d2a; color:#eef2f8; font-size:.9rem;
+    cursor:pointer; font-family:inherit; }
+  .ed-btn:active { transform:translateY(1px); }
+  .ed-btn.is-on { background:var(--pz-orange); border-color:var(--pz-orange); color:#fff; }
+  .ed-btn--cta { background:var(--pz-orange); border-color:var(--pz-orange); color:#fff; font-weight:700; }
+  .ed-btn:disabled { opacity:.5; cursor:default; }
+
+  .ed-section { margin-top:22px; }
+  .ed-section h2 { font-size:.95rem; margin:0 0 8px; color:#cdd9e8; }
+  .ed-hint { color:#8aa; font-size:.78rem; margin:4px 0 0; }
+  .ed-asp { display:flex; gap:8px; flex-wrap:wrap; }
+  .ed-asp .ed-btn { flex:0 0 auto; min-width:0; padding:8px 12px; }
+  .ed-kf-list { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .ed-kf { display:flex; align-items:center; gap:10px; background:#111824;
+    border:1px solid var(--pz-line); border-radius:8px; padding:7px 10px; font-size:.82rem; }
+  .ed-kf .t { color:var(--pz-orange); font-weight:700; }
+  .ed-kf .rm { margin-left:auto; background:none; border:none; color:#e66; cursor:pointer; font-size:1rem; }
+  .ed-msg { margin-top:14px; padding:11px 13px; border-radius:10px; font-size:.86rem; display:none; }
+  .ed-msg.ok { background:rgba(40,180,90,.15); border:1px solid rgba(40,180,90,.5); display:block; }
+  .ed-msg.err { background:rgba(220,70,70,.15); border:1px solid rgba(220,70,70,.5); display:block; }
+  .ed-msg.info { background:rgba(80,130,220,.13); border:1px solid rgba(80,130,220,.4); display:block; }
+  .ed-back { color:#9fb0c4; text-decoration:none; font-size:.85rem; }
+  .ed-toggle-wrap { display:flex; align-items:center; gap:10px; }
+  .ed-disabled-note { background:rgba(80,130,220,.13); border:1px solid rgba(80,130,220,.4);
+    border-radius:10px; padding:12px 14px; font-size:.86rem; color:#cdd9e8; }
+</style>
+</head>
+<body>
+  <div id="pzHeader"></div>
+  <div class="ed-wrap">
+    <a class="ed-back" id="edBack" href="#">← Volver</a>
+    <h1>✂️ Editar clip</h1>
+    <p class="ed-sub">Recorta el momento exacto y, si quieres, reencuadra la jugada (ideal para verticales tipo reel). Tu clip editado se procesa y aparece en tus clips en unos minutos.</p>
+
+    <div id="edUnsupported" class="ed-disabled-note" style="display:none">
+      La edición de clips todavía no está disponible para este club. Pronto.
+    </div>
+
+    <div id="edMain" style="display:none">
+      <div class="ed-stage" id="edStage">
+        <video id="edVideo" playsinline preload="metadata"></video>
+        <div class="ed-crop" id="edCrop">
+          <div class="ed-crop-tag" id="edCropTag">Encuadre</div>
+          <div class="ed-crop-handle" id="edCropHandle"></div>
+        </div>
+      </div>
+
+      <!-- Recorte -->
+      <div class="ed-section">
+        <h2>1 · Recorte</h2>
+        <div class="ed-tl" id="edTl">
+          <div class="ed-tl-sel" id="edTlSel"></div>
+          <div class="ed-tl-play" id="edTlPlay"></div>
+          <div class="ed-tl-handle" id="edTlIn" style="left:0">⟨</div>
+          <div class="ed-tl-handle" id="edTlOut" style="left:100%">⟩</div>
+        </div>
+        <div class="ed-times">
+          <span>Inicio: <strong id="edInLbl">0:00.0</strong></span>
+          <span id="edSelLbl">0.0s</span>
+          <span>Fin: <strong id="edOutLbl">0:00.0</strong></span>
+        </div>
+        <div class="ed-row">
+          <button class="ed-btn" id="edSetIn">⟨ Marcar inicio aquí</button>
+          <button class="ed-btn" id="edPlaySel">▶ Previsualizar recorte</button>
+          <button class="ed-btn" id="edSetOut">Marcar fin aquí ⟩</button>
+        </div>
+      </div>
+
+      <!-- Encuadre dinámico -->
+      <div class="ed-section">
+        <h2>2 · Encuadre dinámico <span style="color:#8aa;font-weight:400;font-size:.8rem">(opcional)</span></h2>
+        <div class="ed-toggle-wrap">
+          <button class="ed-btn" id="edReframeToggle" style="flex:0 0 auto">Activar reencuadre</button>
+          <span class="ed-hint" style="margin:0">Arrastra y redimensiona el recuadro sobre el video.</span>
+        </div>
+        <div id="edReframePanel" style="display:none">
+          <div class="ed-asp" style="margin-top:10px">
+            <button class="ed-btn" data-asp="free">Libre</button>
+            <button class="ed-btn" data-asp="9:16">9:16 (reel)</button>
+            <button class="ed-btn" data-asp="1:1">1:1</button>
+            <button class="ed-btn" data-asp="16:9">16:9</button>
+          </div>
+          <div class="ed-row" style="margin-top:10px">
+            <button class="ed-btn" id="edAddKf">＋ Fijar encuadre en este instante</button>
+            <button class="ed-btn" id="edClearKf">Limpiar puntos</button>
+          </div>
+          <p class="ed-hint">Con 1 punto el encuadre es fijo. Con 2 o más, la cámara se mueve/zoom siguiendo la jugada entre esos instantes.</p>
+          <div class="ed-kf-list" id="edKfList"></div>
+        </div>
+      </div>
+
+      <div class="ed-row" style="margin-top:22px">
+        <button class="ed-btn ed-btn--cta" id="edProcess">Procesar clip editado</button>
+      </div>
+      <div class="ed-msg" id="edMsg"></div>
+    </div>
+  </div>
+
+  <script src="/assets/header.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const params = new URLSearchParams(location.search);
+    const videoId = (params.get("videoId") || params.get("v") || "").trim();
+    let srcUrl = (params.get("src") || "").trim();
+
+    const $ = function (id) { return document.getElementById(id); };
+    const stage = $("edStage"), video = $("edVideo");
+    const crop = $("edCrop"), cropHandle = $("edCropHandle"), cropTag = $("edCropTag");
+    const tl = $("edTl"), tlSel = $("edTlSel"), tlPlay = $("edTlPlay"), tlIn = $("edTlIn"), tlOut = $("edTlOut");
+    const msg = $("edMsg");
+
+    const back = $("edBack");
+    back.href = videoId ? ("/clip.html?videoId=" + encodeURIComponent(videoId)) : "/perfil.html";
+
+    function fmt(t) {
+      t = Math.max(0, t || 0);
+      const m = Math.floor(t / 60), s = (t % 60);
+      return m + ":" + (s < 10 ? "0" : "") + s.toFixed(1);
+    }
+    function showMsg(kind, text) { msg.className = "ed-msg " + kind; msg.textContent = text; }
+
+    // ── Resolver club/cancha/lado + url del clip ───────────────────────────
+    let meta = null;
+    try { meta = (window.PuntazoCard && PuntazoCard.parseFromName) ? PuntazoCard.parseFromName(videoId) : null; } catch (_) {}
+
+    async function resolveUrl() {
+      if (srcUrl) return srcUrl;
+      try {
+        const res = await fetch("/data/videos_index.json", { cache: "no-store" });
+        const idx = await res.json();
+        const hit = idx && idx.videos && idx.videos[videoId];
+        if (hit && hit.url) return hit.url;
+      } catch (_) {}
+      return "";
+    }
+
+    const loc = meta ? meta.loc : "";
+    if (!loc || !(window.PuntazoPulses && PuntazoPulses.canEditClip && PuntazoPulses.canEditClip(loc))) {
+      $("edUnsupported").style.display = "block";
+      return;
+    }
+
+    // ── State ──────────────────────────────────────────────────────────────
+    let duration = 0;
+    let inT = 0, outT = 0;
+    let reframeOn = false;
+    let aspect = "free";       // free | 9:16 | 1:1 | 16:9
+    let rect = { x: 0.15, y: 0.1, w: 0.7, h: 0.8 }; // normalizado [0..1]
+    let keyframes = [];        // [{t,x,y,w,h}]
+
+    // ── Init video ───────────────────────────────────────────────────────
+    (async function init() {
+      srcUrl = await resolveUrl();
+      if (!srcUrl) { $("edMain").style.display = "block"; showMsg("err", "No se encontró el video de este clip."); return; }
+      video.src = srcUrl;
+      $("edMain").style.display = "block";
+      video.addEventListener("loadedmetadata", function () {
+        duration = video.duration || 0;
+        inT = 0; outT = duration;
+        renderTimeline();
+      });
+      video.addEventListener("timeupdate", onTimeUpdate);
+    })();
+
+    // ── Timeline ───────────────────────────────────────────────────────────
+    function pct(t) { return duration > 0 ? (t / duration * 100) : 0; }
+    function renderTimeline() {
+      tlIn.style.left = pct(inT) + "%";
+      tlOut.style.left = pct(outT) + "%";
+      tlSel.style.left = pct(inT) + "%";
+      tlSel.style.width = (pct(outT) - pct(inT)) + "%";
+      $("edInLbl").textContent = fmt(inT);
+      $("edOutLbl").textContent = fmt(outT);
+      $("edSelLbl").textContent = (Math.max(0, outT - inT)).toFixed(1) + "s";
+    }
+    function onTimeUpdate() {
+      tlPlay.style.left = pct(video.currentTime) + "%";
+      if (playingSel && video.currentTime >= outT) { video.pause(); playingSel = false; }
+      if (reframeOn) applyPreviewRect();
+    }
+    function seekFromClientX(clientX) {
+      const r = tl.getBoundingClientRect();
+      const f = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+      return f * duration;
+    }
+    tl.addEventListener("pointerdown", function (e) {
+      if (e.target === tlIn || e.target === tlOut) return;
+      video.currentTime = seekFromClientX(e.clientX);
+    });
+    function dragHandle(handle, isIn) {
+      handle.addEventListener("pointerdown", function (e) {
+        e.preventDefault(); handle.setPointerCapture(e.pointerId);
+        function mv(ev) {
+          let t = seekFromClientX(ev.clientX);
+          if (isIn) inT = Math.max(0, Math.min(t, outT - 0.2));
+          else outT = Math.min(duration, Math.max(t, inT + 0.2));
+          renderTimeline();
+          video.currentTime = isIn ? inT : outT;
+        }
+        function up(ev) { handle.releasePointerCapture(e.pointerId); document.removeEventListener("pointermove", mv); document.removeEventListener("pointerup", up); }
+        document.addEventListener("pointermove", mv);
+        document.addEventListener("pointerup", up);
+      });
+    }
+    dragHandle(tlIn, true); dragHandle(tlOut, false);
+
+    $("edSetIn").addEventListener("click", function () { inT = Math.min(video.currentTime, outT - 0.2); renderTimeline(); });
+    $("edSetOut").addEventListener("click", function () { outT = Math.max(video.currentTime, inT + 0.2); renderTimeline(); });
+    let playingSel = false;
+    $("edPlaySel").addEventListener("click", function () {
+      video.currentTime = inT; playingSel = true; video.play();
+    });
+
+    // ── Reframe: toggle + aspect + crop drag/resize ─────────────────────────
+    $("edReframeToggle").addEventListener("click", function () {
+      reframeOn = !reframeOn;
+      this.classList.toggle("is-on", reframeOn);
+      this.textContent = reframeOn ? "Reencuadre activo" : "Activar reencuadre";
+      $("edReframePanel").style.display = reframeOn ? "block" : "none";
+      crop.classList.toggle("is-on", reframeOn);
+      if (reframeOn) { if (aspect !== "free") applyAspect(aspect); drawCrop(); }
+    });
+
+    document.querySelectorAll("[data-asp]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        aspect = b.getAttribute("data-asp");
+        document.querySelectorAll("[data-asp]").forEach(function (x) { x.classList.toggle("is-on", x === b); });
+        if (aspect !== "free") applyAspect(aspect);
+        drawCrop();
+      });
+    });
+
+    function videoBox() {
+      // El <video> se muestra a ancho completo y alto auto → su caja == frame.
+      return { w: video.clientWidth, h: video.clientHeight };
+    }
+    function applyAspect(asp) {
+      const box = videoBox();
+      if (!box.w || !box.h) return;
+      const parts = asp.split(":"); const ar = Number(parts[0]) / Number(parts[1]);
+      // Mantener el ancho actual, derivar alto px del aspect, normalizar.
+      let wpx = rect.w * box.w;
+      let hpx = wpx / ar;
+      if (hpx > box.h) { hpx = box.h * 0.96; wpx = hpx * ar; }
+      rect.w = wpx / box.w; rect.h = hpx / box.h;
+      rect.x = Math.min(rect.x, 1 - rect.w); rect.y = Math.min(rect.y, 1 - rect.h);
+      rect.x = Math.max(0, rect.x); rect.y = Math.max(0, rect.y);
+    }
+    function drawCrop() {
+      const box = videoBox();
+      crop.style.left = (rect.x * box.w) + "px";
+      crop.style.top = (rect.y * box.h) + "px";
+      crop.style.width = (rect.w * box.w) + "px";
+      crop.style.height = (rect.h * box.h) + "px";
+      cropTag.textContent = aspect === "free" ? "Encuadre" : aspect;
+    }
+    // Drag move
+    crop.addEventListener("pointerdown", function (e) {
+      if (e.target === cropHandle) return;
+      e.preventDefault(); crop.setPointerCapture(e.pointerId);
+      const box = videoBox(); const sx = e.clientX, sy = e.clientY; const ox = rect.x, oy = rect.y;
+      function mv(ev) {
+        rect.x = Math.max(0, Math.min(1 - rect.w, ox + (ev.clientX - sx) / box.w));
+        rect.y = Math.max(0, Math.min(1 - rect.h, oy + (ev.clientY - sy) / box.h));
+        drawCrop();
+      }
+      function up() { document.removeEventListener("pointermove", mv); document.removeEventListener("pointerup", up); }
+      document.addEventListener("pointermove", mv); document.addEventListener("pointerup", up);
+    });
+    // Resize (corner), respeta aspect si está fijo
+    cropHandle.addEventListener("pointerdown", function (e) {
+      e.preventDefault(); e.stopPropagation(); cropHandle.setPointerCapture(e.pointerId);
+      const box = videoBox(); const sx = e.clientX, sy = e.clientY; const ow = rect.w, oh = rect.h;
+      const ar = (aspect !== "free") ? (function () { const p = aspect.split(":"); return (Number(p[0]) / Number(p[1])) * (box.h / box.w); })() : null;
+      function mv(ev) {
+        let nw = Math.max(0.08, Math.min(1 - rect.x, ow + (ev.clientX - sx) / box.w));
+        let nh;
+        if (ar) { nh = nw / ar; if (rect.y + nh > 1) { nh = 1 - rect.y; nw = nh * ar; } }
+        else { nh = Math.max(0.08, Math.min(1 - rect.y, oh + (ev.clientY - sy) / box.h)); }
+        rect.w = nw; rect.h = nh; drawCrop();
+      }
+      function up() { document.removeEventListener("pointermove", mv); document.removeEventListener("pointerup", up); }
+      document.addEventListener("pointermove", mv); document.addEventListener("pointerup", up);
+    });
+    window.addEventListener("resize", function () { if (reframeOn) drawCrop(); });
+
+    // Keyframes
+    function renderKfs() {
+      const list = $("edKfList"); list.innerHTML = "";
+      keyframes.slice().sort(function (a, b) { return a.t - b.t; }).forEach(function (k, i) {
+        const row = document.createElement("div"); row.className = "ed-kf";
+        row.innerHTML = '<span class="t">' + fmt(k.t) + '</span><span>x' +
+          Math.round(k.x * 100) + ' y' + Math.round(k.y * 100) + ' · ' +
+          Math.round(k.w * 100) + '%×' + Math.round(k.h * 100) + '%</span>' +
+          '<button class="rm" title="Quitar">✕</button>';
+        row.querySelector(".rm").addEventListener("click", function () {
+          keyframes = keyframes.filter(function (x) { return x !== k; }); renderKfs();
+        });
+        list.appendChild(row);
+      });
+    }
+    $("edAddKf").addEventListener("click", function () {
+      keyframes.push({ t: video.currentTime, x: rect.x, y: rect.y, w: rect.w, h: rect.h });
+      renderKfs();
+    });
+    $("edClearKf").addEventListener("click", function () { keyframes = []; renderKfs(); });
+
+    // Preview: interpola el recuadro según keyframes y el tiempo actual.
+    function applyPreviewRect() {
+      if (!keyframes.length) { drawCrop(); return; }
+      const ks = keyframes.slice().sort(function (a, b) { return a.t - b.t; });
+      const t = video.currentTime;
+      let a = ks[0], b = ks[ks.length - 1];
+      if (t <= a.t) { setRect(a); return; }
+      if (t >= b.t) { setRect(b); return; }
+      for (let i = 0; i < ks.length - 1; i++) {
+        if (t >= ks[i].t && t <= ks[i + 1].t) {
+          const f = (t - ks[i].t) / Math.max(0.001, ks[i + 1].t - ks[i].t);
+          setRect({
+            x: ks[i].x + (ks[i + 1].x - ks[i].x) * f,
+            y: ks[i].y + (ks[i + 1].y - ks[i].y) * f,
+            w: ks[i].w + (ks[i + 1].w - ks[i].w) * f,
+            h: ks[i].h + (ks[i + 1].h - ks[i].h) * f,
+          });
+          return;
+        }
+      }
+    }
+    function setRect(r) { rect.x = r.x; rect.y = r.y; rect.w = r.w; rect.h = r.h; drawCrop(); }
+
+    // ── Procesar (enviar spec a la NUC) ─────────────────────────────────────
+    let submitted = false;
+    $("edProcess").addEventListener("click", async function () {
+      if (submitted) return;
+      const btn = this;
+      if (!(outT > inT)) { showMsg("err", "Marca un recorte válido (inicio < fin)."); return; }
+      btn.disabled = true; btn.textContent = "Enviando…";
+      try {
+        const reframe = {
+          enabled: reframeOn,
+          aspect: aspect,
+          keyframes: reframeOn
+            ? (keyframes.length ? keyframes : [{ t: inT, x: rect.x, y: rect.y, w: rect.w, h: rect.h }])
+            : [],
+        };
+        await window.PuntazoPulses.requestClipEdit({
+          loc: loc, can: meta.can, lado: meta.lado,
+          sourceVideoId: videoId, sourceUrl: srcUrl,
+          trim: { in: inT, out: outT },
+          reframe: reframe,
+        });
+        submitted = true;
+        btn.textContent = "✅ Enviado a procesar";
+        showMsg("ok", "Tu clip editado se está procesando. Aparecerá en los clips de la cancha en unos minutos.");
+      } catch (e) {
+        btn.disabled = false; btn.textContent = "Procesar clip editado";
+        showMsg("err", "No se pudo enviar: " + (e && e.message ? e.message : "error"));
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
