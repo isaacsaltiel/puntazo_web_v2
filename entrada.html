@@ -842,26 +842,15 @@
         $selGrid.appendChild(card);
       });
 
-      // F124: re-orden de cards extras. Antes: registrar / recuperar / modos.
-      // Ahora pedido por Isaac:
-      //   1) "¿Sin Puntazo en tu cancha?" → arriba (es el path más amplio para
-      //      users que llegan sin club asociado).
-      //   2) "Solo registrar puntazos" → en medio (caso específico modo botón).
-      //   3) "¿Se te escapó un puntazo?" → al fondo, con emoji 🔍 en lugar
-      //      de la flecha genérica (sugiere "buscar en el pasado").
+      // F127: orden final pedido por Isaac (corrige F124).
+      //   1) "Solo registrar puntazos" → ARRIBA (con la P redonda como visual).
+      //   2) "¿Sin Puntazo en tu cancha?" → medio (modos juego standalone).
+      //   3) "¿Se te escapó un puntazo?" → fondo (con 🔍 en lugar de flecha).
       if (!modoBoton) {
         const extras = document.createElement("div");
         extras.style.cssText = "grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; margin-top:8px;";
         extras.innerHTML =
-          // ① ¿Sin Puntazo en tu cancha? — promovido al top (era el último)
-          '<a href="/herramientas.html" class="sel-card" style="text-decoration:none; min-height:auto; padding:14px 16px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px; border-color:rgba(180,120,255,.32); background:linear-gradient(180deg, rgba(180,120,255,.10), rgba(11,124,255,.04));">' +
-            '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +
-              '<span class="name" style="font-size:.92rem;">¿Sin Puntazo en tu cancha?</span>' +
-              '<span class="meta" style="margin-top:0;">Prueba los modos de juego — Torneo, Americano, King, Marcador libre…</span>' +
-            '</span>' +
-            '<span style="font-size:1.45rem; opacity:.9; line-height:1;">🎲</span>' +
-          '</a>' +
-          // ② Solo registrar puntazos — queda al medio con la P redonda
+          // ① Solo registrar puntazos — arriba, con la P redonda visual
           '<a href="/entrada.html?modo=boton" class="sel-card" style="text-decoration:none; min-height:auto; padding:12px 14px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px;">' +
             '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +
               '<span class="name" style="font-size:.92rem;">Solo registrar puntazos</span>' +
@@ -871,7 +860,15 @@
                  'style="width:52px;height:52px;flex-shrink:0;border-radius:50%;object-fit:contain;' +
                  'filter:drop-shadow(0 0 14px rgba(11,124,255,.45));">' +
           '</a>' +
-          // ③ ¿Se te escapó un puntazo? — al fondo con emoji 🔍 (buscar)
+          // ② ¿Sin Puntazo en tu cancha? — medio, card destacada morada
+          '<a href="/herramientas.html" class="sel-card" style="text-decoration:none; min-height:auto; padding:14px 16px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px; border-color:rgba(180,120,255,.32); background:linear-gradient(180deg, rgba(180,120,255,.10), rgba(11,124,255,.04));">' +
+            '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +
+              '<span class="name" style="font-size:.92rem;">¿Sin Puntazo en tu cancha?</span>' +
+              '<span class="meta" style="margin-top:0;">Prueba los modos de juego — Torneo, Americano, King, Marcador libre…</span>' +
+            '</span>' +
+            '<span style="font-size:1.45rem; opacity:.9; line-height:1;">🎲</span>' +
+          '</a>' +
+          // ③ ¿Se te escapó un puntazo? — fondo con 🔍 (buscar)
           '<a href="/recuperar.html" class="sel-card" style="text-decoration:none; min-height:auto; padding:14px 16px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px;">' +
             '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +
               '<span class="name" style="font-size:.92rem;">¿Se te escapó un puntazo?</span>' +
