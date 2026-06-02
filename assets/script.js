@@ -922,6 +922,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (path.endsWith("lado.html")) {
       const ok = await requireCanchaPassword(p.loc, p.can);
       if (!ok) { window.location.href = `cancha.html?loc=${p.loc}&can=${p.can}`; return; }
+      // F126: expone el loader como global para que el refresh-bar pueda
+      // dispararlo on-demand sin recargar la página completa.
+      window.PuntazoLadoReload = populateVideos;
       populateVideos(); createScrollToTopBtn(); return;
     }
   })();

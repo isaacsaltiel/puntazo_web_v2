@@ -26,6 +26,9 @@
 <!-- F125-H1: overlay reusable que abre resumen.html?embed=1 en un
      modal full-screen para ver/editar la foto del resumen on-demand. -->
 <script src="/assets/resumen-overlay.js"></script>
+<!-- F126: refresh-bar para "Mis puntazos pendientes" — re-trigger del
+     join con videos_index sin recargar la página. -->
+<script src="/assets/refresh-bar.js"></script>
 <script src="/assets/identity.js"></script>
 <style>
   .perfil-wrap { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
@@ -510,6 +513,10 @@
         <h3>🎯 Mis puntazos pendientes</h3>
         <span id="pendingCount" class="pz-section-count" style="display:none"></span>
       </div>
+      <!-- F126: refresh-bar arriba de la lista. Permite al user re-disparar
+           el join con videos_index para detectar clips recién listos sin
+           recargar la página completa. -->
+      <div id="pz-rb-perfil-host"></div>
       <div id="pendingList" class="pz-pending-list" style="display:none"></div>
       <div id="pendingLoading" class="pz-matches-loading" style="display:none">
         <div class="empty-icon">⏳</div>
@@ -625,6 +632,32 @@
     loadMyMatches(user);
     loadMyPendingPuntazos(user); // F82
     loadSaved(user);
+    setupRefreshBar(user); // F126
+  }
+
+  // F126: refresh-bar arriba de "Mis puntazos pendientes". Al pulsar
+  // "Actualizar" re-dispara loadMyPendingPuntazos (que internamente hace
+  // un join con videos_index.json para detectar clips listos). El user
+  // ve cuándo fue el último refresh + cuántos pulsos tiene pendientes.
+  let _rbPerfilBar = null;
+  function setupRefreshBar(user) {
+    if (!window.PuntazoRefreshBar) return;
+    const host = document.getElementById('pz-rb-perfil-host');
+    if (!host) return;
+    if (_rbPerfilBar && typeof _rbPerfilBar.destroy === 'function') {
+      _rbPerfilBar.destroy();
+    }
+    _rbPerfilBar = window.PuntazoRefreshBar.attach(host, {
+      label: 'Actualizado',
+      auto: 0, // solo manual; el onSnapshot ya mantiene la lista en vivo
+               // mientras la pestaña esté abierta. El botón fuerza el
+               // re-join con videos_index para "Listo · Ver clip".
+      showPending: false, // la lista de pendientes ya está debajo, no se duplica
+      refreshOnInit: false,
+      onRefresh: async function () {
+        try { await loadMyPendingPuntazos(user); } catch (_) {}
+      },
+    });
   }
 
   // F122: si hay un match activo del user, mutamos el CTA "Iniciar partido"
