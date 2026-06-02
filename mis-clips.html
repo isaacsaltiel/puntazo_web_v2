@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Mis clips · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/matches.js"></script>
+<script src="/assets/clubs-catalog.js"></script>
+<script src="/assets/header.js"></script>
+
+<style>
+  html, body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pz-clips-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 90px 16px 60px;
+  }
+  .pz-clips-backlink {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-bottom: 14px;
+    padding: 8px 14px;
+    background: rgba(11, 124, 255, 0.10);
+    border: 1px solid rgba(11, 124, 255, 0.30);
+    border-radius: 999px;
+    color: #cfe2ff;
+    font-family: inherit; font-weight: 700; font-size: 0.86rem;
+    text-decoration: none;
+    transition: background .14s, border-color .14s;
+  }
+  .pz-clips-backlink:hover {
+    background: rgba(11, 124, 255, 0.20);
+    border-color: rgba(11, 124, 255, 0.55);
+  }
+
+  .pz-clips-pageheader { margin-bottom: 18px; }
+  .pz-clips-pageheader h1 {
+    font-size: 1.55rem; font-weight: 900; color: #fff;
+    margin: 0 0 4px; letter-spacing: -0.3px;
+  }
+  .pz-clips-pageheader p {
+    font-size: 0.92rem; color: rgba(234, 242, 255, 0.60); margin: 0;
+  }
+
+  .pz-clips-state {
+    text-align: center;
+    padding: 40px 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    color: rgba(234, 242, 255, 0.65);
+  }
+  .pz-clips-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .pz-clips-state h3 {
+    margin: 0 0 8px; color: #eaf2ff; font-size: 1.05rem; font-weight: 900;
+  }
+  .pz-clips-state p { margin: 0 0 14px; line-height: 1.5; }
+
+  .pz-clips-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: .75rem 1.4rem;
+    border-radius: 999px;
+    border: 1px solid rgba(11,124,255,.45);
+    background: linear-gradient(135deg, rgba(11,124,255,0.22), rgba(0,79,200,0.10));
+    color: #eaf2ff;
+    font-family: inherit; font-size: .92rem; font-weight: 800;
+    text-decoration: none;
+    transition: background .14s, border-color .14s, transform .14s;
+  }
+  .pz-clips-cta:hover {
+    background: linear-gradient(135deg, rgba(11,124,255,0.32), rgba(0,79,200,0.16));
+    border-color: rgba(11,124,255,0.70);
+    transform: translateY(-1px);
+  }
+
+  /* ── Match group card ── */
+  .pz-clips-list {
+    display: flex; flex-direction: column;
+    gap: 16px;
+  }
+  .pz-clip-group {
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    padding: 16px 16px 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    backdrop-filter: blur(10px);
+  }
+  .pz-clip-group-head {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .pz-clip-group-date {
+    font-size: 0.80rem; font-weight: 700; color: rgba(234,242,255,.58);
+    letter-spacing: .2px;
+  }
+  .pz-clip-group-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 999px;
+    font-size: 0.70rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .5px;
+    flex-shrink: 0;
+    background: rgba(180,180,180,.14);
+    border: 1px solid rgba(220,220,220,.22);
+    color: #d2d6dd;
+  }
+  .pz-clip-group-loc {
+    font-size: 1.05rem; font-weight: 900; color: #fff; line-height: 1.2;
+    letter-spacing: -0.3px; margin-bottom: 2px;
+  }
+  .pz-clip-group-sub {
+    font-size: 0.84rem; color: rgba(234,242,255,.62); margin-bottom: 10px;
+  }
+  .pz-clip-group-score {
+    font-size: 0.90rem; font-weight: 800; color: #cfe2ff;
+    letter-spacing: .3px; margin-bottom: 10px;
+  }
+  .pz-clip-group-score .pz-score-sep { color: rgba(207,226,255,.45); margin: 0 6px; }
+  .pz-clip-group-score-empty {
+    font-size: 0.82rem; color: rgba(234,242,255,.45);
+    font-style: italic; margin-bottom: 10px;
+  }
+
+  /* Featured PARTIDO video */
+  .pz-clip-featured {
+    margin: 4px 0 14px;
+    padding: 12px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(11,124,255,0.18), rgba(0,79,200,0.08));
+    border: 1px solid rgba(11,124,255,0.35);
+  }
+  .pz-clip-featured-title {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.78rem; font-weight: 800; color: #cfe2ff;
+    text-transform: uppercase; letter-spacing: .5px;
+    margin-bottom: 8px;
+  }
+  .pz-clip-featured video {
+    width: 100%;
+    max-height: 360px;
+    border-radius: 10px;
+    background: #000;
+    display: block;
+  }
+
+  /* Group footer / clips count + expand */
+  .pz-clip-group-foot {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin-top: 6px;
+  }
+  .pz-clip-group-count {
+    font-size: 0.86rem; font-weight: 700; color: rgba(234,242,255,.72);
+  }
+  .pz-clip-group-toggle {
+    appearance: none;
+    border: 1px solid rgba(11,124,255,0.40);
+    background: rgba(11,124,255,0.14);
+    color: #cfe2ff;
+    font-family: inherit; font-weight: 800; font-size: 0.86rem;
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .14s, border-color .14s;
+  }
+  .pz-clip-group-toggle:hover {
+    background: rgba(11,124,255,0.26);
+    border-color: rgba(11,124,255,0.65);
+  }
+
+  /* Expanded clip items */
+  .pz-clip-items {
+    display: none;
+    margin-top: 12px;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .pz-clip-items.is-open { display: flex; }
+  .pz-clip-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    text-decoration: none;
+    color: #eaf2ff;
+    transition: background .14s, border-color .14s;
+  }
+  .pz-clip-item:hover {
+    background: rgba(11,124,255,0.12);
+    border-color: rgba(11,124,255,0.35);
+  }
+  .pz-clip-item-icon {
+    flex-shrink: 0;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(11,124,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+  }
+  .pz-clip-item-info { flex: 1; min-width: 0; }
+  .pz-clip-item-title {
+    font-size: 0.92rem; font-weight: 800; color: #fff;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pz-clip-item-meta {
+    font-size: 0.76rem; color: rgba(234,242,255,.55); margin-top: 2px;
+  }
+  .pz-clip-item-arrow {
+    flex-shrink: 0; color: rgba(11,124,255,0.85); font-size: 1.1rem;
+  }
+</style>
+</head>
+<body>
+<div class="page-bg"></div>
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="site-content fade-in">
+  <div class="pz-clips-wrap">
+    <a class="pz-clips-backlink" href="/perfil.html">← Mi perfil</a>
+    <div class="pz-clips-pageheader">
+      <h1>Mis clips</h1>
+      <p id="pageSubtitle">Todos los clips de tus partidos, agrupados por partido.</p>
+    </div>
+
+    <div id="loading" class="pz-clips-state">
+      <div class="icon">⏳</div>
+      <h3>Cargando tus clips…</h3>
+      <p>Buscando los partidos donde has jugado.</p>
+    </div>
+
+    <div id="loginRequired" class="pz-clips-state" style="display:none">
+      <div class="icon">🔐</div>
+      <h3>Inicia sesión para ver tus clips</h3>
+      <p>Necesitas tu cuenta para ver los clips de tus partidos.</p>
+      <button id="loginBtn" class="pz-clips-cta">Iniciar sesión</button>
+    </div>
+
+    <div id="emptyState" class="pz-clips-state" style="display:none">
+      <div class="icon">🎾</div>
+      <h3>Aún no tienes clips</h3>
+      <p>Inicia un partido y captura tus puntazos. Cuando termine, todos los clips aparecerán aquí agrupados.</p>
+      <a href="/entrada.html" class="pz-clips-cta">▶ Jugar</a>
+    </div>
+
+    <div id="errorState" class="pz-clips-state" style="display:none">
+      <div class="icon">⚠️</div>
+      <h3>No pudimos cargar tus clips</h3>
+      <p>Intenta recargar la página. Si el problema persiste, contacta soporte.</p>
+    </div>
+
+    <div id="clipsList" class="pz-clips-list" style="display:none"></div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-redes">
+    <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
+    <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
+    <a href="https://wa.me/522206804856" target="_blank" rel="noopener">WhatsApp</a>
+  </div>
+  <p class="footer-copy">© 2026 Puntazo</p>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  const $loading      = document.getElementById('loading');
+  const $loginReq     = document.getElementById('loginRequired');
+  const $empty        = document.getElementById('emptyState');
+  const $error        = document.getElementById('errorState');
+  const $list         = document.getElementById('clipsList');
+  const $loginBtn     = document.getElementById('loginBtn');
+  const $subtitle     = document.getElementById('pageSubtitle');
+
+  $loginBtn.addEventListener('click', function () {
+    if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === 'function') {
+      window.PuntazoAuth.signIn();
+    }
+  });
+
+  function showState(which) {
+    $loading.style.display   = (which === 'loading')  ? 'block' : 'none';
+    $loginReq.style.display  = (which === 'login')    ? 'block' : 'none';
+    $empty.style.display     = (which === 'empty')    ? 'block' : 'none';
+    $error.style.display     = (which === 'error')    ? 'block' : 'none';
+    $list.style.display      = (which === 'list')     ? 'flex'  : 'none';
+  }
+
+  function escapeHTML(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function tsToDate(ts) {
+    if (!ts) return null;
+    if (ts instanceof Date) return ts;
+    if (typeof ts.toDate === 'function') { try { return ts.toDate(); } catch { return null; } }
+    if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000 + Math.floor((ts.nanoseconds || 0) / 1e6));
+    if (typeof ts === 'number') return new Date(ts);
+    return null;
+  }
+
+  const MESES_CORTOS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function formatDateShort(d) {
+    if (!d) return '';
+    const dd = d.getDate();
+    const mes = MESES_CORTOS[d.getMonth()] || '';
+    const y = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2,'0');
+    const mm = String(d.getMinutes()).padStart(2,'0');
+    return dd + ' ' + mes + ' ' + y + ', ' + hh + ':' + mm;
+  }
+
+  function formatClipTime(ts) {
+    const d = new Date(ts);
+    const hh = String(d.getHours()).padStart(2,'0');
+    const mm = String(d.getMinutes()).padStart(2,'0');
+    const ss = String(d.getSeconds()).padStart(2,'0');
+    return hh + ':' + mm + ':' + ss;
+  }
+
+  function formatScore(match) {
+    const m = match && match.marcador;
+    if (!m || !Array.isArray(m.sets) || m.sets.length === 0) return '';
+    const cells = m.sets
+      .filter(s => s && typeof s === 'object' && Number.isFinite(s.team1) && Number.isFinite(s.team2))
+      .map(s => s.team1 + '-' + s.team2);
+    if (!cells.length) return '';
+    return cells.join('<span class="pz-score-sep">·</span>');
+  }
+
+  function resolveNames(cfg, loc, can, lado) {
+    let locN = loc || '', canN = can || '', ladoN = lado || '';
+    if (cfg && Array.isArray(cfg.locaciones)) {
+      const L = cfg.locaciones.find(x => x.id === loc);
+      if (L) {
+        locN = L.nombre || loc;
+        if (Array.isArray(L.cancha)) {
+          const C = L.cancha.find(x => x.id === can);
+          if (C) {
+            canN = C.nombre || can;
+            if (Array.isArray(C.lados)) {
+              const Ld = C.lados.find(x => x.id === lado);
+              if (Ld) ladoN = Ld.nombre || lado;
+            }
+          }
+        }
+      }
+    }
+    return { locNombre: locN, canNombre: canN, ladoNombre: ladoN };
+  }
+
+  let _configCache = null;
+  async function loadConfig() {
+    if (_configCache) return _configCache;
+    try {
+      const res = await fetch('/data/config_locations.json?cb=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) return null;
+      _configCache = await res.json();
+      return _configCache;
+    } catch (e) { return null; }
+  }
+
+  function buildClipItem(clip, idx) {
+    const a = document.createElement('a');
+    a.className = 'pz-clip-item';
+    a.href = clip.videoUrl;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    const time = formatClipTime(clip.timestamp);
+    a.innerHTML =
+      '<div class="pz-clip-item-icon">🎬</div>' +
+      '<div class="pz-clip-item-info">' +
+        '<div class="pz-clip-item-title">Clip #' + (idx + 1) + ' · ' + escapeHTML(time) + '</div>' +
+        '<div class="pz-clip-item-meta">' + escapeHTML(clip.videoId || '') + '</div>' +
+      '</div>' +
+      '<div class="pz-clip-item-arrow">▶</div>';
+    return a;
+  }
+
+  function buildMatchGroup(match, clips, cfg) {
+    const { locNombre, canNombre, ladoNombre } = resolveNames(cfg, match.loc, match.can, match.lado);
+    const startedDate = tsToDate(match.startedAt);
+    const dateStr = formatDateShort(startedDate);
+    const scoreHtml = formatScore(match);
+
+    // Separar el video "PARTIDO" (tag=PARTIDO) destacado del resto.
+    const parser = (window.PuntazoMatches && typeof PuntazoMatches.parseClipName === 'function')
+      ? PuntazoMatches.parseClipName : null;
+    let featured = null;
+    const rest = [];
+    for (const c of clips) {
+      let isPartido = false;
+      if (parser) {
+        const p = parser(c.videoId || c.nombre || '');
+        if (p && p.tag && String(p.tag).toUpperCase() === 'PARTIDO') isPartido = true;
+      }
+      if (isPartido && !featured) featured = c;
+      else rest.push(c);
+    }
+
+    const group = document.createElement('div');
+    group.className = 'pz-clip-group';
+
+    const ladoTxt = ladoNombre ? (' · ' + escapeHTML(ladoNombre)) : '';
+    const canTxt = canNombre ? escapeHTML(canNombre) : '';
+
+    const featuredHtml = featured
+      ? '<div class="pz-clip-featured">' +
+          '<div class="pz-clip-featured-title">🏆 Video del partido completo</div>' +
+          '<video src="' + escapeHTML(featured.videoUrl) + '" controls preload="metadata" playsinline></video>' +
+        '</div>'
+      : '';
+
+    const scoreBlock = scoreHtml
+      ? '<div class="pz-clip-group-score">' + scoreHtml + '</div>'
+      : '<div class="pz-clip-group-score-empty">Sin marcador registrado</div>';
+
+    const totalClips = clips.length;
+    const restCount = rest.length;
+    const countLabel = totalClips === 0
+      ? 'Sin clips aún'
+      : (totalClips === 1 ? '1 clip' : (totalClips + ' clips'));
+
+    group.innerHTML =
+      '<div class="pz-clip-group-head">' +
+        '<div class="pz-clip-group-date">' + escapeHTML(dateStr) + '</div>' +
+        '<span class="pz-clip-group-badge">Terminado</span>' +
+      '</div>' +
+      '<div class="pz-clip-group-loc">' + escapeHTML(locNombre || match.loc || '—') + '</div>' +
+      '<div class="pz-clip-group-sub">' + canTxt + ladoTxt + '</div>' +
+      scoreBlock +
+      featuredHtml +
+      '<div class="pz-clip-group-foot">' +
+        '<div class="pz-clip-group-count">🎬 ' + escapeHTML(countLabel) + '</div>' +
+        (restCount > 0
+          ? '<button type="button" class="pz-clip-group-toggle">Ver clips</button>'
+          : '') +
+      '</div>' +
+      '<div class="pz-clip-items"></div>';
+
+    if (restCount > 0) {
+      const $items = group.querySelector('.pz-clip-items');
+      rest.forEach(function (c, i) {
+        $items.appendChild(buildClipItem(c, i));
+      });
+      const $toggle = group.querySelector('.pz-clip-group-toggle');
+      $toggle.addEventListener('click', function () {
+        const open = $items.classList.toggle('is-open');
+        $toggle.textContent = open ? 'Ocultar' : 'Ver clips';
+      });
+    }
+
+    return group;
+  }
+
+  async function loadAll(user) {
+    showState('loading');
+    if (!window.PuntazoMatches || typeof PuntazoMatches.listByUser !== 'function') {
+      showState('error');
+      return;
+    }
+    try {
+      const cfgP = loadConfig();
+      const matches = await PuntazoMatches.listByUser(user.uid, { status: 'ended', limit: 50 });
+      const cfg = await cfgP;
+      if (!Array.isArray(matches) || matches.length === 0) {
+        showState('empty');
+        return;
+      }
+
+      // Fetch clips para cada match en paralelo
+      const enriched = await Promise.all(matches.map(async function (m) {
+        try {
+          const clips = await PuntazoMatches.findClipsForMatch(m);
+          return { match: m, clips: Array.isArray(clips) ? clips : [] };
+        } catch (e) {
+          console.warn('[mis-clips] findClipsForMatch falló para', m.id, e);
+          return { match: m, clips: [] };
+        }
+      }));
+
+      // Filtrar: si un partido no tiene clips, lo dejamos visible igual con
+      // "Sin clips aún" — el user sabe que jugó pero no salió ningún puntazo.
+      // Esto es deliberado: ver "0 clips" es información útil.
+
+      $list.innerHTML = '';
+      let totalClips = 0;
+      enriched.forEach(function (it) {
+        totalClips += it.clips.length;
+        const group = buildMatchGroup(it.match, it.clips, cfg);
+        $list.appendChild(group);
+      });
+
+      const matchN = enriched.length;
+      $subtitle.textContent = (matchN === 1 ? '1 partido' : (matchN + ' partidos'))
+        + ' · ' + (totalClips === 1 ? '1 clip' : (totalClips + ' clips'));
+
+      showState('list');
+    } catch (e) {
+      console.error('[mis-clips] error', e);
+      showState('error');
+    }
+  }
+
+  function onAuthReady() {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) { showState('login'); return; }
+    loadAll(user);
+  }
+
+  window.addEventListener('puntazo:auth-ready', onAuthReady);
+  window.addEventListener('puntazo:auth-changed', onAuthReady);
+  if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+    onAuthReady();
+  } else {
+    setTimeout(function () {
+      if ($loading.style.display !== 'none') onAuthReady();
+    }, 1500);
+  }
+})();
+</script>
+</body>
+</html>
