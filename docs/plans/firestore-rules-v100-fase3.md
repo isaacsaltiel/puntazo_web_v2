@@ -325,6 +325,23 @@ service cloud.firestore {
     // ════════════════════════════════════════════════════
 
     // ════════════════════════════════════════════════════
+    // NUEVO R8 — Cola de ediciones de clip (render en la nube / GitHub Actions)
+    // ════════════════════════════════════════════════════
+    // La web encola specs de edición (trim + encuadre dinámico / sacar puntazo
+    // de un partido largo). Un workflow en la nube (admin SDK) los procesa con
+    // ffmpeg, sube a Dropbox y actualiza status/result. El cliente solo crea y
+    // lee SUS propios docs; nunca actualiza (eso es del workflow vía admin SDK).
+    match /clip_edits/{editId} {
+      allow create: if request.resource.data.kind in ['edit', 'puntazo']
+                    && request.resource.data.source_video_id is string
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.created_at == request.time;
+      allow read: if request.auth != null
+                  && resource.data.uid_creator == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ════════════════════════════════════════════════════
     // Catch-all denegado
     // ════════════════════════════════════════════════════
     match /{document=**} {

@@ -237,22 +237,22 @@
     };
   }
 
-  // R8 — clubs cuya NUC sabe renderizar ediciones de clip (trim + encuadre
-  // dinámico) vía ffmpeg. El maestro lo activa en el swap con la NUC.
-  const CLIP_EDIT_CLUBS = ["WellStreet-Pickleball"];
-  function canEditClip(loc) { return CLIP_EDIT_CLUBS.indexOf(loc) >= 0; }
+  // R8 — Edición de clips (trim + encuadre dinámico) y extracción de puntazos
+  // cortos desde partidos largos. El RENDER se hace en la NUBE (GitHub Actions
+  // + ffmpeg), NO en la NUC: la web encola el "spec" en la colección Firestore
+  // `clip_edits/` y un workflow la procesa, sube a Dropbox y reindexa. Funciona
+  // para CUALQUIER club (el render solo necesita el clip fuente en Dropbox).
+  function canEditClip(loc) { return !!loc; }
 
   // requestClipEdit({ loc, can, lado?, sourceVideoId, sourceUrl, trim:{in,out},
-  //   reframe:{ enabled, aspect, keyframes:[{t,x,y,w,h}] } })
-  // Escribe un doc pending_pulses source="clip_edit" para que la NUC corte y
-  // reencuadre el clip con ffmpeg y lo suba reindexado. Coordenadas de reframe
-  // NORMALIZADAS [0..1] respecto al frame (independientes de resolución).
+  //   reframe:{ enabled, aspect, keyframes:[{t,x,y,w,h}] }, kind })
+  // kind: "edit" (default) | "puntazo" (recorte corto sacado de un partido largo;
+  //       NO borra el largo — el fuente queda intacto, esto crea un clip nuevo).
+  // Escribe un doc clip_edits/ para que el workflow en la nube renderice con
+  // ffmpeg. Coordenadas de reframe NORMALIZADAS [0..1] respecto al frame.
   async function requestClipEdit(opts) {
     if (!opts || !opts.loc || !opts.sourceVideoId || !opts.sourceUrl) {
       throw new Error("requestClipEdit: faltan loc/sourceVideoId/sourceUrl");
-    }
-    if (!canEditClip(opts.loc)) {
-      throw new Error("Edición de clips no disponible para " + opts.loc);
     }
     const trim = opts.trim || {};
     const tin = Math.max(0, Number(trim.in) || 0);
@@ -285,12 +285,15 @@
       keyframes: keyframes,
     };
 
+    const kind = (opts.kind === "puntazo") ? "puntazo" : "edit";
     const doc = {
       club: opts.loc,
       cancha: canchaDigit(opts.can || ""),
+      court: opts.can || "",            // court id "CanchaN" (para nombrar/rutear)
       lado: opts.lado || "LadoA",
-      source: "clip_edit",
-      client_pulse_id: "EDIT_" + genClientPulseId().slice(6) + "_" + (opts.sourceVideoId || "").slice(0, 24),
+      kind: kind,
+      status: "pending",                // pending → processing → done | error (lo mueve el workflow)
+      client_edit_id: "EDIT_" + genClientPulseId().slice(6) + "_" + (opts.sourceVideoId || "").slice(0, 24),
       source_video_id: opts.sourceVideoId,
       source_url: opts.sourceUrl,
       trim: { in: Math.round(tin * 100) / 100, out: Math.round(tout * 100) / 100 },
@@ -299,10 +302,11 @@
       uid_creator: user ? user.uid : null,
       created_at: firebase.firestore.FieldValue.serverTimestamp(),
       consumed_at: null,
-      consumed_by: null,
+      result_video_url: null,
+      error_reason: null,
     };
-    const ref = await db.collection("pending_pulses").add(doc);
-    return { ok: true, channel: "firestore", docId: ref.id, client_pulse_id: doc.client_pulse_id };
+    const ref = await db.collection("clip_edits").add(doc);
+    return { ok: true, channel: "cloud", docId: ref.id, client_edit_id: doc.client_edit_id };
   }
 
   window.PuntazoPulses = {
@@ -311,7 +315,6 @@
     canRecordMatch: canRecordMatch,
     requestClipEdit: requestClipEdit,
     canEditClip: canEditClip,
-    CLIP_EDIT_CLUBS: CLIP_EDIT_CLUBS.slice(),
     FIRESTORE_CLUBS: FIRESTORE_CLUBS.slice(),
     MATCH_RECORDING_CLUBS: MATCH_RECORDING_CLUBS.slice(),
     MATCH_RECORDING_MAX_MINUTES: MATCH_RECORDING_MAX_MINUTES,

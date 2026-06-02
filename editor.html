@@ -84,8 +84,8 @@
   <div id="pzHeader"></div>
   <div class="ed-wrap">
     <a class="ed-back" id="edBack" href="#">← Volver</a>
-    <h1>✂️ Editar clip</h1>
-    <p class="ed-sub">Recorta el momento exacto y, si quieres, reencuadra la jugada (ideal para verticales tipo reel). Tu clip editado se procesa y aparece en tus clips en unos minutos.</p>
+    <h1 id="edTitle">✂️ Editar clip</h1>
+    <p class="ed-sub" id="edSubtitle">Recorta el momento exacto y, si quieres, reencuadra la jugada (ideal para verticales tipo reel). Tu clip editado se procesa y aparece en tus clips en unos minutos.</p>
 
     <div id="edUnsupported" class="ed-disabled-note" style="display:none">
       La edición de clips todavía no está disponible para este club. Pronto.
@@ -158,6 +158,11 @@
     const params = new URLSearchParams(location.search);
     const videoId = (params.get("videoId") || params.get("v") || "").trim();
     let srcUrl = (params.get("src") || "").trim();
+    // Si el fuente es un partido completo (_PARTIDO_), el modo natural es
+    // "sacar un puntazo corto" del largo (sin perder el largo: el fuente queda
+    // intacto, esto crea un clip nuevo).
+    const isMatch = /_PARTIDO_/i.test(videoId);
+    const editKind = isMatch ? "puntazo" : "edit";
 
     const $ = function (id) { return document.getElementById(id); };
     const stage = $("edStage"), video = $("edVideo");
@@ -210,9 +215,18 @@
       if (!srcUrl) { $("edMain").style.display = "block"; showMsg("err", "No se encontró el video de este clip."); return; }
       video.src = srcUrl;
       $("edMain").style.display = "block";
+      if (isMatch) {
+        const t = document.getElementById("edTitle");
+        const s = document.getElementById("edSubtitle");
+        if (t) t.textContent = "✂️ Sacar puntazo del partido";
+        if (s) s.textContent = "Recorta el momento clave de tu partido completo (el largo NO se borra: esto crea un clip corto nuevo). Opcional: reencuádralo vertical para compartir.";
+        document.title = "Sacar puntazo — Puntazo";
+      }
       video.addEventListener("loadedmetadata", function () {
         duration = video.duration || 0;
-        inT = 0; outT = duration;
+        inT = 0;
+        // Para puntazos desde un partido largo, arranca con una ventana corta (~12s).
+        outT = (isMatch && duration > 18) ? Math.min(duration, 12) : duration;
         renderTimeline();
       });
       video.addEventListener("timeupdate", onTimeUpdate);
@@ -404,6 +418,7 @@
           sourceVideoId: videoId, sourceUrl: srcUrl,
           trim: { in: inT, out: outT },
           reframe: reframe,
+          kind: editKind,
         });
         submitted = true;
         btn.textContent = "✅ Enviado a procesar";

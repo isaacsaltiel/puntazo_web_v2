@@ -17,7 +17,16 @@ local), clamp a **MAX 20 min anclando al FINAL** (si dura más, graba los últim
 `client_pulse_id` (determinístico `PLS_M_<matchId>`). Config:
 `firestore.match_recording = { enabled, max_minutes:20, allowed_clubs, tail_seconds:3 }`.
 
-### 2. `source == "clip_edit"` — edición de clip (R8): recorte + encuadre dinámico
+### 2. ~~`source == "clip_edit"`~~ — MOVIDO A LA NUBE (NO lo hagas en la NUC)
+
+> **CAMBIO**: la edición de clips (recorte + encuadre dinámico + sacar puntazo de un
+> partido largo) ya NO se renderiza en la NUC. Se hace en **GitHub Actions**
+> (`.github/workflows/clip_edit.yml` + `clip_edit_ci.py`), leyendo la colección
+> Firestore **`clip_edits/`** (no `pending_pulses`). La NUC **NO debe** procesar
+> `clip_edit` ni escuchar `clip_edits/`. Ignora esta sección. (Se conserva abajo solo
+> como referencia histórica del contrato.)
+
+<details><summary>(histórico) contrato clip_edit cuando se pensaba en NUC</summary>
 Campos extra:
 ```
 source_video_id : nombre del .mp4 original (ej WellStreet-Pickleball_Cancha1_LadoA_..._..mp4)
@@ -48,6 +57,8 @@ Handler (ffmpeg):
 - Idempotencia por `client_pulse_id` (`EDIT_...`). ACK consumed_at/consumed_by.
 - Allowlist de clubes (config). Errores → consumed con `error_reason`
   (`edit_source_unavailable`, `invalid_trim`, `reframe_failed`, etc.).
+
+</details>
 
 ### 3. Multi-club (recordatorio, ya pedido)
 El listener debe escuchar AMBOS clubes (`WellStreet-Pickleball` + `WellStreet-Padel`)
