@@ -19,12 +19,15 @@
   // mostrará en el selector (todavía no listo para jugadores).
   // status: "active" → seleccionable
   //         "soon"   → se muestra pero deshabilitado ("Próximamente")
+  // `deporte` determina el modelo de scoring (pádel/tenis = sets; pickleball =
+  // juegos a 11). El club es la fuente de verdad del deporte → al crear un
+  // partido se infiere con sportForLoc(loc), no se deja al azar.
   const CLUB_DISPLAY = {
-    "Interpadel":            { emoji: "🎾", logoUrl: "/assets/logos/interpadel.png", status: "active", nombre: "Interpadel" },
-    "BreakPoint":            { emoji: "⚡", logoUrl: "/assets/logos/breakpoint.png", status: "active", nombre: "BreakPoint" },
-    "Scorpion":              { emoji: "🦂", status: "active", nombre: "Scorpion" },
-    "WellStreet-Pickleball": { emoji: "🏓", logoUrl: "/assets/logos/wellstreet.png", status: "active", nombre: "WellStreet Pickleball" },
-    "WellStreet-Padel":      { emoji: "🎾", logoUrl: "/assets/logos/wellstreet.png", status: "active", nombre: "WellStreet Pádel" }
+    "Interpadel":            { emoji: "🎾", logoUrl: "/assets/logos/interpadel.png", status: "active", nombre: "Interpadel", deporte: "padel" },
+    "BreakPoint":            { emoji: "⚡", logoUrl: "/assets/logos/breakpoint.png", status: "active", nombre: "BreakPoint", deporte: "padel" },
+    "Scorpion":              { emoji: "🦂", status: "active", nombre: "Scorpion", deporte: "padel" },
+    "WellStreet-Pickleball": { emoji: "🏓", logoUrl: "/assets/logos/wellstreet.png", status: "active", nombre: "WellStreet Pickleball", deporte: "pickleball" },
+    "WellStreet-Padel":      { emoji: "🎾", logoUrl: "/assets/logos/wellstreet.png", status: "active", nombre: "WellStreet Pádel", deporte: "padel" }
   };
 
   // ── Mapping de códigos QR físicos → loc id en config ──
@@ -110,6 +113,13 @@
     _catalogCache = null;
   }
 
+  // sportForLoc: deporte de un club ("padel" | "tenis" | "pickleball").
+  // Default "padel" para clubs no declarados (comportamiento histórico).
+  function sportForLoc(locId) {
+    const d = CLUB_DISPLAY[locId];
+    return (d && d.deporte) ? d.deporte : "padel";
+  }
+
   // ── Íconos de cancha por club ──
   // Si existe /assets/court-icons/{locId}/B{n}.png se usa (arte propio del
   // club, ej. canchas de pickleball); si no, cae al global
@@ -148,6 +158,7 @@
     resolveQrCode: resolveQrCode,
     getClubByLocId: getClubByLocId,
     clearCache: clearCache,
+    sportForLoc: sportForLoc,
     courtIconUrls: courtIconUrls,
     applyCourtIcon: applyCourtIcon
   };

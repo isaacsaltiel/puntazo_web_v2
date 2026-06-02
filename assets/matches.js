@@ -53,8 +53,25 @@
   // posiciones 2-3 son Equipo 2 (invariante de Etapa 6.5, ahora soft).
   const LEGACY_INDEX_TO_TEAM = ["team1", "team1", "team2", "team2"];
 
-  const MODOS_VALIDOS = ["partido_3", "partido_5", "reta", "libre"];
-  const DEPORTES_VALIDOS = ["padel", "tenis"];
+  // Modos pádel/tenis (sets) + pickleball (juegos a 11) + agnósticos (reta/libre).
+  //   partido_3/_5 → mejor de 3/5 sets (regla pádel/tenis).
+  //   pickle_1      → 1 juego a 11 (gana por 2).
+  //   pickle_3      → mejor de 3 juegos a 11 (gana por 2).
+  //   reta          → sin score, solo ganador. libre → conteo simple.
+  const MODOS_VALIDOS = ["partido_3", "partido_5", "pickle_1", "pickle_3", "reta", "libre"];
+  const DEPORTES_VALIDOS = ["padel", "tenis", "pickleball"];
+
+  // Qué modos ofrecer según el deporte (la UI usa esto para no mezclar
+  // sets de pádel con juegos de pickleball). reta/libre son universales.
+  const MODOS_BY_SPORT = {
+    padel:      ["partido_3", "partido_5", "reta", "libre"],
+    tenis:      ["partido_3", "partido_5", "reta", "libre"],
+    pickleball: ["pickle_3", "pickle_1", "reta", "libre"],
+  };
+  // Modos cuyo score son "juegos a 11" en lugar de "sets de games".
+  const PICKLE_MODOS = ["pickle_1", "pickle_3"];
+  // Default de juego de pickleball: a 11, se gana por 2 (torneos: 15/21).
+  const PICKLE_TARGET_DEFAULT = 11;
 
   // sanitizeJugadores acepta arrays de longitud 0-4. Cada elemento es un
   // objeto { nombre, equipo, uid?, claimedByUid? }. Length variable (0,1,2,3,4)
@@ -249,6 +266,55 @@
       return { state: "incomplete", winner: null, hint: "Set incompleto (jueguen 7-5 o lleguen a 6-6)." };
     }
     return { state: "incomplete", winner: null, hint: "Set incompleto (uno debe llegar a 6 con diferencia ≥ 2)." };
+  }
+
+  // validatePickleGame: regla de pickleball. Un "juego" se gana al llegar a
+  // 11 (o 15/21 en torneos) con diferencia ≥ 2. El score visible son DOS
+  // números (los puntos de cada equipo en ese juego); el "tercer número"
+  // (servidor 1/2) del cantado de dobles es solo del saque, no del marcador.
+  // Reusa el shape sets[]: cada "set" es en realidad un "juego" de pickleball.
+  //   { state: "valid",      winner }
+  //   { state: "incomplete", winner: null, hint }
+  //   { state: "invalid",    winner: null, error }
+  function validatePickleGame(t1Raw, t2Raw) {
+    const t1 = Number(t1Raw);
+    const t2 = Number(t2Raw);
+    if (!Number.isInteger(t1) || !Number.isInteger(t2) || t1 < 0 || t2 < 0) {
+      return { state: "invalid", winner: null, error: "Los puntos deben ser enteros ≥ 0." };
+    }
+    if (t1 > 40 || t2 > 40) {
+      return { state: "invalid", winner: null, error: "Puntos fuera de rango (máx 40)." };
+    }
+    const max = Math.max(t1, t2);
+    const diff = Math.abs(t1 - t2);
+    if (max < PICKLE_TARGET_DEFAULT) {
+      return { state: "incomplete", winner: null, hint: "Un juego se gana al llegar a 11 (o 15/21) con 2 de diferencia." };
+    }
+    if (diff < 2) {
+      return { state: "incomplete", winner: null, hint: "En pickleball se gana por 2. Sigan jugando." };
+    }
+    return { state: "valid", winner: t1 > t2 ? "team1" : "team2" };
+  }
+
+  // validateScoreCell: dispatcher por deporte/modo. Para modos de pickleball
+  // usa validatePickleGame; para el resto, validateSet (pádel/tenis).
+  function validateScoreCell(t1, t2, tb, opts) {
+    const modo = opts && opts.modo;
+    const deporte = opts && opts.deporte;
+    const isPickle = (modo && PICKLE_MODOS.indexOf(modo) >= 0) || deporte === "pickleball";
+    return isPickle ? validatePickleGame(t1, t2) : validateSet(t1, t2, tb);
+  }
+
+  // deducePickleMatchWinner: gana el equipo con más juegos ganados.
+  // sets: [{team1,team2}, ...] (cada uno un juego ya cerrado/válido).
+  function deducePickleMatchWinner(sets) {
+    let g1 = 0, g2 = 0;
+    (Array.isArray(sets) ? sets : []).forEach(function (s) {
+      const v = validatePickleGame(s.team1, s.team2);
+      if (v.state === "valid") { if (v.winner === "team1") g1++; else g2++; }
+    });
+    if (g1 === g2) return null;
+    return g1 > g2 ? "team1" : "team2";
   }
 
   function validateTiebreak(t1Raw, t2Raw) {
@@ -1307,6 +1373,9 @@
       validateSet,
       validateTiebreak,
       deduceMatchWinner,
+      validatePickleGame,
+      validateScoreCell,
+      deducePickleMatchWinner,
     },
     live: {
       initMarcador: initLiveMarcador,
@@ -1321,6 +1390,8 @@
       formatScoreboard: formatLiveScoreboard,
     },
     MODOS: MODOS_VALIDOS.slice(),
+    MODOS_BY_SPORT: JSON.parse(JSON.stringify(MODOS_BY_SPORT)),
+    PICKLE_MODOS: PICKLE_MODOS.slice(),
     DEPORTES: DEPORTES_VALIDOS.slice(),
     // F115: helpers de expiración / auto-cierre
     maxMatchDurationMs: maxMatchDurationMs,
