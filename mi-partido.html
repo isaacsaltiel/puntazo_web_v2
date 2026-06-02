@@ -188,6 +188,69 @@
   .mp-modal h3 { margin: 0 0 8px; font-size: 1.15rem; font-weight: 900; color: #fff; }
   .mp-modal p.note { margin: 0 0 14px; color: rgba(234, 242, 255, .65); font-size: 0.88rem; line-height: 1.5; }
 
+  /* F123-C: modal "¿Quién eres tú?" — fuerza vinculación al crear con jugadores */
+  .mp-whoami-close {
+    position: absolute; top: 10px; right: 12px;
+    appearance: none; border: none; background: transparent;
+    color: rgba(234, 242, 255, 0.55);
+    font-size: 1.4rem; font-weight: 900;
+    cursor: pointer; padding: 6px 10px;
+    line-height: 1;
+    transition: color .14s;
+  }
+  .mp-whoami-close:hover { color: #fff; }
+  .mp-whoami-slot-list {
+    display: flex; flex-direction: column; gap: 8px;
+    margin: 10px 0 12px;
+  }
+  .mp-whoami-slot-btn {
+    appearance: none; border: 1px solid rgba(11, 124, 255, 0.35);
+    background: rgba(0, 79, 200, 0.14);
+    color: #eaf2ff;
+    font-family: inherit; font-weight: 800; font-size: 1rem;
+    padding: 14px 16px;
+    border-radius: 14px;
+    cursor: pointer;
+    text-align: left;
+    display: flex; align-items: center; gap: 10px;
+    transition: background .14s, border-color .14s, transform .08s;
+  }
+  .mp-whoami-slot-btn:hover {
+    background: rgba(11, 124, 255, 0.28);
+    border-color: rgba(11, 124, 255, 0.55);
+  }
+  .mp-whoami-slot-btn:active { transform: scale(0.98); }
+  .mp-whoami-slot-team {
+    font-size: 0.72rem; font-weight: 700;
+    color: rgba(234, 242, 255, 0.55);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-left: auto;
+  }
+  .mp-whoami-organizer {
+    appearance: none;
+    background: transparent;
+    border: 1px dashed rgba(234, 242, 255, 0.25);
+    color: rgba(234, 242, 255, 0.70);
+    font-family: inherit; font-weight: 700; font-size: 0.9rem;
+    padding: 12px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: background .14s, color .14s, border-color .14s;
+  }
+  .mp-whoami-organizer:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #eaf2ff;
+    border-color: rgba(234, 242, 255, 0.40);
+  }
+  .mp-whoami-foot-note {
+    margin: 10px 0 0;
+    font-size: 0.78rem;
+    color: rgba(234, 242, 255, 0.50);
+    line-height: 1.4;
+    text-align: center;
+  }
+
   /* F80 — Fase 2a · Item 7: modo como resumen [Cambiar] */
   .mp-end-modo-summary {
     display: flex; align-items: center; justify-content: space-between;
@@ -3705,6 +3768,22 @@
   </div>
 </div>
 
+<!-- ── F123-C: Modal "¿Quién eres tú?" — bloquea creación si registraste
+     jugadores sin marcar tu slot. Aparece desde mpNuevaStart cuando hay
+     ≥1 nombre y ninguno tiene uid del current user. ── -->
+<div id="mpWhoamiModal" class="mp-modal-backdrop">
+  <div class="mp-modal" role="dialog" aria-modal="true" aria-labelledby="mpWhoamiTitle">
+    <button id="mpWhoamiClose" type="button" class="mp-whoami-close" aria-label="Cerrar">×</button>
+    <h3 id="mpWhoamiTitle">🎾 ¿En qué posición jugaste?</h3>
+    <p class="note">Marca tu slot para llevar tu marcador y ranking. Si solo organizaste el partido, puedes seguir sin vincularte.</p>
+    <div id="mpWhoamiSlotList" class="mp-whoami-slot-list"></div>
+    <div class="mp-modal-actions">
+      <button id="mpWhoamiOrganizer" type="button" class="mp-whoami-organizer">🛠 Yo no juego, solo organicé</button>
+    </div>
+    <p class="mp-whoami-foot-note">Esto sirve para que veas tus partidos en tu perfil. No te preocupes — solo tarda un toque.</p>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -5911,10 +5990,87 @@
     }
   }
 
+  // ── F123-C: forzar "soy yo" al registrar jugadores ─────────────────────
+  // Racional: antes el creador podía registrar 4 nombres sin indicar cuál
+  // era él. Entraba al partido como owner pero sin slot vinculado, y al
+  // abrir su propio link compartido el modal "Ese soy yo" le seguía saliendo
+  // en detalle.html. Ranking lo ignoraba. Ahora, si registras ≥1 nombre, o
+  // (a) marcas tu slot (doble-tap "Soy yo" → uid en playerState), o (b)
+  // confirmas que solo organizaste vía modal. Si registras 0 nombres
+  // (flujo casual) el flujo queda intacto.
+  const $whoamiModal = document.getElementById("mpWhoamiModal");
+  const $whoamiSlotList = document.getElementById("mpWhoamiSlotList");
+  const $whoamiClose = document.getElementById("mpWhoamiClose");
+  const $whoamiOrganizer = document.getElementById("mpWhoamiOrganizer");
+  let nuevaOrganizerOnly = false; // flag global: el user marcó "solo organicé"
+
+  function closeWhoamiModal() {
+    if ($whoamiModal) $whoamiModal.classList.remove("is-open");
+  }
+
+  function openWhoamiModal() {
+    if (!$whoamiModal || !$whoamiSlotList) return;
+    nuevaOrganizerOnly = false; // reset por apertura
+    $whoamiSlotList.innerHTML = "";
+    for (let i = 0; i < 4; i++) {
+      const j = playerState.nueva[i];
+      if (!j || !j.nombre) continue;
+      const eqLabel = (j.equipo === "team1") ? "Mi equipo" : "Equipo rival";
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "mp-whoami-slot-btn";
+      btn.dataset.idx = String(i);
+      btn.innerHTML = "🎾 <span>" + escHtml(j.nombre) + "</span><span class=\"mp-whoami-slot-team\">" + escHtml(eqLabel) + "</span>";
+      btn.addEventListener("click", function () {
+        const idx = parseInt(btn.dataset.idx, 10);
+        const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+        if (!user) {
+          try { window.PuntazoAuth.requireAuth(function () { btn.click(); }); } catch (_) {}
+          return;
+        }
+        playerState.nueva.forEach(function (s, k) {
+          if (s.uid === user.uid && k !== idx) { delete s.uid; renderSlot("nueva", k); }
+        });
+        playerState.nueva[idx].uid = user.uid;
+        renderSlot("nueva", idx);
+        closeWhoamiModal();
+        if ($nuevaStart) $nuevaStart.click(); // ahora pasa la validación
+      });
+      $whoamiSlotList.appendChild(btn);
+    }
+    $whoamiModal.classList.add("is-open");
+  }
+
+  if ($whoamiClose) {
+    $whoamiClose.addEventListener("click", closeWhoamiModal);
+  }
+  if ($whoamiOrganizer) {
+    $whoamiOrganizer.addEventListener("click", function () {
+      nuevaOrganizerOnly = true;
+      closeWhoamiModal();
+      createNueva(collectJugadores("nueva"), modoState.nueva);
+    });
+  }
+
   if ($nuevaStart) {
     $nuevaStart.addEventListener("click", function () {
       if ($nuevaMsg) { $nuevaMsg.className = "mp-msg"; $nuevaMsg.textContent = ""; }
-      createNueva(collectJugadores("nueva"), modoState.nueva);
+      const jugadores = collectJugadores("nueva");
+      // 0 nombres → flujo casual, permite avanzar tal cual
+      if (jugadores.length === 0) {
+        createNueva(jugadores, modoState.nueva);
+        return;
+      }
+      // ≥1 nombre → exige vinculación o flag organizador
+      const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      const myUid = user && user.uid;
+      const someoneIsMe = myUid && jugadores.some(function (j) { return j.uid === myUid; });
+      if (someoneIsMe || nuevaOrganizerOnly) {
+        createNueva(jugadores, modoState.nueva);
+        return;
+      }
+      // Ninguna opción marcada → modal bloqueante
+      openWhoamiModal();
     });
   }
 
