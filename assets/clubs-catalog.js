@@ -84,12 +84,18 @@
       });
     }
 
-    // Orden: activos primero, luego "soon"; dentro de cada grupo, alfabético por nombre
+    // Orden: activos primero, luego "soon"; dentro de cada grupo, alfabético por
+    // nombre — EXCEPTO Scorpion que siempre va al final dentro de su grupo
+    // (Isaac: club no opera, lo mantenemos visible pero por debajo del resto
+    // para no robarle prominencia a los clubs activos reales).
     clubs.sort((a, b) => {
       if (a.status !== b.status) {
         if (a.status === "active") return -1;
         if (b.status === "active") return 1;
       }
+      const aScorpion = a.id === "Scorpion";
+      const bScorpion = b.id === "Scorpion";
+      if (aScorpion !== bScorpion) return aScorpion ? 1 : -1;
       return a.nombre.localeCompare(b.nombre);
     });
 

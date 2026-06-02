@@ -842,43 +842,42 @@
         $selGrid.appendChild(card);
       });
 
-      // R5 + F122: cards al final con accesos secundarios.
-      // - "Solo registrar puntazos" lleva el botón P redondo a la derecha
-      //   como preview visual (el mismo que verán en /boton.html).
-      // - "Sin Puntazo en tu cancha?" promovido de link discreto a card
-      //   con copy más juguetón ("Prueba los modos de juego") porque era
-      //   prácticamente un eater-egg y muchos usuarios sin club se
-      //   perdían de Torneo 5 / Americano / King.
+      // F124: re-orden de cards extras. Antes: registrar / recuperar / modos.
+      // Ahora pedido por Isaac:
+      //   1) "¿Sin Puntazo en tu cancha?" → arriba (es el path más amplio para
+      //      users que llegan sin club asociado).
+      //   2) "Solo registrar puntazos" → en medio (caso específico modo botón).
+      //   3) "¿Se te escapó un puntazo?" → al fondo, con emoji 🔍 en lugar
+      //      de la flecha genérica (sugiere "buscar en el pasado").
       if (!modoBoton) {
         const extras = document.createElement("div");
         extras.style.cssText = "grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; margin-top:8px;";
         extras.innerHTML =
-          '<a href="/entrada.html?modo=boton" class="sel-card" style="text-decoration:none; min-height:auto; padding:12px 14px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px;">' +
-            '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +
-              '<span class="name" style="font-size:.92rem;">Solo registrar puntazos</span>' +
-              '<span class="meta" style="margin-top:0;">Sin crear partido — solo el botón</span>' +
-            '</span>' +
-            // F122: P redonda como visual de qué es el botón (mismo asset
-            // que se ve en /boton.html). Borde con glow azul.
-            '<img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" ' +
-                 'style="width:52px;height:52px;flex-shrink:0;border-radius:50%;object-fit:contain;' +
-                 'filter:drop-shadow(0 0 14px rgba(11,124,255,.45));">' +
-          '</a>' +
-          '<a href="/recuperar.html" class="sel-card" style="text-decoration:none; min-height:auto; padding:14px 16px; flex-direction:row; justify-content:space-between; gap:10px;">' +
-            '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px;">' +
-              '<span class="name" style="font-size:.92rem;">¿Se te escapó un puntazo?</span>' +
-              '<span class="meta" style="margin-top:0;">Recupéralo de las últimas 24h</span>' +
-            '</span>' +
-            '<span style="font-size:1.2rem; opacity:.6;">→</span>' +
-          '</a>' +
-          // F122: card destacada (era link subtle) para que los que NO
-          // tienen Puntazo en su cancha encuentren los modos de juego.
+          // ① ¿Sin Puntazo en tu cancha? — promovido al top (era el último)
           '<a href="/herramientas.html" class="sel-card" style="text-decoration:none; min-height:auto; padding:14px 16px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px; border-color:rgba(180,120,255,.32); background:linear-gradient(180deg, rgba(180,120,255,.10), rgba(11,124,255,.04));">' +
             '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +
               '<span class="name" style="font-size:.92rem;">¿Sin Puntazo en tu cancha?</span>' +
               '<span class="meta" style="margin-top:0;">Prueba los modos de juego — Torneo, Americano, King, Marcador libre…</span>' +
             '</span>' +
             '<span style="font-size:1.45rem; opacity:.9; line-height:1;">🎲</span>' +
+          '</a>' +
+          // ② Solo registrar puntazos — queda al medio con la P redonda
+          '<a href="/entrada.html?modo=boton" class="sel-card" style="text-decoration:none; min-height:auto; padding:12px 14px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px;">' +
+            '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +
+              '<span class="name" style="font-size:.92rem;">Solo registrar puntazos</span>' +
+              '<span class="meta" style="margin-top:0;">Sin crear partido — solo el botón</span>' +
+            '</span>' +
+            '<img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" ' +
+                 'style="width:52px;height:52px;flex-shrink:0;border-radius:50%;object-fit:contain;' +
+                 'filter:drop-shadow(0 0 14px rgba(11,124,255,.45));">' +
+          '</a>' +
+          // ③ ¿Se te escapó un puntazo? — al fondo con emoji 🔍 (buscar)
+          '<a href="/recuperar.html" class="sel-card" style="text-decoration:none; min-height:auto; padding:14px 16px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px;">' +
+            '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +
+              '<span class="name" style="font-size:.92rem;">¿Se te escapó un puntazo?</span>' +
+              '<span class="meta" style="margin-top:0;">Recupéralo de las últimas 24h</span>' +
+            '</span>' +
+            '<span style="font-size:1.45rem; opacity:.9; line-height:1;">🔍</span>' +
           '</a>';
         $selGrid.appendChild(extras);
       }
