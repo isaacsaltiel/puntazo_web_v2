@@ -278,6 +278,27 @@
     color: rgba(234, 242, 255, 0.75);
   }
   .ml-status-pending strong { color: #ffd497; }
+  /* F123-G: lista de matches pending con razón concreta. */
+  .ml-pending-list {
+    list-style: none; padding: 0; margin: 10px 0 0;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .ml-pending-item {
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.28);
+    border-radius: 8px;
+    border-left: 3px solid rgba(255, 170, 60, 0.55);
+  }
+  .ml-pending-item-title {
+    font-size: 0.84rem; font-weight: 800; color: #eaf2ff;
+    display: block; margin-bottom: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .ml-pending-item-reason {
+    font-size: 0.74rem; color: rgba(255, 212, 151, 0.92);
+    line-height: 1.35;
+  }
+  .ml-pending-item-reason::before { content: "porque: "; opacity: 0.65; }
 
   /* F107 Issue 10: estado vacío de history con copy humano */
   .ml-history-empty {
@@ -413,6 +434,27 @@
     `;
   }
 
+  // F123-G: helper para construir la lista de matches pending con la razón
+  // concreta por la que NO cuenta para ranking. Cada item: título corto
+  // (rivales o lugar) + razón humana.
+  function buildPendingListHtml(pending) {
+    if (!pending || !pending.length) return '';
+    const items = pending.slice(0, 8).map(function (m) {
+      const j = Array.isArray(m.jugadores) ? m.jugadores : [];
+      const nombres = j.map(function (x) { return x && x.nombre; }).filter(Boolean);
+      let title;
+      if (nombres.length >= 2) title = nombres.slice(0, 3).join(' / ');
+      else if (m.loc) title = m.loc + (m.can ? ' · ' + m.can : '');
+      else title = 'Partido';
+      const reason = m.nonRankableReason || 'Pendiente de validación';
+      return '<li class="ml-pending-item">' +
+        '<span class="ml-pending-item-title">' + escapeHtml(title) + '</span>' +
+        '<span class="ml-pending-item-reason">' + escapeHtml(reason) + '</span>' +
+      '</li>';
+    }).join('');
+    return '<ul class="ml-pending-list">' + items + '</ul>';
+  }
+
   // F99 P3 (items 9+10): bloque de estado real del ranking.
   function renderStatusBlock(r) {
     const $block = document.getElementById('mlStatusBlock');
@@ -433,6 +475,7 @@
             🔔 <strong>${pending.length} ${pending.length === 1 ? 'partido pendiente' : 'partidos pendientes'} de validación</strong>.
             Para que un partido cuente para ranking, al menos un jugador del equipo rival debe vincularse.
             Comparte el link del partido desde el resumen e invita a los rivales con "Invitar jugadores al partido".
+            ${buildPendingListHtml(pending)}
           </div>
         `;
       } else if (playedCount === 0) {
@@ -469,6 +512,7 @@
         <div class="ml-status-pending">
           🔔 <strong>${pending.length} ${pending.length === 1 ? 'partido pendiente' : 'partidos pendientes'} de validación</strong>
           (no cuentan para ranking aún). Invita a los rivales desde el resumen del partido.
+          ${buildPendingListHtml(pending)}
         </div>
       `;
     }

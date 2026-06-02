@@ -357,6 +357,26 @@
   .pz-matches-empty a { color:var(--blue3); text-decoration:none; font-weight:700; }
   .pz-matches-empty a:hover { color:#eaf2ff; }
   .pz-matches-error { color:#ffb1a3; font-size:0.88rem; }
+
+  /* F123-G: badge "no cuenta para ranking" en matches ended pero no rankable.
+     Subtle (no rojo, no alarmista). Tooltip nativo via title=. */
+  .pz-no-ranking-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 8px;
+    padding: 5px 9px;
+    background: rgba(255, 170, 60, 0.10);
+    border: 1px solid rgba(255, 170, 60, 0.32);
+    border-radius: 999px;
+    font-size: 0.70rem;
+    font-weight: 800;
+    color: #ffd497;
+    cursor: help;
+    letter-spacing: 0.2px;
+    user-select: none;
+  }
+  .pz-no-ranking-badge:hover { background: rgba(255, 170, 60, 0.18); }
+  .pz-match-card-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 0; }
+  .pz-match-card-wrap > a, .pz-match-card-wrap > .pz-sb-card { width: 100%; }
 </style>
 </head>
 <body>
@@ -1073,6 +1093,36 @@
               return tb - ta;
             });
 
+            // F123-G: para cada match ended, calcular si NO cuenta para
+            // ranking y por qué. Inline (no depende de ranking-client.js)
+            // para evitar pull-in extra. Mismas reglas que classifyMatches
+            // en ranking-client.js → mantenerlas en sync si cambian.
+            const reasonByMatchId = new Map();
+            function nonRankableReasonFor(m, focusUid) {
+              if (!m || m.status !== 'ended') return null;
+              const jugadores = Array.isArray(m.jugadores) ? m.jugadores : [];
+              const myJ = jugadores.find(function (j) { return j && (j.uid === focusUid || j.claimedByUid === focusUid); });
+              if (!myJ) return 'Aún no te has vinculado como jugador en este partido';
+              const ma = m.marcador;
+              const w = ma && ma.ganador;
+              if (w !== 'team1' && w !== 'team2') return 'El marcador todavía no tiene ganador definido';
+              const t1Uids = jugadores.filter(function (x) { return x && x.uid && x.equipo === 'team1'; }).length;
+              const t2Uids = jugadores.filter(function (x) { return x && x.uid && x.equipo === 'team2'; }).length;
+              if (t1Uids === 0 && t2Uids === 0) return 'Faltan vincular jugadores en ambos equipos';
+              if (t1Uids === 0 || t2Uids === 0) {
+                const myTeam = myJ.equipo;
+                const rivalMissing = (myTeam === 'team1' && t2Uids === 0) || (myTeam === 'team2' && t1Uids === 0);
+                return rivalMissing
+                  ? 'Falta vincular al menos un jugador del equipo rival'
+                  : 'Falta vincular al menos un jugador de tu equipo';
+              }
+              return null; // es rankable
+            }
+            allMatches.forEach(function (x) {
+              const reason = nonRankableReasonFor(x.match, myUid);
+              if (reason) reasonByMatchId.set(x.match.id, reason);
+            });
+
             $matchesList.innerHTML = '';
             const MAX_IN_PERFIL = 3;
             let renderedTotal = 0;
@@ -1082,7 +1132,33 @@
               renderedTotal++;
               if (renderedInPerfil < MAX_IN_PERFIL) {
                 const card = buildMatchCard(item.match, item.claim, cfg, myUid);
-                $matchesList.appendChild(card);
+                const reason = reasonByMatchId.get(item.match.id);
+                // F123-G: si está ended pero NO cuenta para ranking → badge sutil
+                // con tooltip que muestra la razón concreta al hover/click.
+                if (item.match.status === 'ended' && reason) {
+                  const wrap = document.createElement('div');
+                  wrap.className = 'pz-match-card-wrap';
+                  wrap.appendChild(card);
+                  const badge = document.createElement('span');
+                  badge.className = 'pz-no-ranking-badge';
+                  badge.textContent = '🔸 No cuenta para ranking';
+                  badge.title = reason;
+                  badge.setAttribute('aria-label', 'No cuenta para ranking: ' + reason);
+                  badge.addEventListener('click', function (e) {
+                    e.preventDefault(); e.stopPropagation();
+                    try {
+                      if (window.PuntazoCard && typeof window.PuntazoCard.toast === 'function') {
+                        window.PuntazoCard.toast(reason);
+                      } else {
+                        alert(reason);
+                      }
+                    } catch (_) { alert(reason); }
+                  });
+                  wrap.appendChild(badge);
+                  $matchesList.appendChild(wrap);
+                } else {
+                  $matchesList.appendChild(card);
+                }
                 renderedInPerfil++;
               }
             }

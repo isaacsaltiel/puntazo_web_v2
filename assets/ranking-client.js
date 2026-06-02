@@ -140,6 +140,10 @@
   //   played            = ended donde figuro (como jugador con uid O como owner)
   //   rankable          = played + ganador definido + ≥1 uid por equipo + YO vinculado en jugadores[]
   //   pendingValidation = played pero NO rankable (falta vincular rival o falta yo mismo)
+  //
+  // F123-G: cada match en pendingValidation lleva un `nonRankableReason` humano
+  // explicando POR QUÉ no cuenta para ranking. UI lo muestra textual (mi-nivel)
+  // o como tooltip (perfil "Mis partidos").
   function classifyMatches(allMatches, focusUid) {
     const played = [];
     const rankable = [];
@@ -166,6 +170,33 @@
       if (hasWinner && bothTeamsHaveUid && myJ) {
         rankable.push(m);
       } else {
+        // F123-G: razón humana concreta. Orden de prioridad (la más obvia
+        // primero). Si hay varios problemas, gana el que el user puede
+        // arreglar primero.
+        let reason;
+        if (!myJ) {
+          reason = "Aún no te has vinculado como jugador en este partido";
+        } else if (!hasWinner) {
+          reason = "El marcador todavía no tiene ganador definido";
+        } else if (!bothTeamsHaveUid) {
+          // ¿Falta el rival, mi compañero o ambos?
+          const missingT1 = (t1Uids === 0);
+          const missingT2 = (t2Uids === 0);
+          if (missingT1 && missingT2) {
+            reason = "Faltan vincular jugadores en ambos equipos";
+          } else {
+            // Cuál es mi equipo, para decir "equipo rival" o "tu equipo"
+            const myTeam = myJ && myJ.equipo;
+            const rivalMissing = (myTeam === "team1" && missingT2) || (myTeam === "team2" && missingT1);
+            reason = rivalMissing
+              ? "Falta vincular al menos un jugador del equipo rival"
+              : "Falta vincular al menos un jugador de tu equipo";
+          }
+        } else {
+          reason = "Pendiente de validación";
+        }
+        // Mutación controlada: solo añadimos un campo de UI, no toca lógica.
+        m.nonRankableReason = reason;
         pendingValidation.push(m);
       }
     });
