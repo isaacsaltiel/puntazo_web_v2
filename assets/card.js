@@ -4,11 +4,13 @@
 window.PuntazoCard = (function () {
   'use strict';
 
+  // F123-D: reconoce sufijo opcional _TAG_TAGID entre lado y fecha
+  // (espejo de F123-A en matches.js). Backwards-compatible.
   function parseFromName(name) {
-    const re = /^(.+?)_(.+?)_(.+?)_(\d{8})_(\d{6})\.mp4$/i;
+    const re = /^(.+?)_(.+?)_(Lado[A-Z])(?:_([A-Z][A-Z_]*)_([A-Za-z0-9]+))?_(\d{8})_(\d{6})\.mp4$/i;
     const m = String(name || '').match(re);
     if (!m) return null;
-    const [, loc, can, lado, date8, time6] = m;
+    const [, loc, can, lado, tag, tagId, date8, time6] = m;
     const tryYYYYMMDD = () => {
       const Y=Number(date8.slice(0,4)),Mo=Number(date8.slice(4,6)),D=Number(date8.slice(6,8));
       if(Y>=1900&&Y<=2100&&Mo>=1&&Mo<=12&&D>=1&&D<=31) return{Y:String(Y),M:date8.slice(4,6),D:date8.slice(6,8)};
@@ -24,7 +26,8 @@ window.PuntazoCard = (function () {
     const h=time6.slice(0,2),mi=time6.slice(2,4),s=time6.slice(4,6);
     return { loc, can, lado, tsKey:Number(`${d.Y}${d.M}${d.D}${h}${mi}${s}`),
              date:new Date(Number(d.Y),Number(d.M)-1,Number(d.D),Number(h),Number(mi),Number(s)),
-             ymd:`${d.Y}${d.M}${d.D}`, Y:d.Y, M:d.M, D:d.D, h, mi, s };
+             ymd:`${d.Y}${d.M}${d.D}`, Y:d.Y, M:d.M, D:d.D, h, mi, s,
+             tag: tag || null, tagId: tagId || null };
   }
 
   function formatDisplayTime(nombre) {
@@ -230,6 +233,19 @@ window.PuntazoCard = (function () {
     const card = document.createElement('div');
     card.className = 'video-card';
     if (entry.nombre) card.id = entry.nombre;
+
+    // F123-D: badge "PARTIDO COMPLETO" si el video tiene tag=PARTIDO.
+    // El sufijo _PARTIDO_<id> lo emite la NUC (Worker E) para distinguir
+    // partidos completos de clips sueltos. Card recibe clase extra para
+    // borde azul brillante; un span arriba muestra el badge.
+    const isPartido = !!(entry._meta && entry._meta.tag === 'PARTIDO');
+    if (isPartido) {
+      card.classList.add('is-partido-completo');
+      const badge = document.createElement('div');
+      badge.className = 'card-partido-badge';
+      badge.textContent = '🎾 PARTIDO COMPLETO';
+      card.appendChild(badge);
+    }
 
     // 1. Header: label
     const topEl = document.createElement('div');

@@ -505,6 +505,29 @@ main{
 .video-card:hover{border-color:rgba(0,79,200,0.45);}
 .video-card:hover::before{opacity:1;}
 
+/* F123-D: Bloque destacado para videos con tag=PARTIDO (partidos
+   completos publicados por la NUC). Aplicado por PuntazoCard.build
+   en perfil.html (guardados) y por script.js en lado.html. */
+.video-card.is-partido-completo{
+  border-color:rgba(11,124,255,0.55);
+  background:linear-gradient(180deg, rgba(11,124,255,0.10) 0%, rgba(0,79,200,0.06) 60%);
+  box-shadow:0 0 0 1px rgba(11,124,255,0.30), 0 0 24px rgba(11,124,255,0.16);
+}
+.video-card.is-partido-completo:hover{border-color:rgba(11,124,255,0.85);}
+.card-partido-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 11px;border-radius:999px;
+  background:linear-gradient(135deg, rgba(0,79,200,0.55), rgba(11,124,255,0.40));
+  border:1px solid rgba(11,124,255,0.60);
+  color:#fff;
+  font-family:'Montserrat',sans-serif;
+  font-weight:800;font-size:0.72rem;
+  letter-spacing:0.6px;margin-bottom:10px;
+  text-transform:uppercase;
+  box-shadow:0 2px 10px rgba(11,124,255,0.30);
+  width:max-content;
+}
+
 .video-title{
   font-size:1.25rem;font-weight:800;color:#fff;
   margin-bottom:0.6rem;letter-spacing:-0.3px;

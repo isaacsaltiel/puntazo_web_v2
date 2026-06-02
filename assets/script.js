@@ -82,11 +82,16 @@ async function requireCanchaPassword(locId, canId) {
 }
 
 // ----------------------- parseFromName -----------------------
+// F123-D: ahora reconoce sufijo opcional _TAG_TAGID entre lado y fecha
+// (espejo de F123-A en assets/matches.js). El grupo lado se ancla a
+// (Lado[A-Z]) para evitar que el backtracking se trague el sufijo.
+// Backwards-compatible: filenames sin sufijo siguen parseando igual con
+// tag=null, tagId=null.
 function parseFromName(name) {
-  const re = /^(.+?)_(.+?)_(.+?)_(\d{8})_(\d{6})\.mp4$/i;
+  const re = /^(.+?)_(.+?)_(Lado[A-Z])(?:_([A-Z][A-Z_]*)_([A-Za-z0-9]+))?_(\d{8})_(\d{6})\.mp4$/i;
   const m = String(name || "").match(re);
   if (!m) return null;
-  const [, loc, can, lado, date8, time6] = m;
+  const [, loc, can, lado, tag, tagId, date8, time6] = m;
   const tryYYYYMMDD = () => {
     const Y = Number(date8.slice(0,4)), Mo = Number(date8.slice(4,6)), D = Number(date8.slice(6,8));
     if (Y>=1900&&Y<=2100&&Mo>=1&&Mo<=12&&D>=1&&D<=31) return { Y: String(Y), M: date8.slice(4,6), D: date8.slice(6,8) };
@@ -102,7 +107,11 @@ function parseFromName(name) {
   const h = time6.slice(0,2), mi = time6.slice(2,4), s = time6.slice(4,6);
   const tsKey = Number(`${d.Y}${d.M}${d.D}${h}${mi}${s}`);
   const date = new Date(Number(d.Y), Number(d.M)-1, Number(d.D), Number(h), Number(mi), Number(s));
-  return { loc, can, lado, date, tsKey, ymd: `${d.Y}${d.M}${d.D}`, Y: d.Y, M: d.M, D: d.D, h, mi, s };
+  return {
+    loc, can, lado, date, tsKey,
+    ymd: `${d.Y}${d.M}${d.D}`, Y: d.Y, M: d.M, D: d.D, h, mi, s,
+    tag: tag || null, tagId: tagId || null,
+  };
 }
 
 // ── Etiqueta de fecha para separadores ──────────────────────────
@@ -688,6 +697,17 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     // ── Card ──
     const card = document.createElement("div");
     card.className = "video-card"; card.id = entry.nombre;
+
+    // F123-D: badge "PARTIDO COMPLETO" si el video tiene tag=PARTIDO.
+    // entry._meta viene de parseFromName (ahora expone tag/tagId).
+    // Backwards-compatible: clips sin tag se renderean exactamente igual.
+    if (entry._meta && entry._meta.tag === "PARTIDO") {
+      card.classList.add("is-partido-completo");
+      const badge = document.createElement("div");
+      badge.className = "card-partido-badge";
+      badge.textContent = "🎾 PARTIDO COMPLETO";
+      card.appendChild(badge);
+    }
 
     // 1. Header: hora
     const cardTop = document.createElement("div"); cardTop.className = "card-top";
