@@ -5111,6 +5111,12 @@
       "can": "cancha1",
       "date": "2026-06-01",
       "count": 1
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "date": "2026-06-02",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -6057,6 +6063,12 @@
       "count": 7
     },
     {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "hour": "02",
+      "count": 7
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "14",
@@ -6090,12 +6102,6 @@
       "loc": "breakpoint",
       "can": "cancha3",
       "hour": "19",
-      "count": 6
-    },
-    {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha1",
-      "hour": "02",
       "count": 6
     },
     {
@@ -14828,7 +14834,16 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "date": "2026-06-02",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-06-02T02:14:25.254339+00:00"
+  "generated_at_utc": "2026-06-02T11:55:21.492327+00:00"
 }
