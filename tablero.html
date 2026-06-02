@@ -804,10 +804,11 @@
       else if (w === "team2") t2Sets++;
     });
 
-    $scoreLabel.textContent = "Sets " + t1Sets + " · " + t2Sets;
+    var _pickle = (modo === "pickle_1" || modo === "pickle_3");
+    $scoreLabel.textContent = (_pickle ? "Juegos " : "Sets ") + t1Sets + " · " + t2Sets;
 
     if (sets.length === 0) {
-      $scoreBody.innerHTML = '<div class="tb-noscore"><div class="vs-line">0 · 0</div><div class="vs-sub">Sin sets registrados</div></div>';
+      $scoreBody.innerHTML = '<div class="tb-noscore"><div class="vs-line">0 · 0</div><div class="vs-sub">' + (_pickle ? "Sin juegos registrados" : "Sin sets registrados") + '</div></div>';
       return;
     }
 
