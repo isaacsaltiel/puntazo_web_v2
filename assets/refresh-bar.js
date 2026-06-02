@@ -194,6 +194,80 @@
   const _pendingCache = new Map();
   const PENDING_TTL_MS = 8 * 1000;
 
+  // F126-B: cache de los JSON videos_recientes por loc|can|lado, para que
+  // si el panel tiene 3 pulsos de la misma cancha no se haga 3 fetches.
+  const _jsonCache = new Map();
+  const JSON_TTL_MS = 30 * 1000;
+
+  async function _loadVideosForLado(loc, can, lado) {
+    if (!loc || !can || !lado) return null;
+    const key = loc + "|" + can + "|" + lado;
+    const cached = _jsonCache.get(key);
+    if (cached && Date.now() - cached.ts < JSON_TTL_MS) return cached.json;
+    let url = null;
+    try {
+      if (window.PuntazoMatches && window.PuntazoMatches.findJsonUrl) {
+        url = await window.PuntazoMatches.findJsonUrl(loc, can, lado);
+      }
+    } catch (_) {}
+    if (!url) return null;
+    try {
+      // cache-bust para que un Actualizar manual SI traiga el JSON fresco
+      // del CDN (GitHub Pages cachea agresivo en edge).
+      const resp = await fetch(url + (url.indexOf("?") >= 0 ? "&" : "?") + "_cb=" + Date.now(), { cache: "no-store" });
+      if (!resp.ok) return null;
+      const json = await resp.json();
+      _jsonCache.set(key, { ts: Date.now(), json: json });
+      return json;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // F126-B: para cada pulso consumed_at != null, busca su clip
+  // correspondiente en videos_recientes.json del lado y, si existe,
+  // marca doc._matchedClipUrl. Esto permite que el panel del refresh-bar
+  // distinga "ya está listo" vs "todavía procesando", y filtre los
+  // ya-listos del listado de pendientes (no son pendientes anymore).
+  async function _annotatePulsesWithClips(docs) {
+    const groups = new Map();
+    docs.forEach(function (d) {
+      if (!d.club || !d.cancha) return;
+      const lado = d.lado || "LadoA";
+      const canStr = /^\d+$/.test(String(d.cancha)) ? "Cancha" + d.cancha : String(d.cancha);
+      const key = d.club + "|" + canStr + "|" + lado;
+      if (!groups.has(key)) groups.set(key, { loc: d.club, can: canStr, lado: lado, docs: [] });
+      groups.get(key).docs.push(d);
+    });
+
+    const matchWindowMs = 90 * 1000;
+    for (const grp of groups.values()) {
+      const json = await _loadVideosForLado(grp.loc, grp.can, grp.lado);
+      if (!json || !Array.isArray(json.videos)) continue;
+      const parsed = [];
+      for (const v of json.videos) {
+        let p = null;
+        try {
+          if (window.PuntazoMatches && window.PuntazoMatches.parseClipName) {
+            p = window.PuntazoMatches.parseClipName(v.nombre);
+          }
+        } catch (_) {}
+        if (p && p.date) parsed.push({ url: v.url, nombre: v.nombre, ts: p.date.getTime() });
+      }
+      for (const doc of grp.docs) {
+        let anchorMs = 0;
+        if (doc.consumed_at && doc.consumed_at.toMillis) anchorMs = doc.consumed_at.toMillis();
+        if (!anchorMs && doc.created_at && doc.created_at.toMillis) anchorMs = doc.created_at.toMillis();
+        if (!anchorMs) continue;
+        const hit = parsed.find(function (x) { return Math.abs(x.ts - anchorMs) <= matchWindowMs; });
+        if (hit) {
+          doc._matchedClipUrl = hit.url;
+          doc._matchedClipNombre = hit.nombre;
+        }
+      }
+    }
+  }
+
   async function fetchUserPending(uid, ctx) {
     const fb = window.PuntazoFirebase;
     if (!fb || typeof fb.db !== "function") return [];
@@ -233,8 +307,17 @@
         const bMs = b.created_at && b.created_at.toMillis ? b.created_at.toMillis() : 0;
         return bMs - aMs;
       });
-      _pendingCache.set(key, { ts: Date.now(), docs: out });
-      return out;
+
+      // F126-B: anota los pulsos consumed_at con su clip URL si existe en
+      // videos_recientes.json del lado, y FILTRA los ya-listos del panel
+      // de pendientes (ya no son pendientes: tienen su clip disponible).
+      // Esto resuelve el bug donde un pulso procesado hace 455 min aparecía
+      // como "Tardando más de lo normal" aunque el clip ya estaba subido.
+      try { await _annotatePulsesWithClips(out); } catch (_) {}
+      const trulyPending = out.filter(function (d) { return !d._matchedClipUrl; });
+
+      _pendingCache.set(key, { ts: Date.now(), docs: trulyPending });
+      return trulyPending;
     } catch (e) {
       console.warn("[refresh-bar] fetchUserPending falló:", e && e.message);
       return [];

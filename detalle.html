@@ -24,6 +24,8 @@
 <!-- F125-H1: overlay reusable que abre resumen.html?embed=1 en un
      modal full-screen para ver/editar la foto del resumen on-demand. -->
 <script src="/assets/resumen-overlay.js"></script>
+<!-- F126-B: refresh-bar para re-cargar clips on-demand. -->
+<script src="/assets/refresh-bar.js"></script>
 <script src="/assets/identity.js"></script>
 
 <style>
@@ -470,6 +472,8 @@
 
     <!-- Clips del partido (reusa la pipeline de resumen.html via script.js) -->
     <div class="dt-clips-title">🎾 Clips del partido</div>
+    <!-- F126-B: refresh-bar para re-cargar clips sin recargar la página. -->
+    <div id="pz-rb-detalle-host"></div>
     <div id="dtClipsList"></div>
   </div>
 </main>
@@ -905,6 +909,30 @@
     });
   }
 
+  // F126-B: refresh-bar arriba de la lista de clips. Al pulsar
+  // "Actualizar" re-dispara loadClips(match). Panel desplegable con
+  // los pulsos pendientes del user en este match.
+  let _rbDetalleBar = null;
+  function setupRefreshBar(match) {
+    if (!window.PuntazoRefreshBar) return;
+    const host = document.getElementById('pz-rb-detalle-host');
+    if (!host) return;
+    if (_rbDetalleBar && typeof _rbDetalleBar.destroy === 'function') _rbDetalleBar.destroy();
+    _rbDetalleBar = window.PuntazoRefreshBar.attach(host, {
+      label: 'Actualizado',
+      auto: 0,
+      showPending: true,
+      refreshOnInit: false,
+      context: {
+        loc: match.loc, can: match.can, lado: match.lado,
+        matchId: match.id,
+      },
+      onRefresh: async function () {
+        try { await loadClips(match); } catch (_) {}
+      },
+    });
+  }
+
   async function loadClips(match) {
     // Reusa el cargador de PuntazoCard si está disponible (igual que resumen)
     if (!match.loc || !match.can || !match.lado) {
@@ -964,6 +992,7 @@
       renderAcceptanceBlock(match);
       setupPhotoToggle(match);
       loadClips(match);
+      setupRefreshBar(match); // F126-B
       show('content');
       // F110: auto-heal silencioso de claim docs para matches viejos
       autoHealClaim(match);

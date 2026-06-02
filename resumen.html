@@ -32,6 +32,8 @@
 <script src="/assets/clip-states.js"></script>
 <script src="/assets/pulses.js"></script>
 <script src="/assets/scoreboard-card.js"></script>
+<!-- F126-B: refresh-bar para re-cargar clips del partido on-demand. -->
+<script src="/assets/refresh-bar.js"></script>
 
 <!-- html2canvas: captura el DOM de la tarjeta → canvas → PNG -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1274,6 +1276,9 @@
 
     <!-- Lista de clips del partido -->
     <div class="rs-section-title">Clips del partido</div>
+    <!-- F126-B: refresh-bar antes del header de clips. Permite re-call
+         findClipsForMatch sin recargar la página. -->
+    <div id="pz-rb-resumen-host"></div>
     <div class="rs-clips-header">
       <div style="flex:1; min-width:0;"></div>
       <button id="rsBtnReel" class="rs-btn-reel" type="button" style="display:none">
@@ -1612,6 +1617,36 @@
   }
 
   // ════════════════════════════════════════════════════════════
+  // F126-B: refresh-bar arriba del bloque de clips. Al pulsar Actualizar
+  // re-llama findClipsForMatch + renderClips sin recargar la página.
+  // Útil cuando el user acaba de cerrar el partido y está esperando que
+  // sus clips aparezcan post-procesamiento NUC.
+  let _rbResumenBar = null;
+  function setupResumenRefreshBar(match) {
+    if (!window.PuntazoRefreshBar) return;
+    const host = document.getElementById("pz-rb-resumen-host");
+    if (!host) return;
+    if (_rbResumenBar && typeof _rbResumenBar.destroy === "function") _rbResumenBar.destroy();
+    _rbResumenBar = window.PuntazoRefreshBar.attach(host, {
+      label: "Actualizado",
+      auto: 0,
+      showPending: true,
+      refreshOnInit: false,
+      context: { loc: match.loc, can: match.can, lado: match.lado, matchId: match.id },
+      onRefresh: async function () {
+        try {
+          let clips = [];
+          if (window.PuntazoMatches && window.PuntazoMatches.findClipsForMatch) {
+            clips = await window.PuntazoMatches.findClipsForMatch(match);
+          }
+          if (!Array.isArray(clips)) clips = [];
+          if (typeof $puntazos !== "undefined" && $puntazos) $puntazos.textContent = String(clips.length);
+          renderClips(clips);
+        } catch (_) {}
+      },
+    });
+  }
+
   //  Render de la lista de clips (fuera de la tarjeta)
   // ════════════════════════════════════════════════════════════
   function renderClips(clips) {
@@ -2182,6 +2217,9 @@
     $puntazos.textContent = String(clips.length);
     renderClips(clips);
     fitCard();
+
+    // F126-B: refresh-bar arriba de la lista de clips.
+    setupResumenRefreshBar(match);
 
     // Etapa 15.8 — Feature 2: habilitar reel sólo si hay clips disponibles
     // (con videoUrl real, no sólo timestamps). Guardamos para uso del reel.

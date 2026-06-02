@@ -28,6 +28,8 @@
 <script src="/assets/matches.js"></script>
 <!-- F122: watcher "puntazo listo" cuando un pending del user pasa a ready. -->
 <script src="/assets/pending-pulse-watcher.js"></script>
+<!-- F126-B: refresh-bar arriba de los pulsos del partido. -->
+<script src="/assets/refresh-bar.js"></script>
 <script src="/assets/clip-states.js"></script>
 <script src="/assets/court-svg.js"></script>
 <script src="/assets/pulses.js"></script>
@@ -3433,6 +3435,8 @@
       <span>🎯 Puntazos del partido</span>
       <span class="toggle-caret" aria-hidden="true">▼</span>
     </button>
+    <!-- F126-B: refresh-bar arriba del bloque de pulsos del partido. -->
+    <div id="pz-rb-mp-host"></div>
     <div id="mpClipStates" class="mp-card cs-card" style="display:none">
       <div class="cs-header">
         <span class="cs-title">🎯 Puntazos de este partido</span>
@@ -4753,6 +4757,35 @@
     return "/assets/court-icons/B" + idx + ".webp";
   }
 
+  // F126-B: refresh-bar para mi-partido. clip-states ya está vivo via
+  // onSnapshot, así que el bar es más para tranquilidad psicológica +
+  // panel desplegable con pulsos del user en este match. onRefresh
+  // no hace re-fetch porque la suscripción ya entrega cambios en vivo;
+  // marca solo el timestamp y refresca el panel de pendientes.
+  let _rbMpBar = null;
+  function setupMpRefreshBar(match) {
+    if (!window.PuntazoRefreshBar) return;
+    const host = document.getElementById("pz-rb-mp-host");
+    if (!host) return;
+    if (_rbMpBar && typeof _rbMpBar.destroy === "function") _rbMpBar.destroy();
+    _rbMpBar = window.PuntazoRefreshBar.attach(host, {
+      label: "Actualizado",
+      auto: 0,
+      showPending: true,
+      refreshOnInit: false,
+      context: { loc: match.loc, can: match.can, lado: match.lado, matchId: match.id },
+      onRefresh: async function () {
+        // No-op intencional: clip-states ya está vivo via onSnapshot.
+        // El bar solo marca el timestamp + el panel de pendientes se
+        // refresca solo (porque fetchUserPending vuelve a correr) y eso
+        // cubre el caso "tengo pulsos esperando, quiero ver su estado".
+        // Si en el futuro se detecta drift, este handler puede forzar
+        // un re-sub al clip-states.
+        return Promise.resolve();
+      },
+    });
+  }
+
   function applyCourtBackground(match) {
     const bg = document.getElementById("mpCourtBg");
     if (!bg) return;
@@ -4799,6 +4832,9 @@
 
     // Etapa 16.4 F12: aplicar fondo dinámico con el ícono de la cancha
     applyCourtBackground(match);
+
+    // F126-B: refresh-bar arriba del bloque de pulsos del partido.
+    setupMpRefreshBar(match);
 
     const { locNombre, canNombre, ladoNombre } = await resolveNames(match.loc, match.can, match.lado);
     // Etapa 16.4 F24: venue label en el header del timer (sin "lado")
