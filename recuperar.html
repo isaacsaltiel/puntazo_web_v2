@@ -485,7 +485,7 @@
         card.type = "button";
         card.className = "sel-card sel-card--cancha";
         const iconNum = (idx % 8) + 1;
-        const iconSrc = "/assets/court-icons/B" + iconNum + ".png";
+        const iconSrc = "/assets/court-icons/B" + iconNum + ".webp";
         card.innerHTML =
           '<img class="court-icon" src="' + iconSrc + '" alt="' + escapeHtml(cancha.nombre) + '" onerror="this.outerHTML=\'<div class=&quot;emoji&quot;>🎾</div>\'">' +
           '<div class="name">' + escapeHtml(cancha.nombre) + '</div>';

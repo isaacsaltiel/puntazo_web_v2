@@ -730,10 +730,51 @@
   border-radius:8px;
   display:block;
 }
+
+/* ══════════════════════════════════════════════════════════
+   F122 — Fondo de cancha en la landing (sutil, full-page)
+   Misma estética que lado.html post-F122: foto de cancha
+   nítida (sin blur) con overlay vertical para legibilidad.
+   En landing la opacity es más baja (0.28) porque hay muchas
+   secciones y mucho contenido — no queremos competir.
+   ══════════════════════════════════════════════════════════ */
+.landing-court-bg{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:url('/assets/court-icons/B-extern.webp') center/cover no-repeat;
+  opacity:0;transition:opacity 0.9s ease;
+  filter:saturate(1.05);
+  animation:landingBgBreathe 22s ease-in-out infinite;
+}
+.landing-court-bg.is-ready{opacity:0.28;}
+.landing-court-bg::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,
+    rgba(2,6,16,0.62) 0%,
+    rgba(2,6,16,0.48) 30%,
+    rgba(2,6,16,0.55) 65%,
+    rgba(2,6,16,0.82) 100%);
+}
+@keyframes landingBgBreathe{
+  0%,100%{transform:scale(1.00);}
+  50%    {transform:scale(1.05);}
+}
+/* Aseguramos que todas las secciones queden por encima del fondo de cancha. */
+.hero, .section-wrap, .footer-cta, footer{position:relative;z-index:1;}
 </style>
 
 </head>
 <body>
+
+<!-- F122: fondo de cancha (sutil, full-page) — misma estética que lado.html.
+     Se hace fade-in tras 50ms del load para no competir con el LCP. -->
+<div id="landingCourtBg" class="landing-court-bg" aria-hidden="true"></div>
+<script>
+  // Fade-in del fondo en el siguiente frame (no bloquea el LCP del hero).
+  requestAnimationFrame(function () {
+    var el = document.getElementById("landingCourtBg");
+    if (el) el.classList.add("is-ready");
+  });
+</script>
 
 <div id="nav-root" data-nav-variant="landing"></div>
 <script src="/assets/header.js"></script>
@@ -1086,7 +1127,7 @@
          cada uno — pendiente optimizar a versiones 200x200 ≤ 30KB. -->
     <div class="loc-card">
       <div class="loc-icon loc-icon--has-img">
-        <img src="/assets/logos/interpadel.png" alt="Interpadel" loading="lazy"
+        <img src="/assets/logos/interpadel.webp" alt="Interpadel" loading="lazy"
              onerror="this.outerHTML='🎾';">
       </div>
       <h4>Interpadel</h4>
@@ -1094,7 +1135,7 @@
     </div>
     <div class="loc-card">
       <div class="loc-icon loc-icon--has-img">
-        <img src="/assets/logos/breakpoint.png" alt="BreakPoint" loading="lazy"
+        <img src="/assets/logos/breakpoint.webp" alt="BreakPoint" loading="lazy"
              onerror="this.outerHTML='⚡';">
       </div>
       <h4>BreakPoint</h4>
@@ -1107,7 +1148,7 @@
     </div>
     <div class="loc-card">
       <div class="loc-icon loc-icon--has-img">
-        <img src="/assets/logos/wellstreet.png" alt="WellStreet" loading="lazy"
+        <img src="/assets/logos/wellstreet.webp" alt="WellStreet" loading="lazy"
              onerror="this.outerHTML='🏟';">
       </div>
       <h4>WellStreet</h4>

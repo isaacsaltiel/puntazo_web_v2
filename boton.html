@@ -394,8 +394,9 @@ html, body {
       if (!el) return;
       // Íconos por club: intenta /assets/court-icons/{LOC}/B{n}.png (ej. canchas
       // de pickleball con arte propio); si no existe, cae al global B{n}.png.
-      const globalUrl = '/assets/court-icons/B' + _iconNum + '.png';
-      const clubUrl = '/assets/court-icons/' + encodeURIComponent(LOC) + '/B' + _iconNum + '.png';
+      // F122: WebP (94% más liviano que PNG).
+      const globalUrl = '/assets/court-icons/B' + _iconNum + '.webp';
+      const clubUrl = '/assets/court-icons/' + encodeURIComponent(LOC) + '/B' + _iconNum + '.webp';
       function setBg(url) {
         el.style.backgroundImage = "url('" + url + "')";
         el.classList.add('ready');

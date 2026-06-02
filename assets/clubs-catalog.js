@@ -23,11 +23,11 @@
   // juegos a 11). El club es la fuente de verdad del deporte → al crear un
   // partido se infiere con sportForLoc(loc), no se deja al azar.
   const CLUB_DISPLAY = {
-    "Interpadel":            { emoji: "🎾", logoUrl: "/assets/logos/interpadel.png", status: "active", nombre: "Interpadel", deporte: "padel" },
-    "BreakPoint":            { emoji: "⚡", logoUrl: "/assets/logos/breakpoint.png", status: "active", nombre: "BreakPoint", deporte: "padel" },
+    "Interpadel":            { emoji: "🎾", logoUrl: "/assets/logos/interpadel.webp", status: "active", nombre: "Interpadel", deporte: "padel" },
+    "BreakPoint":            { emoji: "⚡", logoUrl: "/assets/logos/breakpoint.webp", status: "active", nombre: "BreakPoint", deporte: "padel" },
     "Scorpion":              { emoji: "🦂", status: "active", nombre: "Scorpion", deporte: "padel" },
-    "WellStreet-Pickleball": { emoji: "🏓", logoUrl: "/assets/logos/wellstreet.png", status: "active", nombre: "WellStreet Pickleball", deporte: "pickleball" },
-    "WellStreet-Padel":      { emoji: "🎾", logoUrl: "/assets/logos/wellstreet.png", status: "active", nombre: "WellStreet Pádel", deporte: "padel" }
+    "WellStreet-Pickleball": { emoji: "🏓", logoUrl: "/assets/logos/wellstreet.webp", status: "active", nombre: "WellStreet Pickleball", deporte: "pickleball" },
+    "WellStreet-Padel":      { emoji: "🎾", logoUrl: "/assets/logos/wellstreet.webp", status: "active", nombre: "WellStreet Pádel", deporte: "padel" }
   };
 
   // ── Mapping de códigos QR físicos → loc id en config ──
@@ -121,18 +121,20 @@
   }
 
   // ── Íconos de cancha por club ──
-  // Si existe /assets/court-icons/{locId}/B{n}.png se usa (arte propio del
+  // Si existe /assets/court-icons/{locId}/B{n}.webp se usa (arte propio del
   // club, ej. canchas de pickleball); si no, cae al global
-  // /assets/court-icons/B{n}.png. El número se resuelve por el dígito de la
+  // /assets/court-icons/B{n}.webp. El número se resuelve por el dígito de la
   // cancha (Cancha4 → 4 → B4), con módulo 8 para >8.
+  // F122: PNG → WebP (94% reducción en peso). Los .png originales siguen
+  // en disco como fallback de emergencia pero ya no se referencian.
   function courtIconUrls(locId, canchaId) {
     const m = String(canchaId || "").match(/(\d+)/);
     let n = m ? parseInt(m[1], 10) : 1;
     if (!Number.isFinite(n) || n < 1) n = 1;
     const idx = (((n - 1) % 8) + 8) % 8 + 1;
-    const globalUrl = "/assets/court-icons/B" + idx + ".png";
+    const globalUrl = "/assets/court-icons/B" + idx + ".webp";
     const clubUrl = locId
-      ? "/assets/court-icons/" + encodeURIComponent(locId) + "/B" + idx + ".png"
+      ? "/assets/court-icons/" + encodeURIComponent(locId) + "/B" + idx + ".webp"
       : globalUrl;
     return { clubUrl: clubUrl, globalUrl: globalUrl };
   }

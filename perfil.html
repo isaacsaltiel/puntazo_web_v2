@@ -137,6 +137,52 @@
   .pz-social-title { font-size:.96rem; font-weight:900; color:#fff; }
   .pz-social-sub { font-size:.74rem; color:rgba(234,242,255,.55); margin-top:2px; }
 
+  /* F122: CTA "Iniciar partido / Volver a tu partido" — entry point a
+     entrada o mi-partido sin tener que buscar el banner global del header.
+     Por defecto apunta a entrada.html; si hay match activo del user, el
+     boot JS lo cambia in-place a "Volver a tu partido aquí". */
+  .pz-play-cta {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 18px;
+    margin: 8px 0 28px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(11,124,255,0.22), rgba(0,79,200,0.10));
+    border: 1px solid rgba(11,124,255,0.45);
+    text-decoration: none;
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(0,79,200,0.18);
+    transition: transform .14s, background .14s, border-color .14s, box-shadow .14s;
+  }
+  .pz-play-cta:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgba(11,124,255,0.32), rgba(0,79,200,0.16));
+    border-color: rgba(11,124,255,0.65);
+    box-shadow: 0 14px 36px rgba(0,79,200,0.26);
+  }
+  .pz-play-cta-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: rgba(11,124,255,0.18);
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 14px rgba(11,124,255,0.45));
+  }
+  .pz-play-cta-icon img { width: 100%; height: 100%; object-fit: contain; }
+  .pz-play-cta-text { flex:1; min-width:0; }
+  .pz-play-cta-title { font-size: 1.05rem; font-weight: 900; color: #fff; line-height: 1.15; }
+  .pz-play-cta-sub { font-size: 0.82rem; color: rgba(234,242,255,0.78); margin-top: 3px; }
+  .pz-play-cta-arrow { font-size: 1.4rem; color: rgba(11,124,255,0.92); flex-shrink: 0; }
+  .pz-play-cta--active {
+    background: linear-gradient(135deg, rgba(34,197,94,0.22), rgba(11,124,255,0.10));
+    border-color: rgba(34,197,94,0.55);
+    box-shadow: 0 10px 30px rgba(34,197,94,0.20);
+  }
+  .pz-play-cta--active:hover {
+    background: linear-gradient(135deg, rgba(34,197,94,0.32), rgba(11,124,255,0.14));
+    border-color: rgba(34,197,94,0.75);
+  }
+  .pz-play-cta--active .pz-play-cta-arrow { color: rgba(34,197,94,0.95); }
+
   /* F82 Item 17: lista de puntazos pendientes (estilo chips densos) */
   .pz-pending-list {
     display: flex; flex-direction: column;
@@ -328,6 +374,20 @@
         <span class="pz-nivel-arrow">→</span>
       </a>
 
+      <!-- F122: CTA primary para iniciar partido / volver al activo.
+           Por defecto apunta a entrada.html. El boot JS más abajo lo
+           cambia a "Volver a tu partido aquí" si hay match activo. -->
+      <a id="profilePlayCta" class="pz-play-cta" href="/entrada.html">
+        <span class="pz-play-cta-icon">
+          <img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true">
+        </span>
+        <span class="pz-play-cta-text">
+          <span class="pz-play-cta-title" id="profilePlayCtaTitle">Iniciar partido</span>
+          <span class="pz-play-cta-sub" id="profilePlayCtaSub">Selecciona tu club y cancha</span>
+        </span>
+        <span class="pz-play-cta-arrow">→</span>
+      </a>
+
       <!-- F87: grid de accesos a social (grupos + amigos) -->
       <div class="pz-social-grid">
         <a href="/grupos.html" class="pz-social-card">
@@ -487,9 +547,34 @@
       $perfilAvatar.textContent = (user.displayName||user.email||'P').charAt(0).toUpperCase();
     }
     $perfilName.textContent = user.displayName || user.email || 'Mi perfil';
+    updatePlayCta(user); // F122
     loadMyMatches(user);
     loadMyPendingPuntazos(user); // F82
     loadSaved(user);
+  }
+
+  // F122: si hay un match activo del user, mutamos el CTA "Iniciar partido"
+  // para que diga "Volver a tu partido" y vaya directo a mi-partido.html.
+  // Si no, el default ("Iniciar partido" → /entrada.html) se queda.
+  async function updatePlayCta(user) {
+    try {
+      const $cta = document.getElementById('profilePlayCta');
+      const $title = document.getElementById('profilePlayCtaTitle');
+      const $sub = document.getElementById('profilePlayCtaSub');
+      if (!$cta || !$title || !$sub) return;
+      if (!window.PuntazoMatches || typeof PuntazoMatches.getActiveForUser !== 'function') return;
+      const active = await PuntazoMatches.getActiveForUser(user.uid);
+      if (active && active.id) {
+        $cta.href = '/mi-partido.html?matchId=' + encodeURIComponent(active.id);
+        $cta.classList.add('pz-play-cta--active');
+        $title.textContent = 'Volver a tu partido';
+        // Sub con el contexto del partido (club + cancha si existen).
+        const parts = [];
+        if (active.loc) parts.push(active.loc);
+        if (active.can) parts.push(active.can);
+        $sub.textContent = parts.length ? parts.join(' · ') : 'Continuar donde lo dejaste';
+      }
+    } catch (e) { /* silencioso: el default queda OK */ }
   }
 
   // ============================================================

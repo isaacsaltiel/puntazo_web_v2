@@ -29,24 +29,51 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
 <script src="/assets/matches.js"></script>
+<!-- F122: clubs-catalog para resolver el ícono de cancha por club/cancha
+     (mismo mapping que mi-partido). Se usa para pintar el fondo dinámico. -->
+<script src="/assets/clubs-catalog.js"></script>
 
 <style>
 /* ═══════════════════════════════════════════════════
    LADO.HTML — Estilos específicos de esta página
 ═══════════════════════════════════════════════════ */
 
-/* F111-A: fondo con foto de cancha (B-extern.png) blureado.
-   Sobrescribe .page-bg para esta página. Mantiene contraste con
-   overlay oscuro para que el contenido siga siendo legible. */
+/* F122 (era F111-A): fondo POR CANCHA — B{n}.webp dinámico cargado vía
+   JS desde clubs-catalog (mismo mapping que mi-partido). Diferencias vs
+   mi-partido: NO se blurea (Isaac quiere ver la cancha nítida) y la
+   opacidad es más alta (0.62 vs 0.78 con blur). La animación de
+   respiración (scale 1↔1.04) se queda — se siente vivo sin distraer.
+   Fallback: si no hay loc+can en URL, .lado-court-bg queda hidden y
+   .page-bg (el linear-gradient base) cubre todo. */
 .page-bg {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(2,6,16,0.78) 0%, rgba(2,6,16,0.55) 40%, rgba(2,6,16,0.85) 100%),
-    url('/assets/court-icons/B-extern.png') center/cover no-repeat;
-  filter: blur(0px);
-  /* leve animación de respiración para que se sienta vivo sin distraer */
+  background: linear-gradient(180deg, rgba(2,6,16,0.78) 0%, rgba(2,6,16,0.55) 40%, rgba(2,6,16,0.85) 100%);
+}
+.lado-court-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 0.6s ease;
   animation: ladoBgBreathe 18s ease-in-out infinite;
+  /* Sin blur. Saturate ligero para que el color de la cancha resalte. */
+  filter: saturate(1.08);
+}
+.lado-court-bg.is-active { opacity: 0.62; }
+/* Overlay vertical encima del fondo de cancha — oscuro arriba/abajo,
+   medio más translúcido — para que título y cards siempre tengan contraste. */
+.lado-court-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgba(2,6,16,0.65) 0%,
+    rgba(2,6,16,0.20) 30%,
+    rgba(2,6,16,0.20) 65%,
+    rgba(2,6,16,0.80) 100%);
 }
 @keyframes ladoBgBreathe {
   0%, 100% { transform: scale(1.00); }
@@ -315,6 +342,39 @@ video.video-preview {
 <body>
 
 <div class="page-bg"></div>
+<!-- F122: fondo dinámico con el ícono de la cancha (B{n}.webp). Se activa
+     vía JS cuando hay loc+can en el URL. Hereda el mapping de clubs-catalog
+     (mismo que mi-partido) — incluyendo arte por club (pickleball usa su
+     propio set de íconos). Fallback: si no hay loc+can o falla la imagen,
+     queda inactivo (opacity 0) y se ve solo el linear-gradient base. -->
+<div id="ladoCourtBg" class="lado-court-bg" aria-hidden="true"></div>
+<script>
+(function () {
+  "use strict";
+  try {
+    var p = new URLSearchParams(window.location.search);
+    var loc = (p.get("loc") || "").trim();
+    var can = (p.get("can") || "").trim();
+    var bg = document.getElementById("ladoCourtBg");
+    if (!bg || (!loc && !can)) return;
+    function apply() {
+      if (window.PuntazoClubs && typeof PuntazoClubs.applyCourtIcon === "function") {
+        PuntazoClubs.applyCourtIcon(bg, loc || null, can || null, "bg");
+      } else {
+        // Fallback inline si clubs-catalog aún no carga: usa el global.
+        var m = String(can || "").match(/(\d+)/);
+        var n = m ? parseInt(m[1], 10) : 1;
+        if (!Number.isFinite(n) || n < 1) n = 1;
+        var idx = (((n - 1) % 8) + 8) % 8 + 1;
+        bg.style.backgroundImage = "url('/assets/court-icons/B" + idx + ".webp')";
+      }
+      bg.classList.add("is-active");
+    }
+    if (window.PuntazoClubs) apply();
+    else window.addEventListener("DOMContentLoaded", apply, { once: true });
+  } catch (e) { /* silencioso, el fondo base sigue siendo OK */ }
+})();
+</script>
 
 <!-- ── NAV ── -->
 <div id="nav-root" data-nav-variant="internal"></div>
