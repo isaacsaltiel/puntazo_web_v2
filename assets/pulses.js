@@ -32,6 +32,16 @@
   // Agregar más conforme cada NUC implemente R4.
   const FIRESTORE_CLUBS = ["BreakPoint"];
 
+  // R7 — "Partido completo": clubs cuya NUC sabe procesar source="match_full"
+  // (cortar el NVR del inicio al fin del partido). Hoy: pickleball de WellStreet,
+  // donde los partidos son cortos. El maestro agrega el club aquí en el mismo
+  // swap en que la NUC despliega el handler match_full (igual que FIRESTORE_CLUBS).
+  const MATCH_RECORDING_CLUBS = ["WellStreet-Pickleball"];
+  // Tope de duración subida (la NUC clampa de forma autoritativa; esto es para
+  // UX/validación en el cliente). Mín para evitar clips basura.
+  const MATCH_RECORDING_MAX_MINUTES = 20;
+  const MATCH_RECORDING_MIN_SECONDS = 20;
+
   // Apps Script (CLUBS en el .gs) tiene keys con espacios para algunos
   // clubs; mapeamos el id interno al display que espera el Script.
   const APPS_CLUB_MAP = {
@@ -140,9 +150,101 @@
     return requestViaAppsScript(opts);
   }
 
+  // ── R7 — Solicitud de "Partido completo" ──────────────────────────────
+  // Escribe un doc pending_pulses con source="match_full" para que la NUC corte
+  // el NVR del inicio al fin del partido (clamp 20 min, ancla al final, lo hace
+  // la NUC). Idempotente: client_pulse_id determinístico por matchId, así un
+  // doble click NO duplica el upload (la NUC dedup por external_id).
+  //
+  // toDate: acepta Date | Firestore Timestamp | {seconds} | ms-number.
+  function toDate(v) {
+    if (!v) return null;
+    if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+    if (typeof v.toDate === "function") { try { return v.toDate(); } catch (_) { return null; } }
+    if (typeof v.seconds === "number") return new Date(v.seconds * 1000);
+    if (typeof v === "number") return new Date(v);
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function canRecordMatch(loc) {
+    return MATCH_RECORDING_CLUBS.indexOf(loc) >= 0;
+  }
+
+  // requestMatchRecording({ loc, can, lado?, matchId, startAt, endAt })
+  // Devuelve { ok, channel, docId, client_pulse_id, durationSec, clamped, recordedMinutes }.
+  // Lanza si: club no soportado, falta data, ventana inválida o partido < mínimo.
+  async function requestMatchRecording(opts) {
+    if (!opts || !opts.loc || !opts.can || !opts.matchId) {
+      throw new Error("requestMatchRecording: faltan loc/can/matchId");
+    }
+    if (!canRecordMatch(opts.loc)) {
+      throw new Error("Grabación de partido completo no disponible para " + opts.loc);
+    }
+    const start = toDate(opts.startAt);
+    const end = toDate(opts.endAt);
+    if (!start || !end) {
+      throw new Error("requestMatchRecording: startAt/endAt inválidos");
+    }
+    const durationSec = Math.round((end.getTime() - start.getTime()) / 1000);
+    if (durationSec <= 0) {
+      throw new Error("requestMatchRecording: el fin del partido no es posterior al inicio");
+    }
+    if (durationSec < MATCH_RECORDING_MIN_SECONDS) {
+      const e = new Error("El partido es demasiado corto para grabarlo completo.");
+      e.code = "match_too_short";
+      throw e;
+    }
+    if (!window.PuntazoFirebase || typeof window.PuntazoFirebase.db !== "function"
+        || !window.firebase || !firebase.firestore) {
+      throw new Error("Firestore no disponible.");
+    }
+    const db = window.PuntazoFirebase.db();
+    const user = (window.PuntazoAuth && window.PuntazoAuth.currentUser)
+      || (firebase.auth && firebase.auth().currentUser) || null;
+
+    const maxSec = MATCH_RECORDING_MAX_MINUTES * 60;
+    const clamped = durationSec > maxSec;
+    // La web manda la ventana REAL; la NUC clampa autoritativamente al final.
+    // recordedMinutes es solo informativo para la UI.
+    const recordedMinutes = Math.min(durationSec, maxSec) / 60;
+
+    const doc = {
+      club: opts.loc,
+      cancha: canchaDigit(opts.can),
+      lado: opts.lado || "LadoA",
+      source: "match_full",
+      // Determinístico por partido → idempotencia end-to-end.
+      client_pulse_id: "PLS_M_" + opts.matchId,
+      match_id: opts.matchId,
+      uid_creator: user ? user.uid : null,
+      created_at: firebase.firestore.FieldValue.serverTimestamp(),
+      start_at: firebase.firestore.Timestamp.fromDate(start),
+      end_at: firebase.firestore.Timestamp.fromDate(end),
+      consumed_at: null,
+      consumed_by: null,
+    };
+
+    const ref = await db.collection("pending_pulses").add(doc);
+    return {
+      ok: true,
+      channel: "firestore",
+      docId: ref.id,
+      client_pulse_id: doc.client_pulse_id,
+      durationSec: durationSec,
+      clamped: clamped,
+      recordedMinutes: recordedMinutes,
+    };
+  }
+
   window.PuntazoPulses = {
     requestPulse: requestPulse,
+    requestMatchRecording: requestMatchRecording,
+    canRecordMatch: canRecordMatch,
     FIRESTORE_CLUBS: FIRESTORE_CLUBS.slice(),
+    MATCH_RECORDING_CLUBS: MATCH_RECORDING_CLUBS.slice(),
+    MATCH_RECORDING_MAX_MINUTES: MATCH_RECORDING_MAX_MINUTES,
+    MATCH_RECORDING_MIN_SECONDS: MATCH_RECORDING_MIN_SECONDS,
     _canchaDigit: canchaDigit,
     _genClientPulseId: genClientPulseId,
   };

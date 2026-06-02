@@ -30,6 +30,7 @@
 <script src="/assets/auth.js"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/clip-states.js"></script>
+<script src="/assets/pulses.js"></script>
 <script src="/assets/scoreboard-card.js"></script>
 
 <!-- html2canvas: captura el DOM de la tarjeta → canvas → PNG -->
@@ -1218,6 +1219,21 @@
       <span class="rs-btn-cta-arrow">→</span>
     </a>
 
+    <!-- R7 — Subir partido completo (solo clubs soportados, ej. pickleball) -->
+    <div id="rsMatchFull" class="rs-clip-states" style="display:none">
+      <div class="rs-cs-summary info">
+        <div class="icon">🎥</div>
+        <div class="body">
+          <div class="title">Partido completo</div>
+          <div id="rsMfDetail" class="detail">¿Quieres subir el video completo de tu partido?</div>
+          <button id="rsMfBtn" type="button" class="rs-btn-cta" style="margin-top:10px;">
+            <span id="rsMfBtnLabel">🎥 Subir partido completo</span>
+          </button>
+          <div id="rsMfMsg" class="detail" style="margin-top:8px; display:none;"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Estado de tus clips (Etapa 13 — R3.1) -->
     <div id="rsClipStates" class="rs-clip-states" style="display:none">
       <div id="rsCsSummary" class="rs-cs-summary info">
@@ -1998,10 +2014,94 @@
   }
 
   // ════════════════════════════════════════════════════════════
+  //  R7 — "Subir partido completo" (solo clubs soportados; solo dueño)
+  // ════════════════════════════════════════════════════════════
+  function setupMatchFull(match) {
+    const wrap = document.getElementById("rsMatchFull");
+    if (!wrap) return;
+    try {
+      if (!window.PuntazoPulses || typeof PuntazoPulses.requestMatchRecording !== "function") return;
+      if (!match || match.status !== "ended") return;
+      if (!PuntazoPulses.canRecordMatch(match.loc)) return;
+      // Solo el dueño solicita (evita duplicados/abuso; la idempotencia por
+      // matchId protege igual, pero no tiene sentido ofrecerlo a invitados).
+      const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      if (!user || user.uid !== match.userId) return;
+
+      const startD = tsToDate(match.startedAt);
+      const endD = tsToDate(match.endedAt);
+      if (!startD || !endD) return;
+      const durSec = Math.round((endD.getTime() - startD.getTime()) / 1000);
+
+      const detail = document.getElementById("rsMfDetail");
+      const btn = document.getElementById("rsMfBtn");
+      const label = document.getElementById("rsMfBtnLabel");
+      const msg = document.getElementById("rsMfMsg");
+      const maxMin = PuntazoPulses.MATCH_RECORDING_MAX_MINUTES || 20;
+      const minSec = PuntazoPulses.MATCH_RECORDING_MIN_SECONDS || 20;
+
+      wrap.style.display = "block";
+
+      if (durSec < minSec) {
+        detail.textContent = "Este partido es demasiado corto para subirlo completo.";
+        btn.style.display = "none";
+        return;
+      }
+
+      const durMin = Math.round(durSec / 60);
+      if (durSec > maxMin * 60) {
+        detail.textContent = "Tu partido duró ~" + durMin + " min. Se subirán los últimos "
+          + maxMin + " minutos (el sistema graba máximo " + maxMin + " min por partido).";
+      } else {
+        detail.textContent = "Sube el video completo de tu partido (~" + Math.max(1, durMin) + " min).";
+      }
+
+      const lsKey = "puntazo_matchfull_" + match.id;
+      function alreadyRequested() {
+        try { return localStorage.getItem(lsKey) === "1"; } catch (_) { return false; }
+      }
+      function markRequested() {
+        try { localStorage.setItem(lsKey, "1"); } catch (_) {}
+      }
+      if (alreadyRequested()) {
+        label.textContent = "✅ Partido completo solicitado";
+        btn.disabled = true;
+      }
+
+      btn.onclick = async function () {
+        if (btn.disabled) return;
+        btn.disabled = true;
+        label.textContent = "Enviando…";
+        msg.style.display = "none";
+        try {
+          const res = await PuntazoPulses.requestMatchRecording({
+            loc: match.loc, can: match.can, lado: match.lado,
+            matchId: match.id, startAt: match.startedAt, endAt: match.endedAt,
+          });
+          markRequested();
+          label.textContent = "✅ Partido completo solicitado";
+          msg.style.display = "block";
+          msg.textContent = "Tu partido se está procesando. Aparecerá en los clips de la cancha en unos minutos"
+            + (res && res.clamped ? " (últimos " + maxMin + " min)." : ".");
+        } catch (e) {
+          btn.disabled = false;
+          label.textContent = "🎥 Subir partido completo";
+          msg.style.display = "block";
+          const m = (e && e.message) ? e.message : "error";
+          msg.textContent = "No se pudo solicitar: " + m;
+        }
+      };
+    } catch (_) {}
+  }
+
+  // ════════════════════════════════════════════════════════════
   //  Render principal
   // ════════════════════════════════════════════════════════════
   async function renderResumen(match) {
     currentMatch = match;
+
+    // R7: oferta de subir partido completo (clubs soportados, solo dueño).
+    try { setupMatchFull(match); } catch (_) {}
 
     // Etapa 16.4 F16: mostrar botón "Editar marcador y jugadores" solo al dueño
     try {
