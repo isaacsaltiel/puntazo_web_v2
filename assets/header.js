@@ -129,15 +129,15 @@
       <a href="/entrada.html?modo=boton" target="_blank" rel="noopener"
          class="pz-phone-cta"
          onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'header_phone_button'});}catch(e){}">
-        📲 Usar teléfono como botón
+        📲 Solo registrar puntazos
       </a>`;
   }
 
   function getClipsCTA() {
     return `
-      <a href="/explorar.html" class="pz-clips-cta"
-         onclick="try{gtag('event','encuentra_tus_clips_click',{event_category:'CTA',event_label:'header'});}catch(e){}">
-        🎾 <span class="cta-label">Encuentra tus clips</span>
+      <a href="/entrada.html" class="pz-clips-cta"
+         onclick="try{gtag('event','encuentra_tus_clips_click',{event_category:'CTA',event_label:'header_jugar'});}catch(e){}">
+        ▶ <span class="cta-label">Jugar</span>
       </a>`;
   }
 
