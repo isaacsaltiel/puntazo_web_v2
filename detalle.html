@@ -21,6 +21,9 @@
 <script src="/assets/card.js"></script>
 <script src="/assets/script.js"></script>
 <script src="/assets/scoreboard-card.js"></script>
+<!-- F125-H1: overlay reusable que abre resumen.html?embed=1 en un
+     modal full-screen para ver/editar la foto del resumen on-demand. -->
+<script src="/assets/resumen-overlay.js"></script>
 <script src="/assets/identity.js"></script>
 
 <style>
@@ -342,7 +345,10 @@
   .dt-accept-btn.is-accepted { background: rgba(34, 197, 94, 0.10); }
   .dt-accept-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
 
-  /* Foto resumen on-demand */
+  /* F125-H1: el iframe inline "micro pestaña" se reemplazó por un
+     overlay full-screen reusable (PuntazoResumenOverlay). Solo queda el
+     botón que dispara el overlay; los estilos .dt-photo-frame antiguos
+     ya no se usan. */
   .dt-photo-wrap {
     margin-bottom: 20px;
     text-align: center;
@@ -355,31 +361,10 @@
     color: #cfe2ff;
     font-family: inherit; font-weight: 800; font-size: 0.94rem;
     cursor: pointer;
-    transition: background .14s;
+    transition: background .14s, transform .12s;
   }
   .dt-photo-btn:hover { background: linear-gradient(180deg, rgba(11,124,255,0.30), rgba(0,79,200,0.16)); }
-
-  /* Frame de la foto resumen cuando abierta */
-  .dt-photo-frame {
-    display: none;
-    margin-top: 12px;
-    border: 1px solid rgba(255,255,255,0.10);
-    border-radius: 16px;
-    overflow: hidden;
-    background: rgba(0,0,0,0.30);
-  }
-  .dt-photo-frame.is-open { display: block; }
-  .dt-photo-frame iframe {
-    width: 100%;
-    height: 70vh; min-height: 480px; max-height: 800px;
-    border: 0; display: block;
-  }
-  .dt-photo-frame-actions {
-    display: flex; gap: 6px;
-    padding: 10px;
-    background: rgba(0,0,0,0.40);
-    border-top: 1px solid rgba(255,255,255,0.08);
-  }
+  .dt-photo-btn:active { transform: scale(0.98); }
 
   /* Clips */
   .dt-clips-title {
@@ -473,12 +458,14 @@
       <div class="dt-acceptance-actions" id="dtAcceptanceActions"></div>
     </div>
 
-    <!-- Foto resumen on-demand (carga el resumen.html en iframe) -->
+    <!-- F125-H1: foto del resumen on-demand. Antes era un iframe
+         inline tipo "micro pestaña" que abría dentro del flow de la
+         página. Ahora el click abre un overlay full-screen reusable
+         (PuntazoResumenOverlay) con la misma resumen.html?embed=1
+         pero a tamaño completo y con los botones de edición visibles
+         solo cuando la foto ya cargó. -->
     <div class="dt-photo-wrap">
-      <button id="dtPhotoBtn" class="dt-photo-btn" type="button">📸 Ver foto resumen</button>
-      <div id="dtPhotoFrame" class="dt-photo-frame">
-        <iframe id="dtPhotoIframe" src="about:blank" loading="lazy"></iframe>
-      </div>
+      <button id="dtPhotoBtn" class="dt-photo-btn" type="button">📸 Ver foto del resumen</button>
     </div>
 
     <!-- Clips del partido (reusa la pipeline de resumen.html via script.js) -->
@@ -502,8 +489,8 @@
   const $editBtn = document.getElementById('dtEditBtn');
   const $shareBtn = document.getElementById('dtShareBtn');
   const $photoBtn = document.getElementById('dtPhotoBtn');
-  const $photoFrame = document.getElementById('dtPhotoFrame');
-  const $photoIframe = document.getElementById('dtPhotoIframe');
+  // F125-H1: el iframe inline se removió. Ahora el botón abre overlay
+  // full-screen via PuntazoResumenOverlay.open(matchId).
   const $clipsList = document.getElementById('dtClipsList');
 
   const params = new URLSearchParams(window.location.search);
@@ -904,13 +891,16 @@
   }
 
   function setupPhotoToggle(match) {
-    let opened = false;
+    // F125-H1: ahora delega al overlay reusable. El embed mode de
+    // resumen.html (?embed=1) oculta el header global, así el iframe
+    // queda visualmente limpio dentro del modal full-screen.
+    if (!$photoBtn) return;
     $photoBtn.addEventListener('click', function () {
-      opened = !opened;
-      $photoFrame.classList.toggle('is-open', opened);
-      $photoBtn.textContent = opened ? 'Ocultar foto resumen ▲' : '📸 Ver foto resumen';
-      if (opened && $photoIframe.src === 'about:blank') {
-        $photoIframe.src = '/resumen.html?matchId=' + encodeURIComponent(match.id) + '&embed=1';
+      if (window.PuntazoResumenOverlay && match && match.id) {
+        window.PuntazoResumenOverlay.open(match.id);
+      } else {
+        // Fallback en caso extremo: navegar a resumen sin embed.
+        window.location.href = '/resumen.html?matchId=' + encodeURIComponent(match.id);
       }
     });
   }

@@ -1069,6 +1069,31 @@
 </head>
 <body>
 
+<!-- F125-H1: si la URL trae ?embed=1, ocultamos el chrome global
+     (header + page-bg) ANTES de que pinte. Esto deja solo el card del
+     resumen + botones, perfecto para mostrar dentro del overlay modal
+     que dispara cualquier match-card en perfil/mis-partidos/detalle. -->
+<script>
+(function () {
+  try {
+    var p = new URLSearchParams(window.location.search);
+    if (p.get("embed") === "1") {
+      document.documentElement.classList.add("pz-embed-mode");
+    }
+  } catch (_) {}
+})();
+</script>
+<style>
+  /* F125-H1: clase root que aplica solo cuando entras vía
+     resumen.html?matchId=X&embed=1. Oculta header global, hace el body
+     transparente para mezclar con el backdrop del overlay padre, y
+     centra mejor el card en viewport chico. */
+  .pz-embed-mode #nav-root,
+  .pz-embed-mode .page-bg { display: none !important; }
+  .pz-embed-mode body { background: transparent !important; }
+  .pz-embed-mode .rs-wrap { padding-top: 14px !important; }
+</style>
+
 <div class="page-bg"></div>
 
 <div id="nav-root" data-nav-variant="internal"></div>

@@ -23,6 +23,9 @@
 <script src="/assets/pending-pulse-watcher.js"></script>
 <script src="/assets/card.js"></script>
 <script src="/assets/scoreboard-card.js"></script>
+<!-- F125-H1: overlay reusable que abre resumen.html?embed=1 en un
+     modal full-screen para ver/editar la foto del resumen on-demand. -->
+<script src="/assets/resumen-overlay.js"></script>
 <script src="/assets/identity.js"></script>
 <style>
   .perfil-wrap { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
@@ -80,6 +83,21 @@
   }
 
   .pz-matches-list { display:flex; flex-direction:column; gap:12px; margin-bottom:14px; }
+
+  /* F125-H1: wrapper que contiene la scoreboard-card + el botón
+     "Ver foto del resumen" debajo. Solo se renderea el botón para
+     matches ended; para active queda solo la card y el wrap se ve
+     idéntico al diseño anterior. */
+  .pz-match-card-wrap {
+    display: flex;
+    flex-direction: column;
+  }
+  .pz-match-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+    padding-right: 2px;
+  }
 
   /* F85: link a "Mi nivel" */
   .pz-nivel-link {
@@ -961,8 +979,9 @@
 
   function buildMatchCard(match, claim, cfg, myUid) {
     // F81: usa el helper window.PuntazoScoreboardCard si está disponible.
-    // Devuelve un <a> envolvente que lleva a mi-partido (active) o resumen
-    // (ended). Si el helper no está, fallback al render legacy.
+    // Devuelve un wrapper <div> con la scoreboard-card adentro y, para
+    // matches ended, un botón "📸 Ver foto del resumen" debajo que abre
+    // el overlay (resumen.html?embed=1 en iframe full-screen).
     const { locNombre, canNombre } = resolveNamesSync(cfg, match.loc, match.can, match.lado);
     const status = match.status || 'active';
     let href = `/mi-partido.html?matchId=${encodeURIComponent(match.id)}`;
@@ -970,20 +989,39 @@
     // detalle.html (Flujo B). resumen.html es solo para "recién terminé".
     if (status === 'ended') href = `/detalle.html?matchId=${encodeURIComponent(match.id)}`;
 
+    const wrap = document.createElement('div');
+    wrap.className = 'pz-match-card-wrap';
+
     if (window.PuntazoScoreboardCard && typeof window.PuntazoScoreboardCard.build === 'function') {
-      return window.PuntazoScoreboardCard.build(match, {
+      wrap.appendChild(window.PuntazoScoreboardCard.build(match, {
         href: href,
         myUid: myUid,
         locNombre: locNombre,
         canNombre: canNombre,
-      });
+      }));
+    } else {
+      // Fallback minimal (en teoría no debería pasar nunca)
+      const a = document.createElement('a');
+      a.href = href;
+      a.className = 'pz-match-card';
+      a.textContent = (locNombre || match.loc || '—') + ' · ' + (canNombre || match.can || '');
+      wrap.appendChild(a);
     }
-    // Fallback minimal (en teoría no debería pasar nunca)
-    const a = document.createElement('a');
-    a.href = href;
-    a.className = 'pz-match-card';
-    a.textContent = (locNombre || match.loc || '—') + ' · ' + (canNombre || match.can || '');
-    return a;
+
+    // F125-H1: botón "Ver foto del resumen" solo para matches ended.
+    // El click abre overlay con resumen.html?embed=1 que muestra la foto
+    // generada con html2canvas + los botones para descargar/compartir/
+    // personalizar (los botones de edición viven dentro de resumen.html
+    // y solo aparecen cuando la foto ya cargó — exactamente lo que Isaac
+    // pidió: "solo cuando ya apareció").
+    if (status === 'ended' && window.PuntazoResumenOverlay) {
+      const actions = document.createElement('div');
+      actions.className = 'pz-match-card-actions';
+      actions.appendChild(window.PuntazoResumenOverlay.buildButton(match.id));
+      wrap.appendChild(actions);
+    }
+
+    return wrap;
   }
 
   async function fetchMatchById(db, matchId) {
