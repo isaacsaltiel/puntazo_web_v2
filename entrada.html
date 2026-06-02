@@ -696,11 +696,16 @@
     const bg = document.getElementById("entradaCourtBg");
     if (!bg) return;
     if (!active || !can) { bg.classList.remove("is-active"); return; }
-    const m = String(can).match(/(\d+)/);
-    let n = m ? parseInt(m[1], 10) : 1;
-    if (!Number.isFinite(n) || n < 1) n = 1;
-    const idx = ((n - 1) % 8) + 1;
-    bg.style.backgroundImage = "url('/assets/court-icons/B" + idx + ".png')";
+    // Íconos por club (pickleball usa arte propio; resto cae al global).
+    if (window.PuntazoClubs && PuntazoClubs.applyCourtIcon) {
+      PuntazoClubs.applyCourtIcon(bg, loc, can, "bg");
+    } else {
+      const m = String(can).match(/(\d+)/);
+      let n = m ? parseInt(m[1], 10) : 1;
+      if (!Number.isFinite(n) || n < 1) n = 1;
+      const idx = ((n - 1) % 8) + 1;
+      bg.style.backgroundImage = "url('/assets/court-icons/B" + idx + ".png')";
+    }
     bg.classList.add("is-active");
   }
 
@@ -890,10 +895,23 @@
         const canMatch = String(cancha.id || "").match(/(\d+)/);
         const canNum = canMatch ? parseInt(canMatch[1], 10) : (canchaIdx + 1);
         const iconNum = (((canNum - 1) % 8) + 8) % 8 + 1; // [1..8] safe
-        const iconSrc = "/assets/court-icons/B" + iconNum + ".png";
+        // Default = ícono global (mantiene el fallback a emoji vía onerror);
+        // si el club tiene arte propio (pickleball), se hace upgrade abajo.
+        const _icons = (window.PuntazoClubs && PuntazoClubs.courtIconUrls)
+          ? PuntazoClubs.courtIconUrls(club && club.id, cancha.id)
+          : { clubUrl: "/assets/court-icons/B" + iconNum + ".png", globalUrl: "/assets/court-icons/B" + iconNum + ".png" };
+        const iconSrc = _icons.globalUrl;
         card.innerHTML =
           '<img class="court-icon" src="' + iconSrc + '" alt="' + escapeHtml(cancha.nombre) + '" onerror="this.outerHTML=\'<div class=&quot;emoji&quot;>🎾</div>\'">' +
           '<div class="name">' + escapeHtml(cancha.nombre) + '</div>';
+        if (_icons.clubUrl !== _icons.globalUrl) {
+          const _imgEl = card.querySelector("img.court-icon");
+          if (_imgEl) {
+            const _probe = new Image();
+            _probe.onload = function () { _imgEl.src = _icons.clubUrl; };
+            _probe.src = _icons.clubUrl;
+          }
+        }
         card.addEventListener("click", function () {
           selectorState.selectedCancha = cancha;
           // Siempre elegimos el primer lado automáticamente (el concepto "lado" es

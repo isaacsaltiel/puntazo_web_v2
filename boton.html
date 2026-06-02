@@ -392,13 +392,22 @@ html, body {
     try {
       const el = document.getElementById('bgCourt');
       if (!el) return;
-      const url = '/assets/court-icons/B' + _iconNum + '.png';
-      const img = new Image();
-      img.onload = function () {
+      // Íconos por club: intenta /assets/court-icons/{LOC}/B{n}.png (ej. canchas
+      // de pickleball con arte propio); si no existe, cae al global B{n}.png.
+      const globalUrl = '/assets/court-icons/B' + _iconNum + '.png';
+      const clubUrl = '/assets/court-icons/' + encodeURIComponent(LOC) + '/B' + _iconNum + '.png';
+      function setBg(url) {
         el.style.backgroundImage = "url('" + url + "')";
         el.classList.add('ready');
+      }
+      const club = new Image();
+      club.onload = function () { setBg(clubUrl); };
+      club.onerror = function () {
+        const g = new Image();
+        g.onload = function () { setBg(globalUrl); };
+        g.src = globalUrl;
       };
-      img.src = url;
+      club.src = clubUrl;
     } catch (_) {}
   })();
 

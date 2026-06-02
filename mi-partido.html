@@ -4638,12 +4638,18 @@
   function applyCourtBackground(match) {
     const bg = document.getElementById("mpCourtBg");
     if (!bg) return;
-    const url = inferCourtIconUrl(match);
-    if (!url) {
+    if (!match || !match.can) {
       bg.classList.remove("is-active");
       return;
     }
-    bg.style.backgroundImage = "url('" + url + "')";
+    // Íconos por club (pickleball usa arte propio; resto cae al global).
+    if (window.PuntazoClubs && PuntazoClubs.applyCourtIcon) {
+      PuntazoClubs.applyCourtIcon(bg, match.loc, match.can, "bg");
+    } else {
+      const url = inferCourtIconUrl(match);
+      if (!url) { bg.classList.remove("is-active"); return; }
+      bg.style.backgroundImage = "url('" + url + "')";
+    }
     bg.classList.add("is-active");
   }
 
@@ -4655,11 +4661,16 @@
     if (!bg) return;
     const canParam = newCan;
     if (!canParam) { bg.classList.remove("is-active"); return; }
-    const mc = String(canParam).match(/(\d+)/);
-    let n = mc ? parseInt(mc[1], 10) : 1;
-    if (!Number.isFinite(n) || n < 1) n = 1;
-    const idx = ((n - 1) % 8) + 1;
-    bg.style.backgroundImage = "url('/assets/court-icons/B" + idx + ".png')";
+    // Íconos por club (pickleball usa arte propio; resto cae al global).
+    if (window.PuntazoClubs && PuntazoClubs.applyCourtIcon) {
+      PuntazoClubs.applyCourtIcon(bg, newLoc, canParam, "bg");
+    } else {
+      const mc = String(canParam).match(/(\d+)/);
+      let n = mc ? parseInt(mc[1], 10) : 1;
+      if (!Number.isFinite(n) || n < 1) n = 1;
+      const idx = ((n - 1) % 8) + 1;
+      bg.style.backgroundImage = "url('/assets/court-icons/B" + idx + ".png')";
+    }
     bg.classList.add("is-active");
   }
 
