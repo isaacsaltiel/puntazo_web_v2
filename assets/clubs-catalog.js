@@ -27,7 +27,7 @@
     "BreakPoint":            { emoji: "⚡", logoUrl: "/assets/logos/breakpoint.png", status: "active", nombre: "BreakPoint", deporte: "padel" },
     "Scorpion":              { emoji: "🦂", status: "active", nombre: "Scorpion", deporte: "padel" },
     "WellStreet-Pickleball": { emoji: "🏓", logoUrl: "/assets/logos/wellstreet.png", status: "active", nombre: "WellStreet Pickleball", deporte: "pickleball" },
-    "WellStreet-Padel":      { emoji: "🎾", logoUrl: "/assets/logos/wellstreet.png", status: "active", nombre: "WellStreet Pádel", deporte: "padel" }
+    "WellStreet-Padel":      { emoji: "🎾", logoUrl: "/assets/logos/wellstreet.png", status: "soon", nombre: "WellStreet Pádel", deporte: "padel" }
   };
 
   // ── Mapping de códigos QR físicos → loc id en config ──
