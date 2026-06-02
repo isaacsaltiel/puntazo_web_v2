@@ -29,6 +29,10 @@
 <!-- F126: refresh-bar para "Mis puntazos pendientes" — re-trigger del
      join con videos_index sin recargar la página. -->
 <script src="/assets/refresh-bar.js"></script>
+<!-- F129: heartbeat-watcher para mapear error_reason de pulsos a texto
+     amigable en pendingStateInfo. Banner no se renderiza en perfil
+     (no hay loc específico). -->
+<script src="/assets/heartbeat-watcher.js"></script>
 <script src="/assets/identity.js"></script>
 <style>
   .perfil-wrap { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
@@ -701,13 +705,25 @@
         url: doc._matchedClipUrl,
       };
     }
+    // F129: si el doc llegó con error_reason de la NUC (nvr_window_exceeded
+    // / dropbox_upload_failed / etc.), mapeamos a un mensaje amigable.
+    // Nunca exponemos la jerga interna al user.
+    if (doc.error_reason) {
+      var human = doc.error_reason;
+      try {
+        if (window.PuntazoHeartbeatWatcher && window.PuntazoHeartbeatWatcher.errorReasonText) {
+          human = window.PuntazoHeartbeatWatcher.errorReasonText(doc.error_reason) || human;
+        }
+      } catch (_) {}
+      return { emoji: "⚠️", label: "Con problema", cls: "is-error", note: human };
+    }
     if (!doc.consumed_at) {
       return { emoji: "🟡", label: "En cola", cls: "is-pending", note: "Esperando ser procesado" };
     }
     // Si consumed_at viejo pero no hay clip_states asociado:
     const ageMin = doc._ageMin || 0;
     if (ageMin > 15) {
-      return { emoji: "⚠️", label: "Posiblemente con error", cls: "is-error", note: "Procesado hace más de 15 min, podría requerir ayuda" };
+      return { emoji: "⚠️", label: "Tardando más de lo normal", cls: "is-error", note: "Procesado hace más de 15 min, podría requerir ayuda" };
     }
     return { emoji: "🟠", label: "Procesando", cls: "is-pending", note: "Tu clip se está procesando" };
   }

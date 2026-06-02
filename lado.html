@@ -43,6 +43,9 @@
      este archivo, cerca del videos-container, para tener acceso a los
      query params loc/can/lado del contexto. -->
 <script src="/assets/refresh-bar.js"></script>
+<!-- F129: heartbeat-watcher para mostrar banner "cámaras fuera de línea"
+     si nuc_heartbeat/{clubId} no se actualiza en >5 min. -->
+<script src="/assets/heartbeat-watcher.js"></script>
 
 <style>
 /* ═══════════════════════════════════════════════════
@@ -451,6 +454,10 @@ video.video-preview {
   <!-- Filtros de día (generados por script.js en #filtro-dia) -->
   <!-- Filtros de hora (generados por script.js en #filtro-horario) -->
   <div id="filtro-horario"></div>
+
+  <!-- F129: banner "cámaras del club fuera de línea" si nuc_heartbeat
+       lleva >5 min sin actualizar. Solo aparece si pasa el threshold. -->
+  <div id="pz-hb-host"></div>
 
   <!-- F126: barra de refresh con timestamp "Actualizado hace X" + botón
        "Actualizar" + panel desplegable con los pulsos pendientes del user
@@ -1034,6 +1041,15 @@ video.video-preview {
     if (!host) return;
     var p = paramsFromQuery();
     if (!p.loc || !p.can || !p.lado) return; // sin contexto, no tiene sentido.
+
+    // F129: heartbeat watcher para mostrar banner si las cámaras del
+    // club están temporalmente fuera de línea.
+    try {
+      var hbHost = document.getElementById("pz-hb-host");
+      if (hbHost && window.PuntazoHeartbeatWatcher) {
+        window.PuntazoHeartbeatWatcher.watch(p.loc, hbHost);
+      }
+    } catch (_) {}
 
     window.__pzLadoBar = window.PuntazoRefreshBar.attach(host, {
       label: "Actualizado",

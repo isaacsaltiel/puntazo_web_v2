@@ -25,6 +25,9 @@
 <script src="/assets/auth.js"></script>
 <script src="/assets/clubs-catalog.js"></script>
 <script src="/assets/pulses.js"></script>
+<!-- F129: heartbeat-watcher para banner pasivo "cámaras del club fuera
+     de línea" en cuanto el user selecciona club. -->
+<script src="/assets/heartbeat-watcher.js"></script>
 
 <style>
   body {
@@ -524,6 +527,22 @@
     const cancha = state.selectedCancha;
     $formCtx.innerHTML = "Recuperar puntazo en <strong>" + escapeHtml(club.nombre) +
       "</strong> · <strong>" + escapeHtml(cancha.nombre) + "</strong>";
+
+    // F129: si las cámaras del club están temporalmente fuera de línea,
+    // mostrar banner pasivo arriba del form. El user igual puede pedir
+    // la recuperación — el doc se queda en cola y la NUC lo procesa
+    // cuando vuelva. El banner solo le pre-aclara la espera.
+    try {
+      var hbHost = document.getElementById("pz-hb-host");
+      if (!hbHost) {
+        hbHost = document.createElement("div");
+        hbHost.id = "pz-hb-host";
+        $form.insertBefore(hbHost, $form.firstChild);
+      }
+      if (window.PuntazoHeartbeatWatcher) {
+        window.PuntazoHeartbeatWatcher.watch(club.id, hbHost);
+      }
+    } catch (_) {}
 
     // Default datetime: ahora menos 5 min, con paso 1 min
     const d = new Date();

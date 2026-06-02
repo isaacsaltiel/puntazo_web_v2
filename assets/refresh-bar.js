@@ -326,7 +326,15 @@
 
   function pendingStateInfo(doc) {
     if (doc.error_reason) {
-      return { emoji: "⚠️", label: "Con problema", note: doc.error_reason };
+      // F129: mapear reason crudo a texto amigable si el heartbeat-watcher
+      // está cargado. Si no, fallback al string crudo (mejor que vacío).
+      var human = doc.error_reason;
+      try {
+        if (window.PuntazoHeartbeatWatcher && window.PuntazoHeartbeatWatcher.errorReasonText) {
+          human = window.PuntazoHeartbeatWatcher.errorReasonText(doc.error_reason) || human;
+        }
+      } catch (_) {}
+      return { emoji: "⚠️", label: "Con problema", note: human };
     }
     if (!doc.consumed_at) {
       return { emoji: "🟡", label: "En cola", note: "Esperando ser procesado" };

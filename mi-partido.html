@@ -30,6 +30,8 @@
 <script src="/assets/pending-pulse-watcher.js"></script>
 <!-- F126-B: refresh-bar arriba de los pulsos del partido. -->
 <script src="/assets/refresh-bar.js"></script>
+<!-- F129: heartbeat-watcher para banner "cámaras fuera de línea". -->
+<script src="/assets/heartbeat-watcher.js"></script>
 <script src="/assets/clip-states.js"></script>
 <script src="/assets/court-svg.js"></script>
 <script src="/assets/pulses.js"></script>
@@ -4835,6 +4837,23 @@
 
     // F126-B: refresh-bar arriba del bloque de pulsos del partido.
     setupMpRefreshBar(match);
+
+    // F129: banner pasivo "cámaras del club fuera de línea". Lee
+    // nuc_heartbeat/{match.loc}. Solo se muestra si lastSeenAt > 5 min.
+    try {
+      if (window.PuntazoHeartbeatWatcher && match.loc) {
+        var hbHost = document.getElementById("pz-hb-mp-host");
+        if (!hbHost) {
+          hbHost = document.createElement("div");
+          hbHost.id = "pz-hb-mp-host";
+          var rbHost = document.getElementById("pz-rb-mp-host");
+          if (rbHost && rbHost.parentNode) {
+            rbHost.parentNode.insertBefore(hbHost, rbHost);
+          }
+        }
+        if (hbHost) window.PuntazoHeartbeatWatcher.watch(match.loc, hbHost);
+      }
+    } catch (_) {}
 
     const { locNombre, canNombre, ladoNombre } = await resolveNames(match.loc, match.can, match.lado);
     // Etapa 16.4 F24: venue label en el header del timer (sin "lado")

@@ -20,6 +20,8 @@
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/clubs-catalog.js"></script>
 <script src="/assets/pulses.js"></script>
+<!-- F129: heartbeat-watcher para banner "cámaras fuera de línea". -->
+<script src="/assets/heartbeat-watcher.js"></script>
 
 <style>
 :root{
@@ -321,6 +323,10 @@ html, body {
          selector si está en la cancha equivocada o quiere otra. -->
     <a class="hud-edit" id="btnEdit" href="/entrada.html?modo=boton">← Cambiar cancha</a>
   </div>
+
+  <!-- F129: banner pasivo "cámaras del club fuera de línea" si nuc_heartbeat
+       lleva >5 min sin actualizar. Solo aparece cuando aplica. -->
+  <div id="pz-hb-host" style="padding: 0 16px;"></div>
 
   <!-- Botón grande -->
   <div class="btn-center">
@@ -691,6 +697,14 @@ html, body {
   }
 
   // ── Boot ──
+  // F129: banner pasivo "cámaras fuera de línea" leyendo nuc_heartbeat/{LOC}.
+  try {
+    var _hbHost = document.getElementById("pz-hb-host");
+    if (_hbHost && window.PuntazoHeartbeatWatcher) {
+      window.PuntazoHeartbeatWatcher.watch(LOC, _hbHost);
+    }
+  } catch (_) {}
+
   (async function boot() {
     await resolveHud();
     renderLog();
