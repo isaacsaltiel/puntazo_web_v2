@@ -2160,6 +2160,20 @@
   async function renderResumen(match) {
     currentMatch = match;
 
+    // F128-H2 (lectura): si el match tiene una foto de resumen oficial
+    // guardada (subida por algún user vinculado y persistida via worker
+    // NUC en Dropbox), úsala como fondo del card en lugar de la
+    // imagen genérica ball-closeup.png. Esto hace que TODOS los users
+    // que abran este match vean la misma foto de resumen — exactamente
+    // lo que Isaac pidió: "se cambia para todos, no solo para uno".
+    // Cuando el user cambia la foto local, este bg local toma precedencia
+    // sobre el remoto hasta que la página recarga.
+    if (match && match.summaryImageUrl && $cardBg) {
+      try {
+        $cardBg.style.backgroundImage = "url('" + match.summaryImageUrl + "')";
+      } catch (_) {}
+    }
+
     // R7: oferta de subir partido completo (clubs soportados, solo dueño).
     try { setupMatchFull(match); } catch (_) {}
 
