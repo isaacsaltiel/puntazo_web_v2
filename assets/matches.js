@@ -904,10 +904,15 @@
   // dependa de cargar script.js (que ejecuta DOMContentLoaded handlers
   // que no aplican fuera de las páginas de producción).
   function parseFromName(name) {
-    const re = /^(.+?)_(.+?)_(.+?)_(\d{8})_(\d{6})\.mp4$/i;
+    // Sufijo opcional _TAG_TAGID antes de la fecha (ej. _PARTIDO_<hash>):
+    // lo emite la NUC desde Worker E (onboarding WellStreet) para distinguir
+    // partidos completos de clips sueltos. Anclamos lado con (Lado[A-Z]) para
+    // evitar que el backtracking del .+? non-greedy se trague el sufijo
+    // dentro del grupo lado y rompa el cruce con matchDoc.lado.
+    const re = /^(.+?)_(.+?)_(Lado[A-Z])(?:_([A-Z][A-Z_]*)_([A-Za-z0-9]+))?_(\d{8})_(\d{6})\.mp4$/i;
     const m = String(name || "").match(re);
     if (!m) return null;
-    const [, loc, can, lado, date8, time6] = m;
+    const [, loc, can, lado, tag, tagId, date8, time6] = m;
 
     const tryYYYYMMDD = () => {
       const Y = Number(date8.slice(0, 4));
@@ -938,7 +943,12 @@
       Number(d.Y), Number(d.M) - 1, Number(d.D),
       Number(h), Number(mi), Number(s)
     );
-    return { loc, can, lado, date, Y: d.Y, M: d.M, D: d.D, h, mi, s };
+    return {
+      loc, can, lado,
+      tag: tag || null,
+      tagId: tagId || null,
+      date, Y: d.Y, M: d.M, D: d.D, h, mi, s,
+    };
   }
 
   function toMillis(ts) {
