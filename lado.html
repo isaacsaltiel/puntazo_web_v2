@@ -34,6 +34,11 @@
 <!-- F122: clubs-catalog para resolver el ícono de cancha por club/cancha
      (mismo mapping que mi-partido). Se usa para pintar el fondo dinámico. -->
 <script src="/assets/clubs-catalog.js"></script>
+<!-- F122: watcher "puntazo listo" cuando un pending del user pasa a ready.
+     Requiere PuntazoAuth (no cargado en lado por default) — pero el módulo
+     auto-skipea si no hay PuntazoAuth/PuntazoFirebase disponibles. -->
+<script src="/assets/auth.js"></script>
+<script src="/assets/pending-pulse-watcher.js"></script>
 
 <style>
 /* ═══════════════════════════════════════════════════
