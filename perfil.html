@@ -225,6 +225,27 @@
   .pz-pending-action {
     flex-shrink: 0;
   }
+  /* F123-B: item entero clickeable cuando el clip ya está listo */
+  .pz-pending-item--clickable { padding: 0; }
+  .pz-pending-item--clickable .pz-pending-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    text-decoration: none; color: inherit;
+    width: 100%;
+  }
+  .pz-pending-item--clickable:hover {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.30);
+  }
+  .pz-pending-cta {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.16);
+    border: 1px solid rgba(34, 197, 94, 0.40);
+    color: #9af2c0;
+    font-size: 0.78rem; font-weight: 700;
+  }
   .pz-pending-action a {
     display: inline-block;
     padding: 6px 12px;
@@ -586,9 +607,18 @@
   // ============================================================
   function pendingStateInfo(doc) {
     // Decide qué emoji / texto mostrar según el estado del pulso.
-    // El pulso vive en pending_pulses; el estado canónico vive en
-    // clip_states (poblado por la NUC). En esta v1 no hacemos el
-    // join — derivamos del doc del pending_pulse.
+    // F123-B: si ya cruzamos con videos_recientes.json y encontramos un
+    // clip cuyo timestamp cae dentro de la ventana del pulso, mostramos
+    // "Listo · Ver clip" (gana sobre cualquier heurística por edad).
+    if (doc._matchedClipUrl) {
+      return {
+        emoji: "✅",
+        label: "Listo · Ver clip",
+        cls: "is-visible",
+        note: "Tu clip ya está disponible",
+        url: doc._matchedClipUrl,
+      };
+    }
     if (!doc.consumed_at) {
       return { emoji: "🟡", label: "En cola", cls: "is-pending", note: "Esperando ser procesado" };
     }
@@ -598,6 +628,88 @@
       return { emoji: "⚠️", label: "Posiblemente con error", cls: "is-error", note: "Procesado hace más de 15 min, podría requerir ayuda" };
     }
     return { emoji: "🟠", label: "Procesando", cls: "is-pending", note: "Tu clip se está procesando" };
+  }
+
+  // F123-B: cache TTL 60s de los JSON videos_recientes.json por lado.
+  // Key: `${loc}|${can}|${lado}`. Valor: { ts, videos: [{ nombre, url, dateMs }] }
+  // Evita N fetches si el user tiene varios pulsos del mismo lado.
+  const _pendingClipJsonCache = new Map();
+  const _PENDING_CLIP_CACHE_TTL_MS = 60 * 1000;
+  const _PENDING_CLIP_MATCH_WINDOW_MS = 90 * 1000; // ±90s
+
+  async function _loadVideosForLado(loc, can, lado) {
+    if (!loc || !can || !lado) return null;
+    const key = loc + '|' + can + '|' + lado;
+    const now = Date.now();
+    const cached = _pendingClipJsonCache.get(key);
+    if (cached && (now - cached.ts) < _PENDING_CLIP_CACHE_TTL_MS) return cached.videos;
+    if (!window.PuntazoMatches || typeof PuntazoMatches.findJsonUrl !== 'function') return null;
+    try {
+      const url = await PuntazoMatches.findJsonUrl(loc, can, lado);
+      if (!url) { _pendingClipJsonCache.set(key, { ts: now, videos: [] }); return []; }
+      const res = await fetch(url + '?cb=' + now, { cache: 'no-store' });
+      if (!res.ok) { _pendingClipJsonCache.set(key, { ts: now, videos: [] }); return []; }
+      const data = await res.json();
+      const raw = Array.isArray(data && data.videos) ? data.videos : [];
+      const parsed = [];
+      const parser = (PuntazoMatches && typeof PuntazoMatches.parseClipName === 'function')
+        ? PuntazoMatches.parseClipName : null;
+      for (const v of raw) {
+        if (!v || !v.nombre || !v.url || !parser) continue;
+        const p = parser(v.nombre);
+        if (!p) continue;
+        // Defensa: el JSON debe ser de este lado.
+        if (p.loc !== loc || p.can !== can || p.lado !== lado) continue;
+        parsed.push({ nombre: v.nombre, url: v.url, dateMs: p.date.getTime() });
+      }
+      _pendingClipJsonCache.set(key, { ts: now, videos: parsed });
+      return parsed;
+    } catch (e) {
+      // Degradación silenciosa: si no podemos leer el JSON, el flujo viejo
+      // (Procesando / Posiblemente con error) sigue funcionando.
+      _pendingClipJsonCache.set(key, { ts: now, videos: [] });
+      return [];
+    }
+  }
+
+  // Para cada pulso ya consumido, busca un clip ±90s en el JSON del lado.
+  // Si lo encuentra, anota _matchedClipUrl y _matchedClipNombre en el doc.
+  // Agrupa fetches por (loc,can,lado) para hacer 1 request por combinación.
+  async function _annotatePendingWithClips(docs) {
+    const targets = docs.filter(d => d.consumed_at && d.club && d.cancha && d.lado);
+    if (!targets.length) return;
+    const groups = new Map(); // key → [docs]
+    for (const d of targets) {
+      const key = d.club + '|' + d.cancha + '|' + d.lado;
+      const arr = groups.get(key) || [];
+      arr.push(d);
+      groups.set(key, arr);
+    }
+    const tasks = [];
+    for (const [key, arr] of groups.entries()) {
+      const [loc, can, lado] = key.split('|');
+      tasks.push(_loadVideosForLado(loc, can, lado).then(videos => {
+        if (!Array.isArray(videos) || !videos.length) return;
+        for (const d of arr) {
+          const consumedDate = tsToDate(d.consumed_at) || tsToDate(d.created_at);
+          if (!consumedDate) continue;
+          const target = consumedDate.getTime();
+          let best = null;
+          let bestDelta = Infinity;
+          for (const v of videos) {
+            const delta = Math.abs(v.dateMs - target);
+            if (delta <= _PENDING_CLIP_MATCH_WINDOW_MS && delta < bestDelta) {
+              best = v; bestDelta = delta;
+            }
+          }
+          if (best) {
+            d._matchedClipUrl = best.url;
+            d._matchedClipNombre = best.nombre;
+          }
+        }
+      }));
+    }
+    await Promise.all(tasks);
   }
 
   function showPendingState(which) {
@@ -622,6 +734,21 @@
       return 'hace ' + d + 'd';
     })() : '';
     const canchaTxt = doc.cancha ? ('Cancha ' + String(doc.cancha).replace(/^\D+/, '')) : '';
+    // F123-B: si hay clip listo, todo el item es un link directo al video.
+    if (info.url) {
+      item.classList.add('pz-pending-item--clickable');
+      item.innerHTML = `
+        <a class="pz-pending-link" href="${escapeHTML(info.url)}" target="_blank" rel="noopener">
+          <div class="pz-pending-state ${info.cls}">${info.emoji}</div>
+          <div class="pz-pending-info">
+            <div class="pz-pending-title">${escapeHTML(info.label)} · ${escapeHTML(clubLabel || doc.club || '')} ${escapeHTML(canchaTxt)}</div>
+            <div class="pz-pending-meta">${escapeHTML(ago)} · ${escapeHTML(info.note)}</div>
+          </div>
+          <div class="pz-pending-action"><span class="pz-pending-cta">Ver clip</span></div>
+        </a>
+      `;
+      return item;
+    }
     item.innerHTML = `
       <div class="pz-pending-state ${info.cls}">${info.emoji}</div>
       <div class="pz-pending-info">
@@ -653,7 +780,7 @@
         .where('uid_creator', '==', user.uid)
         .orderBy('created_at', 'desc')
         .limit(25)
-        .onSnapshot(function (snap) {
+        .onSnapshot(async function (snap) {
           const docs = [];
           snap.forEach(function (d) {
             const data = d.data() || {};
@@ -665,6 +792,10 @@
             docs.push(Object.assign({ _id: d.id }, data));
           });
           if (!docs.length) { showPendingState('empty'); return; }
+          // F123-B: cruzar pulsos consumed con videos_recientes.json del lado
+          // ANTES de pintar, para que el estado correcto salga al primer paint.
+          // Si falla, _annotatePendingWithClips degrada silencioso.
+          try { await _annotatePendingWithClips(docs); } catch (_) {}
           $pendingList.innerHTML = '';
           docs.forEach(function (doc) {
             const item = renderPendingItem(doc, resolveClubName(doc.club));

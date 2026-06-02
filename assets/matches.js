@@ -1369,6 +1369,11 @@
     listByUser,
     getActiveForUser,
     findClipsForMatch,
+    // F123-B: expuesto para que perfil.html pueda resolver json_url por lado
+    // y cruzar pulsos pending con clips ya indexados (sin reimplementar la
+    // lectura de config_locations.json).
+    findJsonUrl: _findJsonUrl,
+    parseClipName: parseFromName,
     subscribeToClaims,
     claimSlot,
     unclaimSlot,
