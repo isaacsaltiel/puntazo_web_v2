@@ -4005,16 +4005,53 @@
   }
 
   // ---------- selector de modo ----------
+  // Definición de botones de modo (label + desc) reutilizada al render
+  // dinámico por deporte. Pádel/tenis = sets; pickleball = juegos a 11.
+  const MODO_BTN_DEFS = {
+    partido_3: { label: "Partido",       desc: "Mejor de 3 sets" },
+    partido_5: { label: "Partido largo", desc: "Mejor de 5 sets" },
+    pickle_3:  { label: "Partido",       desc: "Mejor de 3 juegos a 11" },
+    pickle_1:  { label: "Juego rápido",  desc: "1 juego a 11" },
+    reta:      { label: "Reta",          desc: "Sin score, solo ganador" },
+    libre:     { label: "Libre",         desc: "Conteo simple" },
+  };
+  const ALL_MODOS = ["partido_3", "partido_5", "pickle_1", "pickle_3", "reta", "libre"];
+  // Modos cuyo score son "juegos a 11" (no sets de games).
+  const PICKLE_MODOS_UI = ["pickle_1", "pickle_3"];
+
+  // Reescribe los botones de modo de una fila según el deporte del club, y
+  // deja seleccionado el primero. Así un club de pickleball ve modos de
+  // juegos a 11 y uno de pádel ve sets — nunca mezclados.
+  function applyModoButtonsForSport(ctx, sport) {
+    const row = document.querySelector('[data-modo-target="' + ctx + '"]');
+    if (!row) return;
+    let modos = null;
+    try {
+      modos = (window.PuntazoMatches && PuntazoMatches.MODOS_BY_SPORT
+               && PuntazoMatches.MODOS_BY_SPORT[sport]) || null;
+    } catch (_) { modos = null; }
+    if (!Array.isArray(modos) || !modos.length) modos = ["partido_3", "partido_5", "reta", "libre"];
+    row.innerHTML = modos.map(function (m) {
+      const d = MODO_BTN_DEFS[m] || { label: m, desc: "" };
+      return '<button type="button" class="mp-modo-btn" data-modo="' + m + '">'
+        + d.label + '<span class="desc">' + d.desc + '</span></button>';
+    }).join("");
+    setModo(ctx, modos[0]);
+  }
+
   function setModo(ctx, modo) {
-    if (!["partido_3", "partido_5", "reta", "libre"].includes(modo)) return;
+    if (ALL_MODOS.indexOf(modo) < 0) return;
     modoState[ctx] = modo;
     const rows = document.querySelectorAll('[data-modo-target="' + ctx + '"] .mp-modo-btn');
     rows.forEach(function (b) {
       b.classList.toggle("is-selected", b.getAttribute("data-modo") === modo);
     });
     if (ctx === "end") {
-      // Al entrar a un modo de sets, garantizar al menos un set en blanco
-      if ((modo === "partido_3" || modo === "partido_5") && endScoreState.sets.length === 0) {
+      // Al entrar a un modo con celdas de score (sets o juegos), garantizar
+      // al menos una celda en blanco.
+      const needsCells = (modo === "partido_3" || modo === "partido_5"
+                          || PICKLE_MODOS_UI.indexOf(modo) >= 0);
+      if (needsCells && endScoreState.sets.length === 0) {
         endScoreState.sets.push({ t1: 0, t2: 0, tb: null });
       }
       rebuildScoreArea();
@@ -4764,7 +4801,7 @@
       $activeActions.style.display = "flex";
       $finishedActions.style.display = "none";
       if ($quickActions) $quickActions.style.display = "flex";
-      if ($liveToggle) $liveToggle.style.display = "flex";
+      if ($liveToggle) $liveToggle.style.display = liveSupportsBoard(currentMatch) ? "flex" : "none";
       if ($configToggle) $configToggle.style.display = "flex";
       if ($clipStatesToggle) $clipStatesToggle.style.display = "flex";
       if ($timerBox) $timerBox.classList.add("is-active");
@@ -4784,7 +4821,7 @@
       $activeActions.style.display = "none";
       $finishedActions.style.display = "none";
       if ($quickActions) $quickActions.style.display = "none";
-      if ($liveToggle) $liveToggle.style.display = "flex";
+      if ($liveToggle) $liveToggle.style.display = liveSupportsBoard(currentMatch) ? "flex" : "none";
       if ($configToggle) $configToggle.style.display = "flex";
       if ($clipStatesToggle) $clipStatesToggle.style.display = "flex";
       if ($timerBox) $timerBox.classList.add("is-active");
@@ -4833,8 +4870,13 @@
 
   function emptySet() { return { t1: 0, t2: 0, tb: null }; }
 
+  function isPickleMode() {
+    return PICKLE_MODOS_UI.indexOf(modoState.end) >= 0;
+  }
   function isSetMode() {
-    return modoState.end === "partido_3" || modoState.end === "partido_5";
+    // "Set mode" = modos con celdas de score (sets de pádel O juegos de pickleball).
+    return modoState.end === "partido_3" || modoState.end === "partido_5"
+        || isPickleMode();
   }
 
   function validateScoreLive() {
@@ -4850,7 +4892,30 @@
       else if (a > 0 || b > 0) ganador = "empate";
       return { ok: a > 0 || b > 0, ganador, complete: a > 0 || b > 0 };
     }
-    // Set modes
+    // Pickleball: cada "set" es un juego a 11 (gana por 2). best-of-N juegos.
+    if (isPickleMode()) {
+      const need = modoState.end === "pickle_3" ? 2 : 1;
+      const validatedGames = endScoreState.sets.map(function (s) {
+        return window.PuntazoMatches.score.validatePickleGame(s.t1, s.t2);
+      });
+      const allValid = validatedGames.every(function (v) { return v.state === "valid"; });
+      let g1 = 0, g2 = 0;
+      validatedGames.forEach(function (v) {
+        if (v.state === "valid") { if (v.winner === "team1") g1++; else g2++; }
+      });
+      const complete = (g1 >= need || g2 >= need);
+      const ganador = complete ? (g1 > g2 ? "team1" : "team2") : null;
+      return {
+        ok: allValid && endScoreState.sets.length > 0,
+        ganador: ganador,
+        complete: complete,
+        target: need,
+        validatedSets: validatedGames,
+        t1Sets: g1,
+        t2Sets: g2,
+      };
+    }
+    // Set modes (pádel/tenis)
     const target = modoState.end === "partido_5" ? 3 : 2;
     const validatedSets = endScoreState.sets.map(function (s) {
       const tb = s.tb ? { team1: s.tb.t1, team2: s.tb.t2 } : null;
@@ -4949,18 +5014,31 @@
     // antes (ej. set 1 6-0, set 2 va 1-1 con set 3, después user corrige
     // set 2 a 6-0 → 2-0 cierra, set 3 sobra). Guardamos en buffer para
     // restaurar si vuelve a hacerse necesario.
-    const minRequired = modoState.end === "partido_5" ? 3 : 2;
+    const pickle = isPickleMode();
+    const minRequired = pickle
+      ? (modoState.end === "pickle_3" ? 2 : 1)
+      : (modoState.end === "partido_5" ? 3 : 2);
     if (live.complete && endScoreState.sets.length > minRequired) {
-      // Verificar si el último set es "extra" — el partido cierra con
-      // los anteriores. Si sí, sácarlo y guardar.
+      // Verificar si la última celda es "extra" — el partido cierra con
+      // las anteriores. Si sí, sacarla y guardar.
       const withoutLast = endScoreState.sets.slice(0, -1);
-      const validatedWithoutLast = withoutLast.map(function (s) {
-        const tb = s.tb ? { team1: s.tb.t1, team2: s.tb.t2 } : null;
-        return window.PuntazoMatches.score.validateSet(s.t1, s.t2, tb);
-      });
-      const winnersWithoutLast = validatedWithoutLast.map(function (v) { return { winner: v.winner }; });
-      const rWithoutLast = window.PuntazoMatches.score.deduceMatchWinner(winnersWithoutLast, modoState.end);
-      if (rWithoutLast.complete) {
+      let woComplete;
+      if (pickle) {
+        let g1 = 0, g2 = 0;
+        withoutLast.forEach(function (s) {
+          const v = window.PuntazoMatches.score.validatePickleGame(s.t1, s.t2);
+          if (v.state === "valid") { if (v.winner === "team1") g1++; else g2++; }
+        });
+        woComplete = (g1 >= minRequired || g2 >= minRequired);
+      } else {
+        const validatedWithoutLast = withoutLast.map(function (s) {
+          const tb = s.tb ? { team1: s.tb.t1, team2: s.tb.t2 } : null;
+          return window.PuntazoMatches.score.validateSet(s.t1, s.t2, tb);
+        });
+        const winnersWithoutLast = validatedWithoutLast.map(function (v) { return { winner: v.winner }; });
+        woComplete = window.PuntazoMatches.score.deduceMatchWinner(winnersWithoutLast, modoState.end).complete;
+      }
+      if (woComplete) {
         const removed = endScoreState.sets.pop();
         if (!endScoreState.bufferedSets) endScoreState.bufferedSets = {};
         // key = índice del set que sería si se re-agregara
@@ -4981,7 +5059,7 @@
       head.className = "mp-score-set-head";
       const lab = document.createElement("span");
       lab.className = "mp-score-set-label";
-      lab.textContent = "Set " + (idx + 1);
+      lab.textContent = (pickle ? "Juego " : "Set ") + (idx + 1);
       const status = document.createElement("span");
       status.className = "mp-score-set-status";
       if (v.state === "valid") status.textContent = "✓ válido";
@@ -5024,13 +5102,14 @@
         val.textContent = String(s[k]);
         const plus = document.createElement("button");
         plus.type = "button"; plus.className = "mp-score-pm"; plus.textContent = "+";
+        const cellMax = pickle ? 30 : 7; // pickleball llega a 11/15/21+
         minus.addEventListener("click", function () {
-          s[k] = clamp(s[k] - 1, 0, 7);
+          s[k] = clamp(s[k] - 1, 0, cellMax);
           s.tb = null; // F79: tiebreak desactivado, nunca seteamos s.tb
           rebuildScoreArea();
         });
         plus.addEventListener("click", function () {
-          s[k] = clamp(s[k] + 1, 0, 7);
+          s[k] = clamp(s[k] + 1, 0, cellMax);
           s.tb = null; // F79: tiebreak desactivado
           rebuildScoreArea();
         });
@@ -5116,7 +5195,7 @@
     const addBtn = document.createElement("button");
     addBtn.type = "button";
     addBtn.className = "mp-add-set";
-    addBtn.textContent = live.complete ? "Partido completo" : "+ Agregar set";
+    addBtn.textContent = live.complete ? "Partido completo" : (pickle ? "+ Agregar juego" : "+ Agregar set");
     addBtn.disabled = !canAdd;
     addBtn.addEventListener("click", function () {
       endScoreState.sets.push(nextSet(endScoreState.sets.length));
@@ -5129,7 +5208,7 @@
       banner.className = "mp-winner-banner";
       const setsStr = live.t1Sets + "–" + live.t2Sets;
       banner.textContent = "🏆 Ganador: " + endTeamDisplayName(live.ganador) +
-        " (" + setsStr + " sets)";
+        " (" + setsStr + (pickle ? " juegos)" : " sets)");
       $endScoreArea.appendChild(banner);
     }
   }
@@ -5165,7 +5244,7 @@
     for (let i = 0; i < live.validatedSets.length; i++) {
       const v = live.validatedSets[i];
       if (v.state !== "valid") {
-        return { error: "Set " + (i + 1) + ": " + (v.error || v.hint || "inválido o incompleto") };
+        return { error: (isPickleMode() ? "Juego " : "Set ") + (i + 1) + ": " + (v.error || v.hint || "inválido o incompleto") };
       }
     }
     const sets = endScoreState.sets.map(function (s) { return { team1: s.t1, team2: s.t2 }; });
@@ -5364,8 +5443,10 @@
   const MODO_LABEL = {
     "partido_3": "Partido (mejor de 3 sets)",
     "partido_5": "Partido largo (mejor de 5 sets)",
-    "reta":      "Reta (sin sets, solo ganador)",
-    "libre":     "Libre (cuenta de games)",
+    "pickle_3":  "Partido (mejor de 3 juegos a 11)",
+    "pickle_1":  "Juego rápido (1 juego a 11)",
+    "reta":      "Reta (sin score, solo ganador)",
+    "libre":     "Libre (conteo simple)",
   };
   function renderEndModoSummary() {
     const $txt = document.getElementById("mpEndModoText");
@@ -5384,8 +5465,18 @@
   }
 
   function openModal() {
-    // Modo: heredar del match si existe, default partido_3
-    const matchModo = (currentMatch && currentMatch.modo) || "partido_3";
+    // Modo: ajustar botones al deporte del club/partido, luego heredar el
+    // modo del match (o default según deporte).
+    let sport = (currentMatch && currentMatch.deporte) || null;
+    if (!sport) {
+      try {
+        sport = (window.PuntazoClubs && PuntazoClubs.sportForLoc && currentMatch)
+          ? PuntazoClubs.sportForLoc(currentMatch.loc) : "padel";
+      } catch (_) { sport = "padel"; }
+    }
+    applyModoButtonsForSport("end", sport);
+    const matchModo = (currentMatch && currentMatch.modo)
+      || (sport === "pickleball" ? "pickle_3" : "partido_3");
     setModo("end", matchModo);
     renderEndModoSummary();
     // Jugadores: copiar del match al state del modal
@@ -5424,7 +5515,9 @@
     //   partido_5 → 3 sets visibles
     // El resto se auto-agrega cuando hagan falta (en rebuildScoreArea).
     if (isSetMode()) {
-      const minSets = (matchModo === "partido_5") ? 3 : 2;
+      const minSets = (modoState.end === "partido_5") ? 3
+                    : (modoState.end === "pickle_1") ? 1
+                    : 2; // partido_3 y pickle_3
       while (endScoreState.sets.length < minSets) {
         endScoreState.sets.push(emptySet());
       }
@@ -5790,6 +5883,12 @@
     if ($nuevaStart) $nuevaStart.textContent = "Creando…";
     try {
       const opts = { loc: newLoc, can: newCan, lado: newLado, modo: modo || "partido_3" };
+      // Deporte autoritativo desde el club (pickleball usa scoring distinto).
+      try {
+        if (window.PuntazoClubs && PuntazoClubs.sportForLoc) {
+          opts.deporte = PuntazoClubs.sportForLoc(newLoc);
+        }
+      } catch (_) {}
       if (Array.isArray(jugadores) && jugadores.length > 0) opts.jugadores = jugadores;
       const newId = await window.PuntazoMatches.create(opts);
       // Reemplaza la URL para que F5 no recree
@@ -5855,6 +5954,12 @@
         return;
       }
       show("mpNuevaForm");
+      // Modos según el deporte del club (pickleball = juegos a 11).
+      try {
+        const sport = (window.PuntazoClubs && PuntazoClubs.sportForLoc)
+          ? PuntazoClubs.sportForLoc(newLoc) : "padel";
+        applyModoButtonsForSport("nueva", sport);
+      } catch (_) {}
       // Etapa 16.4 F32: bg de cancha también en esta pantalla intermedia
       applyCourtBackgroundFromCanParam();
       return;
