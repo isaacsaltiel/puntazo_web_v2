@@ -144,7 +144,15 @@ service cloud.firestore {
       allow read: if request.auth != null
                   && resource.data.uid_creator == request.auth.uid;
 
-      allow update, delete: if false;
+      // F130: el dueño de un pulso (uid_creator) puede borrarlo. Cubre
+      // el caso "tengo pulsos de prueba colgados, quiero limpiar mi
+      // lista" sin requerir admin manual desde Firebase Console.
+      // El admin SDK del runner sigue pudiendo borrar bypaseando este check.
+      allow delete: if request.auth != null
+                    && resource.data.uid_creator == request.auth.uid;
+
+      // Update sigue denegado para clientes (solo admin SDK).
+      allow update: if false;
     }
 
     // ════════════════════════════════════════════════════

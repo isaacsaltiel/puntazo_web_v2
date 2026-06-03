@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<base href="/" />
+<title>Dev · Cleanup pulsos colgados</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/clubs-catalog.js"></script>
+
+<style>
+  :root{
+    --bg:#050914; --text:#eaf2ff; --muted:rgba(234,242,255,.55);
+    --line:rgba(255,255,255,.10); --bad:#f06845; --ok:#22c55e;
+    --warn:#ffc85a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
+  .wrap{max-width:920px;margin:0 auto;padding:28px 16px 80px;}
+  h1{font-size:1.5rem;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:.92rem;margin:0 0 18px;line-height:1.5;}
+  .sub code{background:rgba(0,0,0,.32);padding:1px 6px;border-radius:4px;font-size:.85em;}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 18px;}
+  button{font-family:inherit;font-size:.92rem;font-weight:700;cursor:pointer;
+    padding:10px 16px;border-radius:10px;border:1px solid var(--line);
+    background:rgba(11,124,255,.14);color:var(--text);transition:all .15s;}
+  button:hover{background:rgba(11,124,255,.24);}
+  button.danger{background:rgba(240,104,69,.18);border-color:rgba(240,104,69,.45);}
+  button.danger:hover{background:rgba(240,104,69,.32);}
+  button:disabled{opacity:.4;cursor:not-allowed;}
+  .row{display:grid;grid-template-columns:1fr auto;gap:12px;
+    padding:12px 14px;border:1px solid var(--line);border-radius:10px;
+    margin-bottom:8px;align-items:center;background:rgba(255,255,255,.02);}
+  .row .meta{font-size:.84rem;color:var(--muted);}
+  .row .title{font-weight:700;color:#fff;margin-bottom:2px;}
+  .row .id{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.70rem;
+    color:rgba(234,242,255,.38);margin-top:3px;}
+  .row.done{opacity:.5;}
+  .row.done .title::before{content:"✓ ";color:var(--ok);}
+  .row.fail{border-color:rgba(240,104,69,.55);}
+  .row.fail .title::before{content:"✗ ";color:var(--bad);}
+  .badge{display:inline-block;font-size:.66rem;font-weight:800;
+    padding:2px 7px;border-radius:999px;margin-right:6px;
+    text-transform:uppercase;letter-spacing:.3px;}
+  .badge.queue{background:rgba(255,200,90,.16);border:1px solid rgba(255,200,90,.45);color:#ffd497;}
+  .badge.proc{background:rgba(255,150,60,.16);border:1px solid rgba(255,150,60,.45);color:#ffc497;}
+  .badge.err{background:rgba(240,104,69,.18);border:1px solid rgba(240,104,69,.45);color:#ffb09a;}
+  .badge.ok{background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.42);color:#9af2c0;}
+  #msg{padding:10px 12px;border-radius:8px;background:rgba(11,124,255,.10);
+    border:1px solid rgba(11,124,255,.28);font-size:.88rem;margin-bottom:14px;
+    display:none;}
+  #msg.show{display:block;}
+  .counter{font-size:.86rem;color:var(--muted);margin-left:auto;}
+  .empty{text-align:center;padding:40px 20px;color:var(--muted);}
+  .login{text-align:center;padding:40px 20px;}
+  .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+  .filter-btn{padding:7px 12px;font-size:.78rem;}
+  .filter-btn.active{background:rgba(11,124,255,.32);border-color:rgba(11,124,255,.60);}
+  .rule-warning{
+    padding:14px 16px;border-radius:12px;
+    background:rgba(255,200,90,.10);
+    border:1px solid rgba(255,200,90,.42);
+    font-size:.86rem;margin-bottom:18px;color:#ffd497;line-height:1.5;
+  }
+  .rule-warning strong{color:#fff;}
+  .rule-warning pre{
+    background:rgba(0,0,0,.45);padding:10px 12px;border-radius:8px;
+    color:#cfe2ff;font-size:.78rem;font-family:ui-monospace,Menlo,Consolas,monospace;
+    margin-top:8px;overflow-x:auto;white-space:pre;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>Dev · Cleanup pulsos colgados</h1>
+  <p class="sub">Borra pulsos tuyos en <code>pending_pulses</code> que quedaron colgados (en cola, procesando, con error, o de prueba). Solo lista pulsos donde <code>uid_creator == tu uid</code>. Las reglas Firestore te dejan borrar los tuyos (F130). Si te aparece <code>permission-denied</code>, la rule no está deployada todavía — pega el bloque que está abajo en Firebase Console.</p>
+
+  <div class="rule-warning">
+    <strong>⚙ ¿Primera vez? Necesitas pegar esta rule en Firebase Console:</strong>
+    Firestore → Reglas → busca el bloque <code>match /pending_pulses/{pulseId}</code>. Reemplaza la línea <code>allow update, delete: if false;</code> por:
+    <pre>      allow delete: if request.auth != null
+                    &amp;&amp; resource.data.uid_creator == request.auth.uid;
+      allow update: if false;</pre>
+    Publica los cambios. Después recarga esta página.
+  </div>
+
+  <div id="msg"></div>
+
+  <div id="loginBox" class="login" style="display:none">
+    <p>Necesitas iniciar sesión con Google.</p>
+    <button id="btnLogin">Iniciar sesión</button>
+  </div>
+
+  <div id="loadingBox" class="empty">Cargando…</div>
+
+  <div id="emptyBox" class="empty" style="display:none">
+    No tienes pulsos colgados. Nada que limpiar 🎉
+  </div>
+
+  <div id="mainBox" style="display:none">
+    <div class="filters" id="filters">
+      <button type="button" class="filter-btn active" data-filter="all">Todos</button>
+      <button type="button" class="filter-btn" data-filter="queue">🟡 En cola</button>
+      <button type="button" class="filter-btn" data-filter="proc">🟠 Procesando</button>
+      <button type="button" class="filter-btn" data-filter="err">⚠️ Con error</button>
+      <button type="button" class="filter-btn" data-filter="ok">✅ Listo</button>
+    </div>
+
+    <div class="bar">
+      <button id="btnAll" class="danger">Borrar TODOS los listados</button>
+      <button id="btnReload">Recargar lista</button>
+      <span class="counter" id="counter"></span>
+    </div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const $msg      = document.getElementById('msg');
+  const $loginBox = document.getElementById('loginBox');
+  const $loading  = document.getElementById('loadingBox');
+  const $empty    = document.getElementById('emptyBox');
+  const $main     = document.getElementById('mainBox');
+  const $list     = document.getElementById('list');
+  const $btnAll   = document.getElementById('btnAll');
+  const $btnReload= document.getElementById('btnReload');
+  const $btnLogin = document.getElementById('btnLogin');
+  const $counter  = document.getElementById('counter');
+  const $filters  = document.getElementById('filters');
+
+  let allDocs = [];
+  let activeFilter = 'all';
+  let clubsCache = null;
+
+  function showMsg(text, isErr) {
+    $msg.textContent = text || '';
+    $msg.className = text ? ('show' + (isErr ? ' err' : '')) : '';
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])
+    );
+  }
+
+  async function resolveLabel(loc, can, lado) {
+    try {
+      if (!clubsCache && window.PuntazoClubs && PuntazoClubs.getCatalog) {
+        clubsCache = await PuntazoClubs.getCatalog();
+      }
+      const club = clubsCache && (clubsCache.clubs || []).find(c => c.id === loc);
+      const clubName = club ? (club.nombre || loc) : loc;
+      return clubName + ' · ' + (can || '?') + ' · ' + (lado || '?');
+    } catch (_) { return loc + ' · ' + can + ' · ' + lado; }
+  }
+
+  function fmtTs(ts) {
+    if (!ts) return '—';
+    const ms = typeof ts === 'number' ? ts
+             : (ts.toMillis ? ts.toMillis()
+             : (ts.seconds ? ts.seconds * 1000 : null));
+    if (!ms) return '—';
+    const d = new Date(ms);
+    return d.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+  }
+
+  function classifyDoc(d) {
+    if (!d.consumed_at) return { type: 'queue', emoji: '🟡', label: 'En cola', cls: 'queue' };
+    if (d.error_reason) return { type: 'err', emoji: '⚠️', label: 'Con error', cls: 'err', detail: d.error_reason };
+    // consumed_at != null sin error_reason → procesando o listo.
+    // Sin join con videos_index aquí, simplemente lo llamamos "procesado".
+    const consumedMs = d.consumed_at && d.consumed_at.toMillis ? d.consumed_at.toMillis() : 0;
+    const ageMin = consumedMs ? Math.floor((Date.now() - consumedMs) / 60000) : 0;
+    if (ageMin > 15) return { type: 'ok', emoji: '✅', label: 'Procesado', cls: 'ok', detail: 'hace ' + ageMin + ' min' };
+    return { type: 'proc', emoji: '🟠', label: 'Procesando', cls: 'proc' };
+  }
+
+  function applyFilter() {
+    const filtered = (activeFilter === 'all') ? allDocs : allDocs.filter(d => d._classify.type === activeFilter);
+    $list.innerHTML = '';
+    if (!filtered.length) {
+      $list.innerHTML = '<div class="empty">Nada en este filtro.</div>';
+      $counter.textContent = '0 mostrados';
+      return;
+    }
+    filtered.forEach(d => $list.appendChild(renderRow(d)));
+    $counter.textContent = filtered.length + ' mostrados';
+    $list.querySelectorAll('button[data-id]').forEach(btn => {
+      btn.addEventListener('click', () => deleteOne(btn.getAttribute('data-id'), btn));
+    });
+  }
+
+  function renderRow(d) {
+    const div = document.createElement('div');
+    div.className = 'row';
+    div.id = 'row-' + d._id;
+    const cls = d._classify;
+    const detail = cls.detail ? ' · ' + esc(cls.detail) : '';
+    div.innerHTML =
+      '<div>' +
+        '<div class="title">' +
+          '<span class="badge ' + cls.cls + '">' + cls.emoji + ' ' + esc(cls.label) + '</span>' +
+          esc(d._label) +
+        '</div>' +
+        '<div class="meta">' +
+          'Pedido: ' + esc(fmtTs(d.created_at)) +
+          ' · source: ' + esc(d.source || '?') +
+          detail +
+        '</div>' +
+        '<div class="id">' + esc(d._id) + '</div>' +
+      '</div>' +
+      '<div>' +
+        '<button class="danger" data-id="' + esc(d._id) + '">Borrar</button>' +
+      '</div>';
+    return div;
+  }
+
+  async function loadAll(user) {
+    $loading.style.display = 'block';
+    $main.style.display = 'none';
+    $empty.style.display = 'none';
+    try {
+      const db = window.PuntazoFirebase && window.PuntazoFirebase.db && window.PuntazoFirebase.db();
+      if (!db) throw new Error('Firestore no inicializado');
+
+      const snap = await db.collection('pending_pulses')
+        .where('uid_creator', '==', user.uid)
+        .limit(200)
+        .get();
+
+      const docs = [];
+      snap.forEach(s => {
+        const o = s.data() || {};
+        o._id = s.id;
+        o._classify = classifyDoc(o);
+        docs.push(o);
+      });
+
+      // Resolver labels en paralelo
+      await Promise.all(docs.map(async d => {
+        d._label = await resolveLabel(d.club, d.cancha, d.lado);
+      }));
+
+      // Sort por fecha desc
+      docs.sort((a, b) => {
+        const aMs = a.created_at && a.created_at.toMillis ? a.created_at.toMillis() : 0;
+        const bMs = b.created_at && b.created_at.toMillis ? b.created_at.toMillis() : 0;
+        return bMs - aMs;
+      });
+
+      allDocs = docs;
+      $loading.style.display = 'none';
+
+      if (!allDocs.length) { $empty.style.display = 'block'; return; }
+      $main.style.display = 'block';
+      applyFilter();
+    } catch (e) {
+      console.error('[cleanup-pulses] load error', e);
+      $loading.style.display = 'none';
+      showMsg('Error cargando: ' + (e && e.message ? e.message : e), true);
+    }
+  }
+
+  async function deleteOne(docId, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Borrando…'; }
+    const $row = document.getElementById('row-' + docId);
+    try {
+      const db = window.PuntazoFirebase.db();
+      await db.collection('pending_pulses').doc(docId).delete();
+      if ($row) $row.classList.add('done');
+      if (btn) btn.textContent = '✓ Borrado';
+      allDocs = allDocs.filter(d => d._id !== docId);
+      return true;
+    } catch (e) {
+      console.error('[cleanup-pulses] delete failed for', docId, e);
+      if ($row) $row.classList.add('fail');
+      if (btn) { btn.disabled = false; btn.textContent = 'Reintentar'; }
+      // Si es permission-denied, casi seguro la rule no está deployada.
+      if (e && e.code === 'permission-denied') {
+        showMsg('La rule de delete no está deployada. Mirá el bloque amarillo arriba.', true);
+      }
+      return false;
+    }
+  }
+
+  async function deleteAll() {
+    const filtered = (activeFilter === 'all') ? allDocs : allDocs.filter(d => d._classify.type === activeFilter);
+    if (!filtered.length) return;
+    if (!confirm('¿Borrar los ' + filtered.length + ' pulsos listados? No se puede deshacer.')) return;
+    $btnAll.disabled = true;
+    $btnReload.disabled = true;
+    let done = 0, fail = 0;
+    for (const d of filtered.slice()) {
+      const btn = $list.querySelector('button[data-id="' + d._id + '"]');
+      const ok = await deleteOne(d._id, btn);
+      if (ok) done++; else fail++;
+      $counter.textContent = done + '/' + filtered.length + ' borrados' + (fail ? ' · ' + fail + ' fallaron' : '');
+    }
+    showMsg('Listo: ' + done + ' borrados' + (fail ? ', ' + fail + ' con error (ver consola)' : '') + '.');
+    $btnReload.disabled = false;
+  }
+
+  $filters.querySelectorAll('button[data-filter]').forEach(b => {
+    b.addEventListener('click', () => {
+      $filters.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      activeFilter = b.getAttribute('data-filter');
+      applyFilter();
+    });
+  });
+
+  $btnAll.addEventListener('click', deleteAll);
+  $btnReload.addEventListener('click', () => {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (u) loadAll(u);
+  });
+  $btnLogin.addEventListener('click', () => {
+    try { window.PuntazoAuth.signIn(); } catch (_) {}
+  });
+
+  function onAuthReady() {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) {
+      $loading.style.display = 'none';
+      $loginBox.style.display = 'block';
+      return;
+    }
+    $loginBox.style.display = 'none';
+    loadAll(user);
+  }
+
+  window.addEventListener('puntazo:auth-ready', onAuthReady);
+  window.addEventListener('puntazo:auth-changed', onAuthReady);
+  if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+    onAuthReady();
+  } else {
+    setTimeout(() => { if ($loading.style.display !== 'none') onAuthReady(); }, 1000);
+  }
+})();
+</script>
+</body>
+</html>
