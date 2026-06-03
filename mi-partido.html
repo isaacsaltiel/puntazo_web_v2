@@ -32,6 +32,9 @@
 <script src="/assets/refresh-bar.js"></script>
 <!-- F129: heartbeat-watcher para banner "cámaras fuera de línea". -->
 <script src="/assets/heartbeat-watcher.js"></script>
+<!-- F131: overlay para ver la foto del resumen cuando el match está
+     ended (mismo overlay que detalle.html usa desde F125-H1). -->
+<script src="/assets/resumen-overlay.js"></script>
 <script src="/assets/clip-states.js"></script>
 <script src="/assets/court-svg.js"></script>
 <script src="/assets/pulses.js"></script>
@@ -3281,6 +3284,13 @@
 
     <div id="mpSuccessBanner" class="mp-success-banner">✅ Partido terminado. Marcador guardado.</div>
 
+    <!-- F131: botón "Ver foto del resumen" cuando el match está ended.
+         Visible solo en estado ended (se controla desde JS en renderMatch).
+         Click abre el overlay reusable PuntazoResumenOverlay. -->
+    <div id="mpResumenPhotoWrap" style="display:none; text-align:center; margin-bottom:14px;">
+      <!-- el button concreto se inyecta desde JS via buildButton -->
+    </div>
+
     <div id="mpTimerBox" class="mp-timer-box">
       <div class="mp-timer-head">
         <div class="mp-timer-label">⏱ En curso</div>
@@ -4837,6 +4847,27 @@
 
     // F126-B: refresh-bar arriba del bloque de pulsos del partido.
     setupMpRefreshBar(match);
+
+    // F131: botón "Ver foto del resumen" para matches ended. El wrap
+    // sólo se muestra cuando match.status === "ended". El botón se
+    // inyecta una sola vez (toggling solo display del wrap).
+    try {
+      const $resPhotoWrap = document.getElementById("mpResumenPhotoWrap");
+      if ($resPhotoWrap) {
+        if (match.status === "ended" && window.PuntazoResumenOverlay) {
+          if (!$resPhotoWrap.dataset.built) {
+            const btn = window.PuntazoResumenOverlay.buildButton(match.id, {
+              label: "📸 Ver foto del resumen",
+            });
+            $resPhotoWrap.appendChild(btn);
+            $resPhotoWrap.dataset.built = "1";
+          }
+          $resPhotoWrap.style.display = "block";
+        } else {
+          $resPhotoWrap.style.display = "none";
+        }
+      }
+    } catch (_) {}
 
     // F129: banner pasivo "cámaras del club fuera de línea". Lee
     // nuc_heartbeat/{match.loc}. Solo se muestra si lastSeenAt > 5 min.

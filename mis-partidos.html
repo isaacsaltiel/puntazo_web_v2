@@ -270,17 +270,11 @@
                 locNombre: locNombre,
                 canNombre: canNombre,
               });
-              // F125-H1: wrapper con scoreboard-card + botón "Ver foto del
-              // resumen" debajo (solo para matches ended). Igual que perfil.
+              // F131: el botón "Ver foto del resumen" salió del listado.
+              // Se ve cuando el user entra al match (mi-partido o detalle).
               const wrap = document.createElement('div');
               wrap.className = 'pz-match-card-wrap';
               wrap.appendChild(card);
-              if (status === 'ended' && window.PuntazoResumenOverlay) {
-                const actions = document.createElement('div');
-                actions.className = 'pz-match-card-actions';
-                actions.appendChild(window.PuntazoResumenOverlay.buildButton(m.id));
-                wrap.appendChild(actions);
-              }
               $list.appendChild(wrap);
               rendered++;
             }

@@ -1057,19 +1057,10 @@
       wrap.appendChild(a);
     }
 
-    // F125-H1: botón "Ver foto del resumen" solo para matches ended.
-    // El click abre overlay con resumen.html?embed=1 que muestra la foto
-    // generada con html2canvas + los botones para descargar/compartir/
-    // personalizar (los botones de edición viven dentro de resumen.html
-    // y solo aparecen cuando la foto ya cargó — exactamente lo que Isaac
-    // pidió: "solo cuando ya apareció").
-    if (status === 'ended' && window.PuntazoResumenOverlay) {
-      const actions = document.createElement('div');
-      actions.className = 'pz-match-card-actions';
-      actions.appendChild(window.PuntazoResumenOverlay.buildButton(match.id));
-      wrap.appendChild(actions);
-    }
-
+    // F131: el botón "Ver foto del resumen" se mueve OUT del listado de
+    // perfil. El user lo ve cuando entra al match (mi-partido.html o
+    // detalle.html), no en cada card de la lista — la lista es para
+    // navegar, no para acciones secundarias.
     return wrap;
   }
 
