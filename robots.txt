@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Páginas internas / de operación: no aportan a búsqueda y no deben indexarse.
+Disallow: /admin.html
+Disallow: /dashboard.html
+Disallow: /editor.html
+Disallow: /tablero.html
+Disallow: /dev-cleanup.html
+Disallow: /dev-cleanup-pulses.html
+Disallow: /boton.html
+Disallow: /recuperar.html
+
+Sitemap: https://puntazoclips.com/sitemap.xml

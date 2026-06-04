@@ -158,14 +158,14 @@
     if (variant === "landing") {
       root.innerHTML = `
         <nav>
-          <a href="landing.html" class="nav-logo">
+          <a href="/" class="nav-logo">
             <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
           </a>
           <ul class="nav-links" id="nav-menu">
-            <li><a href="landing.html#producto"    onclick="closeMenu()">Producto</a></li>
-            <li><a href="landing.html#vision"      onclick="closeMenu()">Visión</a></li>
-            <li><a href="landing.html#clubs"       onclick="closeMenu()">Para clubs</a></li>
-            <li><a href="landing.html#locaciones"  onclick="closeMenu()">Locaciones</a></li>
+            <li><a href="/#producto"    onclick="closeMenu()">Producto</a></li>
+            <li><a href="/#vision"      onclick="closeMenu()">Visión</a></li>
+            <li><a href="/#clubs"       onclick="closeMenu()">Para clubs</a></li>
+            <li><a href="/#locaciones"  onclick="closeMenu()">Locaciones</a></li>
           </ul>
           <div class="pz-nav-right">
             ${getPhoneButtonCTA()}
@@ -192,7 +192,7 @@
               <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </a>
-          <a href="landing.html" class="logo-link">
+          <a href="/" class="logo-link">
             <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
           </a>
           <div class="pz-nav-right pz-nav-right--embedded">
@@ -221,13 +221,13 @@
     // Internal
     root.innerHTML = `
       <header class="site-header">
-        <a href="landing.html" class="logo-link">
+        <a href="/" class="logo-link">
           <img src="assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
         </a>
         <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Abrir menú" onclick="window.toggleNavMenu(event)">☰</button>
         <nav class="navbar" id="nav-menu">
-          <a href="landing.html">Inicio</a>
-          <a href="landing.html#clubs">Para clubs</a>
+          <a href="/">Inicio</a>
+          <a href="/#clubs">Para clubs</a>
         </nav>
         <div class="pz-nav-right pz-nav-right--internal">
           ${getPhoneButtonCTA()}
