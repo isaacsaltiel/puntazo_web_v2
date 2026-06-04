@@ -884,9 +884,20 @@
             const data = d.data() || {};
             const createdDate = tsToDate(data.created_at);
             data._ageMin = createdDate ? Math.floor((Date.now() - createdDate.getTime()) / 60000) : 0;
-            // Filtrar los muy viejos (>24h y ya consumed) — son "ya pasaron",
-            // no aportan a "pendientes". Foco: lo que aún espera respuesta.
-            if (data.consumed_at && data._ageMin > 24 * 60) return;
+            // F133: filtrar los pulsos que ya cumplieron su ciclo:
+            //   (a) consumed_at viejo (>15 min). Asunción: la NUC procesó
+            //       hace rato, video ya está en Dropbox aunque el JSON
+            //       estático cliente-side no lo indexe más (videos_recientes
+            //       guarda 24h, videos_vitrina solo top-5). El listado
+            //       "Mis puntazos pendientes" debe mostrar SOLO lo que de
+            //       verdad está esperando respuesta, no histórico colgado.
+            //   (b) created_at > 24h (cualquier estado) — fallback de seguridad.
+            if (data.consumed_at) {
+              const consumedMs = data.consumed_at.toMillis ? data.consumed_at.toMillis() : 0;
+              const ageConsumedMin = consumedMs ? Math.floor((Date.now() - consumedMs) / 60000) : 0;
+              if (ageConsumedMin > 15) return; // (a)
+            }
+            if (data._ageMin > 24 * 60) return; // (b)
             docs.push(Object.assign({ _id: d.id }, data));
           });
           if (!docs.length) { showPendingState('empty'); return; }

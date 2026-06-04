@@ -308,13 +308,28 @@
         return bMs - aMs;
       });
 
-      // F126-B: anota los pulsos consumed_at con su clip URL si existe en
-      // videos_recientes.json del lado, y FILTRA los ya-listos del panel
-      // de pendientes (ya no son pendientes: tienen su clip disponible).
-      // Esto resuelve el bug donde un pulso procesado hace 455 min aparecía
-      // como "Tardando más de lo normal" aunque el clip ya estaba subido.
+      // F126-B + F133: anota los pulsos consumed_at con su clip URL si
+      // existe en videos_recientes.json. Después filtra del panel:
+      //   - Los que tienen _matchedClipUrl (ya están listos con link).
+      //   - Los que ya tienen consumed_at > 15 min sin match. Asunción
+      //     conservadora: si la NUC consumió hace rato, su video YA
+      //     existe en Dropbox aunque el JSON estático del cliente ya
+      //     no lo indexe (videos_recientes solo guarda 24h,
+      //     videos_vitrina solo top-5). El panel "pendientes" debe
+      //     mostrar solo lo que de verdad está en cola o procesándose
+      //     ahora — no pulsos viejos huérfanos del índice JSON.
       try { await _annotatePulsesWithClips(out); } catch (_) {}
-      const trulyPending = out.filter(function (d) { return !d._matchedClipUrl; });
+      const STALE_CONSUMED_MS = 15 * 60 * 1000;
+      const trulyPending = out.filter(function (d) {
+        if (d._matchedClipUrl) return false;
+        if (d.consumed_at) {
+          var consumedMs = d.consumed_at.toMillis ? d.consumed_at.toMillis() : 0;
+          if (consumedMs && (Date.now() - consumedMs) > STALE_CONSUMED_MS) {
+            return false; // procesado hace rato, asumimos OK
+          }
+        }
+        return true;
+      });
 
       _pendingCache.set(key, { ts: Date.now(), docs: trulyPending });
       return trulyPending;
