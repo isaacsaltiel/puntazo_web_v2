@@ -130,28 +130,40 @@ service cloud.firestore {
     // para que una futura regla "fields-only" en update NO rompa el
     // listener:
     //   consumed_at, consumed_by, error_reason, processed_video_url
+    // F128-H2 + F130 deployadas a Console el 2026-06-03 vía REST API
+    // (ruleset da0d0727). Ver docs/plans/firebase-admin-capabilities.md
+    // para cómo se hizo el deploy desde el chat maestro web.
     match /pending_pulses/{pulseId} {
-      allow create: if request.resource.data.club is string
-                    && request.resource.data.club.size() > 0
-                    && request.resource.data.club.size() < 64
-                    && request.resource.data.cancha is string
-                    && request.resource.data.source is string
-                    && request.resource.data.client_pulse_id is string
-                    && request.resource.data.consumed_at == null
-                    && request.resource.data.consumed_by == null
-                    && request.resource.data.created_at == request.time;
+      allow create: if (
+        // Caso original: pulso de clip (web_boton / recovery / web / button)
+        (request.resource.data.source in ["web_boton","recovery","web","button"]
+          && request.resource.data.club is string
+          && request.resource.data.club.size() > 0
+          && request.resource.data.club.size() < 64
+          && request.resource.data.cancha is string
+          && request.resource.data.client_pulse_id is string
+          && request.resource.data.consumed_at == null
+          && request.resource.data.consumed_by == null
+          && request.resource.data.created_at == request.time)
+        ||
+        // F128-H2 (Worker H): upload de foto del resumen del partido
+        (request.resource.data.source == "upload_resumen"
+          && request.resource.data.match_id is string
+          && request.resource.data.payload_base64 is string
+          && request.resource.data.uid_creator == request.auth.uid
+          && request.resource.data.consumed_at == null
+          && request.resource.data.created_at == request.time)
+      );
 
       allow read: if request.auth != null
                   && resource.data.uid_creator == request.auth.uid;
 
-      // F130: el dueño de un pulso (uid_creator) puede borrarlo. Cubre
-      // el caso "tengo pulsos de prueba colgados, quiero limpiar mi
-      // lista" sin requerir admin manual desde Firebase Console.
-      // El admin SDK del runner sigue pudiendo borrar bypaseando este check.
+      // F130: dueño puede borrar sus propios pulsos.
       allow delete: if request.auth != null
                     && resource.data.uid_creator == request.auth.uid;
 
-      // Update sigue denegado para clientes (solo admin SDK).
+      // Update sigue denegado para clientes (solo admin SDK escribe
+      // consumed_at, consumed_by, error_reason, summary_image_url, etc.).
       allow update: if false;
     }
 
