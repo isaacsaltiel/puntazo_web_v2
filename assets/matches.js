@@ -1165,6 +1165,14 @@
         out.push({
           videoId: v.nombre,
           videoUrl: v.url,
+          // F134: exponer también `url` (alias de videoUrl) para que el
+          // output sea consumible directo por PuntazoCard.build, que lee
+          // entry.url en assets/card.js:279. Sin este alias, detalle.html
+          // y cualquier otra página que pase findClipsForMatch a
+          // PuntazoCard renderiza el card con <video> sin src → fondo
+          // negro sin preview ni controles funcionales. Mantener videoUrl
+          // por backwards-compat (resumen.html, mis-clips.html lo leen).
+          url: v.url,
           club: matchDoc.loc,
           cancha: matchDoc.can,
           lado: matchDoc.lado,
