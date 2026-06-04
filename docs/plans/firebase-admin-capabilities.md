@@ -87,7 +87,16 @@ https://www.googleapis.com/auth/firebase
 
 | Fecha | Ruleset name | Contenido del cambio |
 |---|---|---|
-| 2026-06-03 | `da0d0727-5577-4550-ab39-d6b2f2ea927c` | pending_pulses extendido: F128-H2 (`source="upload_resumen"`) + F130 (delete por uid_creator) |
+| 2026-06-03 | `da0d0727-5577-4550-ab39-d6b2f2ea927c` | pending_pulses extendido: F128-H2 (`source="upload_resumen"`) + F130 (delete por uid_creator). ⚠️ **Introdujo regresión**: apretó el create de clip de `source is string` → `source in [4]`, rompiendo `web_mi_partido`/`web_torneo5`/`match_full`. |
+| 2026-06-04 | `d053bb2c-b272-4a59-8b8d-61e1fd3157f2` | **HOTFIX outage**: revierte el allowlist de source a `is string` en la rama de clip de pending_pulses. Conserva intactas las ramas `upload_resumen` y `delete` de F130. Deploy aprobado por Isaac tras revisar el diff. |
+
+> **Lección (post-mortem 2026-06-04)**: el allowlist `source in [...]` vino del
+> ejemplo del brief Worker H, que hardcodeó 4 sources sin cruzarlos contra los
+> que la web realmente manda. El doc MD quedó desincronizado con prod y nadie lo
+> notó hasta que el outage llegó a los clubes. **Antes de deployar un cambio a
+> `pending_pulses` create, grepear `source:` en `*.html`/`assets/*.js` y cubrir
+> TODOS los valores.** Sources actuales: `web_boton`, `web_mi_partido`,
+> `web_torneo5`, `recovery`, `match_full`, `web`, `button`.
 
 ## Cuándo NO usar este atajo
 

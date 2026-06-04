@@ -135,8 +135,14 @@ service cloud.firestore {
     // para cómo se hizo el deploy desde el chat maestro web.
     match /pending_pulses/{pulseId} {
       allow create: if (
-        // Caso original: pulso de clip (web_boton / recovery / web / button)
-        (request.resource.data.source in ["web_boton","recovery","web","button"]
+        // Caso original: pulso de clip. ⚠️ source = cualquier string.
+        // NO restringir a un allowlist: la web manda múltiples sources
+        // (web_boton, web_mi_partido, web_torneo5, recovery, match_full, web,
+        // button). El deploy da0d0727 (2026-06-03) lo apretó a un allowlist de
+        // 4 y rompió web_mi_partido/web_torneo5/match_full en TODOS los clubes
+        // Firestore → outage. Revertido a `is string` el 2026-06-04 (ruleset
+        // d053bb2c). Si se quiere hardening futuro, incluir TODOS los sources.
+        (request.resource.data.source is string
           && request.resource.data.club is string
           && request.resource.data.club.size() > 0
           && request.resource.data.club.size() < 64
