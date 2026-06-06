@@ -609,6 +609,10 @@
     <div id="actionsAuthed" class="entrada-actions" style="display:none">
       <button id="btnIniciar" class="btn-primary" type="button">🎾 Configurar partido →</button>
       <a id="lnkSoloClips" class="btn-secondary" href="#">Solo quiero ver los clips</a>
+      <!-- F135 (Fix 6): "Solo registrar puntazos" movido aquí desde la 1ª
+           pantalla. Solo aparece cuando ya elegiste club+cancha (estás en la
+           cancha), no en el selector de clubs. -->
+      <a id="lnkRegistrarAuthed" class="btn-secondary" href="#">🔵 Solo registrar puntazos</a>
       <!-- F119: link sutil a herramientas (sortear, marcador, torneo 5, etc).
            Pasa loc+can para que herramientas propague el contexto a los
            modos que lo entienden (Torneo 5 muestra botón Puntazo round). -->
@@ -620,6 +624,9 @@
 
     <div id="actionsGuest" class="entrada-actions" style="display:none">
       <a id="lnkInvitado" class="btn-primary" href="#">Continuar como invitado</a>
+      <!-- F135 (Fix 6): registrar puntazos también para invitado ya estando
+           en la cancha (mismo destino /boton.html). -->
+      <a id="lnkRegistrarGuest" class="btn-secondary" href="#">🔵 Solo registrar puntazos</a>
       <button id="btnLogin" class="btn-google" type="button">
         <svg viewBox="0 0 48 48" aria-hidden="true">
           <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.239 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
@@ -743,11 +750,15 @@
   // F111-B: ?modo=clips → mismo selector visual pero termina en /lado.html
   // (ver clips ya capturados, sin crear partido ni botón).
   const modoClips = (params.modo || "").trim().toLowerCase() === "clips";
+  // F135 (Fix 4): ?modo=canchas&loc=X → selector que ARRANCA en el paso de
+  // canchas del club X (para "cambiar cancha" desde lado.html). Termina en
+  // /lado.html igual que modoClips.
+  const modoCanchas = (params.modo || "").trim().toLowerCase() === "canchas";
 
   // Si el QR físico viejo apunta sin un lado pero con loc/can, tratamos como
   // selector parcial. Más limpio para el caso real: si vienen los 3 → flow viejo.
-  // En modo boton/clips ignoramos hasFullParams (siempre pasa por el selector).
-  const hasFullParams = !modoBoton && !modoClips && loc && can && lado;
+  // En modo boton/clips/canchas ignoramos hasFullParams (siempre pasa por el selector).
+  const hasFullParams = !modoBoton && !modoClips && !modoCanchas && loc && can && lado;
 
   // ---------- SELECTOR FLOW ----------
   //
@@ -842,25 +853,17 @@
         $selGrid.appendChild(card);
       });
 
-      // F127: orden final pedido por Isaac (corrige F124).
-      //   1) "Solo registrar puntazos" → ARRIBA (con la P redonda como visual).
-      //   2) "¿Sin Puntazo en tu cancha?" → medio (modos juego standalone).
-      //   3) "¿Se te escapó un puntazo?" → fondo (con 🔍 en lugar de flecha).
+      // F135 (Fix 6): se QUITÓ "Solo registrar puntazos" de esta 1ª pantalla
+      // (se prestaba a que alguien fuera del club registrara). Ahora vive en el
+      // ready flow, tras elegir club+cancha (#actionsAuthed / #actionsGuest).
+      // Orden de las extras restantes (pedido por Isaac):
+      //   1) "¿Sin Puntazo en tu cancha?" → ARRIBA (modos juego standalone).
+      //   2) "¿Se te escapó un puntazo?" → abajo (con 🔍 en lugar de flecha).
       if (!modoBoton) {
         const extras = document.createElement("div");
         extras.style.cssText = "grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; margin-top:8px;";
         extras.innerHTML =
-          // ① Solo registrar puntazos — arriba, con la P redonda visual
-          '<a href="/entrada.html?modo=boton" class="sel-card" style="text-decoration:none; min-height:auto; padding:12px 14px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px;">' +
-            '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +
-              '<span class="name" style="font-size:.92rem;">Solo registrar puntazos</span>' +
-              '<span class="meta" style="margin-top:0;">Sin crear partido — solo el botón</span>' +
-            '</span>' +
-            '<img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" ' +
-                 'style="width:52px;height:52px;flex-shrink:0;border-radius:50%;object-fit:contain;' +
-                 'filter:drop-shadow(0 0 14px rgba(11,124,255,.45));">' +
-          '</a>' +
-          // ② ¿Sin Puntazo en tu cancha? — medio, card destacada morada
+          // ① ¿Sin Puntazo en tu cancha? — arriba, card destacada morada
           '<a href="/herramientas.html" class="sel-card" style="text-decoration:none; min-height:auto; padding:14px 16px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px; border-color:rgba(180,120,255,.32); background:linear-gradient(180deg, rgba(180,120,255,.10), rgba(11,124,255,.04));">' +
             '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +
               '<span class="name" style="font-size:.92rem;">¿Sin Puntazo en tu cancha?</span>' +
@@ -868,7 +871,7 @@
             '</span>' +
             '<span style="font-size:1.45rem; opacity:.9; line-height:1;">🎲</span>' +
           '</a>' +
-          // ③ ¿Se te escapó un puntazo? — fondo con 🔍 (buscar)
+          // ② ¿Se te escapó un puntazo? — abajo con 🔍 (buscar)
           '<a href="/recuperar.html" class="sel-card" style="text-decoration:none; min-height:auto; padding:14px 16px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px;">' +
             '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +
               '<span class="name" style="font-size:.92rem;">¿Se te escapó un puntazo?</span>' +
@@ -984,7 +987,7 @@
     // El primer lado de la cancha es el que servimos por default (entrada
     // viejo no pide elegir lado por UX — internamente todas las canchas
     // tienen 1 lado salvo Scorpion).
-    if (modoClips) {
+    if (modoClips || modoCanchas) {
       const qs = "?loc=" + encodeURIComponent(club.id) +
                  "&can=" + encodeURIComponent(cancha.id) +
                  "&lado=" + encodeURIComponent(ld.id) +
@@ -1141,6 +1144,13 @@
     $lnkSoloClips.href = "/lado.html" + ladoQuery;
     $lnkInvitado.href = "/lado.html" + ladoQuery;
 
+    // F135 (Fix 6): registrar puntazos directo (ya hay loc+can) → /boton.html.
+    const botonQuery = "?loc=" + encodeURIComponent(loc) + "&can=" + encodeURIComponent(can);
+    const $lnkRegA = document.getElementById("lnkRegistrarAuthed");
+    const $lnkRegG = document.getElementById("lnkRegistrarGuest");
+    if ($lnkRegA) $lnkRegA.href = "/boton.html" + botonQuery;
+    if ($lnkRegG) $lnkRegG.href = "/boton.html" + botonQuery;
+
     // F119: link a herramientas con loc+can (sin lado — herramientas no
     // necesita lado, solo el contexto de club/cancha para que el botón
     // Puntazo round funcione en Torneo 5 / tablero).
@@ -1190,6 +1200,24 @@
     opts = opts || {};
     await loadCatalogSafe();
 
+    // F135 (Fix 4): ?modo=canchas&loc=X → arrancar directo en el paso de
+    // canchas del club X (preseleccionado). Si el club no existe en el
+    // catálogo, caemos al selector de clubs normal.
+    if (opts.directLoc) {
+      const cat = selectorState.catalog || { clubs: [] };
+      const club = cat.clubs.find(c => c.id === opts.directLoc);
+      if (club && club.status !== "soon") {
+        selectorState.selectedClub = club;
+        selectorState.step = "canchas";
+        renderSelector();
+        return;
+      }
+      // Club no disponible → selector de clubs completo
+      selectorState.step = "clubs";
+      renderSelector();
+      return;
+    }
+
     // ¿Vino con ?qr=CODE?
     if (opts.qrCode) {
       const resolved = window.PuntazoClubs && window.PuntazoClubs.resolveQrCode
@@ -1233,6 +1261,9 @@
   // ---------- ENTRYPOINT ----------
   if (hasFullParams) {
     startReadyFlow();
+  } else if (modoCanchas && loc) {
+    // F135 (Fix 4): "cambiar cancha" → directo al paso de canchas del club.
+    startSelectorFlow({ directLoc: loc });
   } else if (qrCode) {
     startSelectorFlow({ qrCode: qrCode });
   } else {

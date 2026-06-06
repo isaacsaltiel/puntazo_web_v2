@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Mis clips guardados · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<link rel="stylesheet" href="/assets/card.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/card.js"></script>
+<style>
+  .gd-wrap { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
+  .gd-head { margin-bottom:18px; }
+  .gd-title { font-size:1.35rem; font-weight:900; color:#fff; margin:0 0 4px; }
+  .gd-sub { font-size:0.86rem; color:rgba(234,242,255,.62); }
+  .gd-back {
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:0.8rem; font-weight:800; color:#cfe2ff; text-decoration:none;
+    padding:6px 13px; border-radius:999px; margin-bottom:14px;
+    background:rgba(11,124,255,.14); border:1px solid rgba(11,124,255,.30);
+    transition:background .14s, border-color .14s;
+  }
+  .gd-back:hover { background:rgba(11,124,255,.26); border-color:rgba(11,124,255,.55); }
+
+  .gd-state { text-align:center; padding:50px 20px; }
+  .gd-state .icon { font-size:48px; margin-bottom:14px; }
+  .gd-state h3 { font-size:1.15rem; font-weight:900; color:#eaf2ff; margin:0 0 8px; }
+  .gd-state p { color:rgba(234,242,255,.60); margin:0 0 20px; }
+  .gd-state button, .gd-state a.btn {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:.8rem 1.5rem; border-radius:999px; cursor:pointer;
+    border:1px solid rgba(11,124,255,.40); background:rgba(0,79,200,.18);
+    color:#eaf2ff; font-family:inherit; font-size:.92rem; font-weight:800;
+    text-decoration:none; transition:all .16s;
+  }
+  .gd-state button:hover, .gd-state a.btn:hover { background:rgba(0,79,200,.28); border-color:rgba(11,124,255,.55); }
+
+  .gd-more-wrap { text-align:center; margin:6px 0 10px; }
+  .gd-more-btn {
+    appearance:none; cursor:pointer;
+    padding:9px 22px; border-radius:999px;
+    border:1px solid rgba(11,124,255,0.40); background:rgba(11,124,255,0.12);
+    color:#cfe2ff; font-family:inherit; font-weight:800; font-size:0.85rem;
+    transition:background .12s, border-color .12s, transform .1s;
+  }
+  .gd-more-btn:hover { background:rgba(11,124,255,0.22); border-color:rgba(11,124,255,0.6); }
+  .gd-more-btn:active { transform:scale(0.96); }
+</style>
+</head>
+<body>
+<div class="page-bg"></div>
+<div id="nav-root" data-nav-variant="internal"></div>
+<script src="/assets/header.js"></script>
+
+<main class="site-content fade-in">
+  <div class="gd-wrap">
+    <a class="gd-back" href="/perfil.html">← Mi perfil</a>
+
+    <div class="gd-head">
+      <h1 class="gd-title">💾 Mis clips guardados</h1>
+      <div class="gd-sub" id="gdSub">Los clips que marcaste con 💾</div>
+    </div>
+
+    <div id="gdLoading" class="gd-state">
+      <div class="icon">⏳</div>
+      <h3>Cargando tus guardados…</h3>
+    </div>
+
+    <div id="gdLogin" class="gd-state" style="display:none">
+      <div class="icon">🔐</div>
+      <h3>Inicia sesión para ver tus guardados</h3>
+      <p>Toca 💾 en cualquier clip para guardarlo y verlo aquí.</p>
+      <button id="gdLoginBtn">Iniciar sesión</button>
+    </div>
+
+    <div id="gdEmpty" class="gd-state" style="display:none">
+      <div class="icon">📂</div>
+      <h3>Sin clips guardados</h3>
+      <p>Toca 💾 en cualquier clip (en la cancha o en tu perfil) para guardarlo aquí.</p>
+      <a class="btn" href="/perfil.html">Ver mis clips →</a>
+    </div>
+
+    <div id="gdError" class="gd-state" style="display:none">
+      <div class="icon">⚠️</div>
+      <h3>No pudimos cargar tus guardados</h3>
+      <p>Intenta recargar la página.</p>
+    </div>
+
+    <div id="gdGrid" class="cards-grid" style="display:none"></div>
+    <div id="gdMoreWrap" class="gd-more-wrap" style="display:none">
+      <button type="button" id="gdMore" class="gd-more-btn">Ver más</button>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-redes">
+    <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
+    <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
+    <a href="https://wa.me/522206804856" target="_blank" rel="noopener">WhatsApp</a>
+  </div>
+  <p class="footer-copy">© 2026 Puntazo</p>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  const $loading = document.getElementById('gdLoading');
+  const $login   = document.getElementById('gdLogin');
+  const $empty   = document.getElementById('gdEmpty');
+  const $error   = document.getElementById('gdError');
+  const $grid    = document.getElementById('gdGrid');
+  const $moreWrap = document.getElementById('gdMoreWrap');
+  const $more    = document.getElementById('gdMore');
+  const $sub     = document.getElementById('gdSub');
+  const $loginBtn = document.getElementById('gdLoginBtn');
+
+  let _videoIndex = {};
+  // Pre-fetch del índice por si algún guardado no tiene URL embebida.
+  fetch('/data/videos_index.json?cb=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (idx) { if (idx) _videoIndex = idx.videos || {}; })
+    .catch(function () {});
+
+  function show(which) {
+    $loading.style.display = (which === 'loading') ? 'block' : 'none';
+    $login.style.display   = (which === 'login')   ? 'block' : 'none';
+    $empty.style.display   = (which === 'empty')   ? 'block' : 'none';
+    $error.style.display   = (which === 'error')   ? 'block' : 'none';
+    $grid.style.display    = (which === 'list')    ? 'grid'  : 'none';
+    if (which !== 'list' && $moreWrap) $moreWrap.style.display = 'none';
+  }
+
+  if ($loginBtn) {
+    $loginBtn.addEventListener('click', function () {
+      if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === 'function') {
+        window.PuntazoAuth.signIn();
+      }
+    });
+  }
+
+  function getEntryUrl(videoId) {
+    const hit = _videoIndex[videoId];
+    if (hit && hit.url) return hit;
+    return null;
+  }
+
+  // Paginador 3 → +3 → +5 → +5 (mismo patrón que perfil/detalle).
+  function makePager(entries, container, moreWrap, moreBtn, buildFn) {
+    let shown = 0, stepIdx = 0;
+    const STEPS = [3, 3, 5];
+    function renderMore() {
+      const add = stepIdx < STEPS.length ? STEPS[stepIdx] : 5; stepIdx++;
+      entries.slice(shown, shown + add).forEach(function (e) {
+        const c = buildFn(e); if (c) container.appendChild(c);
+      });
+      shown = Math.min(shown + add, entries.length);
+      if (moreWrap) moreWrap.style.display = (shown < entries.length) ? 'block' : 'none';
+    }
+    renderMore();
+    if (moreBtn) moreBtn.onclick = renderMore;
+  }
+
+  function buildCard(entry) {
+    if (!window.PuntazoCard) return null;
+    const card = window.PuntazoCard.build(entry, {
+      showSave: true, showShare: true, showFullscreen: true,
+      showClubInfo: true,
+      topLabel: entry.club || '',
+      onUnsave: function () {
+        card.style.opacity = '0.4';
+        setTimeout(function () { card.remove(); }, 300);
+        if (window.PuntazoCard && window.PuntazoCard.toast) {
+          window.PuntazoCard.toast('Quitado de guardados');
+        }
+        // Si se vació la rejilla, mostrar estado vacío.
+        setTimeout(function () {
+          if ($grid && !$grid.children.length) show('empty');
+        }, 320);
+      },
+    });
+    return card;
+  }
+
+  async function loadSaved(user) {
+    show('loading');
+    const db = (window.PuntazoCard && window.PuntazoCard.getDb)
+      ? window.PuntazoCard.getDb()
+      : ((window.PuntazoFirebase && window.PuntazoFirebase.db) ? window.PuntazoFirebase.db() : null);
+    if (!db) { show('error'); return; }
+
+    try {
+      const snap = await db.collection('usuarios').doc(user.uid).collection('guardados')
+        .orderBy('savedAt', 'desc').limit(50).get();
+      if (snap.empty) { show('empty'); return; }
+
+      const entries = [];
+      snap.forEach(function (doc) {
+        const d = doc.data() || {};
+        if (!d.videoId) return;
+        let url = d.videoUrl || '';
+        let club = d.club || '', cancha = d.cancha || '', lado = d.lado || '', fecha = d.fecha || '';
+        if (!url) {
+          const hit = getEntryUrl(d.videoId);
+          if (!hit || !hit.url) return; // sin URL recuperable → omitir
+          url = hit.url; club = hit.club || ''; cancha = hit.cancha || '';
+          lado = hit.lado || ''; fecha = hit.fecha || '';
+        }
+        entries.push({ nombre: d.videoId, url: url, videoUrl: url, club: club, cancha: cancha, lado: lado, fecha: fecha });
+      });
+
+      if (!entries.length) { show('empty'); return; }
+
+      $grid.innerHTML = '';
+      show('list');
+      $sub.textContent = entries.length === 1 ? '1 clip guardado' : (entries.length + ' clips guardados');
+      makePager(entries, $grid, $moreWrap, $more, buildCard);
+    } catch (e) {
+      console.error('[guardados]', e);
+      show('error');
+    }
+  }
+
+  // ── Esperar auth (mismo enfoque defensivo que perfil/mis-clips) ──
+  let _resolved = false;
+  function onAuth(user) {
+    if (_resolved) return;
+    _resolved = true;
+    if (user) loadSaved(user);
+    else show('login');
+  }
+
+  function initAuth() {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) { onAuth(u || null); return; }
+    if (u) { onAuth(u); return; }
+    window.addEventListener('puntazo:auth-changed', function (e) {
+      onAuth((e.detail && e.detail.user) || null);
+    }, { once: true });
+    window.addEventListener('puntazo:auth-ready', function () {
+      onAuth((window.PuntazoAuth && window.PuntazoAuth.currentUser) || null);
+    }, { once: true });
+    setTimeout(function () {
+      onAuth((window.PuntazoAuth && window.PuntazoAuth.currentUser) || null);
+    }, 4500);
+  }
+
+  if (window.__PZ_HEADER_LOADED__) {
+    setTimeout(initAuth, 100);
+  } else {
+    window.addEventListener('puntazo:header-rendered', function () { setTimeout(initAuth, 150); });
+    // Fallback si el evento del header no llega.
+    setTimeout(initAuth, 1200);
+  }
+})();
+</script>
+</body>
+</html>

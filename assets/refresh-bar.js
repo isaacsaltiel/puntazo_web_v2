@@ -68,11 +68,12 @@
         padding: 8px 12px;
         background: rgba(255,255,255,0.04);
         border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 999px;
+        border-radius: 18px;
         font-family: inherit; font-size: 0.78rem;
         color: rgba(234,242,255,0.70);
         margin: 4px 0 12px;
         line-height: 1.2;
+        box-sizing: border-box; max-width: 100%;
       }
       .pz-rb-label {
         display: inline-flex; align-items: center; gap: 6px;
@@ -102,6 +103,7 @@
         color: #cfe2ff;
         font-family: inherit; font-weight: 800; font-size: 0.74rem;
         cursor: pointer; flex-shrink: 0;
+        white-space: nowrap; box-sizing: border-box; max-width: 100%;
         transition: background .12s, border-color .12s, transform .1s;
       }
       .pz-rb-btn:hover {
@@ -120,6 +122,7 @@
         color: #ffd497;
         font-family: inherit; font-weight: 800; font-size: 0.72rem;
         cursor: pointer; flex-shrink: 0;
+        white-space: nowrap; box-sizing: border-box; max-width: 100%;
         transition: background .12s;
       }
       .pz-rb-pending-btn:hover { background: rgba(255, 200, 90, 0.20); }
@@ -133,21 +136,23 @@
 
       .pz-rb-panel {
         width: 100%;
+        box-sizing: border-box;
         margin-top: 8px;
         border-radius: 14px;
         border: 1px solid rgba(255, 200, 90, 0.25);
         background: rgba(20, 14, 6, 0.55);
         backdrop-filter: blur(10px);
-        padding: 10px 12px;
+        padding: 0 12px;
         max-height: 0;
         overflow: hidden;
         opacity: 0;
         transition: max-height .25s ease, opacity .2s ease, padding .2s ease;
       }
       .pz-rb-panel.is-open {
-        max-height: 320px;
+        max-height: 60vh;
         opacity: 1;
         overflow-y: auto;
+        padding: 10px 12px;
       }
       .pz-rb-panel-empty {
         font-size: 0.76rem;

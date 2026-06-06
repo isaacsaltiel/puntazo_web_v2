@@ -89,6 +89,42 @@
     font-size:0.80rem; font-weight:700; color:rgba(234,242,255,.55);
   }
 
+  /* F135 (Fix 1) — bloque desplegable para "Puntazos pendientes" */
+  .pz-collapse { margin: 0 0 14px; }
+  .pz-collapse-head {
+    width:100%; box-sizing:border-box;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    appearance:none; cursor:pointer; text-align:left;
+    padding:10px 14px; border-radius:14px;
+    border:1px solid rgba(255,200,90,0.22);
+    background:rgba(255,200,90,0.07);
+    color:#ffd497; font-family:inherit; font-weight:800; font-size:0.92rem;
+    transition:background .12s, border-color .12s;
+  }
+  .pz-collapse-head:hover { background:rgba(255,200,90,0.12); }
+  .pz-collapse-title { display:inline-flex; align-items:center; gap:8px; min-width:0; }
+  .pz-collapse-caret { font-size:0.7rem; transition:transform .18s; flex-shrink:0; }
+  .pz-collapse-head.is-open .pz-collapse-caret { transform:rotate(180deg); }
+  .pz-collapse-body {
+    max-height:0; overflow:hidden; opacity:0;
+    transition:max-height .25s ease, opacity .2s ease, margin .2s ease;
+  }
+  .pz-collapse-body.is-open {
+    max-height:none; opacity:1; overflow:visible; margin-top:10px;
+  }
+
+  /* F135 (Fix 3) — botón "Ver más" reusable */
+  .pz-more-btn {
+    appearance:none; cursor:pointer;
+    padding:9px 22px; border-radius:999px;
+    border:1px solid rgba(11,124,255,0.40);
+    background:rgba(11,124,255,0.12);
+    color:#cfe2ff; font-family:inherit; font-weight:800; font-size:0.85rem;
+    transition:background .12s, border-color .12s, transform .1s;
+  }
+  .pz-more-btn:hover { background:rgba(11,124,255,0.22); border-color:rgba(11,124,255,0.6); }
+  .pz-more-btn:active { transform:scale(0.96); }
+
   .pz-matches-list { display:flex; flex-direction:column; gap:12px; margin-bottom:14px; }
 
   /* F125-H1: wrapper que contiene la scoreboard-card + el botón
@@ -510,53 +546,62 @@
         ⚙️ Tus partidos están sincronizándose. Si esto persiste, contacta a soporte.
       </div>
 
-      <!-- F82 Item 17 — Mis puntazos pendientes (pulsos digitales solicitados
-           que aún no han llegado a 'visible'). Query a pending_pulses por
-           uid_creator. -->
+      <!-- ════════ 🎬 Mis clips (F135 Fix 1+2+3) ════════
+           Sección unificada: arriba "Puntazos pendientes" como bloque
+           desplegable (pulsos en proceso); debajo, los clips de TODOS mis
+           partidos terminados, paginados (3 → +3 → +5 → +5). -->
       <div class="pz-section-title">
-        <h3>🎯 Mis puntazos pendientes</h3>
-        <span id="pendingCount" class="pz-section-count" style="display:none"></span>
-      </div>
-      <!-- F126: refresh-bar arriba de la lista. Permite al user re-disparar
-           el join con videos_index para detectar clips recién listos sin
-           recargar la página completa. -->
-      <div id="pz-rb-perfil-host"></div>
-      <div id="pendingList" class="pz-pending-list" style="display:none"></div>
-      <div id="pendingLoading" class="pz-matches-loading" style="display:none">
-        <div class="empty-icon">⏳</div>
-        <p>Cargando tus puntazos…</p>
-      </div>
-      <div id="pendingEmpty" class="pz-matches-empty" style="display:none">
-        <p>No tienes puntazos pendientes.<br>
-           Cuando pidas uno desde el botón de la app, aparecerá aquí mientras se procesa.</p>
+        <h3>🎬 Mis clips</h3>
+        <span id="myClipsCount" class="pz-section-count" style="display:none"></span>
       </div>
 
-      <!-- F123-E: acceso a /mis-clips.html (todos los clips de mis partidos,
-           no solo los guardados manualmente). Reusa el estilo pz-play-cta. -->
-      <a class="pz-play-cta" href="/mis-clips.html" style="margin-top:4px">
-        <span class="pz-play-cta-icon" style="font-size:1.7rem">🎬</span>
+      <!-- Puntazos pendientes (desplegable) -->
+      <div id="pendingCollapse" class="pz-collapse">
+        <button type="button" id="pendingToggle" class="pz-collapse-head" aria-expanded="false">
+          <span class="pz-collapse-title">🎯 Puntazos pendientes
+            <span id="pendingCount" class="pz-section-count" style="display:none"></span>
+          </span>
+          <span class="pz-collapse-caret">▾</span>
+        </button>
+        <div id="pendingBody" class="pz-collapse-body">
+          <!-- F126: refresh-bar arriba de la lista. Re-dispara el join con
+               videos_index para detectar clips recién listos sin recargar. -->
+          <div id="pz-rb-perfil-host"></div>
+          <div id="pendingList" class="pz-pending-list" style="display:none"></div>
+          <div id="pendingLoading" class="pz-matches-loading" style="display:none">
+            <div class="empty-icon">⏳</div>
+            <p>Cargando tus puntazos…</p>
+          </div>
+          <div id="pendingEmpty" class="pz-matches-empty" style="display:none">
+            <p>No tienes puntazos pendientes.<br>
+               Cuando pidas uno desde el botón de la app, aparecerá aquí mientras se procesa.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid de clips de mis partidos (paginado) -->
+      <div id="myClipsGrid" class="cards-grid"></div>
+      <div id="myClipsMoreWrap" style="display:none; text-align:center; margin:4px 0 10px;">
+        <button type="button" id="myClipsMore" class="pz-more-btn">Ver más clips</button>
+      </div>
+      <div id="myClipsLoading" class="pz-matches-loading" style="display:none">
+        <div class="empty-icon">⏳</div>
+        <p>Cargando tus clips…</p>
+      </div>
+      <div id="myClipsEmpty" class="pz-matches-empty" style="display:none">
+        <p>Aún no hay clips de tus partidos.<br>
+           Cuando termines un partido y se generen puntazos, aparecerán aquí.</p>
+      </div>
+
+      <!-- F135 (Fix 7): los guardados viven en su propia página -->
+      <a class="pz-play-cta" href="/guardados.html" style="margin-top:8px">
+        <span class="pz-play-cta-icon" style="font-size:1.7rem">💾</span>
         <span class="pz-play-cta-text">
-          <span class="pz-play-cta-title">▶ Ver clips de mis partidos</span>
-          <span class="pz-play-cta-sub">Agrupados por partido, con club, cancha y fecha</span>
+          <span class="pz-play-cta-title">Ver mis clips guardados</span>
+          <span class="pz-play-cta-sub">Los clips que marcaste con 💾</span>
         </span>
         <span class="pz-play-cta-arrow">→</span>
       </a>
-
-      <!-- ── Guardados ── -->
-      <div class="pz-section-title">
-        <h3>Videos guardados</h3>
-      </div>
-
-      <div id="savedGrid" class="cards-grid"></div>
-      <div id="savedEmpty" class="empty-state" style="display:none">
-        <div class="empty-icon">📂</div>
-        <h3>Sin videos guardados</h3>
-        <p>Toca 💾 en cualquier video para guardarlo aquí.</p>
-      </div>
-      <div id="savedLoading" class="empty-state">
-        <div class="empty-icon">⏳</div>
-        <h3>Cargando tus guardados…</h3>
-      </div>
 
     </div>
   </div>
@@ -587,9 +632,13 @@
   const $loginBtn      = document.getElementById('loginBtn');
   const $perfilAvatar  = document.getElementById('perfilAvatar');
   const $perfilName    = document.getElementById('perfilName');
-  const $savedGrid     = document.getElementById('savedGrid');
-  const $savedEmpty    = document.getElementById('savedEmpty');
-  const $savedLoading  = document.getElementById('savedLoading');
+  // F135 (Fix 2/3) — "Mis clips" = clips de todos mis partidos, paginado
+  const $myClipsGrid     = document.getElementById('myClipsGrid');
+  const $myClipsMoreWrap = document.getElementById('myClipsMoreWrap');
+  const $myClipsMore     = document.getElementById('myClipsMore');
+  const $myClipsLoading  = document.getElementById('myClipsLoading');
+  const $myClipsEmpty    = document.getElementById('myClipsEmpty');
+  const $myClipsCount    = document.getElementById('myClipsCount');
   const $matchesLoading = document.getElementById('matchesLoading');
   const $matchesList    = document.getElementById('matchesList');
   const $matchesEmpty   = document.getElementById('matchesEmpty');
@@ -633,10 +682,38 @@
     }
     $perfilName.textContent = user.displayName || user.email || 'Mi perfil';
     updatePlayCta(user); // F122
+    setupPendingCollapse(); // F135 Fix 1
     loadMyMatches(user);
     loadMyPendingPuntazos(user); // F82
-    loadSaved(user);
+    loadMyClips(user); // F135 Fix 2/3 (reemplaza loadSaved → guardados.html)
     setupRefreshBar(user); // F126
+  }
+
+  // F135 (Fix 1): wiring del bloque desplegable "Puntazos pendientes".
+  // Idempotente: solo engancha el listener una vez.
+  let _pendingCollapseWired = false;
+  function setupPendingCollapse() {
+    if (_pendingCollapseWired) return;
+    const $toggle = document.getElementById('pendingToggle');
+    const $body = document.getElementById('pendingBody');
+    if (!$toggle || !$body) return;
+    $toggle.addEventListener('click', function () {
+      const open = !$body.classList.contains('is-open');
+      $body.classList.toggle('is-open', open);
+      $toggle.classList.toggle('is-open', open);
+      $toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    _pendingCollapseWired = true;
+  }
+
+  // F135 (Fix 1): abre/cierra el bloque de pendientes según haya o no pulsos.
+  function setPendingCollapseOpen(open) {
+    const $toggle = document.getElementById('pendingToggle');
+    const $body = document.getElementById('pendingBody');
+    if (!$toggle || !$body) return;
+    $body.classList.toggle('is-open', !!open);
+    $toggle.classList.toggle('is-open', !!open);
+    $toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
   // F126: refresh-bar arriba de "Mis puntazos pendientes". Al pulsar
@@ -900,7 +977,7 @@
             if (data._ageMin > 24 * 60) return; // (b)
             docs.push(Object.assign({ _id: d.id }, data));
           });
-          if (!docs.length) { showPendingState('empty'); return; }
+          if (!docs.length) { showPendingState('empty'); setPendingCollapseOpen(false); return; }
           // F123-B: cruzar pulsos consumed con videos_recientes.json del lado
           // ANTES de pintar, para que el estado correcto salga al primer paint.
           // Si falla, _annotatePendingWithClips degrada silencioso.
@@ -911,9 +988,10 @@
             $pendingList.appendChild(item);
           });
           showPendingState('list');
+          setPendingCollapseOpen(true); // F135: hay pendientes → abrir bloque
           $pendingCount.textContent = docs.length === 1
-            ? '1 puntazo en proceso'
-            : (docs.length + ' puntazos en proceso');
+            ? '1 en proceso'
+            : (docs.length + ' en proceso');
           $pendingCount.style.display = 'inline';
         }, function (err) {
           console.warn('[perfil pending] onSnapshot error', err);
@@ -1287,62 +1365,87 @@
     }
   }
 
-  function buildSavedCard(entry, onUnsave) {
-    if (!window.PuntazoCard) return null;
-    return window.PuntazoCard.build(entry, {
-      showSave:true, showShare:true, showFullscreen:true,
-      showClubInfo:true,
-      topLabel: entry.club || '',
-      onUnsave: onUnsave || null,
-    });
+  // F135 (Fix 3): paginador reusable. Muestra 3, luego +3 (6), luego +5 cada
+  // click (11, 16, …). Oculta el botón "Ver más" cuando ya no quedan items.
+  function makePager(entries, container, moreWrap, moreBtn, buildFn) {
+    let shown = 0;
+    let stepIdx = 0;
+    const STEPS = [3, 3, 5]; // después de éstos: siempre +5
+    function nextStep() {
+      const s = stepIdx < STEPS.length ? STEPS[stepIdx] : 5;
+      stepIdx++;
+      return s;
+    }
+    function renderMore() {
+      const add = nextStep();
+      const slice = entries.slice(shown, shown + add);
+      slice.forEach(function (e) { const c = buildFn(e); if (c) container.appendChild(c); });
+      shown += slice.length;
+      if (moreWrap) moreWrap.style.display = (shown < entries.length) ? '' : 'none';
+    }
+    renderMore(); // pinta los primeros 3
+    if (moreBtn) moreBtn.onclick = renderMore;
   }
 
-  function getEntryUrl(videoId) {
-    const hit = _videoIndex[videoId];
-    if (hit && hit.url) return hit;
-    return null;
-  }
+  // F135 (Fix 2): "Mis clips" = clips de TODOS mis partidos terminados.
+  // Reusa PuntazoMatches.listByUser + findClipsForMatch (mismo patrón que
+  // mis-clips.html), aplana, dedup por nombre, ordena desc y pagina.
+  async function loadMyClips(user) {
+    if (!$myClipsGrid) return;
+    $myClipsGrid.innerHTML = '';
+    if ($myClipsMoreWrap) $myClipsMoreWrap.style.display = 'none';
+    if ($myClipsEmpty) $myClipsEmpty.style.display = 'none';
+    if ($myClipsCount) $myClipsCount.style.display = 'none';
+    if ($myClipsLoading) $myClipsLoading.style.display = 'block';
 
-  async function loadSaved(user) {
-    const db = window.PuntazoCard?.getDb();
-    if (!db) { $savedLoading.style.display='none'; $savedEmpty.style.display='block'; return; }
-    $savedLoading.style.display='block'; $savedEmpty.style.display='none';
+    if (!window.PuntazoMatches ||
+        typeof PuntazoMatches.listByUser !== 'function' ||
+        typeof PuntazoMatches.findClipsForMatch !== 'function') {
+      if ($myClipsLoading) $myClipsLoading.style.display = 'none';
+      if ($myClipsEmpty) $myClipsEmpty.style.display = 'block';
+      return;
+    }
+
     try {
-      const snap = await db.collection('usuarios').doc(user.uid).collection('guardados')
-        .orderBy('savedAt','desc').limit(50).get();
-      $savedLoading.style.display='none';
-      if (snap.empty) { $savedEmpty.style.display='block'; return; }
-
-      for (const doc of snap.docs) {
-        const d = doc.data();
-        if (!d.videoId) continue;
-
-        let url    = d.videoUrl || '';
-        let club   = d.club     || '';
-        let cancha = d.cancha   || '';
-        let lado   = d.lado     || '';
-        let fecha  = d.fecha    || '';
-
-        if (!url) {
-          const hit = getEntryUrl(d.videoId);
-          if (!hit || !hit.url) continue;
-          url=hit.url; club=hit.club||''; cancha=hit.cancha||''; lado=hit.lado||''; fecha=hit.fecha||'';
-        }
-
-        const entry = { nombre:d.videoId, url, club, cancha, lado, fecha };
-        const card  = buildSavedCard(entry, function() {
-          card.style.opacity='0.4';
-          setTimeout(()=>{ card.remove(); }, 300);
-          if(window.PuntazoCard) window.PuntazoCard.toast('Quitado de guardados');
-        });
-        if (!card) continue;
-        $savedGrid.appendChild(card);
+      const matches = await PuntazoMatches.listByUser(user.uid, { status: 'ended', limit: 50 });
+      if (!Array.isArray(matches) || !matches.length) {
+        if ($myClipsLoading) $myClipsLoading.style.display = 'none';
+        if ($myClipsEmpty) $myClipsEmpty.style.display = 'block';
+        return;
       }
+      const perMatch = await Promise.all(matches.map(async function (m) {
+        try { return await PuntazoMatches.findClipsForMatch(m); }
+        catch (_) { return []; }
+      }));
+      // Flatten + dedup por nombre + orden desc por timestamp
+      const seen = new Set();
+      const all = [];
+      perMatch.forEach(function (arr) {
+        (arr || []).forEach(function (c) {
+          const key = c && (c.nombre || c.videoId);
+          if (!key || seen.has(key)) return;
+          seen.add(key);
+          all.push(c);
+        });
+      });
+      all.sort(function (a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
 
-      if (!$savedGrid.children.length) $savedEmpty.style.display='block';
-    } catch(e) {
-      console.error('[perfil saved]', e);
-      $savedLoading.style.display='none'; $savedEmpty.style.display='block';
+      if ($myClipsLoading) $myClipsLoading.style.display = 'none';
+      if (!all.length) { if ($myClipsEmpty) $myClipsEmpty.style.display = 'block'; return; }
+
+      if ($myClipsCount) {
+        $myClipsCount.textContent = all.length === 1 ? '1 clip' : (all.length + ' clips');
+        $myClipsCount.style.display = 'inline';
+      }
+      makePager(all, $myClipsGrid, $myClipsMoreWrap, $myClipsMore, function (entry) {
+        return window.PuntazoCard ? window.PuntazoCard.build(entry, {
+          showSave: true, showShare: true, showFullscreen: true, showClubInfo: true,
+        }) : null;
+      });
+    } catch (e) {
+      console.error('[perfil mis-clips]', e);
+      if ($myClipsLoading) $myClipsLoading.style.display = 'none';
+      if ($myClipsEmpty) $myClipsEmpty.style.display = 'block';
     }
   }
 

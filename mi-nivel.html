@@ -288,7 +288,14 @@
     background: rgba(0, 0, 0, 0.28);
     border-radius: 8px;
     border-left: 3px solid rgba(255, 170, 60, 0.55);
+    display: flex; align-items: center; gap: 10px;
   }
+  /* F135 (Fix 5): el cuerpo del pendiente es un link al partido */
+  .ml-pending-item-main {
+    flex: 1; min-width: 0; display: block;
+    text-decoration: none; color: inherit;
+  }
+  .ml-pending-item-main:hover .ml-pending-item-title { color: #6fb2ff; }
   .ml-pending-item-title {
     font-size: 0.84rem; font-weight: 800; color: #eaf2ff;
     display: block; margin-bottom: 2px;
@@ -299,6 +306,17 @@
     line-height: 1.35;
   }
   .ml-pending-item-reason::before { content: "porque: "; opacity: 0.65; }
+  /* F135 (Fix 5): botón compartir link del partido pendiente */
+  .ml-pending-share {
+    appearance: none; cursor: pointer; flex-shrink: 0;
+    padding: 6px 11px; border-radius: 999px;
+    border: 1px solid rgba(11, 124, 255, 0.40);
+    background: rgba(11, 124, 255, 0.12);
+    color: #cfe2ff; font-family: inherit; font-weight: 800; font-size: 0.72rem;
+    white-space: nowrap;
+    transition: background .12s, border-color .12s;
+  }
+  .ml-pending-share:hover { background: rgba(11, 124, 255, 0.22); border-color: rgba(11, 124, 255, 0.6); }
 
   /* F107 Issue 10: estado vacío de history con copy humano */
   .ml-history-empty {
@@ -447,13 +465,53 @@
       else if (m.loc) title = m.loc + (m.can ? ' · ' + m.can : '');
       else title = 'Partido';
       const reason = m.nonRankableReason || 'Pendiente de validación';
+      // F135 (Fix 5): cada pendiente ahora es navegable al partido (donde vive
+      // "Invitar jugadores al partido") + botón de compartir el link, para que
+      // el user pueda invitar a los rivales a vincularse. Todos los pendientes
+      // son status==='ended'; el flujo de invitar/vincular vive en mi-partido.
+      const mid = m.id || '';
+      const href = mid ? ('/mi-partido.html?matchId=' + encodeURIComponent(mid)) : '#';
       return '<li class="ml-pending-item">' +
-        '<span class="ml-pending-item-title">' + escapeHtml(title) + '</span>' +
-        '<span class="ml-pending-item-reason">' + escapeHtml(reason) + '</span>' +
+        '<a class="ml-pending-item-main" href="' + escapeHtml(href) + '">' +
+          '<span class="ml-pending-item-title">' + escapeHtml(title) + '</span>' +
+          '<span class="ml-pending-item-reason">' + escapeHtml(reason) + '</span>' +
+        '</a>' +
+        (mid
+          ? '<button type="button" class="ml-pending-share" data-mid="' + escapeHtml(mid) +
+            '" data-title="' + escapeHtml(title) + '">🔗 Compartir</button>'
+          : '') +
       '</li>';
     }).join('');
     return '<ul class="ml-pending-list">' + items + '</ul>';
   }
+
+  // F135 (Fix 5): compartir el link de un partido pendiente para invitar a los
+  // rivales a vincularse. navigator.share nativo con fallback a portapapeles.
+  function mlSharePendingMatch(matchId, title) {
+    if (!matchId) return;
+    const url = window.location.origin + '/mi-partido.html?matchId=' + encodeURIComponent(matchId);
+    const shareData = {
+      title: 'Puntazo — ' + (title || 'Partido'),
+      text: 'Vincúlate a este partido en Puntazo para que cuente en el ranking:',
+      url: url,
+    };
+    if (navigator.share) { navigator.share(shareData).catch(function () {}); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url)
+        .then(function () { alert('Link copiado:\n' + url); })
+        .catch(function () { window.prompt('Copia el link del partido:', url); });
+      return;
+    }
+    window.prompt('Copia el link del partido:', url);
+  }
+
+  // Delegación: un solo listener para todos los botones "Compartir" pendientes.
+  document.addEventListener('click', function (e) {
+    const btn = e.target && e.target.closest ? e.target.closest('.ml-pending-share') : null;
+    if (!btn) return;
+    e.preventDefault();
+    mlSharePendingMatch(btn.getAttribute('data-mid'), btn.getAttribute('data-title'));
+  });
 
   // F99 P3 (items 9+10): bloque de estado real del ranking.
   function renderStatusBlock(r) {
