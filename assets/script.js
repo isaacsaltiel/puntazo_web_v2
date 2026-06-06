@@ -210,7 +210,8 @@ async function populateLados() {
     const ul = document.getElementById("lados-lista"); if (!ul || !cancha) return; ul.innerHTML = "";
     const linkClub = document.getElementById("link-club"), linkCancha = document.getElementById("link-cancha");
     if (linkClub)   { linkClub.textContent = loc.nombre; linkClub.href = `locacion.html?loc=${params.loc}`; }
-    if (linkCancha) { linkCancha.textContent = cancha.nombre; linkCancha.href = "#"; }
+    // F135 (Fix 4): "cambiar cancha" → selector de canchas del club actual.
+    if (linkCancha) { linkCancha.textContent = cancha.nombre; linkCancha.href = `entrada.html?modo=canchas&loc=${encodeURIComponent(params.loc)}`; }
     cancha.lados.forEach(lado => {
       const li = document.createElement("li"); li.classList.add("fade-in");
       const a = document.createElement("a"); a.href = `lado.html?loc=${params.loc}&can=${params.can}&lado=${lado.id}`; a.textContent = lado.nombre || lado.id; a.classList.add("link-blanco");
@@ -806,7 +807,9 @@ async function populateVideos() {
     // Breadcrumb
     const linkClub = document.getElementById("link-club"), linkCancha = document.getElementById("link-cancha"), nombreLado = document.getElementById("nombre-lado");
     if (linkClub)   { linkClub.textContent = locObj?.nombre || loc; linkClub.href = `locacion.html?loc=${loc}`; }
-    if (linkCancha) { linkCancha.textContent = canObj?.nombre || can; }
+    // F135 (Fix 4): el breadcrumb "Cancha" = "cambiar cancha" → selector de
+    // canchas del club actual (antes era href="#" muerto y mandaba a clubs).
+    if (linkCancha) { linkCancha.textContent = canObj?.nombre || can; linkCancha.href = `entrada.html?modo=canchas&loc=${encodeURIComponent(loc)}`; }
     if (nombreLado) { nombreLado.textContent = ladoObj?.nombre || lado; }
 
     // Lado opuesto

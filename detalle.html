@@ -956,16 +956,42 @@
       $clipsList.innerHTML = '';
       const grid = document.createElement('div');
       grid.className = 'cards-grid';
-      entries.forEach(function (entry) {
-        try {
-          const card = window.PuntazoCard.build(entry, {
-            showSave: true, showShare: true, showFullscreen: true,
-            showClubInfo: true,
-          });
-          if (card) grid.appendChild(card);
-        } catch (e) {}
-      });
       $clipsList.appendChild(grid);
+
+      // F135 (Fix 3): paginación 3 → +3 → +5 → +5. Solo muestra 3 al inicio;
+      // "Ver más" añade 3, luego 5 cada vez, hasta agotar.
+      const moreWrap = document.createElement('div');
+      moreWrap.style.cssText = 'text-align:center; margin:10px 0 4px; display:none;';
+      const moreBtn = document.createElement('button');
+      moreBtn.type = 'button';
+      moreBtn.textContent = 'Ver más clips';
+      moreBtn.style.cssText = 'appearance:none;cursor:pointer;padding:9px 22px;border-radius:999px;' +
+        'border:1px solid rgba(11,124,255,0.40);background:rgba(11,124,255,0.12);color:#cfe2ff;' +
+        'font-family:inherit;font-weight:800;font-size:0.85rem;';
+      moreWrap.appendChild(moreBtn);
+      $clipsList.appendChild(moreWrap);
+
+      let shown = 0, stepIdx = 0;
+      const STEPS = [3, 3, 5];
+      function renderMore() {
+        const add = stepIdx < STEPS.length ? STEPS[stepIdx] : 5; stepIdx++;
+        entries.slice(shown, shown + add).forEach(function (entry) {
+          try {
+            // F136: marcar el clip con su matchId para que, al guardarlo, "Mis
+            // clips" pueda ofrecer "Ir al partido" aunque sea un partido ajeno.
+            entry.matchId = match.id;
+            const card = window.PuntazoCard.build(entry, {
+              showSave: true, showShare: true, showFullscreen: true,
+              showClubInfo: true,
+            });
+            if (card) grid.appendChild(card);
+          } catch (e) {}
+        });
+        shown = Math.min(shown + add, entries.length);
+        moreWrap.style.display = (shown < entries.length) ? 'block' : 'none';
+      }
+      moreBtn.addEventListener('click', renderMore);
+      renderMore(); // primeros 3
     } catch (e) {
       console.error('[detalle] clips error', e);
       $clipsList.innerHTML = '<div class="dt-state">Error cargando clips.</div>';
