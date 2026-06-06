@@ -479,24 +479,36 @@
   }
 
   // ── esperar auth ──
-  let _resolved = false;
-  function onAuth(user) {
-    if (_resolved) return;
-    _resolved = true;
-    if (user) loadAll(user); else show('login');
+  // OJO: PuntazoAuth.isBootstrapped se vuelve true ANTES de que Firebase
+  // resuelva la sesión (onAuthStateChanged es async). Por eso NO usamos
+  // isBootstrapped para decidir "no hay sesión": daría login en falso y se
+  // quedaría fijo. En su lugar escuchamos puntazo:auth-changed de forma
+  // PERSISTENTE y re-renderizamos cuando el usuario aparece (o se loguea).
+  let _loadedUid = null;
+  function onUser(user) {
+    if (user && user.uid) {
+      if (_loadedUid === user.uid) return; // ya cargado para este user
+      _loadedUid = user.uid;
+      loadAll(user);
+    } else {
+      _loadedUid = null;
+      show('login');
+    }
   }
-  function initAuth() {
-    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
-    if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) { onAuth(u || null); return; }
-    if (u) { onAuth(u); return; }
-    window.addEventListener('puntazo:auth-changed', function (e) { onAuth((e.detail && e.detail.user) || null); }, { once: true });
-    window.addEventListener('puntazo:auth-ready', function () { onAuth((window.PuntazoAuth && window.PuntazoAuth.currentUser) || null); }, { once: true });
-    setTimeout(function () { onAuth((window.PuntazoAuth && window.PuntazoAuth.currentUser) || null); }, 4500);
-  }
-  if (window.__PZ_HEADER_LOADED__) { setTimeout(initAuth, 100); }
-  else {
-    window.addEventListener('puntazo:header-rendered', function () { setTimeout(initAuth, 150); });
-    setTimeout(initAuth, 1200);
+  // Persistente: cada cambio de auth re-evalúa (cubre login después de cargar).
+  window.addEventListener('puntazo:auth-changed', function (e) {
+    onUser((e.detail && e.detail.user) || (window.PuntazoAuth && window.PuntazoAuth.currentUser) || null);
+  });
+  // Si ya hay sesión al cargar, úsala de una vez.
+  if (window.PuntazoAuth && window.PuntazoAuth.currentUser) {
+    onUser(window.PuntazoAuth.currentUser);
+  } else {
+    // Aún resolviendo: nos quedamos en "Cargando…". Si tras una gracia no
+    // llegó ningún usuario, mostramos login (sin fijarlo: auth-changed lo
+    // corrige si después aparece sesión).
+    setTimeout(function () {
+      if (_loadedUid === null) onUser((window.PuntazoAuth && window.PuntazoAuth.currentUser) || null);
+    }, 5000);
   }
 })();
 </script>
