@@ -612,7 +612,10 @@
       <!-- F135 (Fix 6): "Solo registrar puntazos" movido aquí desde la 1ª
            pantalla. Solo aparece cuando ya elegiste club+cancha (estás en la
            cancha), no en el selector de clubs. -->
-      <a id="lnkRegistrarAuthed" class="btn-secondary" href="#">🔵 Solo registrar puntazos</a>
+      <a id="lnkRegistrarAuthed" class="btn-secondary" href="#" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
+        <img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" style="width:26px;height:26px;flex-shrink:0;border-radius:50%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(11,124,255,.45));">
+        Solo registrar puntazos
+      </a>
       <!-- F119: link sutil a herramientas (sortear, marcador, torneo 5, etc).
            Pasa loc+can para que herramientas propague el contexto a los
            modos que lo entienden (Torneo 5 muestra botón Puntazo round). -->
@@ -626,7 +629,10 @@
       <a id="lnkInvitado" class="btn-primary" href="#">Continuar como invitado</a>
       <!-- F135 (Fix 6): registrar puntazos también para invitado ya estando
            en la cancha (mismo destino /boton.html). -->
-      <a id="lnkRegistrarGuest" class="btn-secondary" href="#">🔵 Solo registrar puntazos</a>
+      <a id="lnkRegistrarGuest" class="btn-secondary" href="#" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
+        <img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" style="width:26px;height:26px;flex-shrink:0;border-radius:50%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(11,124,255,.45));">
+        Solo registrar puntazos
+      </a>
       <button id="btnLogin" class="btn-google" type="button">
         <svg viewBox="0 0 48 48" aria-hidden="true">
           <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.239 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
