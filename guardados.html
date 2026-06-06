@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <base href="/" />
-<title>Mis clips guardados · Puntazo</title>
+<title>Mis clips · Puntazo</title>
 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,6 +15,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/auth.js"></script>
+<script src="/assets/matches.js"></script>
 <script src="/assets/card.js"></script>
 <style>
   .gd-wrap { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
@@ -43,7 +44,40 @@
   }
   .gd-state button:hover, .gd-state a.btn:hover { background:rgba(0,79,200,.28); border-color:rgba(11,124,255,.55); }
 
-  .gd-more-wrap { text-align:center; margin:6px 0 10px; }
+  /* F136 — item unificado: header (club/nombres/fecha) + badge origen + card */
+  .mc-list { display:flex; flex-direction:column; gap:22px; }
+  .mc-item { display:flex; flex-direction:column; gap:0; }
+  .mc-head {
+    display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    margin-bottom:6px;
+  }
+  .mc-head-main { min-width:0; }
+  .mc-club { display:block; font-size:0.98rem; font-weight:900; color:#eaf2ff; line-height:1.2;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mc-names { display:block; font-size:0.8rem; font-weight:700; color:rgba(234,242,255,.72);
+    margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mc-date { flex-shrink:0; font-size:0.74rem; font-weight:800; color:rgba(234,242,255,.55);
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10);
+    border-radius:999px; padding:3px 10px; white-space:nowrap; }
+  .mc-origin {
+    display:inline-flex; align-items:center; gap:5px; align-self:flex-start;
+    font-size:0.70rem; font-weight:800; border-radius:999px; padding:3px 9px;
+    margin-bottom:8px;
+  }
+  .mc-origin-match { background:rgba(11,124,255,.12); border:1px solid rgba(11,124,255,.35); color:#cfe2ff; }
+  .mc-origin-boton { background:rgba(255,200,90,.10); border:1px solid rgba(255,200,90,.35); color:#ffd497; }
+  .mc-origin-saved { background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.38); color:#9af2c0; }
+  .mc-go {
+    display:inline-flex; align-items:center; gap:6px; align-self:flex-start;
+    margin-top:10px; text-decoration:none;
+    font-size:0.8rem; font-weight:800; color:#cfe2ff;
+    padding:7px 14px; border-radius:999px;
+    background:rgba(11,124,255,.14); border:1px solid rgba(11,124,255,.34);
+    transition:background .12s, border-color .12s;
+  }
+  .mc-go:hover { background:rgba(11,124,255,.24); border-color:rgba(11,124,255,.6); }
+
+  .gd-more-wrap { text-align:center; margin:18px 0 10px; }
   .gd-more-btn {
     appearance:none; cursor:pointer;
     padding:9px 22px; border-radius:999px;
@@ -65,36 +99,36 @@
     <a class="gd-back" href="/perfil.html">← Mi perfil</a>
 
     <div class="gd-head">
-      <h1 class="gd-title">💾 Mis clips guardados</h1>
-      <div class="gd-sub" id="gdSub">Los clips que marcaste con 💾</div>
+      <h1 class="gd-title">🎬 Mis clips</h1>
+      <div class="gd-sub" id="gdSub">Tus clips guardados, los que pediste con tu botón y los de tus partidos</div>
     </div>
 
     <div id="gdLoading" class="gd-state">
       <div class="icon">⏳</div>
-      <h3>Cargando tus guardados…</h3>
+      <h3>Cargando tus clips…</h3>
     </div>
 
     <div id="gdLogin" class="gd-state" style="display:none">
       <div class="icon">🔐</div>
-      <h3>Inicia sesión para ver tus guardados</h3>
-      <p>Toca 💾 en cualquier clip para guardarlo y verlo aquí.</p>
+      <h3>Inicia sesión para ver tus clips</h3>
+      <p>Aquí se juntan los clips que guardas con 💾 y los que pides con tu botón.</p>
       <button id="gdLoginBtn">Iniciar sesión</button>
     </div>
 
     <div id="gdEmpty" class="gd-state" style="display:none">
       <div class="icon">📂</div>
-      <h3>Sin clips guardados</h3>
-      <p>Toca 💾 en cualquier clip (en la cancha o en tu perfil) para guardarlo aquí.</p>
-      <a class="btn" href="/perfil.html">Ver mis clips →</a>
+      <h3>Todavía no tienes clips</h3>
+      <p>Guarda un clip con 💾 (en la cancha o dentro de un partido) o pide uno con tu botón, y aparecerá aquí.</p>
+      <a class="btn" href="/entrada.html">Ir a mi cancha →</a>
     </div>
 
     <div id="gdError" class="gd-state" style="display:none">
       <div class="icon">⚠️</div>
-      <h3>No pudimos cargar tus guardados</h3>
+      <h3>No pudimos cargar tus clips</h3>
       <p>Intenta recargar la página.</p>
     </div>
 
-    <div id="gdGrid" class="cards-grid" style="display:none"></div>
+    <div id="gdList" class="mc-list" style="display:none"></div>
     <div id="gdMoreWrap" class="gd-more-wrap" style="display:none">
       <button type="button" id="gdMore" class="gd-more-btn">Ver más</button>
     </div>
@@ -118,14 +152,15 @@
   const $login   = document.getElementById('gdLogin');
   const $empty   = document.getElementById('gdEmpty');
   const $error   = document.getElementById('gdError');
-  const $grid    = document.getElementById('gdGrid');
+  const $list    = document.getElementById('gdList');
   const $moreWrap = document.getElementById('gdMoreWrap');
   const $more    = document.getElementById('gdMore');
   const $sub     = document.getElementById('gdSub');
   const $loginBtn = document.getElementById('gdLoginBtn');
 
+  const MES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
   let _videoIndex = {};
-  // Pre-fetch del índice por si algún guardado no tiene URL embebida.
   fetch('/data/videos_index.json?cb=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (idx) { if (idx) _videoIndex = idx.videos || {}; })
@@ -136,33 +171,147 @@
     $login.style.display   = (which === 'login')   ? 'block' : 'none';
     $empty.style.display   = (which === 'empty')   ? 'block' : 'none';
     $error.style.display   = (which === 'error')   ? 'block' : 'none';
-    $grid.style.display    = (which === 'list')    ? 'grid'  : 'none';
+    $list.style.display    = (which === 'list')    ? 'flex'  : 'none';
     if (which !== 'list' && $moreWrap) $moreWrap.style.display = 'none';
   }
 
   if ($loginBtn) {
     $loginBtn.addEventListener('click', function () {
-      if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === 'function') {
-        window.PuntazoAuth.signIn();
-      }
+      if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === 'function') window.PuntazoAuth.signIn();
     });
   }
 
-  function getEntryUrl(videoId) {
-    const hit = _videoIndex[videoId];
-    if (hit && hit.url) return hit;
-    return null;
+  // ── helpers ──────────────────────────────────────────────
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); }
+
+  function tsToMillis(ts) {
+    if (!ts) return 0;
+    if (typeof ts.toMillis === 'function') { try { return ts.toMillis(); } catch (_) { return 0; } }
+    if (typeof ts.seconds === 'number') return ts.seconds * 1000;
+    if (ts instanceof Date) return ts.getTime();
+    if (typeof ts === 'number') return ts;
+    return 0;
   }
 
-  // Paginador 3 → +3 → +5 → +5 (mismo patrón que perfil/detalle).
+  function tsFromNombre(nombre) {
+    try {
+      if (window.PuntazoMatches && PuntazoMatches.parseClipName) {
+        const p = PuntazoMatches.parseClipName(nombre);
+        if (p && p.date) return p.date.getTime();
+      }
+    } catch (_) {}
+    return 0;
+  }
+
+  function canStr(cancha) {
+    const c = String(cancha == null ? '' : cancha);
+    return /^\d+$/.test(c) ? ('Cancha' + c) : c;
+  }
+
+  function dateBucket(ms) {
+    if (!ms) return '';
+    const now = new Date();
+    const d = new Date(ms);
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const dayMs = 86400000;
+    if (ms >= startOfToday) return 'Hoy';
+    if (ms >= startOfToday - dayMs) return 'Ayer';
+    if (ms >= startOfToday - 6 * dayMs) return 'Esta semana';
+    if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) return 'Este mes';
+    const mes = MES[d.getMonth()];
+    const cap = mes.charAt(0).toUpperCase() + mes.slice(1);
+    return d.getFullYear() === now.getFullYear() ? cap : (cap + ' ' + d.getFullYear());
+  }
+
+  function playersLabel(jugadores) {
+    const J = Array.isArray(jugadores) ? jugadores : [];
+    function team(t) { return J.filter(function (j) { return j && j.equipo === t && j.nombre; }).map(function (j) { return String(j.nombre).trim(); }).filter(Boolean); }
+    const t1 = team('team1').slice(0, 2).join(' / ');
+    const t2 = team('team2').slice(0, 2).join(' / ');
+    if (t1 && t2) return t1 + ' vs ' + t2;
+    if (t1) return t1;
+    if (t2) return t2;
+    const all = J.map(function (j) { return j && j.nombre; }).filter(Boolean);
+    return all.slice(0, 4).join(' / ');
+  }
+
+  function getDb() {
+    if (window.PuntazoCard && window.PuntazoCard.getDb) { const d = window.PuntazoCard.getDb(); if (d) return d; }
+    try { return window.PuntazoFirebase ? window.PuntazoFirebase.db() : null; } catch (_) { return null; }
+  }
+
+  // dismissed botón clips (para que al quitar uno no reaparezca al recargar)
+  function dismissKey(uid) { return 'pz.misclips.dismissedBoton.v1.' + uid; }
+  function loadDismissed(uid) {
+    try { return new Set(JSON.parse(localStorage.getItem(dismissKey(uid)) || '[]')); } catch (_) { return new Set(); }
+  }
+  function addDismissed(uid, videoId) {
+    try { const s = loadDismissed(uid); s.add(videoId); localStorage.setItem(dismissKey(uid), JSON.stringify(Array.from(s))); } catch (_) {}
+  }
+
+  // cache de JSON por lado (resolver pulsos del botón → clip)
+  const _ladoJsonCache = new Map();
+  async function loadLadoJson(loc, can, lado) {
+    const key = loc + '|' + can + '|' + lado;
+    if (_ladoJsonCache.has(key)) return _ladoJsonCache.get(key);
+    let url = null;
+    try { if (window.PuntazoMatches && PuntazoMatches.findJsonUrl) url = await PuntazoMatches.findJsonUrl(loc, can, lado); } catch (_) {}
+    let json = null;
+    if (url) {
+      try {
+        const r = await fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cb=' + Date.now(), { cache: 'no-store' });
+        if (r.ok) json = await r.json();
+      } catch (_) {}
+    }
+    _ladoJsonCache.set(key, json);
+    return json;
+  }
+
+  // Resuelve los pulsos del botón (uid_creator) a su clip vía JSON del lado.
+  // Mismo join por ventana de 90s que el refresh-bar de producción.
+  async function resolveBotonClips(snap) {
+    const groups = new Map();
+    snap.forEach(function (doc) {
+      const o = doc.data() || {};
+      if (!(o.consumed_at && !o.error_reason)) return; // solo resueltos OK
+      if (!o.club || !o.cancha) return;
+      const lado = o.lado || 'LadoA';
+      const cs = canStr(o.cancha);
+      const key = o.club + '|' + cs + '|' + lado;
+      if (!groups.has(key)) groups.set(key, { loc: o.club, can: cs, lado: lado, docs: [] });
+      groups.get(key).docs.push(o);
+    });
+    const out = [];
+    for (const grp of groups.values()) {
+      const json = await loadLadoJson(grp.loc, grp.can, grp.lado);
+      if (!json || !Array.isArray(json.videos)) continue;
+      const parsed = [];
+      json.videos.forEach(function (v) {
+        const t = tsFromNombre(v.nombre);
+        if (t) parsed.push({ url: v.url, nombre: v.nombre, ts: t, fecha: v.fecha || '' });
+      });
+      grp.docs.forEach(function (o) {
+        let anchor = tsToMillis(o.consumed_at) || tsToMillis(o.created_at);
+        if (!anchor) return;
+        const hit = parsed.find(function (x) { return Math.abs(x.ts - anchor) <= 90000; });
+        if (hit) {
+          out.push({
+            nombre: hit.nombre, url: hit.url, club: grp.loc, cancha: grp.can, lado: grp.lado,
+            fecha: hit.fecha, ts: hit.ts, matchId: o.match_id || null,
+          });
+        }
+      });
+    }
+    return out;
+  }
+
+  // ── paginador 3 → +3 → +5 → +5 ──
   function makePager(entries, container, moreWrap, moreBtn, buildFn) {
     let shown = 0, stepIdx = 0;
     const STEPS = [3, 3, 5];
     function renderMore() {
       const add = stepIdx < STEPS.length ? STEPS[stepIdx] : 5; stepIdx++;
-      entries.slice(shown, shown + add).forEach(function (e) {
-        const c = buildFn(e); if (c) container.appendChild(c);
-      });
+      entries.slice(shown, shown + add).forEach(function (e) { const c = buildFn(e); if (c) container.appendChild(c); });
       shown = Math.min(shown + add, entries.length);
       if (moreWrap) moreWrap.style.display = (shown < entries.length) ? 'block' : 'none';
     }
@@ -170,95 +319,183 @@
     if (moreBtn) moreBtn.onclick = renderMore;
   }
 
-  function buildCard(entry) {
+  // ── render de un item ──
+  function buildItem(entry, uid) {
     if (!window.PuntazoCard) return null;
+    const wrap = document.createElement('div');
+    wrap.className = 'mc-item';
+
+    const m = entry._match || null;
+    const clubName = (m && m.loc) || entry.club || '';
+    const names = m ? playersLabel(m.jugadores) : '';
+    const bucket = dateBucket(entry.ts);
+
+    // header
+    const head = document.createElement('div');
+    head.className = 'mc-head';
+    head.innerHTML =
+      '<div class="mc-head-main">' +
+        '<span class="mc-club">' + esc(clubName || 'Clip') + '</span>' +
+        (names ? '<span class="mc-names">' + esc(names) + '</span>' : '') +
+      '</div>' +
+      (bucket ? '<span class="mc-date">' + esc(bucket) + '</span>' : '');
+    wrap.appendChild(head);
+
+    // badge de origen
+    const badge = document.createElement('span');
+    if (m) { badge.className = 'mc-origin mc-origin-match'; badge.textContent = '🎾 Clip de tu partido'; }
+    else if (entry.origin === 'boton') { badge.className = 'mc-origin mc-origin-boton'; badge.textContent = '📱 Pedido desde tu botón'; }
+    else { badge.className = 'mc-origin mc-origin-saved'; badge.textContent = '💾 Guardado'; }
+    wrap.appendChild(badge);
+
+    // card de video (sin club info: ya va en el header)
     const card = window.PuntazoCard.build(entry, {
-      showSave: true, showShare: true, showFullscreen: true,
-      showClubInfo: true,
-      topLabel: entry.club || '',
+      showSave: true, showShare: true, showFullscreen: true, showClubInfo: false,
       onUnsave: function () {
-        card.style.opacity = '0.4';
-        setTimeout(function () { card.remove(); }, 300);
-        if (window.PuntazoCard && window.PuntazoCard.toast) {
-          window.PuntazoCard.toast('Quitado de guardados');
-        }
-        // Si se vació la rejilla, mostrar estado vacío.
-        setTimeout(function () {
-          if ($grid && !$grid.children.length) show('empty');
-        }, 320);
+        if (entry.origin === 'boton') addDismissed(uid, entry.nombre); // no reaparecer
+        wrap.style.opacity = '0.4';
+        setTimeout(function () { wrap.remove(); if ($list && !$list.children.length) show('empty'); }, 300);
+        if (window.PuntazoCard && window.PuntazoCard.toast) window.PuntazoCard.toast('Quitado de Mis clips');
       },
     });
-    return card;
+    if (card) wrap.appendChild(card);
+
+    // botón "ir al partido" si el clip pertenece a un partido
+    if (m && m.id) {
+      const go = document.createElement('a');
+      go.className = 'mc-go';
+      const ended = (m.status === 'ended' || m.status === 'cancelled');
+      go.href = (ended ? '/detalle.html?matchId=' : '/mi-partido.html?matchId=') + encodeURIComponent(m.id);
+      go.textContent = 'Ir al partido →';
+      wrap.appendChild(go);
+    }
+    return card ? wrap : null;
   }
 
-  async function loadSaved(user) {
+  // ── carga principal ──
+  async function loadAll(user) {
     show('loading');
-    const db = (window.PuntazoCard && window.PuntazoCard.getDb)
-      ? window.PuntazoCard.getDb()
-      : ((window.PuntazoFirebase && window.PuntazoFirebase.db) ? window.PuntazoFirebase.db() : null);
+    const db = getDb();
     if (!db) { show('error'); return; }
+    const uid = user.uid;
+    const dismissed = loadDismissed(uid);
 
     try {
-      const snap = await db.collection('usuarios').doc(user.uid).collection('guardados')
-        .orderBy('savedAt', 'desc').limit(50).get();
-      if (snap.empty) { show('empty'); return; }
+      // 1) Partidos del user (owner) → metadata + ventanas de tiempo
+      const matchById = new Map();
+      const windows = [];
+      try {
+        const matches = (window.PuntazoMatches && PuntazoMatches.listByUser)
+          ? await PuntazoMatches.listByUser(uid, { limit: 50 }) : [];
+        (matches || []).forEach(function (m) {
+          matchById.set(m.id, m);
+          windows.push({
+            id: m.id, loc: m.loc, can: m.can, lado: m.lado || 'LadoA',
+            startMs: tsToMillis(m.startedAt),
+            endMs: tsToMillis(m.endedAt) || (tsToMillis(m.startedAt) + 6 * 3600 * 1000),
+          });
+        });
+      } catch (_) {}
 
-      const entries = [];
-      snap.forEach(function (doc) {
+      // 2) Guardados (fuente persistente)
+      const byVideoId = new Map();
+      const savedSnap = await db.collection('usuarios').doc(uid).collection('guardados')
+        .orderBy('savedAt', 'desc').limit(200).get();
+      savedSnap.forEach(function (doc) {
         const d = doc.data() || {};
         if (!d.videoId) return;
         let url = d.videoUrl || '';
-        let club = d.club || '', cancha = d.cancha || '', lado = d.lado || '', fecha = d.fecha || '';
-        if (!url) {
-          const hit = getEntryUrl(d.videoId);
-          if (!hit || !hit.url) return; // sin URL recuperable → omitir
-          url = hit.url; club = hit.club || ''; cancha = hit.cancha || '';
-          lado = hit.lado || ''; fecha = hit.fecha || '';
-        }
-        entries.push({ nombre: d.videoId, url: url, videoUrl: url, club: club, cancha: cancha, lado: lado, fecha: fecha });
+        if (!url) { const hit = _videoIndex[d.videoId]; if (hit && hit.url) url = hit.url; else return; }
+        byVideoId.set(d.videoId, {
+          nombre: d.videoId, url: url, videoUrl: url,
+          club: d.club || '', cancha: d.cancha || '', lado: d.lado || '', fecha: d.fecha || '',
+          origin: d.origin || 'manual', matchId: d.matchId || null,
+          ts: tsFromNombre(d.videoId) || tsToMillis(d.savedAt) || 0,
+        });
       });
 
-      if (!entries.length) { show('empty'); return; }
+      // 3) Clips del botón (pulsos resueltos) → incluir + persistir los nuevos
+      try {
+        const pulsesSnap = await db.collection('pending_pulses')
+          .where('uid_creator', '==', uid).limit(100).get();
+        const resolved = await resolveBotonClips(pulsesSnap);
+        resolved.forEach(function (c) {
+          if (byVideoId.has(c.nombre)) return;       // ya guardado
+          if (dismissed.has(c.nombre)) return;        // el user lo quitó
+          byVideoId.set(c.nombre, {
+            nombre: c.nombre, url: c.url, videoUrl: c.url,
+            club: c.club, cancha: c.cancha, lado: c.lado, fecha: c.fecha,
+            origin: 'boton', matchId: c.matchId || null, ts: c.ts || tsFromNombre(c.nombre),
+          });
+          // persistir best-effort (durable más allá de la ventana del JSON)
+          db.collection('usuarios').doc(uid).collection('guardados').doc(c.nombre).set({
+            videoId: c.nombre, videoUrl: c.url, club: c.club, cancha: c.cancha, lado: c.lado,
+            fecha: c.fecha, origin: 'boton', matchId: c.matchId || null,
+            savedAt: (firebase && firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date()),
+            nombreArchivo: c.nombre,
+          }, { merge: true }).catch(function () {});
+        });
+      } catch (_) {}
 
-      $grid.innerHTML = '';
+      const list = Array.from(byVideoId.values());
+      if (!list.length) { show('empty'); return; }
+
+      // 4) Asociar cada clip a un partido (matchId guardado o por ventana de tiempo)
+      const needFetch = new Set();
+      list.forEach(function (c) {
+        if (!c.matchId) {
+          const w = windows.find(function (x) {
+            return x.loc === c.club && canStr(x.can) === canStr(c.cancha) &&
+                   (x.lado || 'LadoA') === (c.lado || 'LadoA') &&
+                   c.ts >= x.startMs && c.ts <= x.endMs;
+          });
+          if (w) c.matchId = w.id;
+        }
+        if (c.matchId && !matchById.has(c.matchId)) needFetch.add(c.matchId);
+      });
+
+      // 5) Traer metadata de partidos desconocidos (ajenos) para nombres/estado
+      if (needFetch.size && window.PuntazoMatches && PuntazoMatches.get) {
+        await Promise.all(Array.from(needFetch).map(async function (mid) {
+          try { const m = await PuntazoMatches.get(mid); if (m) matchById.set(mid, m); }
+          catch (_) {}
+        }));
+      }
+
+      // 6) enriquecer + ordenar desc
+      list.forEach(function (c) { if (c.matchId && matchById.has(c.matchId)) c._match = matchById.get(c.matchId); });
+      list.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+
+      // 7) render
+      $list.innerHTML = '';
       show('list');
-      $sub.textContent = entries.length === 1 ? '1 clip guardado' : (entries.length + ' clips guardados');
-      makePager(entries, $grid, $moreWrap, $more, buildCard);
+      $sub.textContent = (list.length === 1 ? '1 clip' : (list.length + ' clips')) +
+        ' · guardados, de botón y de tus partidos';
+      makePager(list, $list, $moreWrap, $more, function (entry) { return buildItem(entry, uid); });
     } catch (e) {
-      console.error('[guardados]', e);
+      console.error('[mis-clips]', e);
       show('error');
     }
   }
 
-  // ── Esperar auth (mismo enfoque defensivo que perfil/mis-clips) ──
+  // ── esperar auth ──
   let _resolved = false;
   function onAuth(user) {
     if (_resolved) return;
     _resolved = true;
-    if (user) loadSaved(user);
-    else show('login');
+    if (user) loadAll(user); else show('login');
   }
-
   function initAuth() {
     const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) { onAuth(u || null); return; }
     if (u) { onAuth(u); return; }
-    window.addEventListener('puntazo:auth-changed', function (e) {
-      onAuth((e.detail && e.detail.user) || null);
-    }, { once: true });
-    window.addEventListener('puntazo:auth-ready', function () {
-      onAuth((window.PuntazoAuth && window.PuntazoAuth.currentUser) || null);
-    }, { once: true });
-    setTimeout(function () {
-      onAuth((window.PuntazoAuth && window.PuntazoAuth.currentUser) || null);
-    }, 4500);
+    window.addEventListener('puntazo:auth-changed', function (e) { onAuth((e.detail && e.detail.user) || null); }, { once: true });
+    window.addEventListener('puntazo:auth-ready', function () { onAuth((window.PuntazoAuth && window.PuntazoAuth.currentUser) || null); }, { once: true });
+    setTimeout(function () { onAuth((window.PuntazoAuth && window.PuntazoAuth.currentUser) || null); }, 4500);
   }
-
-  if (window.__PZ_HEADER_LOADED__) {
-    setTimeout(initAuth, 100);
-  } else {
+  if (window.__PZ_HEADER_LOADED__) { setTimeout(initAuth, 100); }
+  else {
     window.addEventListener('puntazo:header-rendered', function () { setTimeout(initAuth, 150); });
-    // Fallback si el evento del header no llega.
     setTimeout(initAuth, 1200);
   }
 })();

@@ -552,7 +552,6 @@
            partidos terminados, paginados (3 → +3 → +5 → +5). -->
       <div class="pz-section-title">
         <h3>🎬 Mis clips</h3>
-        <span id="myClipsCount" class="pz-section-count" style="display:none"></span>
       </div>
 
       <!-- Puntazos pendientes (desplegable) -->
@@ -579,26 +578,14 @@
         </div>
       </div>
 
-      <!-- Grid de clips de mis partidos (paginado) -->
-      <div id="myClipsGrid" class="cards-grid"></div>
-      <div id="myClipsMoreWrap" style="display:none; text-align:center; margin:4px 0 10px;">
-        <button type="button" id="myClipsMore" class="pz-more-btn">Ver más clips</button>
-      </div>
-      <div id="myClipsLoading" class="pz-matches-loading" style="display:none">
-        <div class="empty-icon">⏳</div>
-        <p>Cargando tus clips…</p>
-      </div>
-      <div id="myClipsEmpty" class="pz-matches-empty" style="display:none">
-        <p>Aún no hay clips de tus partidos.<br>
-           Cuando termines un partido y se generen puntazos, aparecerán aquí.</p>
-      </div>
-
-      <!-- F135 (Fix 7): los guardados viven en su propia página -->
+      <!-- F136: "Mis clips" unificado vive en /guardados.html (guardados +
+           clips de botón + clips de partidos que guardaste). El grid inline
+           se quitó; aquí solo el acceso. -->
       <a class="pz-play-cta" href="/guardados.html" style="margin-top:8px">
-        <span class="pz-play-cta-icon" style="font-size:1.7rem">💾</span>
+        <span class="pz-play-cta-icon" style="font-size:1.7rem">🎬</span>
         <span class="pz-play-cta-text">
-          <span class="pz-play-cta-title">Ver mis clips guardados</span>
-          <span class="pz-play-cta-sub">Los clips que marcaste con 💾</span>
+          <span class="pz-play-cta-title">Ver mis clips</span>
+          <span class="pz-play-cta-sub">Guardados, pedidos con tu botón y de tus partidos</span>
         </span>
         <span class="pz-play-cta-arrow">→</span>
       </a>
@@ -632,13 +619,6 @@
   const $loginBtn      = document.getElementById('loginBtn');
   const $perfilAvatar  = document.getElementById('perfilAvatar');
   const $perfilName    = document.getElementById('perfilName');
-  // F135 (Fix 2/3) — "Mis clips" = clips de todos mis partidos, paginado
-  const $myClipsGrid     = document.getElementById('myClipsGrid');
-  const $myClipsMoreWrap = document.getElementById('myClipsMoreWrap');
-  const $myClipsMore     = document.getElementById('myClipsMore');
-  const $myClipsLoading  = document.getElementById('myClipsLoading');
-  const $myClipsEmpty    = document.getElementById('myClipsEmpty');
-  const $myClipsCount    = document.getElementById('myClipsCount');
   const $matchesLoading = document.getElementById('matchesLoading');
   const $matchesList    = document.getElementById('matchesList');
   const $matchesEmpty   = document.getElementById('matchesEmpty');
@@ -685,7 +665,6 @@
     setupPendingCollapse(); // F135 Fix 1
     loadMyMatches(user);
     loadMyPendingPuntazos(user); // F82
-    loadMyClips(user); // F135 Fix 2/3 (reemplaza loadSaved → guardados.html)
     setupRefreshBar(user); // F126
   }
 
@@ -1362,90 +1341,6 @@
     } catch (e) {
       console.error('[perfil mis-partidos] query setup error', e);
       showMatchesState('error');
-    }
-  }
-
-  // F135 (Fix 3): paginador reusable. Muestra 3, luego +3 (6), luego +5 cada
-  // click (11, 16, …). Oculta el botón "Ver más" cuando ya no quedan items.
-  function makePager(entries, container, moreWrap, moreBtn, buildFn) {
-    let shown = 0;
-    let stepIdx = 0;
-    const STEPS = [3, 3, 5]; // después de éstos: siempre +5
-    function nextStep() {
-      const s = stepIdx < STEPS.length ? STEPS[stepIdx] : 5;
-      stepIdx++;
-      return s;
-    }
-    function renderMore() {
-      const add = nextStep();
-      const slice = entries.slice(shown, shown + add);
-      slice.forEach(function (e) { const c = buildFn(e); if (c) container.appendChild(c); });
-      shown += slice.length;
-      if (moreWrap) moreWrap.style.display = (shown < entries.length) ? '' : 'none';
-    }
-    renderMore(); // pinta los primeros 3
-    if (moreBtn) moreBtn.onclick = renderMore;
-  }
-
-  // F135 (Fix 2): "Mis clips" = clips de TODOS mis partidos terminados.
-  // Reusa PuntazoMatches.listByUser + findClipsForMatch (mismo patrón que
-  // mis-clips.html), aplana, dedup por nombre, ordena desc y pagina.
-  async function loadMyClips(user) {
-    if (!$myClipsGrid) return;
-    $myClipsGrid.innerHTML = '';
-    if ($myClipsMoreWrap) $myClipsMoreWrap.style.display = 'none';
-    if ($myClipsEmpty) $myClipsEmpty.style.display = 'none';
-    if ($myClipsCount) $myClipsCount.style.display = 'none';
-    if ($myClipsLoading) $myClipsLoading.style.display = 'block';
-
-    if (!window.PuntazoMatches ||
-        typeof PuntazoMatches.listByUser !== 'function' ||
-        typeof PuntazoMatches.findClipsForMatch !== 'function') {
-      if ($myClipsLoading) $myClipsLoading.style.display = 'none';
-      if ($myClipsEmpty) $myClipsEmpty.style.display = 'block';
-      return;
-    }
-
-    try {
-      const matches = await PuntazoMatches.listByUser(user.uid, { status: 'ended', limit: 50 });
-      if (!Array.isArray(matches) || !matches.length) {
-        if ($myClipsLoading) $myClipsLoading.style.display = 'none';
-        if ($myClipsEmpty) $myClipsEmpty.style.display = 'block';
-        return;
-      }
-      const perMatch = await Promise.all(matches.map(async function (m) {
-        try { return await PuntazoMatches.findClipsForMatch(m); }
-        catch (_) { return []; }
-      }));
-      // Flatten + dedup por nombre + orden desc por timestamp
-      const seen = new Set();
-      const all = [];
-      perMatch.forEach(function (arr) {
-        (arr || []).forEach(function (c) {
-          const key = c && (c.nombre || c.videoId);
-          if (!key || seen.has(key)) return;
-          seen.add(key);
-          all.push(c);
-        });
-      });
-      all.sort(function (a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
-
-      if ($myClipsLoading) $myClipsLoading.style.display = 'none';
-      if (!all.length) { if ($myClipsEmpty) $myClipsEmpty.style.display = 'block'; return; }
-
-      if ($myClipsCount) {
-        $myClipsCount.textContent = all.length === 1 ? '1 clip' : (all.length + ' clips');
-        $myClipsCount.style.display = 'inline';
-      }
-      makePager(all, $myClipsGrid, $myClipsMoreWrap, $myClipsMore, function (entry) {
-        return window.PuntazoCard ? window.PuntazoCard.build(entry, {
-          showSave: true, showShare: true, showFullscreen: true, showClubInfo: true,
-        }) : null;
-      });
-    } catch (e) {
-      console.error('[perfil mis-clips]', e);
-      if ($myClipsLoading) $myClipsLoading.style.display = 'none';
-      if ($myClipsEmpty) $myClipsEmpty.style.display = 'block';
     }
   }
 

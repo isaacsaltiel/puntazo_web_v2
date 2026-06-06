@@ -977,6 +977,9 @@
         const add = stepIdx < STEPS.length ? STEPS[stepIdx] : 5; stepIdx++;
         entries.slice(shown, shown + add).forEach(function (entry) {
           try {
+            // F136: marcar el clip con su matchId para que, al guardarlo, "Mis
+            // clips" pueda ofrecer "Ir al partido" aunque sea un partido ajeno.
+            entry.matchId = match.id;
             const card = window.PuntazoCard.build(entry, {
               showSave: true, showShare: true, showFullscreen: true,
               showClubInfo: true,

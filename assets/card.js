@@ -76,6 +76,13 @@ window.PuntazoCard = (function () {
       videoId:entry.nombre, videoUrl:entry.url||'',
       club:entry.club||'', cancha:entry.cancha||'', lado:entry.lado||'',
       fecha:entry.fecha||(entry._meta?`${entry._meta.Y}-${entry._meta.M}-${entry._meta.D}`:''),
+      // F136: origin distingue cómo llegó el clip a "Mis clips":
+      //   'manual' = guardado a mano con 💾 (este path).
+      //   'boton'  = auto-persistido al resolverse un pulso del botón.
+      // matchId opcional si el call-site lo conoce (la mayoría no; Mis clips
+      // lo deriva por ventana de tiempo contra los partidos del user).
+      origin: entry.origin || 'manual',
+      matchId: entry.matchId || null,
       savedAt:getTs(), nombreArchivo:entry.nombre,
     };
     await db.collection('usuarios').doc(user.uid).collection('guardados').doc(entry.nombre).set(meta,{merge:true});
