@@ -159,7 +159,7 @@
       root.innerHTML = `
         <nav>
           <a href="/" class="nav-logo">
-            <img src="/assets/img/P_Vector.png" alt="Puntazo" onerror="this.style.display='none'">
+            <img src="/assets/img/P_blanca_transparente.png" alt="Puntazo" onerror="this.style.display='none'">
           </a>
           <ul class="nav-links" id="nav-menu">
             <li><a href="/#producto"    onclick="closeMenu()">Producto</a></li>
@@ -193,7 +193,7 @@
             </svg>
           </a>
           <a href="/" class="logo-link">
-            <img src="/assets/img/P_Vector.png" alt="Puntazo" onerror="this.style.display='none'">
+            <img src="/assets/img/P_blanca_transparente.png" alt="Puntazo" onerror="this.style.display='none'">
           </a>
           <div class="pz-nav-right pz-nav-right--embedded">
             <div class="pz-auth-slot" data-auth-slot></div>
@@ -222,7 +222,7 @@
     root.innerHTML = `
       <header class="site-header">
         <a href="/" class="logo-link">
-          <img src="/assets/img/P_Vector.png" alt="Puntazo" onerror="this.style.display='none'">
+          <img src="/assets/img/P_blanca_transparente.png" alt="Puntazo" onerror="this.style.display='none'">
         </a>
         <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Abrir menú" onclick="window.toggleNavMenu(event)">☰</button>
         <nav class="navbar" id="nav-menu">
