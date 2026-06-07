@@ -806,9 +806,10 @@ async function populateVideos() {
 
     // Breadcrumb
     const linkClub = document.getElementById("link-club"), linkCancha = document.getElementById("link-cancha"), nombreLado = document.getElementById("nombre-lado");
-    if (linkClub)   { linkClub.textContent = locObj?.nombre || loc; linkClub.href = `locacion.html?loc=${loc}`; }
-    // F135 (Fix 4): el breadcrumb "Cancha" = "cambiar cancha" → selector de
-    // canchas del club actual (antes era href="#" muerto y mandaba a clubs).
+    // F139: ambos breadcrumbs (nombre del club y cancha) van al selector de
+    // CANCHAS del club actual, igual que "← Regresar". Antes "Club" caía en la
+    // lista de clubs (locacion.html). Reusa el deep-link modo=canchas (F135).
+    if (linkClub)   { linkClub.textContent = locObj?.nombre || loc; linkClub.href = `entrada.html?modo=canchas&loc=${encodeURIComponent(loc)}`; }
     if (linkCancha) { linkCancha.textContent = canObj?.nombre || can; linkCancha.href = `entrada.html?modo=canchas&loc=${encodeURIComponent(loc)}`; }
     if (nombreLado) { nombreLado.textContent = ladoObj?.nombre || lado; }
 
