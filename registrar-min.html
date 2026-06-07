@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Registrar · Puntazo</title>
+<link rel="icon" href="/assets/img/P_blanca_transparente.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/assets/estilo.css" />
+<style>
+  /* ════ Variante MINIMALISTA POR PASOS — una cosa por pantalla, mucho aire ════ */
+  body{ overflow:hidden; }
+  .min-app{
+    position:fixed; inset:0; z-index:1;
+    display:flex; flex-direction:column;
+    max-width:480px; margin:0 auto; padding:0 1.5rem;
+  }
+  /* Barra superior mínima: atrás + progreso (puntos) + logo chico */
+  .min-top{
+    display:flex; align-items:center; gap:14px;
+    padding:1.1rem 0 0.4rem; flex-shrink:0;
+  }
+  .min-back{
+    appearance:none; border:none; background:rgba(255,255,255,0.05);
+    border:1px solid var(--border2); width:40px; height:40px; border-radius:50%;
+    color:#fff; cursor:pointer; font-size:1.2rem; line-height:1;
+    display:flex; align-items:center; justify-content:center; transition:all .15s; flex-shrink:0;
+  }
+  .min-back:hover{ background:rgba(11,124,255,0.16); border-color:rgba(11,124,255,0.4); }
+  .min-back[hidden]{ visibility:hidden; }
+  .min-dots{ display:flex; gap:7px; flex:1; justify-content:center; }
+  .min-dot{ width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,0.16); transition:all .3s; }
+  .min-dot.on{ background:var(--blue2); width:22px; border-radius:7px; box-shadow:0 0 10px rgba(11,124,255,0.5); }
+  .min-dot.done{ background:rgba(11,124,255,0.5); }
+  .min-logo{ width:26px; flex-shrink:0; opacity:0.85; }
+
+  /* Zona de pasos */
+  .min-body{ flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; }
+  .step{ position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center;
+    opacity:0; transform:translateX(28px); pointer-events:none; transition:opacity .32s ease, transform .32s ease; }
+  .step.active{ opacity:1; transform:none; pointer-events:auto; }
+  .step.left{ transform:translateX(-28px); }
+
+  .eyebrow{ font-size:0.74rem; text-transform:uppercase; letter-spacing:2px; font-weight:800; color:var(--blue3); margin-bottom:0.7rem; }
+  .q{ font-size:clamp(1.7rem,6vw,2.3rem); font-weight:900; letter-spacing:-0.6px; color:#fff; line-height:1.08; margin-bottom:0.4rem; }
+  .q-sub{ color:var(--muted); font-size:0.96rem; margin-bottom:2rem; }
+
+  /* Tarjetas grandes (deporte) */
+  .big-choice{ display:flex; flex-direction:column; gap:0.9rem; }
+  .big-choice button{
+    appearance:none; cursor:pointer; text-align:left;
+    background:var(--card); border:1px solid var(--border); border-radius:20px;
+    padding:1.4rem 1.5rem; color:#fff; font-family:inherit; font-weight:800; font-size:1.25rem;
+    display:flex; align-items:center; gap:1rem; transition:all .18s;
+  }
+  .big-choice button:hover{ border-color:var(--blue2); background:rgba(0,79,200,0.12); transform:translateY(-2px); }
+  .big-choice button:active{ transform:scale(0.98); }
+  .big-choice .emoji{ font-size:2rem; }
+
+  /* Inputs grandes minimal */
+  .min-input{
+    width:100%; appearance:none; background:transparent;
+    border:none; border-bottom:2px solid var(--border2);
+    padding:0.8rem 0.2rem; color:#fff; font-family:inherit; font-size:1.5rem; font-weight:800;
+    transition:border-color .2s;
+  }
+  .min-input::placeholder{ color:rgba(234,242,255,0.25); font-weight:700; }
+  .min-input:focus{ outline:none; border-bottom-color:var(--blue2); }
+  .min-input + .min-input{ margin-top:1.3rem; }
+  .acct-tag{ font-size:0.78rem; font-weight:800; color:#bff07a; margin-top:0.5rem; height:1.1em; opacity:0; transition:opacity .2s; }
+  .acct-tag.show{ opacity:1; }
+  .you-pill{ display:inline-flex; align-items:center; gap:7px; background:rgba(11,124,255,0.12);
+    border:1px solid var(--team1-color-border); border-radius:50px; padding:0.5rem 1rem; font-weight:800; color:#fff; margin-bottom:1.4rem; }
+
+  /* Marcador minimal — un set a la vez, números gigantes */
+  .done-sets{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:1.4rem; min-height:30px; }
+  .done-pill{ font-size:0.82rem; font-weight:800; color:var(--muted); background:rgba(255,255,255,0.05);
+    border:1px solid var(--border2); border-radius:50px; padding:5px 12px; }
+  .set-now{ text-align:center; font-size:0.78rem; text-transform:uppercase; letter-spacing:2px; font-weight:800; color:var(--blue3); margin-bottom:1.2rem; }
+  .score-rows{ display:flex; flex-direction:column; gap:1rem; }
+  .score-line{ display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .score-line .nm{ font-weight:800; font-size:1.1rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .score-line.t1 .nm{ color:var(--team1-color); } .score-line.t2 .nm{ color:#dff06a; }
+  .bignum{ display:flex; align-items:center; gap:0.6rem; flex-shrink:0; }
+  .bignum .n{
+    width:78px; height:78px; border-radius:20px; cursor:pointer; user-select:none; -webkit-user-select:none;
+    display:flex; align-items:center; justify-content:center; font-size:2.6rem; font-weight:900; color:#fff;
+    background:rgba(5,9,20,0.6); border:2px solid var(--border2); font-variant-numeric:tabular-nums;
+    transition:transform .1s, border-color .15s, background .15s;
+  }
+  .score-line.t1 .n{ border-color:var(--team1-color-border); } .score-line.t2 .n{ border-color:var(--team2-color-border); }
+  .bignum .n:hover{ background:rgba(11,124,255,0.12); } .bignum .n:active{ transform:scale(0.9); }
+  .bignum .minus{ appearance:none; border:none; background:transparent; color:rgba(234,242,255,0.4);
+    font-size:1.6rem; font-weight:900; cursor:pointer; width:34px; height:34px; line-height:1; }
+  .bignum .minus:hover{ color:#fff; }
+  .score-tip{ text-align:center; font-size:0.74rem; color:rgba(234,242,255,0.35); margin-top:1.3rem; }
+
+  /* Resumen */
+  .summary{ background:var(--card); border:1px solid var(--border); border-radius:20px; padding:1.4rem; text-align:center; margin-bottom:0.3rem; }
+  .summary .vs{ font-size:1.05rem; font-weight:800; color:#fff; line-height:1.5; }
+  .summary .vs .b{ color:var(--blue3); }
+  .summary .sc{ font-size:2rem; font-weight:900; color:#fff; margin:0.7rem 0; letter-spacing:1px; font-variant-numeric:tabular-nums; }
+  .summary .res{ font-size:0.95rem; font-weight:800; }
+  .summary .res.win{ color:#bff07a; } .summary .res.lose{ color:var(--muted); }
+
+  /* Botonera inferior */
+  .min-foot{ flex-shrink:0; padding:1rem 0 1.6rem; }
+  .min-cta{
+    width:100%; appearance:none; cursor:pointer;
+    background:linear-gradient(135deg,var(--blue2),var(--blue)); color:#fff;
+    border:1px solid var(--blue2); border-radius:50px; padding:1.1rem;
+    font-family:inherit; font-weight:900; font-size:1.1rem;
+    box-shadow:0 0 30px rgba(0,79,200,0.4); transition:all .15s;
+    display:flex; align-items:center; justify-content:center; gap:0.5rem;
+  }
+  .min-cta:hover:not(:disabled){ transform:translateY(-2px); box-shadow:0 0 46px rgba(11,124,255,0.55); }
+  .min-cta:disabled{ opacity:0.35; cursor:not-allowed; box-shadow:none; }
+  .min-cta.ghost{ background:transparent; box-shadow:none; border-color:var(--border2); color:var(--muted); margin-top:0.7rem; padding:0.85rem; font-size:0.95rem; }
+  .min-cta.ghost:hover{ color:#fff; border-color:rgba(255,255,255,0.25); transform:none; }
+  .min-cta .spin{ width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;animation:spin .7s linear infinite;display:none; }
+  .min-cta.loading .spin{ display:inline-block; }
+  .min-err{ color:#ffb4a1; font-size:0.85rem; text-align:center; min-height:1.1em; margin-top:0.6rem; }
+
+  /* Éxito + gate */
+  .center-msg{ text-align:center; }
+  .center-msg .big-emoji{ font-size:3rem; margin-bottom:0.8rem; }
+  .center-msg h2{ font-size:1.7rem; font-weight:900; color:#fff; margin-bottom:0.6rem; }
+  .center-msg p{ color:var(--muted); font-size:0.98rem; line-height:1.55; margin-bottom:0.4rem; }
+  .center-msg .hl{ color:#bff07a; font-weight:800; }
+  .copied{ font-size:0.82rem; color:#bff07a; min-height:1.1em; margin-top:0.6rem; }
+  [hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+<div class="page-bg"></div>
+
+<div class="min-app">
+  <!-- Top -->
+  <div class="min-top" id="top" hidden>
+    <button class="min-back" id="back" type="button" aria-label="Atrás">‹</button>
+    <div class="min-dots" id="dots"></div>
+    <img class="min-logo" src="/assets/img/P_blanca_transparente.png" alt="" onerror="this.style.display='none'">
+  </div>
+
+  <!-- Body -->
+  <div class="min-body" id="body">
+
+    <!-- Gate -->
+    <div class="step active" id="s-gate">
+      <div class="center-msg">
+        <div class="big-emoji">🎾</div>
+        <h2>Registra tu partido</h2>
+        <p>Inicia sesión para empezar. Tu rival lo confirma y sube al ranking.</p>
+        <div style="margin-top:1.5rem"><button class="min-cta" id="gate-login" type="button" style="max-width:300px;margin:0 auto">Iniciar sesión con Google</button></div>
+      </div>
+    </div>
+
+    <!-- 1. Deporte -->
+    <div class="step" id="s-dep">
+      <div class="eyebrow">Paso 1</div>
+      <div class="q">¿Qué jugaron?</div>
+      <div class="q-sub">Elige el deporte.</div>
+      <div class="big-choice">
+        <button type="button" data-dep="padel"><span class="emoji">🎾</span> Pádel</button>
+        <button type="button" data-dep="pickleball"><span class="emoji">🏓</span> Pickleball</button>
+      </div>
+    </div>
+
+    <!-- 2. Compañero -->
+    <div class="step" id="s-compa">
+      <div class="eyebrow">Paso 2</div>
+      <div class="q">¿Con quién jugaste?</div>
+      <div class="q-sub">Tu compañero de equipo.</div>
+      <div class="you-pill" id="you-pill">✓ Tú</div>
+      <input class="min-input" id="in-compa" type="text" placeholder="Nombre de tu compañero/a" autocomplete="off" />
+      <div class="acct-tag" id="tag-compa">✓ tiene cuenta de Puntazo</div>
+    </div>
+
+    <!-- 3. Rivales -->
+    <div class="step" id="s-rivales">
+      <div class="eyebrow">Paso 3</div>
+      <div class="q">¿Contra quiénes?</div>
+      <div class="q-sub">Tus rivales. Al menos uno con cuenta para que confirme.</div>
+      <input class="min-input" id="in-r1" type="text" placeholder="Rival 1" autocomplete="off" />
+      <div class="acct-tag" id="tag-r1">✓ tiene cuenta de Puntazo</div>
+      <input class="min-input" id="in-r2" type="text" placeholder="Rival 2" autocomplete="off" />
+      <div class="acct-tag" id="tag-r2">✓ tiene cuenta de Puntazo</div>
+    </div>
+
+    <!-- 4. Marcador -->
+    <div class="step" id="s-score">
+      <div class="eyebrow">Paso 4</div>
+      <div class="q" style="margin-bottom:1.2rem">El marcador</div>
+      <div class="done-sets" id="done-sets"></div>
+      <div class="set-now" id="set-now">Set 1</div>
+      <div class="score-rows">
+        <div class="score-line t1">
+          <span class="nm" id="sl-t1">Tu equipo</span>
+          <div class="bignum">
+            <button class="minus" type="button" data-team="team1" data-d="-1">−</button>
+            <div class="n" id="n-t1" data-team="team1" data-d="1">0</div>
+          </div>
+        </div>
+        <div class="score-line t2">
+          <span class="nm" id="sl-t2">Rivales</span>
+          <div class="bignum">
+            <button class="minus" type="button" data-team="team2" data-d="-1">−</button>
+            <div class="n" id="n-t2" data-team="team2" data-d="1">0</div>
+          </div>
+        </div>
+      </div>
+      <div class="score-tip">Toca el número para sumar · − para corregir</div>
+    </div>
+
+    <!-- 5. Resumen / registrar -->
+    <div class="step" id="s-sum">
+      <div class="eyebrow">Listo</div>
+      <div class="q" style="margin-bottom:1.4rem">¿Todo bien?</div>
+      <div class="summary" id="summary"></div>
+    </div>
+
+    <!-- Éxito -->
+    <div class="step" id="s-ok">
+      <div class="center-msg">
+        <div class="big-emoji">🎾</div>
+        <h2>¡Registrado!</h2>
+        <p>Le avisamos a <span class="hl" id="ok-rival">tu rival</span> para que lo confirme. En cuanto acepte, cuenta para el ranking de los dos.</p>
+        <p style="font-size:0.85rem;color:rgba(234,242,255,0.4)">Queda pendiente. Si nadie confirma en 7 días, no cuenta.</p>
+        <div class="copied" id="copied"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Foot -->
+  <div class="min-foot" id="foot" hidden>
+    <button class="min-cta" id="cta" type="button"><span class="spin"></span><span id="cta-label">Siguiente</span></button>
+    <button class="min-cta ghost" id="cta2" type="button" hidden></button>
+    <div class="min-err" id="err"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/identity.js"></script>
+<script src="/assets/friends.js"></script>
+<script src="/assets/matches.js"></script>
+<script src="/assets/match-confirmation.js"></script>
+<script src="/assets/match-actions.js"></script>
+<script src="/assets/player-autocomplete.js"></script>
+<script src="/assets/header.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var STEPS = ["dep", "compa", "rivales", "score", "sum"]; // pasos del flujo (sin gate/ok)
+  var stepEls = { gate: $("s-gate"), dep: $("s-dep"), compa: $("s-compa"), rivales: $("s-rivales"), score: $("s-score"), sum: $("s-sum"), ok: $("s-ok") };
+  var idx = -1; // -1 = gate
+
+  var st = {
+    deporte: "padel",
+    you: { nombre: "", uid: null },
+    compa: { nombre: "", uid: null },
+    r1: { nombre: "", uid: null },
+    r2: { nombre: "", uid: null },
+    sets: [],                 // sets cerrados
+    cur: { team1: 0, team2: 0 } // set en curso
+  };
+  function maxGames() { return st.deporte === "pickleball" ? 21 : 7; }
+  function firstName(n) { return String(n || "").trim().split(/\s+/)[0] || n; }
+
+  // ── Dots ──
+  function renderDots() {
+    $("dots").innerHTML = STEPS.map(function (_, i) {
+      return '<div class="min-dot ' + (i === idx ? "on" : (i < idx ? "done" : "")) + '"></div>';
+    }).join("");
+  }
+
+  // ── Navegación de pasos ──
+  function showStep(name) {
+    Object.keys(stepEls).forEach(function (k) {
+      var el = stepEls[k];
+      el.classList.toggle("active", k === name);
+      el.classList.remove("left");
+    });
+  }
+  function go(i) {
+    idx = i;
+    var name = STEPS[i];
+    $("top").hidden = false; $("foot").hidden = false;
+    $("back").hidden = (i === 0);
+    showStep(name);
+    renderDots();
+    configFoot(name);
+    setTimeout(focusStep, 60);
+  }
+  function focusStep() {
+    var name = STEPS[idx];
+    if (name === "compa") $("in-compa").focus();
+    else if (name === "rivales") $("in-r1").focus();
+  }
+  function next() { if (idx < STEPS.length - 1) go(idx + 1); }
+  function back() { if (idx > 0) go(idx - 1); }
+
+  // ── Footer dinámico por paso ──
+  function configFoot(name) {
+    var cta = $("cta"), cta2 = $("cta2"), label = $("cta-label");
+    cta.classList.remove("loading"); $("err").textContent = "";
+    cta2.hidden = true;
+    if (name === "dep") { cta.style.display = "none"; }       // avanza al tocar tarjeta
+    else { cta.style.display = "flex"; }
+    if (name === "compa") { label.textContent = "Siguiente"; cta.disabled = false; }
+    else if (name === "rivales") { label.textContent = "Siguiente"; }
+    else if (name === "score") {
+      label.textContent = "Set listo →";
+      cta2.hidden = false; cta2.textContent = "Ese fue el último set";
+    }
+    else if (name === "sum") { label.textContent = "Registrar partido"; }
+    validate();
+  }
+
+  // ── Validación por paso ──
+  function rivalsAccts() { return [st.r1, st.r2].filter(function (r) { return r.uid; }).length; }
+  function validate() {
+    var name = STEPS[idx], cta = $("cta"), ok = true, msg = "";
+    if (name === "compa") ok = !!st.compa.nombre;
+    else if (name === "rivales") {
+      ok = !!(st.r1.nombre || st.r2.nombre);
+      if (ok && rivalsAccts() === 0) { msg = "Tip: al menos un rival debe tener cuenta (aparece con ✓) para confirmar."; }
+    }
+    else if (name === "score") { cta.disabled = false; return true; }
+    else if (name === "sum") {
+      var w = deduceWinner();
+      ok = !!w.ganador && rivalsAccts() > 0 && st.compa.nombre;
+      if (w.ganador && rivalsAccts() === 0) msg = "Necesitas al menos un rival con cuenta de Puntazo para que confirme.";
+    }
+    cta.disabled = !ok;
+    $("err").textContent = msg;
+    return ok;
+  }
+
+  // ── Paso 1: deporte ──
+  $("s-dep").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-dep]"); if (!b) return;
+    st.deporte = b.dataset.dep; next();
+  });
+
+  // ── Inputs con autocomplete + cuenta ──
+  function wireInput(inputId, tagId, key) {
+    var input = $(inputId), tag = tagId ? $(tagId) : null;
+    function set(name, uid) {
+      st[key].nombre = (name || "").trim(); st[key].uid = uid || null;
+      if (tag) tag.classList.toggle("show", !!uid);
+      validate();
+    }
+    input.addEventListener("input", function () { set(input.value, null); });
+    if (window.PuntazoPlayerAutocomplete) {
+      window.PuntazoPlayerAutocomplete.attach({ input: input, onSelect: function (p) { input.value = p.displayName || ""; set(p.displayName, p.uid || null); } });
+    }
+  }
+
+  // ── Paso 4: marcador (un set a la vez) ──
+  function teamName(team) {
+    if (team === "team1") { var c = st.compa.nombre; return c ? (firstName(st.you.nombre || "Tú") + " / " + firstName(c)) : firstName(st.you.nombre || "Tú"); }
+    var a = st.r1.nombre, b = st.r2.nombre;
+    return (a && b) ? (firstName(a) + " / " + firstName(b)) : (a || b || "Rivales");
+  }
+  function renderScore() {
+    $("sl-t1").textContent = teamName("team1");
+    $("sl-t2").textContent = teamName("team2");
+    $("n-t1").textContent = st.cur.team1;
+    $("n-t2").textContent = st.cur.team2;
+    $("set-now").textContent = (st.deporte === "pickleball" ? "Juego " : "Set ") + (st.sets.length + 1);
+    $("done-sets").innerHTML = st.sets.map(function (s, i) {
+      return '<span class="done-pill">' + (st.deporte === "pickleball" ? "J" : "Set") + (i + 1) + ": " + s.team1 + "-" + s.team2 + "</span>";
+    }).join("");
+  }
+  $("s-score").addEventListener("click", function (e) {
+    var t = e.target.closest("[data-team]"); if (!t) return;
+    var team = t.dataset.team, d = Number(t.dataset.d);
+    st.cur[team] = Math.max(0, Math.min(maxGames(), st.cur[team] + d));
+    renderScore();
+  });
+  function commitCurrentSet() {
+    if (st.cur.team1 !== 0 || st.cur.team2 !== 0) { st.sets.push({ team1: st.cur.team1, team2: st.cur.team2 }); st.cur = { team1: 0, team2: 0 }; }
+  }
+  function deduceWinner() {
+    var all = st.sets.concat((st.cur.team1 || st.cur.team2) ? [st.cur] : []);
+    var w1 = 0, w2 = 0;
+    all.forEach(function (s) { if (s.team1 > s.team2) w1++; else if (s.team2 > s.team1) w2++; });
+    if (!all.length || w1 === w2) return { ganador: null, w1: w1, w2: w2, sets: all };
+    return { ganador: w1 > w2 ? "team1" : "team2", w1: w1, w2: w2, sets: all };
+  }
+
+  // ── Paso 5: resumen ──
+  function renderSummary() {
+    var w = deduceWinner();
+    var iWon = w.ganador === "team1";
+    var scoreStr = w.sets.map(function (s) { return s.team1 + "-" + s.team2; }).join("  ");
+    $("summary").innerHTML =
+      '<div class="vs"><span class="b">' + esc(teamName("team1")) + '</span><br><span style="color:var(--muted);font-size:0.85rem">vs</span><br>' + esc(teamName("team2")) + '</div>' +
+      '<div class="sc">' + esc(scoreStr || "—") + '</div>' +
+      '<div class="res ' + (iWon ? "win" : "lose") + '">' + (w.ganador ? (iWon ? "🏆 Ganaste" : "Perdiste, pero quedó registrado") : "Falta un ganador") + '</div>';
+  }
+
+  // ── CTA principal ──
+  $("cta").addEventListener("click", async function () {
+    var name = STEPS[idx];
+    if (name === "score") { commitCurrentSet(); renderScore(); return; } // "Set listo": cierra y abre el siguiente
+    if (name === "sum") { await submit(); return; }
+    if (!validate()) return;
+    next();
+    if (STEPS[idx] === "score") renderScore();
+    if (STEPS[idx] === "sum") renderSummary();
+  });
+  // CTA secundario en marcador: "ese fue el último set" → cierra y va a resumen
+  $("cta2").addEventListener("click", function () {
+    commitCurrentSet();
+    var w = deduceWinner();
+    if (!w.ganador) { $("err").textContent = "El marcador necesita un ganador (¿quedó empate?)."; return; }
+    next(); renderSummary();
+  });
+  $("back").addEventListener("click", back);
+
+  // ── Submit ──
+  async function submit() {
+    if (!validate()) return;
+    var cta = $("cta"); cta.classList.add("loading"); cta.disabled = true; $("err").textContent = "";
+    try {
+      var w = deduceWinner();
+      var jugadores = [
+        { nombre: st.you.nombre, equipo: "team1", uid: st.you.uid },
+        { nombre: st.compa.nombre, equipo: "team1" },
+        { nombre: st.r1.nombre || "Rival 1", equipo: "team2" },
+        { nombre: st.r2.nombre || "Rival 2", equipo: "team2" },
+      ].filter(function (j) { return j.nombre; });
+      if (st.compa.uid) jugadores[1].uid = st.compa.uid;
+      jugadores.forEach(function (j) { if (j.equipo === "team2") { if (st.r1.uid && j.nombre === st.r1.nombre) j.uid = st.r1.uid; if (st.r2.uid && j.nombre === st.r2.nombre) j.uid = st.r2.uid; } });
+      var matchId = await window.PuntazoMatchActions.register({
+        loc: "Manual", deporte: st.deporte, modo: st.deporte === "pickleball" ? "pickle_3" : "partido_3",
+        jugadores: jugadores, marcador: { sets: w.sets, ganador: w.ganador },
+      });
+      success(matchId);
+    } catch (err) {
+      console.error(err);
+      $("err").textContent = (err && err.message) ? err.message.replace("[MatchActions] ", "") : "No se pudo registrar.";
+      cta.classList.remove("loading"); cta.disabled = false;
+    }
+  }
+  function success(matchId) {
+    $("top").hidden = true; $("foot").hidden = true;
+    showStep("ok");
+    var rivals = [st.r1, st.r2].map(function (r) { return r.nombre; }).filter(Boolean).map(firstName);
+    $("ok-rival").textContent = rivals.length ? rivals.join(" y ") : "tu rival";
+    var link = location.origin + "/confirmar.html?id=" + encodeURIComponent(matchId);
+    copy(link).then(function () { $("copied").textContent = "🔗 Link de confirmación copiado — mándaselo por WhatsApp."; });
+  }
+
+  // ── Utils ──
+  function esc(s) { return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function copy(t) { if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t); return Promise.resolve(); }
+
+  // ── Auth ──
+  $("gate-login").addEventListener("click", function () { if (window.PuntazoAuth && window.PuntazoAuth.signIn) window.PuntazoAuth.signIn(); });
+  function onUser(user) {
+    if (!user) { idx = -1; $("top").hidden = true; $("foot").hidden = true; showStep("gate"); return; }
+    st.you = { nombre: user.displayName || "Yo", uid: user.uid };
+    $("you-pill").innerHTML = "✓ " + esc(firstName(st.you.nombre));
+    try { window.PuntazoPlayerAutocomplete && window.PuntazoPlayerAutocomplete.prefetchPool(user.uid); } catch (e) {}
+    if (idx === -1) go(0);
+  }
+
+  // ── Boot ──
+  wireInput("in-compa", "tag-compa", "compa");
+  wireInput("in-r1", "tag-r1", "r1");
+  wireInput("in-r2", "tag-r2", "r2");
+  showStep("gate");
+  window.addEventListener("puntazo:auth-changed", function () { onUser(window.PuntazoAuth && window.PuntazoAuth.currentUser); });
+  (function waitAuth(n) {
+    if (window.PuntazoAuth) { onUser(window.PuntazoAuth.currentUser); return; }
+    if (n > 150) return; setTimeout(function () { waitAuth(n + 1); }, 80);
+  })(0);
+})();
+</script>
+</body>
+</html>
