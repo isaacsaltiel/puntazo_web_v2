@@ -11,6 +11,8 @@
 <link rel="stylesheet" href="/assets/estilo.css" />
 <style>
   /* ── Registrar — usa los tokens de estilo.css (--blue, --team1/2, etc.) ── */
+  /* KO total del doble-tap zoom (picar rápido los números no hace zoom) */
+  html, body{ touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
   .reg-wrap{ max-width:560px; margin:0 auto; }
   .reg-tag{
     display:inline-flex;align-items:center;gap:6px;
@@ -226,6 +228,15 @@
         </div>
       </div>
 
+      <!-- Formato -->
+      <div class="reg-card">
+        <div class="reg-label">🎾 Formato</div>
+        <div class="seg" id="seg-formato">
+          <button type="button" data-bo="3" class="on">Mejor de 3 sets</button>
+          <button type="button" data-bo="5">Mejor de 5 sets</button>
+        </div>
+      </div>
+
       <!-- Jugadores -->
       <div class="reg-card">
         <div class="reg-label">👥 ¿Quiénes jugaron?</div>
@@ -265,7 +276,7 @@
         </div>
         <div class="board" id="board"></div>
         <div class="score-hint">Toca el número para sumar · − para corregir</div>
-        <button type="button" class="add-set" id="add-set">+ Agregar tercer set</button>
+        <button type="button" class="add-set" id="add-set">+ Agregar set</button>
         <div class="result-chip" id="result">Ajusta el marcador…</div>
       </div>
 
@@ -320,6 +331,7 @@
 
   // ── Estado ────────────────────────────────────────────────────────────────
   var deporte = "padel";
+  var bestOf = 3; // 3 = mejor de 3 sets, 5 = mejor de 5
   var sets = [{ team1: 0, team2: 0 }, { team1: 0, team2: 0 }]; // 2 sets por defecto
   // slots[idx] = { nombre, uid|null, equipo }
   var slots = {
@@ -358,6 +370,13 @@
     $("score-label").textContent = deporte === "pickleball" ? "🎯 Marcador (juegos a 11)" : "🎯 Marcador";
     // clamp scores al nuevo máximo
     sets.forEach(function (s) { s.team1 = Math.min(s.team1, maxGames()); s.team2 = Math.min(s.team2, maxGames()); });
+    renderBoard(); validate();
+  });
+
+  $("seg-formato").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-bo]"); if (!b) return;
+    bestOf = Number(b.dataset.bo);
+    Array.prototype.forEach.call(this.querySelectorAll("button"), function (x) { x.classList.toggle("on", x === b); });
     renderBoard(); validate();
   });
 
@@ -416,7 +435,7 @@
         '<div class="who"><span class="who-name" id="bn-' + team + '">' + escapeHtml(teamName(team)) + '</span></div>' +
         cells + '</div>';
     }).join("");
-    $("add-set").hidden = sets.length >= 3;
+    $("add-set").hidden = sets.length >= bestOf;
     renderResult();
   }
   function refreshBoardNames() {
@@ -436,7 +455,7 @@
   });
 
   $("add-set").addEventListener("click", function () {
-    if (sets.length < 3) { sets.push({ team1: 0, team2: 0 }); renderBoard(); validate(); }
+    if (sets.length < bestOf) { sets.push({ team1: 0, team2: 0 }); renderBoard(); validate(); }
   });
 
   // Deduce ganador por sets ganados (set = más games). Empate de sets => sin ganador.
@@ -489,7 +508,7 @@
         return j;
       });
       var r = deduceWinner();
-      var modo = deporte === "pickleball" ? "pickle_3" : "partido_3";
+      var modo = deporte === "pickleball" ? "pickle_3" : (bestOf === 5 ? "partido_5" : "partido_3");
       var matchId = await window.PuntazoMatchActions.register({
         loc: ($("place").value || "").trim() || "Manual",
         deporte: deporte, modo: modo,

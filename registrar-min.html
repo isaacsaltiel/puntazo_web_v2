@@ -12,6 +12,8 @@
 <style>
   /* ════ Variante MINIMALISTA POR PASOS — una cosa por pantalla, mucho aire ════ */
   body{ overflow:hidden; }
+  /* KO total del doble-tap zoom (picar rápido los números no hace zoom) */
+  html, body{ touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
   .min-app{
     position:fixed; inset:0; z-index:1;
     display:flex; flex-direction:column;
@@ -168,6 +170,17 @@
       </div>
     </div>
 
+    <!-- 1b. Formato -->
+    <div class="step" id="s-formato">
+      <div class="eyebrow">Paso 2</div>
+      <div class="q">¿A cuántos sets?</div>
+      <div class="q-sub">El formato del partido.</div>
+      <div class="big-choice">
+        <button type="button" data-bo="3"><span class="emoji">🎾</span> Mejor de 3 sets</button>
+        <button type="button" data-bo="5"><span class="emoji">🏆</span> Mejor de 5 sets</button>
+      </div>
+    </div>
+
     <!-- 2. Compañero -->
     <div class="step" id="s-compa">
       <div class="eyebrow">Paso 2</div>
@@ -258,12 +271,13 @@
 (function () {
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
-  var STEPS = ["dep", "compa", "rivales", "score", "sum"]; // pasos del flujo (sin gate/ok)
-  var stepEls = { gate: $("s-gate"), dep: $("s-dep"), compa: $("s-compa"), rivales: $("s-rivales"), score: $("s-score"), sum: $("s-sum"), ok: $("s-ok") };
+  var STEPS = ["dep", "formato", "compa", "rivales", "score", "sum"]; // pasos del flujo (sin gate/ok)
+  var stepEls = { gate: $("s-gate"), dep: $("s-dep"), formato: $("s-formato"), compa: $("s-compa"), rivales: $("s-rivales"), score: $("s-score"), sum: $("s-sum"), ok: $("s-ok") };
   var idx = -1; // -1 = gate
 
   var st = {
     deporte: "padel",
+    bestOf: 3,
     you: { nombre: "", uid: null },
     compa: { nombre: "", uid: null },
     r1: { nombre: "", uid: null },
@@ -295,6 +309,8 @@
     $("top").hidden = false; $("foot").hidden = false;
     $("back").hidden = (i === 0);
     showStep(name);
+    var eb = stepEls[name].querySelector(".eyebrow");
+    if (eb && name !== "sum") eb.textContent = "Paso " + (i + 1);
     renderDots();
     configFoot(name);
     setTimeout(focusStep, 60);
@@ -312,7 +328,7 @@
     var cta = $("cta"), cta2 = $("cta2"), label = $("cta-label");
     cta.classList.remove("loading"); $("err").textContent = "";
     cta2.hidden = true;
-    if (name === "dep") { cta.style.display = "none"; }       // avanza al tocar tarjeta
+    if (name === "dep" || name === "formato") { cta.style.display = "none"; } // avanza al tocar tarjeta
     else { cta.style.display = "flex"; }
     if (name === "compa") { label.textContent = "Siguiente"; cta.disabled = false; }
     else if (name === "rivales") { label.textContent = "Siguiente"; }
@@ -348,6 +364,10 @@
   $("s-dep").addEventListener("click", function (e) {
     var b = e.target.closest("button[data-dep]"); if (!b) return;
     st.deporte = b.dataset.dep; next();
+  });
+  $("s-formato").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-bo]"); if (!b) return;
+    st.bestOf = Number(b.dataset.bo); next();
   });
 
   // ── Inputs con autocomplete + cuenta ──
@@ -442,7 +462,7 @@
       if (st.compa.uid) jugadores[1].uid = st.compa.uid;
       jugadores.forEach(function (j) { if (j.equipo === "team2") { if (st.r1.uid && j.nombre === st.r1.nombre) j.uid = st.r1.uid; if (st.r2.uid && j.nombre === st.r2.nombre) j.uid = st.r2.uid; } });
       var matchId = await window.PuntazoMatchActions.register({
-        loc: "Manual", deporte: st.deporte, modo: st.deporte === "pickleball" ? "pickle_3" : "partido_3",
+        loc: "Manual", deporte: st.deporte, modo: st.deporte === "pickleball" ? "pickle_3" : (st.bestOf === 5 ? "partido_5" : "partido_3"),
         jugadores: jugadores, marcador: { sets: w.sets, ganador: w.ganador },
       });
       success(matchId);
