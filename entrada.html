@@ -487,6 +487,12 @@
     display: block;
     filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
   }
+  /* F143: BreakPoint es un logo cuadrado y detallado; a 48px se ve chico
+     frente a los wordmark horizontales. Solo a él lo agrandamos. */
+  .sel-card .logo--breakpoint {
+    height: 84px;
+    max-width: 100%;
+  }
   /* Etapa 16.4 F4 — ícono hex neón por cancha (B1..B8 generados con AI) */
   .sel-card--cancha {
     padding: 12px 10px 14px;
@@ -834,8 +840,11 @@
         card.className = "sel-card";
         if (club.status === "soon") card.classList.add("is-disabled");
         // Etapa 16.4 F4: logo real si está disponible, fallback al emoji
+        // F143: clase por-club (ej. logo--breakpoint) para poder ajustar el
+        // tamaño de un logo específico sin afectar a los demás.
+        const _logoCls = 'logo logo--' + String(club.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         const visual = club.logoUrl
-          ? '<img class="logo" src="' + escapeHtml(club.logoUrl) + '" alt="' + escapeHtml(club.nombre) + '" onerror="this.outerHTML=\'<div class=&quot;emoji&quot;>' + escapeHtml(club.emoji || "🎾") + '</div>\'">'
+          ? '<img class="' + _logoCls + '" src="' + escapeHtml(club.logoUrl) + '" alt="' + escapeHtml(club.nombre) + '" onerror="this.outerHTML=\'<div class=&quot;emoji&quot;>' + escapeHtml(club.emoji || "🎾") + '</div>\'">'
           : '<div class="emoji">' + escapeHtml(club.emoji || "🎾") + '</div>';
         const inner = [
           visual,
