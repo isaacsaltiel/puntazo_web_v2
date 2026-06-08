@@ -17,7 +17,14 @@
 <!-- R4 + R6: Firebase compat SDK + helpers Puntazo (BreakPoint → Firestore directo) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- F144: auth en boton.html. Sin esto, PuntazoAuth no existía y los pulsos
+     del botón salían con uid_creator=null (anónimos) → nunca aparecían como
+     "pendientes" del usuario ni en "Mis clips". auth.js se auto-inicializa
+     (initAuth() al final del módulo) y restaura la sesión; pulses.js lee
+     currentUser al enviar, así que el pulso queda ligado a tu cuenta. -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
 <script src="/assets/clubs-catalog.js"></script>
 <script src="/assets/pulses.js"></script>
 <!-- F129: heartbeat-watcher para banner "cámaras fuera de línea". -->
