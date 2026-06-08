@@ -52,8 +52,11 @@ service cloud.firestore {
                          request.resource.data.status == "pending_confirmation"
                        );
 
-      // Update: flujo legacy in-club, O confirmación/disputa del RIVAL.
-      allow update: if isLegacyUpdate() || isRivalConfirmAction();
+      // Update: flujo legacy in-club, O confirmación/disputa del RIVAL,
+      // O claim (un signedIn se agrega a sí mismo), O decline (un player se
+      // remueve a sí mismo). Ver E3a / spec-registro-claiming §2 y §6.
+      allow update: if isLegacyUpdate() || isRivalConfirmAction()
+                       || isClaimAction() || isDeclineAction();
 
       // (a) Legacy: dueño edita libre, o invitado toca solo jugadores/scoreAcceptedBy.
       //     Solo aplica a estados active/ended/cancelled (no pending).
@@ -87,6 +90,78 @@ service cloud.firestore {
           && request.resource.data.marcador == resource.data.marcador
           && request.resource.data.jugadores == resource.data.jugadores
           && request.resource.data.userId == resource.data.userId;
+      }
+
+      // ── E3a · CLAIMING (spec-registro-claiming §2.3/§2.6/§6) ──────────────
+      // MODELO DE DATOS (documental; las reglas NO dependen de estos campos):
+      //   • Invitado reusable del dueño:
+      //       users/{ownerUid}/guests/{guestId} =
+      //         { name, searchName, createdAt, lastUsedAt, claimedByUid|null }
+      //   • Jugador DUMMY dentro de matches/{id}.jugadores[]:
+      //       { nombre, equipo, guestId, ownerUid, uid:null }
+      //     (un jugador CON cuenta es { nombre, equipo, uid }).
+      //   guestId/ownerUid sólo sirven para sugerencias/merge (E3b/E4).
+      //
+      // LIMITACIÓN: las reglas Firestore no pueden iterar jugadores[] (arrays).
+      // Por eso la invariante FUERTE se ancla en playerUids (lista) usando
+      // operaciones de conjunto: verificamos que el caller se agrega/quita
+      // EXACTAMENTE a sí mismo y que NADIE más entra/sale, más la inmutabilidad
+      // de marcador/userId/status/ratingProcessed. Que el slot dummy concreto
+      // editado en jugadores[] sea el correcto NO es verificable en reglas →
+      // queda a la capa app + disputa.
+
+      // El delta en playerUids agrega EXACTAMENTE al caller (nada más entra/sale).
+      function callerAddedToPlayers() {
+        return resource.data.playerUids is list
+          && request.resource.data.playerUids is list
+          && request.resource.data.playerUids.toSet()
+               .difference(resource.data.playerUids.toSet()) == [request.auth.uid].toSet()
+          && resource.data.playerUids.toSet()
+               .difference(request.resource.data.playerUids.toSet()).size() == 0;
+      }
+
+      // El delta en playerUids quita EXACTAMENTE al caller (nada más entra/sale).
+      function callerRemovedFromPlayers() {
+        return resource.data.playerUids is list
+          && request.resource.data.playerUids is list
+          && resource.data.playerUids.toSet()
+               .difference(request.resource.data.playerUids.toSet()) == [request.auth.uid].toSet()
+          && request.resource.data.playerUids.toSet()
+               .difference(resource.data.playerUids.toSet()).size() == 0;
+      }
+
+      // (c) CLAIM: un signedIn que NO era jugador se AGREGA a sí mismo a un
+      //     match pending (reclama un slot dummy). No toca marcador/userId/
+      //     status (sigue pending) ni ratingProcessed (sigue false), y no puede
+      //     reclamar si ya estaba en playerUids (lo garantiza callerAdded…).
+      function isClaimAction() {
+        return signedIn()
+          && resource.data.status == 'pending_confirmation'
+          && callerAddedToPlayers()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['jugadores', 'playerUids', 'updatedAt', 'version'])
+          && fieldUnchanged('marcador')
+          && fieldUnchanged('userId')
+          && fieldUnchanged('status')
+          && fieldUnchanged('ratingProcessed')
+          && request.resource.data.ratingProcessed == false;
+      }
+
+      // (d) DECLINE ("no fui yo" del compañero): un player se REMUEVE a sí mismo
+      //     de un match pending (su slot vuelve a dummy en capa app). Mismos
+      //     campos acotados e inmutables que claim. El "declinar" del RIVAL =
+      //     disputar, que YA existe (isRivalConfirmAction); no se duplica aquí.
+      function isDeclineAction() {
+        return isPlayer()
+          && resource.data.status == 'pending_confirmation'
+          && callerRemovedFromPlayers()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['jugadores', 'playerUids', 'updatedAt', 'version'])
+          && fieldUnchanged('marcador')
+          && fieldUnchanged('userId')
+          && fieldUnchanged('status')
+          && fieldUnchanged('ratingProcessed')
+          && request.resource.data.ratingProcessed == false;
       }
 
       // Delete: el dueño puede CANCELAR un registro propio AÚN sin confirmar.
@@ -197,6 +272,15 @@ service cloud.firestore {
       }
 
       match /torneos5/{docId} {
+        allow read, write: if isMe(uid);
+      }
+
+      // E3a — Invitados reusables del dueño (dummies persistentes).
+      // users/{uid}/guests/{guestId} =
+      //   { name, searchName, createdAt, lastUsedAt, claimedByUid|null }
+      // Sólo el dueño los lee/escribe (privados; alimentan su buscador y el
+      // merge/claim de etapas futuras).
+      match /guests/{guestId} {
         allow read, write: if isMe(uid);
       }
     }
