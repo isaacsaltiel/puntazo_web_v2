@@ -94,12 +94,18 @@ el clasificador lo bloquea sin ella).
 Isaac sembró demo (autorizado) + validó en navegador: tablero con 6 jugadores ordenados, fila
 propia resaltada, perfil público OK. "Me encanta, todo." Demo limuiada (leaderboard de vuelta a 2 reales).
 
+- **E3a ✅ (commit cfb59a341, reglas DEPLOYADAS por el maestro 8-jun)** — reglas claim/decline + modelo
+  `guests`, invariante por diferencia de conjuntos sobre `playerUids` (delta == exactamente el caller),
+  doble candado (affectedKeys + fieldUnchanged), `status` inmutable. Emulador 22/22 (reconfirmado por
+  maestro) → `firebase deploy --only firestore:rules` LIVE. Riesgo abierto anotado: decline-del-registrante
+  deja `userId` fuera de playerUids (inofensivo; capa-app en E3b no lo expone, usa cancelar/delete).
+
 ## C. Worker activo
-- Workers #1 (E1) y #2 (E5) ✅ cerrados; gate de validación ✅.
-- **Worker #3 → E3a** (Claiming: modelo `guests` + reglas claim/decline, emulador, SIN deploy).
-  Brief: `docs/workers/worker-E3a-claiming-modelo-reglas.md`. El maestro despliega tras revisar el reporte.
-- Después: E3b (UI de claiming) → E6/E7 (ligas). Deudas vivas: E0b (JS web read-side), E2 (nav),
-  privacy en vistas públicas, entry points en scoreboard-cards.
+- Workers #1 (E1), #2 (E5), #3 (E3a) ✅ cerrados; reglas claim/decline LIVE.
+- **Worker #4 → E3b** (Cerrar el loop de claiming: relajar registro a all-dummies + página de claim
+  "¿cuál eres?" + auto-amistad + declinar). Brief: `docs/workers/worker-E3b-claiming-ui.md`.
+- Después: E3c (invitados persistentes/guestId → habilita sugerencias/merge E4) → E6/E7 (ligas).
+  Deudas vivas: E0b (JS web read-side), E2 (nav), privacy en vistas públicas, entry points.
 
 ---
 
