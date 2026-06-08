@@ -89,10 +89,11 @@
   <h1>👥 Mis amigos</h1>
 
   <div class="am-search">
-    <input type="text" id="amSearch" placeholder="Buscar por handle (ej: isaac)" maxlength="20" autocomplete="off" />
+    <input type="text" id="amSearch" placeholder="Buscar por nombre o handle" maxlength="40" autocomplete="off" />
     <button id="amSearchBtn" type="button">Buscar</button>
   </div>
   <div id="amSearchResult" class="am-msg"></div>
+  <div id="amSearchList" class="am-list"></div>
 
   <div id="amLoginReq" class="am-loginreq" style="display:none">
     Necesitas <a href="#" id="amDoLogin">iniciar sesión</a> para tener amigos.
@@ -233,6 +234,15 @@
       } else if (action === 'remove') {
         if (!confirm('¿Quitar este amigo?')) { btn.disabled = false; return; }
         await window.PuntazoFriends.removeFriend(btn.dataset.uid);
+      } else if (action === 'add') {
+        const uid = btn.dataset.uid;
+        const st = await window.PuntazoFriends.getFriendshipStatus(uid);
+        if (st === 'accepted') { btn.textContent = 'Ya son amigos'; return; }
+        if (st === 'pending_out') { btn.textContent = 'Pendiente'; return; }
+        if (st === 'pending_in') { btn.textContent = 'Te invitó ↑'; return; }
+        await window.PuntazoFriends.sendFriendRequest(uid);
+        btn.textContent = '✓ Enviada';
+        return; // mantener la lista de búsqueda visible
       }
       refresh();
     } catch (err) {
@@ -242,41 +252,50 @@
     }
   });
 
-  $searchBtn.addEventListener('click', async function () {
+  // Búsqueda en TODA la base por nombre o handle, en vivo (mismo motor que registrar-partido).
+  const $searchList = document.getElementById('amSearchList');
+  let searchTimer = null, searchSeq = 0;
+
+  function searchRowHtml(p) {
+    return '<div class="am-item">' +
+      '<div class="am-item-avatar">' + avatarHtml(p) + '</div>' +
+      '<div class="am-item-info">' +
+        '<div class="am-item-name">' + nameHtml(p, p.uid) + '</div>' +
+        '<div class="am-item-handle">' + (handleHtml(p) || 'en Puntazo') + '</div>' +
+      '</div>' +
+      '<div class="am-item-actions">' +
+        '<button class="am-btn-mini am-btn-accept" data-action="add" data-uid="' + escapeHtml(p.uid) + '">Agregar</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  async function doSearch() {
     const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     if (!u) { show('login'); return; }
-    const h = window.PuntazoIdentity.normalizeHandle($search.value);
-    if (!h) { $searchResult.className='am-msg bad'; $searchResult.textContent='Escribe un handle.'; return; }
-    $searchResult.className='am-msg'; $searchResult.textContent='Buscando…';
-    const profile = await window.PuntazoIdentity.findByHandle(h);
-    if (!profile) { $searchResult.className='am-msg bad'; $searchResult.textContent='No encontré @' + h; return; }
-    if (profile.uid === u.uid) { $searchResult.className='am-msg'; $searchResult.textContent='Ese eres tú 😊'; return; }
-    const status = await window.PuntazoFriends.getFriendshipStatus(profile.uid);
-    if (status === 'accepted') {
-      $searchResult.className='am-msg ok'; $searchResult.textContent='Ya son amigos.';
-      return;
+    const q = $search.value;
+    const seq = ++searchSeq;
+    if (!window.PuntazoIdentity || !window.PuntazoIdentity.searchUsers || q.trim().length < 2) {
+      $searchList.innerHTML = ''; $searchResult.textContent = ''; return;
     }
-    if (status === 'pending_out') {
-      $searchResult.className='am-msg'; $searchResult.textContent='Ya le enviaste solicitud, espera respuesta.';
-      return;
-    }
-    if (status === 'pending_in') {
-      $searchResult.className='am-msg'; $searchResult.textContent='Esa persona ya te envió solicitud — revisa arriba.';
-      return;
-    }
-    // Send request
+    $searchResult.className = 'am-msg'; $searchResult.textContent = 'Buscando…';
     try {
-      await window.PuntazoFriends.sendFriendRequest(profile.uid);
-      $searchResult.className='am-msg ok';
-      $searchResult.textContent='✓ Solicitud enviada a ' + (profile.displayName || '@' + h);
-      $search.value = '';
+      const res = await window.PuntazoIdentity.searchUsers(q, { limit: 8, excludeUid: u.uid });
+      if (seq !== searchSeq) return;
+      $searchResult.textContent = '';
+      $searchList.innerHTML = res.length ? res.map(searchRowHtml).join('') : '<div class="am-msg">Sin resultados.</div>';
     } catch (e) {
-      $searchResult.className='am-msg bad';
-      $searchResult.textContent = e && e.message ? e.message : 'No se pudo enviar.';
+      if (seq !== searchSeq) return;
+      $searchResult.className = 'am-msg bad'; $searchResult.textContent = 'No se pudo buscar.';
     }
+  }
+
+  $search.addEventListener('input', function () {
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = setTimeout(doSearch, 220);
   });
+  $searchBtn.addEventListener('click', doSearch);
   $search.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); $searchBtn.click(); }
+    if (e.key === 'Enter') { e.preventDefault(); doSearch(); }
   });
 
   if ($doLogin) $doLogin.addEventListener('click', function (e) {

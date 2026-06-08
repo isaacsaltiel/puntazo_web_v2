@@ -4185,7 +4185,7 @@
     if (_sheetAutocompleteAttached) return;
     if (!window.PuntazoPlayerAutocomplete || !$sheetInput) return;
     try {
-      window.PuntazoPlayerAutocomplete.attach({ input: $sheetInput });
+      window.PuntazoPlayerAutocomplete.attach({ input: $sheetInput, global: true });
       _sheetAutocompleteAttached = true;
     } catch (_) {}
   }
@@ -5463,8 +5463,8 @@
     if (_endTeamAutocompleteAttached) return;
     if (!window.PuntazoPlayerAutocomplete) return;
     try {
-      if ($endTeamEditJ1) window.PuntazoPlayerAutocomplete.attach({ input: $endTeamEditJ1 });
-      if ($endTeamEditJ2) window.PuntazoPlayerAutocomplete.attach({ input: $endTeamEditJ2 });
+      if ($endTeamEditJ1) window.PuntazoPlayerAutocomplete.attach({ input: $endTeamEditJ1, global: true });
+      if ($endTeamEditJ2) window.PuntazoPlayerAutocomplete.attach({ input: $endTeamEditJ2, global: true });
       _endTeamAutocompleteAttached = true;
     } catch (_) {}
   }

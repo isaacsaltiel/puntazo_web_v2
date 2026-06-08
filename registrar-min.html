@@ -132,6 +132,10 @@
   .center-msg p{ color:var(--muted); font-size:0.98rem; line-height:1.55; margin-bottom:0.4rem; }
   .center-msg .hl{ color:#bff07a; font-weight:800; }
   .copied{ font-size:0.82rem; color:#bff07a; min-height:1.1em; margin-top:0.6rem; }
+  .share-box{ display:flex; flex-direction:column; gap:0.6rem; margin-top:1.4rem; }
+  .link-show{ margin-top:0.9rem; font-size:0.78rem; color:rgba(234,242,255,0.5); word-break:break-all;
+    background:rgba(5,9,20,0.5); border:1px solid var(--border2); border-radius:12px; padding:0.7rem 0.9rem;
+    user-select:all; -webkit-user-select:all; }
   [hidden]{ display:none !important; }
 </style>
 </head>
@@ -239,9 +243,15 @@
       <div class="center-msg">
         <div class="big-emoji">🎾</div>
         <h2>¡Registrado!</h2>
-        <p>Le avisamos a <span class="hl" id="ok-rival">tu rival</span> para que lo confirme. En cuanto acepte, cuenta para el ranking de los dos.</p>
-        <p style="font-size:0.85rem;color:rgba(234,242,255,0.4)">Queda pendiente. Si nadie confirma en 7 días, no cuenta.</p>
+        <p>Mándale el link a <span class="hl" id="ok-rival">tu rival</span> para que lo confirme. En cuanto acepte, cuenta para el ranking de los dos.</p>
+        <div class="share-box">
+          <button class="min-cta" id="share-wa" type="button" style="background:linear-gradient(135deg,#25d366,#1da851);border-color:#25d366;box-shadow:0 0 30px rgba(37,211,102,0.35)">Enviar por WhatsApp</button>
+          <button class="min-cta ghost" id="share-more" type="button" hidden>Compartir…</button>
+          <button class="min-cta ghost" id="share-copy" type="button">Copiar link</button>
+        </div>
+        <div class="link-show" id="link-show"></div>
         <div class="copied" id="copied"></div>
+        <p style="font-size:0.85rem;color:rgba(234,242,255,0.4);margin-top:1rem">Queda pendiente. Si nadie confirma en 7 días, no cuenta.</p>
       </div>
     </div>
 
@@ -532,7 +542,17 @@
     var rivals = [st.r1, st.r2].map(function (r) { return r.nombre; }).filter(Boolean).map(firstName);
     $("ok-rival").textContent = rivals.length ? rivals.join(" y ") : "tu rival";
     var link = location.origin + "/confirmar.html?id=" + encodeURIComponent(matchId);
-    copy(link).then(function () { $("copied").textContent = "🔗 Link de confirmación copiado — mándaselo por WhatsApp."; });
+    var msg = "Te reto en Puntazo 🎾 Confirma nuestro partido aquí: " + link;
+    $("link-show").textContent = link;
+    $("share-wa").onclick = function () { window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank"); };
+    if (navigator.share) {
+      var sm = $("share-more"); sm.hidden = false;
+      sm.onclick = function () { navigator.share({ title: "Puntazo", text: "Confirma nuestro partido en Puntazo", url: link }).catch(function () {}); };
+    }
+    $("share-copy").onclick = function () {
+      copy(link).then(function () { $("copied").textContent = "🔗 Link copiado"; })
+        .catch(function () { $("copied").textContent = "Selecciona el link de abajo y cópialo"; });
+    };
   }
 
   // ── Utils ──
