@@ -100,12 +100,31 @@ propia resaltada, perfil público OK. "Me encanta, todo." Demo limuiada (leaderb
   maestro) → `firebase deploy --only firestore:rules` LIVE. Riesgo abierto anotado: decline-del-registrante
   deja `userId` fuera de playerUids (inofensivo; capa-app en E3b no lo expone, usa cancelar/delete).
 
+- **E3b ✅ (commit 9e6f8d94a, en origin/master, SIN deploy)** — loop de claiming cerrado en cliente:
+  `match-actions.register` relajado (registra con puros dummies; sigue exigiendo registrante+marcador),
+  `claim(matchId, slot)` y `decline(matchId)` nuevos (transacción + revalidación adentro contra doble-claim;
+  patches verificados por el maestro contra `isClaimAction`/`isDeclineAction` vivas — solo tocan
+  jugadores/playerUids/updatedAt/version, delta == exactamente el caller), auto-amistad best-effort,
+  `confirmar.html` con path "¿Cuál eres?" (match-by-name del displayName de Google) + botón "No jugué"
+  (compañero=decline, rival=dispute). `registrar-min.html` copy actualizado. Validó node --check + test de
+  seguridad replicando los transforms vs predicados de reglas (pasó) + bestDummyMatch. NO hizo E2E real
+  (requiere siembra + 2da cuenta en navegador). Deudas que dejó: aviso al registrante cuando un compañero
+  declina (sin canal aún), botón "No jugué" en el watcher (opcional, no puesto), claim-a-slot-equivocado
+  no verificable en reglas (mitigado: la UI muestra equipo/compañeros de cada opción).
+
+## GATE de validación E2E claiming (pendiente)
+El loop registrar-all-dummies → reclamar → confirmar → ranking-se-mueve NUNCA corrió E2E contra reglas vivas.
+Necesita: Isaac registra un partido con puros nombres → abre el link en OTRA cuenta Google → "¿Cuál eres?" →
+reclama el slot rival → confirma → verifica que clasificacion/perfil se mueven. (El maestro puede sembrar el
+partido pending con service account con autorización, pero el claim+confirm reales necesitan 2da cuenta en
+navegador — Admin SDK saltaría las reglas y no validaría nada.)
+
 ## C. Worker activo
-- Workers #1 (E1), #2 (E5), #3 (E3a) ✅ cerrados; reglas claim/decline LIVE.
-- **Worker #4 → E3b** (Cerrar el loop de claiming: relajar registro a all-dummies + página de claim
-  "¿cuál eres?" + auto-amistad + declinar). Brief: `docs/workers/worker-E3b-claiming-ui.md`.
-- Después: E3c (invitados persistentes/guestId → habilita sugerencias/merge E4) → E6/E7 (ligas).
-  Deudas vivas: E0b (JS web read-side), E2 (nav), privacy en vistas públicas, entry points.
+- Workers #1 (E1), #2 (E5), #3 (E3a), #4 (E3b) ✅ cerrados; reglas claim/decline LIVE, loop de claiming en cliente.
+- **Siguiente fork de producto** (decisión de Isaac): (a) validar E2E el loop de claiming primero;
+  (b) **E3c** invitados persistentes (`users/{uid}/guests` ya con reglas de E3a → elegir invitado guardado al
+  registrar + batch-claim, habilita sugerencias/merge E4); (c) arrancar **E6** ligas (estructura+miembros).
+  Deudas vivas: E0b (JS web read-side), E2 (nav), privacy en vistas públicas, entry points, aviso-al-registrante.
 
 ---
 
