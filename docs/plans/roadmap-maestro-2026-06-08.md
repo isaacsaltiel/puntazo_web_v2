@@ -79,8 +79,27 @@ intercalar en paralelo.
   PENDIENTE E0b: revisar+commitear los JS web read-side (`matches.js` −108, `ranking.js` ±, `ranking-read.js`
   untracked) — cambian el sitio en vivo, requieren validación en navegador. Deuda aislada, no urgente.
 
+- **E5 ✅ (commit 56c6fcfaa)** — `jugador.html?uid=` (perfil público + Head-to-Head con totales V/games/sets,
+  rivales vs compañeros) + filas de `clasificacion.html` enlazadas. Frontend read-only. Deudas que dejó:
+  privacy (`users.privacy`) no respetada en la vista pública; falta botón "amigo" (→ E6); más entry points
+  (linkear nombres en scoreboard-cards). Sin validación visual en navegador aún.
+
+## GATE de validación (pendiente Isaac)
+E1 + E5 + F4 sin validar en navegador con datos reales. Recomendado: Isaac registra 1 partido real
+(registrar-min → confirmar con un amigo) → enciende clasificacion + jugador + perfil con datos reales.
+Alternativa: maestro siembra demo con service account (requiere autorización explícita de Isaac;
+el clasificador lo bloquea sin ella).
+
+## GATE de validación — ✅ PASADO (8-jun)
+Isaac sembró demo (autorizado) + validó en navegador: tablero con 6 jugadores ordenados, fila
+propia resaltada, perfil público OK. "Me encanta, todo." Demo limuiada (leaderboard de vuelta a 2 reales).
+
 ## C. Worker activo
-- Worker #1 (E1) ✅ cerrado. Siguiente: ver recomendación del maestro (E5 head-to-head o E2 nav).
+- Workers #1 (E1) y #2 (E5) ✅ cerrados; gate de validación ✅.
+- **Worker #3 → E3a** (Claiming: modelo `guests` + reglas claim/decline, emulador, SIN deploy).
+  Brief: `docs/workers/worker-E3a-claiming-modelo-reglas.md`. El maestro despliega tras revisar el reporte.
+- Después: E3b (UI de claiming) → E6/E7 (ligas). Deudas vivas: E0b (JS web read-side), E2 (nav),
+  privacy en vistas públicas, entry points en scoreboard-cards.
 
 ---
 
