@@ -364,6 +364,9 @@
       await ensureScript("/assets/auth.js",          () => !!window.PuntazoAuth);
       if (window.PuntazoAuth && typeof window.PuntazoAuth.init === "function") await window.PuntazoAuth.init();
       attachAuthGuard();
+      // EN1: centro de notificaciones (campana 🔔) en todas las internas.
+      // Best-effort: si falla la carga, no rompe el header.
+      ensureScript("/assets/notifications.js", () => !!window.PuntazoNotifications).catch(() => {});
       // F105 Issues 7+8: banner "Tienes partido activo" en todas las páginas
       checkActiveMatchBanner();
       window.addEventListener("puntazo:auth-changed", checkActiveMatchBanner);

@@ -82,6 +82,9 @@
   }
 
   function renderBanner(pending) {
+    // EN1: la campana del header ya consolida "partidos por confirmar".
+    // Si está activa, no pintamos el banner flotante (evita duplicar).
+    if (window.PuntazoNotifications && window.PuntazoNotifications.active) return;
     if (document.getElementById("pz-mexp-bar") || document.getElementById("pz-ppw-bar")) return; // una a la vez
     ensureStyles();
     var old = document.getElementById("pz-mcw-bar");

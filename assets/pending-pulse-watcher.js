@@ -115,6 +115,10 @@
   }
 
   function renderBanner(uid, newIds, currentIds) {
+    // EN1: la campana del header ya consolida "clips listos". Si está
+    // activa, no pintamos el banner flotante (evita duplicar). El estado
+    // "sin leer" lo lleva la campana en su propio localStorage.
+    if (window.PuntazoNotifications && window.PuntazoNotifications.active) return;
     // Si match-expiration ya tiene un banner activo, esperamos para no
     // apilar dos (una sola notificación visible a la vez).
     if (document.getElementById("pz-mexp-bar")) return;
