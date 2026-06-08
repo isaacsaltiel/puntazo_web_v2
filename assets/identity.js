@@ -47,6 +47,21 @@
     return firebase.firestore.FieldValue.serverTimestamp();
   }
 
+  // Normaliza para búsqueda: minúsculas, sin acentos, solo alfanumérico + espacios.
+  function normalizeName(s) {
+    return String(s || "")
+      .toLowerCase()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9 ]/g, " ")
+      .replace(/\s+/g, " ").trim();
+  }
+
+  // Campo de búsqueda en toda la base: nombre + nombre real + handle, normalizado.
+  // Prefijo-buscable con orderBy("searchName").startAt(q).endAt(q+"").
+  function buildSearchName(p) {
+    return normalizeName([p.displayName || "", p.realName || "", p.handle || ""].join(" "));
+  }
+
   function defaultProfile(authUser) {
     return {
       uid: authUser.uid,
@@ -56,6 +71,7 @@
       handle: "",
       bio: "",
       homeClub: "",
+      searchName: normalizeName(authUser.displayName || ""),
       createdAt: nowTS(),
       lastSeenAt: nowTS(),
       authProvider: authUser.isAnonymous
@@ -102,6 +118,12 @@
       if (authUser.displayName && !data.displayName) {
         updates.displayName = authUser.displayName;
       }
+      // Backfill / mantener searchName (búsqueda en toda la base).
+      const wantSearch = buildSearchName({
+        displayName: updates.displayName || data.displayName,
+        realName: data.realName, handle: data.handle,
+      });
+      if (data.searchName !== wantSearch) updates.searchName = wantSearch;
       try { await ref.update(updates); } catch (_) {}
       PROFILE_CACHE.set(authUser.uid, Object.assign({}, data, updates));
       return Object.assign({}, data, updates);
@@ -161,6 +183,15 @@
     }
     if ("photoURL" in upd && upd.photoURL) {
       upd.photoURL_customized = true; // no sobreescribir desde Google después
+    }
+    // Recalcular searchName si cambió nombre o nombre real.
+    if ("displayName" in upd || "realName" in upd) {
+      const cur = PROFILE_CACHE.get(u.uid) || (await getProfile(u.uid)) || {};
+      upd.searchName = buildSearchName({
+        displayName: ("displayName" in upd) ? upd.displayName : cur.displayName,
+        realName: ("realName" in upd) ? upd.realName : cur.realName,
+        handle: cur.handle,
+      });
     }
     upd.lastSeenAt = nowTS();
     await D.collection("users").doc(u.uid).update(upd);
@@ -290,6 +321,43 @@
     }
   }
 
+  // Búsqueda en TODA la base por nombre (prefijo) + handle exacto.
+  // Devuelve [{uid, displayName, handle, photoURL}]. opts: {limit, excludeUid}.
+  async function searchUsers(query, opts) {
+    const o = opts || {};
+    const limit = Number.isFinite(o.limit) ? o.limit : 8;
+    const D = db();
+    const q = normalizeName(query);
+    if (!D || q.length < 2) return [];
+    const out = [];
+    const seen = {};
+    function push(p) {
+      if (!p || !p.uid) return;
+      if (o.excludeUid && p.uid === o.excludeUid) return;
+      if (p.flags && (p.flags.isDeleted || p.flags.isBanned)) return;
+      if (seen[p.uid]) return;
+      seen[p.uid] = true;
+      out.push({ uid: p.uid, displayName: p.displayName || "", handle: p.handle || "", photoURL: p.photoURL || "" });
+    }
+    try {
+      // Handle exacto (si tecleó algo tipo handle, ej "@ana" o "ana")
+      const byHandle = await findByHandle(q.replace(/\s+/g, ""));
+      if (byHandle) push(byHandle);
+    } catch (_) {}
+    try {
+      // Prefijo por nombre normalizado.
+      const snap = await D.collection("users")
+        .orderBy("searchName")
+        .startAt(q).endAt(q + "")
+        .limit(limit)
+        .get();
+      snap.forEach(function (d) { push(Object.assign({ uid: d.id }, d.data())); });
+    } catch (e) {
+      console.warn("[identity] searchUsers prefijo error", e);
+    }
+    return out.slice(0, limit);
+  }
+
   function clearCache() {
     PROFILE_CACHE.clear();
   }
@@ -318,6 +386,7 @@
     releaseMyHandle: releaseMyHandle,
     checkHandleAvailable: checkHandleAvailable,
     findByHandle: findByHandle,
+    searchUsers: searchUsers,
     normalizeHandle: normalizeHandle,
     validateHandle: validateHandle,
     clearCache: clearCache,

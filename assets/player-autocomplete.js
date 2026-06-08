@@ -194,7 +194,9 @@
       meta.style.fontSize = "0.7rem";
       meta.style.color = "rgba(234, 242, 255, 0.55)";
       meta.style.fontWeight = "600";
-      meta.textContent = p.count + " " + (p.count === 1 ? "partido" : "partidos");
+      // Jugador reciente → "N partidos"; usuario de toda la base → @handle / "en Puntazo".
+      if (p.count != null) meta.textContent = p.count + " " + (p.count === 1 ? "partido" : "partidos");
+      else meta.textContent = p.handle ? ("@" + p.handle) : "en Puntazo";
       item.appendChild(dot);
       item.appendChild(txt);
       item.appendChild(meta);
@@ -237,16 +239,56 @@
     const input = opts.input;
     const onSelect = opts.onSelect || function () {};
     const dd = createDropdown(input);
+    const searchAll = !!opts.global; // opt-in: buscar en TODA la base (registrar-partido)
     let pool = _pool || [];
+    let remoteSeq = 0;       // token para descartar respuestas remotas viejas
+    let remoteTimer = null;  // debounce
+    let lastRemote = [];     // últimos resultados de toda la base para el query actual
+
+    function onPick(picked) {
+      input.value = picked.displayName;
+      dd.style.display = "none";
+      onSelect(picked);
+    }
+
+    // Mezcla: recientes (con historial) primero; luego usuarios de toda la base
+    // que NO estén ya entre los recientes (por uid o por nombre normalizado).
+    function merged() {
+      const local = filterMatches(input.value, pool);
+      const haveUid = {};
+      const haveName = {};
+      local.forEach(function (p) { if (p.uid) haveUid[p.uid] = 1; haveName[normalize(p.displayName)] = 1; });
+      const extra = lastRemote.filter(function (p) {
+        if (p.uid && haveUid[p.uid]) return false;
+        if (haveName[normalize(p.displayName)]) return false;
+        return true;
+      });
+      return local.concat(extra).slice(0, 8);
+    }
+
+    function render() {
+      renderDropdown(dd, merged(), input.value, onPick);
+      positionDropdown(input, dd);
+    }
+
+    // Búsqueda en toda la base (identity.searchUsers), debounced y con token.
+    function queryRemote() {
+      const Id = window.PuntazoIdentity;
+      const val = input.value;
+      if (!searchAll || !Id || !Id.searchUsers || normalize(val).length < 2) { lastRemote = []; return; }
+      const myUid = me() && me().uid;
+      const seq = ++remoteSeq;
+      Id.searchUsers(val, { limit: 6, excludeUid: myUid }).then(function (res) {
+        if (seq !== remoteSeq) return; // llegó tarde, ya hay otra búsqueda
+        lastRemote = res || [];
+        render();
+      }).catch(function () {});
+    }
 
     function update() {
-      const items = filterMatches(input.value, pool);
-      renderDropdown(dd, items, input.value, function (picked) {
-        input.value = picked.displayName;
-        dd.style.display = "none";
-        onSelect(picked);
-      });
-      positionDropdown(input, dd);
+      render(); // pinta lo local de inmediato
+      if (remoteTimer) clearTimeout(remoteTimer);
+      remoteTimer = setTimeout(queryRemote, 220); // luego completa con toda la base
     }
 
     function onFocus() {

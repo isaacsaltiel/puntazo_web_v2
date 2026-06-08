@@ -388,7 +388,7 @@
     }
     input.addEventListener("input", function () { set(input.value, null); });
     if (window.PuntazoPlayerAutocomplete) {
-      window.PuntazoPlayerAutocomplete.attach({ input: input, onSelect: function (p) { input.value = p.displayName || ""; set(p.displayName, p.uid || null); } });
+      window.PuntazoPlayerAutocomplete.attach({ input: input, global: true, onSelect: function (p) { input.value = p.displayName || ""; set(p.displayName, p.uid || null); } });
     }
   }
 

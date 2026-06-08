@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Confirmar partido · Puntazo</title>
+<link rel="icon" href="/assets/img/P_blanca_transparente.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/assets/estilo.css" />
+<style>
+  html, body{ touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+  .cf-app{ position:fixed; inset:0; z-index:1; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; max-width:480px; margin:0 auto; padding:1.5rem; }
+  .cf-logo{ width:34px; margin-bottom:1.4rem; opacity:0.85; }
+  .cf-card{ width:100%; background:var(--card); border:1px solid var(--border); border-radius:22px;
+    padding:1.6rem 1.4rem; text-align:center; }
+  .cf-eyebrow{ font-size:0.74rem; text-transform:uppercase; letter-spacing:2px; font-weight:800; color:var(--blue3); margin-bottom:1rem; }
+  .cf-teams{ font-size:1.15rem; font-weight:800; color:#fff; line-height:1.5; }
+  .cf-teams .t1{ color:var(--team1-color); } .cf-teams .t2{ color:#dff06a; }
+  .cf-vs{ color:var(--muted); font-size:0.8rem; font-weight:700; margin:0.2rem 0; }
+  .cf-score{ font-size:2.2rem; font-weight:900; color:#fff; margin:0.9rem 0; letter-spacing:1px; font-variant-numeric:tabular-nums; }
+  .cf-ask{ color:var(--muted); font-size:0.98rem; line-height:1.55; margin:0.4rem 0 0.2rem; }
+  .cf-ask .hl{ color:#fff; font-weight:800; }
+  .cf-big-emoji{ font-size:2.6rem; margin-bottom:0.6rem; }
+  .cf-level{ display:inline-flex; flex-direction:column; align-items:center; gap:2px; margin-top:1rem;
+    background:rgba(11,124,255,0.1); border:1px solid var(--team1-color-border); border-radius:16px; padding:0.8rem 1.4rem; }
+  .cf-level .lv{ font-size:2.4rem; font-weight:900; color:#fff; line-height:1; font-variant-numeric:tabular-nums; }
+  .cf-level .cap{ font-size:0.72rem; text-transform:uppercase; letter-spacing:1.5px; font-weight:800; color:var(--blue3); }
+  .cf-actions{ display:flex; flex-direction:column; gap:0.7rem; margin-top:1.5rem; width:100%; }
+  .cf-cta{ width:100%; appearance:none; cursor:pointer;
+    background:linear-gradient(135deg,var(--blue2),var(--blue)); color:#fff;
+    border:1px solid var(--blue2); border-radius:50px; padding:1.05rem;
+    font-family:inherit; font-weight:900; font-size:1.08rem; box-shadow:0 0 30px rgba(0,79,200,0.4);
+    transition:all .15s; display:flex; align-items:center; justify-content:center; gap:0.5rem; }
+  .cf-cta:hover:not(:disabled){ transform:translateY(-2px); box-shadow:0 0 46px rgba(11,124,255,0.55); }
+  .cf-cta:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; }
+  .cf-cta.ghost{ background:transparent; box-shadow:none; border-color:var(--border2); color:var(--muted); font-size:0.95rem; padding:0.85rem; }
+  .cf-cta.ghost:hover{ color:#ffb4a1; border-color:rgba(255,180,161,0.4); transform:none; box-shadow:none; }
+  .cf-cta .spin{ width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;animation:spin .7s linear infinite;display:none; }
+  .cf-cta.loading .spin{ display:inline-block; }
+  .cf-note{ color:var(--muted); font-size:0.86rem; line-height:1.5; margin-top:1.2rem; }
+  .cf-err{ color:#ffb4a1; font-size:0.86rem; min-height:1.1em; margin-top:0.7rem; }
+  [hidden]{ display:none !important; }
+</style>
+</head>
+<body>
+<div class="page-bg"></div>
+
+<div class="cf-app">
+  <img class="cf-logo" src="/assets/img/P_blanca_transparente.png" alt="" onerror="this.style.display='none'">
+
+  <div class="cf-card" id="card">
+    <div class="cf-eyebrow" id="eyebrow">Confirmar partido</div>
+    <div id="match-box">
+      <div class="cf-teams"><span class="t1" id="team1">—</span><div class="cf-vs">vs</div><span class="t2" id="team2">—</span></div>
+      <div class="cf-score" id="score">—</div>
+    </div>
+    <div id="state-box">
+      <div class="cf-ask" id="ask">Cargando…</div>
+    </div>
+    <div class="cf-actions" id="actions" hidden></div>
+    <div class="cf-err" id="err"></div>
+    <div class="cf-note" id="note" hidden></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/identity.js"></script>
+<script src="/assets/matches.js"></script>
+<script src="/assets/match-confirmation.js"></script>
+<script src="/assets/match-actions.js"></script>
+<script src="/assets/header.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var matchId = new URLSearchParams(location.search).get("id");
+  var match = null;       // doc del partido
+  var busy = false;
+
+  function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function firstName(n){ return String(n||"").trim().split(/\s+/)[0] || n; }
+  function db(){ return window.PuntazoFirebase && window.PuntazoFirebase.db(); }
+  function me(){ return window.PuntazoAuth && window.PuntazoAuth.currentUser; }
+  function MC(){ return window.PuntazoMatchConfirmation; }
+
+  function teamNames(m, team){
+    var js = Array.isArray(m.jugadores) ? m.jugadores : [];
+    var ns = js.filter(function(j){ return j && j.equipo === team; }).map(function(j){ return firstName(j.nombre); }).filter(Boolean);
+    return ns.length ? ns.join(" / ") : (team === "team1" ? "Equipo 1" : "Equipo 2");
+  }
+  function scoreStr(m){
+    var sets = (m.marcador && Array.isArray(m.marcador.sets)) ? m.marcador.sets : [];
+    return sets.map(function(s){ return s.team1 + "-" + s.team2; }).join("  ") || "—";
+  }
+
+  function renderMatch(){
+    $("team1").textContent = teamNames(match, "team1");
+    $("team2").textContent = teamNames(match, "team2");
+    $("score").textContent = scoreStr(match);
+  }
+
+  function setActions(buttons){
+    var a = $("actions");
+    a.innerHTML = "";
+    if (!buttons || !buttons.length) { a.hidden = true; return; }
+    a.hidden = false;
+    buttons.forEach(function(b){
+      var btn = document.createElement("button");
+      btn.className = "cf-cta" + (b.ghost ? " ghost" : "");
+      btn.type = "button";
+      btn.innerHTML = '<span class="spin"></span><span>' + esc(b.label) + '</span>';
+      btn.addEventListener("click", b.onClick);
+      a.appendChild(btn);
+    });
+  }
+
+  function loadingBtn(on){
+    var b = $("actions").querySelector(".cf-cta");
+    if (!b) return;
+    b.classList.toggle("loading", on); b.disabled = on;
+  }
+
+  // ── Estados de la pantalla ──
+  function showWinnerLevel(){
+    // Tras confirmar, leer mi nivel (puede tardar 1-3s en escribir el trigger).
+    var u = me(); if (!u) return;
+    var deporte = match.deporte || "padel";
+    var ctx = "global:" + deporte;
+    var tries = 0;
+    function poll(){
+      tries++;
+      db().collection("ratings").doc(u.uid).get().then(function(snap){
+        var g = snap.exists && snap.data().byContext && snap.data().byContext[ctx];
+        if (g && typeof g.nivel === "number") {
+          var box = document.createElement("div");
+          box.className = "cf-level";
+          box.innerHTML = '<div class="cap">Tu nivel ahora</div><div class="lv">' + g.nivel.toFixed(2) + '</div>';
+          $("state-box").appendChild(box);
+        } else if (tries < 5) {
+          setTimeout(poll, 1500);
+        }
+      }).catch(function(){});
+    }
+    poll();
+  }
+
+  function renderConfirmed(justNow){
+    $("eyebrow").textContent = "Partido confirmado";
+    $("state-box").innerHTML =
+      '<div class="cf-big-emoji">✅</div>' +
+      '<div class="cf-ask">' + (justNow ? "¡Listo! Quedó confirmado." : "Este partido ya está confirmado.") +
+      ' Cuenta para el ranking de los dos.</div>';
+    setActions([]);
+    var amPlayer = MC().teamOf(match, me() && me().uid);
+    if (amPlayer) showWinnerLevel();
+  }
+
+  function renderState(){
+    renderMatch();
+    var u = me();
+    var S = MC().STATUS;
+
+    // Estados terminales primero
+    if (match.status === S.CONFIRMED) { renderConfirmed(false); return; }
+    if (match.status === S.DISPUTED) {
+      $("eyebrow").textContent = "En disputa";
+      $("state-box").innerHTML = '<div class="cf-big-emoji">⚖️</div><div class="cf-ask">Este resultado fue marcado como disputado. No cuenta para el ranking hasta resolverse.</div>';
+      setActions([]); return;
+    }
+    if (match.status === S.VOID || match.status === S.CANCELLED) {
+      $("eyebrow").textContent = "No disponible";
+      $("state-box").innerHTML = '<div class="cf-big-emoji">⌛</div><div class="cf-ask">Este registro caducó o fue cancelado.</div>';
+      setActions([]); return;
+    }
+    if (MC().isExpired(match, Date.now())) {
+      $("eyebrow").textContent = "Caducado";
+      $("state-box").innerHTML = '<div class="cf-big-emoji">⌛</div><div class="cf-ask">El plazo de 7 días para confirmar este partido ya pasó.</div>';
+      setActions([]); return;
+    }
+
+    // Pendiente de confirmación
+    var regName = "";
+    var js = Array.isArray(match.jugadores) ? match.jugadores : [];
+    var reg = js.find(function(j){ return j && j.uid === match.userId; });
+    regName = reg ? firstName(reg.nombre) : "Tu rival";
+
+    if (!u) {
+      $("ask").innerHTML = '<span class="hl">' + esc(regName) + '</span> registró este partido y te pide confirmarlo.';
+      setActions([{ label: "Iniciar sesión para confirmar", onClick: function(){ window.PuntazoAuth && window.PuntazoAuth.signIn && window.PuntazoAuth.signIn(); } }]);
+      return;
+    }
+
+    var can = MC().canConfirm(match, u.uid);
+    if (can.ok) {
+      $("ask").innerHTML = '<span class="hl">' + esc(regName) + '</span> dice que este fue el resultado. ¿Es correcto?';
+      setActions([
+        { label: "Sí, confirmar ✓", onClick: doConfirm },
+        { label: "No es correcto — disputar", ghost: true, onClick: doDispute },
+      ]);
+      return;
+    }
+
+    // No puede confirmar: o es el registrante, o no es jugador.
+    if (u.uid === match.userId) {
+      $("eyebrow").textContent = "Esperando confirmación";
+      $("state-box").innerHTML = '<div class="cf-big-emoji">⏳</div><div class="cf-ask">Tú registraste este partido. Falta que <span class="hl">tu rival</span> lo confirme para que cuente.</div>';
+    } else {
+      $("ask").textContent = can.reason || "No puedes confirmar este partido.";
+    }
+    setActions([]);
+  }
+
+  function doConfirm(){
+    if (busy) return; busy = true; loadingBtn(true); $("err").textContent = "";
+    window.PuntazoMatchActions.confirm(matchId).then(function(res){
+      busy = false;
+      if (res && res.confirmed) { match.status = "confirmed"; renderConfirmed(true); }
+      else {
+        // Aceptado tu lado pero aún falta el otro equipo (no debería en flujo 2v? — defensivo).
+        $("eyebrow").textContent = "Gracias";
+        $("state-box").innerHTML = '<div class="cf-big-emoji">👍</div><div class="cf-ask">Registramos tu confirmación.</div>';
+        setActions([]);
+      }
+    }).catch(function(e){
+      busy = false; loadingBtn(false);
+      $("err").textContent = (e && e.message) ? e.message.replace("[MatchActions] ", "") : "No se pudo confirmar.";
+    });
+  }
+
+  function doDispute(){
+    if (busy) return;
+    var reason = window.prompt("¿Qué estuvo mal? (opcional)") || "";
+    busy = true; $("err").textContent = "";
+    window.PuntazoMatchActions.dispute(matchId, reason).then(function(){
+      busy = false; match.status = "disputed"; renderState();
+    }).catch(function(e){
+      busy = false;
+      $("err").textContent = (e && e.message) ? e.message.replace("[MatchActions] ", "") : "No se pudo registrar la disputa.";
+    });
+  }
+
+  // ── Carga inicial ──
+  function loadMatch(){
+    if (!matchId) {
+      $("match-box").hidden = true;
+      $("eyebrow").textContent = "Link inválido";
+      $("ask").textContent = "Este link de confirmación no es válido.";
+      return;
+    }
+    db().collection("matches").doc(matchId).get().then(function(snap){
+      if (!snap.exists) {
+        $("match-box").hidden = true;
+        $("eyebrow").textContent = "No encontrado";
+        $("ask").textContent = "Este partido ya no existe (pudo cancelarse).";
+        return;
+      }
+      match = Object.assign({ id: snap.id }, snap.data());
+      renderState();
+    }).catch(function(e){
+      $("ask").textContent = "No se pudo cargar el partido.";
+      $("err").textContent = (e && e.message) || "";
+    });
+  }
+
+  // Re-render cuando cambie el login (para pasar de "inicia sesión" a confirmar).
+  window.addEventListener("puntazo:auth-changed", function(){ if (match) renderState(); });
+
+  (function waitFb(n){
+    if (window.PuntazoFirebase && window.PuntazoMatchConfirmation && window.PuntazoMatchActions) { loadMatch(); return; }
+    if (n > 150) { $("ask").textContent = "No se pudo inicializar."; return; }
+    setTimeout(function(){ waitFb(n + 1); }, 80);
+  })(0);
+})();
+</script>
+</body>
+</html>
