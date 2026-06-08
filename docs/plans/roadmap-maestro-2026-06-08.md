@@ -151,6 +151,11 @@ del claim. (La limpieza también dejó el backend en cero: 0 partidos confirmado
 
 ## C. Worker activo / siguiente
 - Workers #1 (E1), #2 (E5), #3 (E3a), #4 (E3b), #5 (E3b.1) ✅ cerrados. Loop de claiming COMPLETO y validado E2E.
+- **Worker #6 → EN1 (Campana de notificaciones v1)** — Isaac la eligió tras topar el hueco: las solicitudes de
+  amistad no se notifican en ningún lado (solo dentro de amigos.html). Campana en el header que consolida
+  solicitudes de amistad + partidos por confirmar + clips listos, con badge sin-leer (localStorage). Cliente puro,
+  absorbe los banners flotantes (deja el verde "partido en curso"). Shape de notif estable para v2 (colección
+  server-side futura). Brief: `docs/workers/worker-EN1-campana-notificaciones.md`.
 - **Fork de producto pendiente (Isaac decide):** (b) **E3c** invitados persistentes (`users/{uid}/guests` ya
   con reglas E3a → elegir invitado guardado al registrar + sugerencias/merge E4); (c) **E6** ligas
   (estructura+miembros, reusa invite-link).
