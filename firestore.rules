@@ -1,0 +1,337 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isMe(uid)  { return signedIn() && request.auth.uid == uid; }
+
+    // ════════════════════════════════════════════════════
+    // EXISTENTE — usuarios/{uid} (saved videos legacy)
+    // ════════════════════════════════════════════════════
+    match /usuarios/{uid} {
+      allow read, write: if isMe(uid);
+      match /guardados/{videoId} {
+        allow read, write: if isMe(uid);
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // EXISTENTE + F2 — Partidos (Etapa 15 'sin miedo' + jornada sin hardware)
+    // Soporta DOS flujos en un solo bloque:
+    //   (a) sesión in-club legacy:  create status="active" → "ended"
+    //   (b) registro sin hardware:  create status="pending_confirmation"
+    //                               → el RIVAL confirma → "confirmed"
+    // ════════════════════════════════════════════════════
+    match /matches/{matchId} {
+      function statusValid(s) {
+        return s == "active" || s == "ended" || s == "cancelled";
+      }
+      function fieldUnchanged(name) {
+        return request.resource.data[name] == resource.data[name];
+      }
+      function isOwner() { return isMe(resource.data.userId); }
+      // ¿El caller figura como jugador (uid) del partido? Usa playerUids (lista)
+      // que el registro escribe, porque las reglas no pueden iterar jugadores[].
+      function isPlayer() {
+        return signedIn()
+          && resource.data.keys().hasAny(['playerUids'])
+          && (request.auth.uid in resource.data.playerUids);
+      }
+
+      allow read: if true;
+
+      // Create: el dueño con su userId. Flujo legacy (active + timestamps) O
+      // registro manual (pending_confirmation). NUNCA "confirmed" desde cliente
+      // (eso abriría autoconfirmación / farmeo).
+      allow create: if isMe(request.resource.data.userId)
+                    && (
+                         ( request.resource.data.status == "active"
+                           && request.resource.data.startedAt == request.time
+                           && request.resource.data.createdAt == request.time )
+                         ||
+                         request.resource.data.status == "pending_confirmation"
+                       );
+
+      // Update: flujo legacy in-club, O confirmación/disputa del RIVAL.
+      allow update: if isLegacyUpdate() || isRivalConfirmAction();
+
+      // (a) Legacy: dueño edita libre, o invitado toca solo jugadores/scoreAcceptedBy.
+      //     Solo aplica a estados active/ended/cancelled (no pending).
+      function isLegacyUpdate() {
+        return request.auth != null
+          && fieldUnchanged('userId') && fieldUnchanged('loc') && fieldUnchanged('can')
+          && fieldUnchanged('lado') && fieldUnchanged('startedAt') && fieldUnchanged('createdAt')
+          && statusValid(request.resource.data.status)
+          && (
+               resource.data.endedAt == null
+               || request.resource.data.endedAt == resource.data.endedAt
+             )
+          && (
+               request.auth.uid == resource.data.userId
+               || request.resource.data.diff(resource.data).affectedKeys()
+                    .hasOnly(['jugadores', 'updatedAt', 'scoreAcceptedBy'])
+             );
+      }
+
+      // (b) Confirmación/disputa: SOLO un jugador que NO sea el registrante (el RIVAL
+      //     siempre confirma — no existe autoconfirmar), campos acotados, desde pending,
+      //     sin tocar marcador/jugadores, y NUNCA marcando ratingProcessed=true (servidor).
+      function isRivalConfirmAction() {
+        return isPlayer()
+          && request.auth.uid != resource.data.userId
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['scoreAcceptedBy', 'confirmation', 'status', 'ratingProcessed', 'updatedAt', 'version'])
+          && resource.data.status == 'pending_confirmation'
+          && request.resource.data.status in ['pending_confirmation', 'confirmed', 'disputed']
+          && request.resource.data.ratingProcessed == false
+          && request.resource.data.marcador == resource.data.marcador
+          && request.resource.data.jugadores == resource.data.jugadores
+          && request.resource.data.userId == resource.data.userId;
+      }
+
+      // Delete: el dueño puede CANCELAR un registro propio AÚN sin confirmar.
+      // Los partidos legacy (active/ended) NO se borran.
+      allow delete: if isOwner() && resource.data.status == 'pending_confirmation';
+
+      // Claims de slot
+      match /claims/{claimUid} {
+        allow read: if true;
+
+        allow create: if request.auth != null
+                      && request.auth.uid == claimUid
+                      && request.resource.data.slot in [0, 1, 2, 3]
+                      && request.resource.data.claimedAt == request.time;
+
+        allow update: if request.auth != null
+                      && request.auth.uid == claimUid
+                      && request.resource.data.slot in [0, 1, 2, 3];
+
+        allow delete: if request.auth != null
+                      && (
+                        request.auth.uid == claimUid
+                        || request.auth.uid == get(/databases/$(database)/documents/matches/$(matchId)).data.userId
+                      );
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // F96 CRITICAL FIX — collectionGroup('claims') para Mis partidos
+    // ════════════════════════════════════════════════════
+    match /{path=**}/claims/{claimUid} {
+      allow read: if true;
+    }
+
+    // ════════════════════════════════════════════════════
+    // EXISTENTE — Estados de clip (R2)
+    // ════════════════════════════════════════════════════
+    match /clip_states/{clipId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ════════════════════════════════════════════════════
+    // EXISTENTE — Pulsos pendientes desde web (R4)
+    // ════════════════════════════════════════════════════
+    match /pending_pulses/{pulseId} {
+      allow create: if (
+        (request.resource.data.source is string
+          && request.resource.data.club is string
+          && request.resource.data.club.size() > 0
+          && request.resource.data.club.size() < 64
+          && request.resource.data.cancha is string
+          && request.resource.data.client_pulse_id is string
+          && request.resource.data.consumed_at == null
+          && request.resource.data.consumed_by == null
+          && request.resource.data.created_at == request.time)
+        ||
+        (request.resource.data.source == "upload_resumen"
+          && request.resource.data.match_id is string
+          && request.resource.data.payload_base64 is string
+          && request.resource.data.uid_creator == request.auth.uid
+          && request.resource.data.consumed_at == null
+          && request.resource.data.created_at == request.time)
+      );
+
+      allow read: if request.auth != null
+                  && resource.data.uid_creator == request.auth.uid;
+
+      allow delete: if request.auth != null
+                    && resource.data.uid_creator == request.auth.uid;
+
+      allow update: if false;
+    }
+
+    // ════════════════════════════════════════════════════
+    // NUEVO R6 (Worker D, 2026-05-29) — Heartbeat del sistema del club
+    // ════════════════════════════════════════════════════
+    match /nuc_heartbeat/{clubId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ════════════════════════════════════════════════════
+    // NUEVO v100 Fase 3.C — Perfiles extendidos users/{uid}
+    // ════════════════════════════════════════════════════
+    match /users/{uid} {
+      allow read: if true;
+
+      allow create: if isMe(uid)
+                    && request.resource.data.uid == uid;
+
+      allow update: if isMe(uid)
+                    && request.resource.data.uid == resource.data.uid;
+
+      allow delete: if false;
+
+      match /recentPlayers/{otherKey} {
+        allow read, write: if isMe(uid);
+      }
+
+      match /notifications/{notifId} {
+        allow read: if isMe(uid);
+        allow create: if false;
+        allow update: if isMe(uid)
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['read','readAt']);
+        allow delete: if isMe(uid);
+      }
+
+      match /torneos5/{docId} {
+        allow read, write: if isMe(uid);
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // NUEVO v100 Fase 3.C — Handles únicos
+    // ════════════════════════════════════════════════════
+    match /handles/{handle} {
+      allow read: if true;
+
+      allow create: if signedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.handle == handle;
+
+      allow update: if false;
+
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // ════════════════════════════════════════════════════
+    // NUEVO v100 Fase 3.F — Grupos / Ligas
+    // ════════════════════════════════════════════════════
+    match /groups/{groupId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+                    && request.resource.data.creatorUid == request.auth.uid
+                    && request.resource.data.admins is list
+                    && request.auth.uid in request.resource.data.admins
+                    && request.resource.data.createdAt == request.time;
+
+      allow update: if signedIn()
+                    && request.auth.uid in resource.data.admins;
+
+      allow delete: if signedIn()
+                    && request.auth.uid == resource.data.creatorUid;
+
+      match /members/{memberUid} {
+        allow read: if signedIn();
+
+        allow create: if signedIn() && (
+          request.auth.uid == memberUid
+          || request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.admins
+        );
+
+        allow update: if signedIn() && (
+          request.auth.uid == memberUid
+          || request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.admins
+        );
+
+        allow delete: if signedIn() && (
+          request.auth.uid == memberUid
+          || request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.admins
+        );
+      }
+    }
+
+    // F96: collectionGroup('members') para grupos.html "Mis grupos".
+    match /{path=**}/members/{memberUid} {
+      allow read: if signedIn();
+    }
+
+    // ════════════════════════════════════════════════════
+    // NUEVO v100 Fase 3.G — Amistades
+    // ════════════════════════════════════════════════════
+    match /friendships/{friendshipId} {
+      allow read: if signedIn() && (
+        resource.data.uidA == request.auth.uid
+        || resource.data.uidB == request.auth.uid
+      );
+
+      allow create: if signedIn()
+                    && request.resource.data.status in ["pending", "blocked"]
+                    && request.resource.data.requesterUid == request.auth.uid
+                    && (
+                         request.resource.data.uidA == request.auth.uid
+                         || request.resource.data.uidB == request.auth.uid
+                       );
+
+      allow update: if signedIn()
+                    && (
+                         resource.data.uidA == request.auth.uid
+                         || resource.data.uidB == request.auth.uid
+                       )
+                    && request.resource.data.status in ["accepted","rejected","blocked"];
+
+      allow delete: if signedIn() && (
+        resource.data.uidA == request.auth.uid
+        || resource.data.uidB == request.auth.uid
+      );
+    }
+
+    // ════════════════════════════════════════════════════
+    // NUEVO R8 — Cola de ediciones de clip (render en la nube)
+    // ════════════════════════════════════════════════════
+    match /clip_edits/{editId} {
+      allow create: if request.resource.data.kind in ['edit', 'puntazo']
+                    && request.resource.data.source_video_id is string
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.created_at == request.time;
+      allow read: if request.auth != null
+                  && resource.data.uid_creator == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ════════════════════════════════════════════════════
+    // F1/F5 — Ranking server-authoritative (escribe SOLO la Cloud Function / SA)
+    // ════════════════════════════════════════════════════
+    // ratings/{uid}: nivel autoritativo. Lectura: cualquier signedIn. Escritura: jamás
+    // desde cliente (la CF usa Admin SDK y omite reglas).
+    match /ratings/{uid} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // processedMatches/{matchId}: guard de idempotencia, interno del servidor.
+    match /processedMatches/{matchId} {
+      allow read, write: if false;
+    }
+
+    // leaderboards/{ctx}/entries/{uid}: tablas por contexto (global/club/grupo).
+    match /leaderboards/{ctx} {
+      allow read: if signedIn();
+      allow write: if false;
+      match /entries/{uid} {
+        allow read: if signedIn();
+        allow write: if false;
+      }
+    }
+
+    // ════════════════════════════════════════════════════
+    // Catch-all denegado
+    // ════════════════════════════════════════════════════
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

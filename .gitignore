@@ -50,6 +50,14 @@ puntazo.lock
 *.tmp
 cleanup_last_run.txt
 
+# ─── Firebase (Cloud Functions + emulador) ───────────────────
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+emulator-data/
+.runtimeconfig.json
+
 # ─── Build / distribución ─────────────────────────────────────
 dist/
 build/
