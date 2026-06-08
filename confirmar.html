@@ -157,8 +157,11 @@
       '<div class="cf-big-emoji">✅</div>' +
       '<div class="cf-ask">' + (justNow ? "¡Listo! Quedó confirmado." : "Este partido ya está confirmado.") +
       ' Cuenta para el ranking de los dos.</div>';
-    setActions([]);
     var amPlayer = MC().teamOf(match, me() && me().uid);
+    setActions([
+      { label: "Ver mi ranking →", onClick: function () { location.href = "/mi-nivel.html"; } },
+      { label: "Ir al inicio", ghost: true, onClick: function () { location.href = "/index.html"; } },
+    ]);
     if (amPlayer) showWinnerLevel();
   }
 
