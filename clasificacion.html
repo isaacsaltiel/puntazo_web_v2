@@ -63,6 +63,18 @@
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 14px;
+    /* E5: la fila es un <a> al perfil del jugador. */
+    text-decoration: none; color: inherit; cursor: pointer;
+    transition: background .14s, border-color .14s, transform .14s;
+  }
+  a.cl-row:hover {
+    background: rgba(11, 124, 255, 0.10);
+    border-color: rgba(11, 124, 255, 0.35);
+    transform: translateY(-1px);
+  }
+  a.cl-row.is-me:hover {
+    background: rgba(11, 124, 255, 0.22);
+    border-color: rgba(11, 124, 255, 0.6);
   }
   /* Resalta la fila del usuario actual */
   .cl-row.is-me {
@@ -239,7 +251,11 @@
       const nivel = Number.isFinite(e.nivel) ? e.nivel : 0;
       const calibTag = e.isCalibrating ? '<span class="cl-calib">calibrando</span>' : '';
 
-      const row = document.createElement('div');
+      // E5: cada fila enlaza al perfil publico del jugador. Anchor en vez de
+      // div para que sea navegable nativamente sin romper el resaltado is-me
+      // ni el orden. El styling de .cl-row se mantiene (display:flex).
+      const row = document.createElement('a');
+      row.href = '/jugador.html?uid=' + encodeURIComponent(e.uid || '');
       row.className = 'cl-row'
         + (isMe ? ' is-me' : '')
         + (pos === 1 ? ' is-top1' : pos === 2 ? ' is-top2' : pos === 3 ? ' is-top3' : '');

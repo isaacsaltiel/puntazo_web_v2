@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Perfil de jugador &middot; Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/identity.js"></script>
+<script src="/assets/header.js"></script>
+
+<style>
+  html, body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .jg-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 90px 16px 60px;
+  }
+  .jg-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-bottom: 14px;
+    padding: 8px 14px;
+    background: rgba(11, 124, 255, 0.10);
+    border: 1px solid rgba(11, 124, 255, 0.30);
+    border-radius: 999px;
+    color: #cfe2ff;
+    font-family: inherit; font-weight: 700; font-size: 0.86rem;
+    text-decoration: none;
+  }
+  .jg-back:hover { background: rgba(11, 124, 255, 0.20); }
+
+  /* ── Header del jugador ── */
+  .jg-header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 20px;
+    border-radius: 18px;
+    background:
+      radial-gradient(600px 300px at 12% 0%, rgba(255,217,122,0.10), transparent 60%),
+      linear-gradient(135deg, rgba(11,124,255,0.16), rgba(0,79,200,0.08));
+    border: 1px solid rgba(255,255,255,0.10);
+    margin-bottom: 18px;
+  }
+  .jg-avatar {
+    width: 76px; height: 76px; border-radius: 50%;
+    background: rgba(0,79,200,.35); border: 2px solid rgba(255,255,255,.14);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 1.7rem; font-weight: 900; color: #fff; overflow: hidden;
+  }
+  .jg-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .jg-id { flex: 1; min-width: 0; }
+  .jg-name {
+    font-size: 1.3rem; font-weight: 900; color: #fff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    letter-spacing: -0.3px;
+  }
+  .jg-handle {
+    font-size: 0.82rem; font-weight: 700; color: rgba(207,226,255,0.70);
+    margin-top: 2px;
+  }
+  .jg-record {
+    font-size: 0.82rem; color: rgba(234,242,255,0.62); margin-top: 6px;
+  }
+  .jg-calib {
+    display: inline-block; margin-left: 6px;
+    padding: 1px 7px; border-radius: 999px;
+    background: rgba(255,170,60,0.14); border: 1px solid rgba(255,170,60,0.34);
+    color: #ffd497; font-size: 0.64rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.4px; vertical-align: middle;
+  }
+  .jg-nivel {
+    flex-shrink: 0; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    min-width: 70px;
+  }
+  .jg-nivel-emoji {
+    font-size: 1.8rem; line-height: 1;
+    filter: drop-shadow(0 0 10px rgba(255,217,122,0.35));
+  }
+  .jg-nivel-num {
+    font-size: 1.5rem; font-weight: 900; color: #ffd97a; line-height: 1;
+    font-variant-numeric: tabular-nums; text-shadow: 0 0 14px rgba(255,217,122,0.35);
+  }
+  .jg-nivel-lbl {
+    font-size: 0.60rem; color: rgba(234,242,255,0.50);
+    text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800;
+  }
+  .jg-nivel.is-empty .jg-nivel-num { color: rgba(207,226,255,0.55); text-shadow: none; }
+  .jg-nivel.is-empty .jg-nivel-emoji { filter: drop-shadow(0 0 8px rgba(11,124,255,0.35)); }
+
+  /* CTA self-view / login */
+  .jg-cta {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; margin-bottom: 18px;
+    border-radius: 14px; text-decoration: none;
+    background: linear-gradient(135deg, rgba(11,124,255,0.18), rgba(0,79,200,0.10));
+    border: 1px solid rgba(11,124,255,0.35); color: #fff;
+    transition: background .14s, border-color .14s, transform .14s;
+  }
+  .jg-cta:hover { background: linear-gradient(135deg, rgba(11,124,255,0.28), rgba(0,79,200,0.14)); border-color: rgba(11,124,255,0.6); transform: translateY(-2px); }
+  .jg-cta-emoji { font-size: 1.6rem; flex-shrink: 0; }
+  .jg-cta-text { flex: 1; min-width: 0; }
+  .jg-cta-title { font-size: 0.98rem; font-weight: 900; color: #fff; }
+  .jg-cta-sub { font-size: 0.78rem; color: rgba(234,242,255,0.65); margin-top: 2px; }
+  .jg-cta-arrow { font-size: 1.2rem; color: rgba(11,124,255,0.85); flex-shrink: 0; }
+
+  /* ── Head-to-Head ── */
+  .jg-h2h-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 1.1rem; font-weight: 900; color: #eaf2ff;
+    margin: 26px 0 14px; letter-spacing: -0.2px;
+  }
+  .jg-h2h-title .sub {
+    font-size: 0.76rem; font-weight: 700; color: rgba(234,242,255,0.50);
+  }
+
+  /* Tarjeta de totales (marcador global del enfrentamiento) */
+  .jg-summary {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    gap: 10px; padding: 16px 18px; margin-bottom: 14px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.10);
+  }
+  .jg-summary .side { text-align: center; min-width: 0; }
+  .jg-summary .side .who {
+    font-size: 0.80rem; font-weight: 800; color: #cfe2ff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .jg-summary .side .wins {
+    font-size: 2.0rem; font-weight: 900; line-height: 1.1; color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .jg-summary .side.win .wins { color: #9af2c0; text-shadow: 0 0 14px rgba(34,197,94,0.30); }
+  .jg-summary .vs {
+    font-size: 0.82rem; font-weight: 900; color: rgba(234,242,255,0.40);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .jg-summary-detail {
+    display: flex; justify-content: center; gap: 18px;
+    margin: -4px 0 16px; padding: 0 4px;
+    font-size: 0.78rem; color: rgba(234,242,255,0.62);
+  }
+  .jg-summary-detail b { color: #cfe2ff; font-variant-numeric: tabular-nums; }
+
+  /* Bloque compañeros */
+  .jg-mates {
+    padding: 14px 16px; margin-bottom: 16px;
+    border-radius: 14px;
+    background: rgba(34,197,94,0.06); border: 1px solid rgba(34,197,94,0.22);
+    font-size: 0.86rem; color: rgba(234,242,255,0.80); line-height: 1.5;
+  }
+  .jg-mates b { color: #9af2c0; }
+
+  /* Lista de partidos */
+  .jg-matches { display: flex; flex-direction: column; gap: 8px; }
+  .jg-match {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; border-radius: 12px;
+    background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08);
+  }
+  .jg-match-badge {
+    flex-shrink: 0; width: 30px; text-align: center; font-size: 1.15rem; line-height: 1;
+  }
+  .jg-match-info { flex: 1; min-width: 0; }
+  .jg-match-line1 {
+    font-size: 0.86rem; font-weight: 800; color: #fff;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .jg-match-line2 {
+    font-size: 0.74rem; color: rgba(234,242,255,0.55); margin-top: 2px;
+  }
+  .jg-match-result {
+    flex-shrink: 0; font-size: 0.72rem; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 0.4px;
+    padding: 3px 9px; border-radius: 999px;
+  }
+  .jg-match-result.win { background: rgba(34,197,94,0.16); border: 1px solid rgba(34,197,94,0.40); color: #9af2c0; }
+  .jg-match-result.loss { background: rgba(255,90,90,0.12); border: 1px solid rgba(255,90,90,0.30); color: #ffb1a3; }
+  .jg-match-result.neutral { background: rgba(180,180,180,0.12); border: 1px solid rgba(220,220,220,0.20); color: #d2d6dd; }
+
+  /* Estados */
+  .jg-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: rgba(234, 242, 255, 0.70);
+  }
+  .jg-state .icon { font-size: 2.8rem; margin-bottom: 12px; }
+  .jg-state a, .jg-state button.link {
+    color: #6fb2ff; text-decoration: none; font-weight: 800;
+    background: none; border: none; font-family: inherit; font-size: inherit; cursor: pointer; padding: 0;
+  }
+  .jg-h2h-state {
+    text-align: center; padding: 30px 20px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(234,242,255,0.70);
+  }
+  .jg-h2h-state .icon { font-size: 2.2rem; margin-bottom: 10px; }
+  .jg-h2h-state button.link {
+    color: #6fb2ff; text-decoration: none; font-weight: 800;
+    background: none; border: none; font-family: inherit; font-size: inherit; cursor: pointer; padding: 0;
+  }
+</style>
+</head>
+<body>
+
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="jg-wrap">
+  <a class="jg-back" href="/clasificacion.html">&larr; Tablero global</a>
+
+  <div id="jgLoading" class="jg-state">&#8987; Cargando jugador&hellip;</div>
+
+  <div id="jgNotFound" class="jg-state" style="display:none">
+    <div class="icon">&#128269;</div>
+    <p><b>No encontramos a este jugador.</b><br>
+    Revisa el enlace o vuelve al <a href="/clasificacion.html">tablero global</a>.</p>
+  </div>
+
+  <div id="jgError" class="jg-state" style="display:none">
+    <div class="icon">&#9888;&#65039;</div>
+    <p>No pudimos cargar el perfil. Intenta recargar la p&aacute;gina.</p>
+  </div>
+
+  <div id="jgContent" style="display:none">
+    <div id="jgHeader" class="jg-header"></div>
+    <div id="jgSelfCta"></div>
+    <div id="jgH2H"></div>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  const $loading  = document.getElementById('jgLoading');
+  const $notFound = document.getElementById('jgNotFound');
+  const $error    = document.getElementById('jgError');
+  const $content  = document.getElementById('jgContent');
+  const $header   = document.getElementById('jgHeader');
+  const $selfCta  = document.getElementById('jgSelfCta');
+  const $h2h      = document.getElementById('jgH2H');
+
+  // uid objetivo desde el query string.
+  let TARGET_UID = '';
+  try { TARGET_UID = (new URLSearchParams(location.search).get('uid') || '').trim(); } catch (_) {}
+
+  let _booted = false; // evita doble render si auth-ready + isBootstrapped corren juntos.
+
+  function show(which) {
+    $loading.style.display  = (which === 'loading')  ? '' : 'none';
+    $notFound.style.display = (which === 'notfound') ? '' : 'none';
+    $error.style.display    = (which === 'error')    ? '' : 'none';
+    $content.style.display  = (which === 'content')  ? '' : 'none';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c];
+    });
+  }
+
+  function db() {
+    return (window.PuntazoFirebase && window.PuntazoFirebase.db)
+      ? window.PuntazoFirebase.db() : null;
+  }
+
+  // Bucket nivel -> { emoji, name }. Replica el mapeo de clasificacion.html /
+  // perfil.html (escala 1.0-7.0) para consistencia visual entre pantallas.
+  function bucketFor(nivel) {
+    const n = Number(nivel) || 0;
+    if (n >= 7.0) return { emoji: '\u{1F451}', name: 'Top' };          // crown
+    if (n >= 6.0) return { emoji: '⚡',    name: 'Élite' };   // zap
+    if (n >= 5.0) return { emoji: '\u{1F525}', name: 'Competitivo' };  // fire
+    if (n >= 4.0) return { emoji: '\u{1F985}', name: 'Avanzado' };     // eagle
+    if (n >= 3.0) return { emoji: '\u{1F425}', name: 'Intermedio' };   // baby chick
+    if (n >= 2.0) return { emoji: '\u{1F423}', name: 'Aprendiz' };     // hatching chick
+    return { emoji: '\u{1F331}', name: 'Principiante' };               // seedling
+  }
+
+  // Nombre legible con fallbacks: displayName -> handle -> "Jugador <uid corto>".
+  function nameFrom(profile, ratingDisplay, uid) {
+    const dn = profile && typeof profile.displayName === 'string' ? profile.displayName.trim() : '';
+    if (dn) return dn;
+    const rd = typeof ratingDisplay === 'string' ? ratingDisplay.trim() : '';
+    if (rd) return rd;
+    const h = profile && typeof profile.handle === 'string' ? profile.handle.trim() : '';
+    if (h) return '@' + h;
+    return 'Jugador ' + String(uid || '').slice(0, 5);
+  }
+
+  function avatarHtml(profile, displayName) {
+    const photo = profile && profile.photoURL ? String(profile.photoURL) : '';
+    if (photo) {
+      return '<img src="' + escapeHtml(photo) + '" alt="' + escapeHtml(displayName) + '" />';
+    }
+    const initial = (displayName || 'P').charAt(0).toUpperCase();
+    return escapeHtml(initial);
+  }
+
+  // Convierte un Firestore Timestamp (o ms) a Date, o null.
+  function tsToDate(ts) {
+    if (!ts) return null;
+    if (typeof ts.toDate === 'function') { try { return ts.toDate(); } catch (_) { return null; } }
+    if (typeof ts === 'number') return new Date(ts);
+    if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000);
+    return null;
+  }
+
+  function fmtDate(d) {
+    if (!d) return '';
+    try {
+      return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch (_) {
+      return d.toISOString().slice(0, 10);
+    }
+  }
+
+  // ── Render del header del jugador ──
+  // ratingCtx puede ser null (deslogueado: ratings = signedIn, no se lee; o
+  // jugador sin partidos). loggedIn distingue ambos casos en el copy.
+  function renderHeader(profile, ratingCtx, displayName, loggedIn) {
+    const handle = profile && profile.handle ? '@' + profile.handle : '';
+    let nivelHtml, recordHtml;
+    if (ratingCtx && typeof ratingCtx.nivel === 'number') {
+      const b = bucketFor(ratingCtx.nivel);
+      nivelHtml =
+        '<div class="jg-nivel">' +
+          '<span class="jg-nivel-emoji">' + b.emoji + '</span>' +
+          '<span class="jg-nivel-num">' + ratingCtx.nivel.toFixed(2) + '</span>' +
+          '<span class="jg-nivel-lbl">' + escapeHtml(b.name) + '</span>' +
+        '</div>';
+      const wins = Number.isFinite(ratingCtx.wins) ? ratingCtx.wins : 0;
+      const losses = Number.isFinite(ratingCtx.losses) ? ratingCtx.losses : 0;
+      const calib = ratingCtx.isCalibrating ? '<span class="jg-calib">calibrando</span>' : '';
+      recordHtml = '<div class="jg-record">' + wins + 'V &middot; ' + losses + 'D' + calib + '</div>';
+    } else {
+      // Sin nivel: o no logueado (no se puede leer ratings) o jugador sin partidos.
+      nivelHtml =
+        '<div class="jg-nivel is-empty">' +
+          '<span class="jg-nivel-emoji">\u{1F3BE}</span>' +
+          '<span class="jg-nivel-num">&mdash;</span>' +
+          '<span class="jg-nivel-lbl">Nivel</span>' +
+        '</div>';
+      recordHtml = loggedIn
+        ? '<div class="jg-record">Sin nivel todavía</div>'
+        : '<div class="jg-record">Inicia sesión para ver su nivel</div>';
+    }
+
+    $header.innerHTML =
+      '<div class="jg-avatar">' + avatarHtml(profile, displayName) + '</div>' +
+      '<div class="jg-id">' +
+        '<div class="jg-name">' + escapeHtml(displayName) + '</div>' +
+        (handle ? '<div class="jg-handle">' + escapeHtml(handle) + '</div>' : '') +
+        recordHtml +
+      '</div>' +
+      nivelHtml;
+  }
+
+  // ── Localiza el equipo ("team1"/"team2") de un uid en jugadores[] ──
+  function teamOf(match, uid) {
+    const J = Array.isArray(match.jugadores) ? match.jugadores : [];
+    for (let i = 0; i < J.length; i++) {
+      const j = J[i];
+      if (j && j.uid === uid) {
+        return (j.equipo === 'team2') ? 'team2' : 'team1';
+      }
+    }
+    return null;
+  }
+
+  // Suma games y sets ganados por cada equipo a partir de marcador.sets.
+  function tallySets(marcador) {
+    const out = { g1: 0, g2: 0, s1: 0, s2: 0 };
+    const sets = marcador && Array.isArray(marcador.sets) ? marcador.sets : [];
+    for (let i = 0; i < sets.length; i++) {
+      const st = sets[i];
+      if (!st) continue;
+      const t1 = Number(st.team1), t2 = Number(st.team2);
+      if (!Number.isFinite(t1) || !Number.isFinite(t2)) continue;
+      out.g1 += t1; out.g2 += t2;
+      if (t1 > t2) out.s1 += 1;
+      else if (t2 > t1) out.s2 += 1;
+    }
+    return out;
+  }
+
+  // Marcador como texto "6-3 4-6 7-5" desde el punto de vista de myTeam.
+  function scoreText(marcador, myTeam) {
+    const sets = marcador && Array.isArray(marcador.sets) ? marcador.sets : [];
+    const parts = [];
+    for (let i = 0; i < sets.length; i++) {
+      const st = sets[i];
+      if (!st) continue;
+      const t1 = Number(st.team1), t2 = Number(st.team2);
+      if (!Number.isFinite(t1) || !Number.isFinite(t2)) continue;
+      const mine = (myTeam === 'team2') ? t2 : t1;
+      const their = (myTeam === 'team2') ? t1 : t2;
+      parts.push(mine + '-' + their);
+    }
+    return parts.join('  ');
+  }
+
+  // Etiqueta de los rivales/compañeros de un equipo (nombres), para contexto.
+  function teamNames(match, team, excludeUid) {
+    const J = Array.isArray(match.jugadores) ? match.jugadores : [];
+    const names = [];
+    for (let i = 0; i < J.length; i++) {
+      const j = J[i];
+      if (!j) continue;
+      const jt = (j.equipo === 'team2') ? 'team2' : 'team1';
+      if (jt !== team) continue;
+      if (excludeUid && j.uid === excludeUid) continue;
+      const nm = typeof j.nombre === 'string' ? j.nombre.trim() : '';
+      if (nm) names.push(nm);
+    }
+    return names;
+  }
+
+  // ── Head-to-Head: estados ──
+  function h2hState(which, opts) {
+    opts = opts || {};
+    if (which === 'login') {
+      $h2h.innerHTML =
+        '<div class="jg-h2h-title">⚔️ Head-to-Head</div>' +
+        '<div class="jg-h2h-state">' +
+          '<div class="icon">\u{1F512}</div>' +
+          '<p>Inicia sesión para ver tu historial de enfrentamientos con este jugador.</p>' +
+          '<p style="margin-top:10px"><button class="link" id="jgDoLogin">Iniciar sesión</button></p>' +
+        '</div>';
+      const b = document.getElementById('jgDoLogin');
+      if (b) b.addEventListener('click', function () { try { window.PuntazoAuth.signIn(); } catch (_) {} });
+      return;
+    }
+    if (which === 'loading') {
+      $h2h.innerHTML =
+        '<div class="jg-h2h-title">⚔️ Head-to-Head</div>' +
+        '<div class="jg-h2h-state">&#8987; Buscando partidos en común&hellip;</div>';
+      return;
+    }
+    if (which === 'empty') {
+      $h2h.innerHTML =
+        '<div class="jg-h2h-title">⚔️ Head-to-Head</div>' +
+        '<div class="jg-h2h-state">' +
+          '<div class="icon">\u{1F3BE}</div>' +
+          '<p>Aún no han jugado un partido confirmado juntos ni enfrentados.</p>' +
+        '</div>';
+      return;
+    }
+    if (which === 'error') {
+      $h2h.innerHTML =
+        '<div class="jg-h2h-title">⚔️ Head-to-Head</div>' +
+        '<div class="jg-h2h-state">No pudimos cargar el historial. Intenta recargar.</div>';
+      return;
+    }
+  }
+
+  // ── Render del Head-to-Head completo ──
+  function renderH2H(data, meName, targetName) {
+    const r = data.rivals;   // { matches:[], winsMe, winsTarget, gMe, gTarget, sMe, sTarget }
+    const m = data.mates;    // { matches:[], played, won }
+    let html = '<div class="jg-h2h-title">⚔️ Head-to-Head ' +
+      '<span class="sub">' + data.total + ' partido' + (data.total === 1 ? '' : 's') + ' en común</span></div>';
+
+    // ── Como RIVALES ──
+    if (r.matches.length) {
+      const meWinCls = r.winsMe >= r.winsTarget ? ' win' : '';
+      const tgWinCls = r.winsTarget > r.winsMe ? ' win' : '';
+      html +=
+        '<div class="jg-summary">' +
+          '<div class="side' + meWinCls + '">' +
+            '<div class="who">' + escapeHtml(meName) + '</div>' +
+            '<div class="wins">' + r.winsMe + '</div>' +
+          '</div>' +
+          '<div class="vs">vs</div>' +
+          '<div class="side' + tgWinCls + '">' +
+            '<div class="who">' + escapeHtml(targetName) + '</div>' +
+            '<div class="wins">' + r.winsTarget + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="jg-summary-detail">' +
+          '<span>Sets <b>' + r.sMe + '</b> &ndash; <b>' + r.sTarget + '</b></span>' +
+          '<span>Games <b>' + r.gMe + '</b> &ndash; <b>' + r.gTarget + '</b></span>' +
+        '</div>';
+
+      html += '<div class="jg-matches">';
+      r.matches.forEach(function (mt) {
+        const resCls = mt.meWon ? 'win' : 'loss';
+        const resTxt = mt.meWon ? 'Ganaste' : 'Perdiste';
+        const rivalTxt = mt.rivalNames.length ? ('vs ' + mt.rivalNames.join(', ')) : 'vs rival';
+        const mateTxt = mt.mateNames.length ? (' &middot; con ' + escapeHtml(mt.mateNames.join(', '))) : '';
+        html +=
+          '<div class="jg-match">' +
+            '<div class="jg-match-badge">⚔️</div>' +
+            '<div class="jg-match-info">' +
+              '<div class="jg-match-line1">' + escapeHtml(mt.score || 'Sin marcador') + '</div>' +
+              '<div class="jg-match-line2">' + escapeHtml(mt.dateStr) + ' &middot; ' + escapeHtml(rivalTxt) + mateTxt + '</div>' +
+            '</div>' +
+            '<div class="jg-match-result ' + resCls + '">' + resTxt + '</div>' +
+          '</div>';
+      });
+      html += '</div>';
+    }
+
+    // ── Como COMPAÑEROS ──
+    if (m.matches.length) {
+      html += '<div class="jg-h2h-title" style="margin-top:24px">\u{1F91D} Jugando juntos ' +
+        '<span class="sub">' + m.matches.length + ' partido' + (m.matches.length === 1 ? '' : 's') + '</span></div>';
+      html +=
+        '<div class="jg-mates">Como compañeros han jugado <b>' + m.played + '</b> y ganado <b>' + m.won + '</b>' +
+        (m.played ? (' (' + Math.round((m.won / m.played) * 100) + '% victorias).') : '.') + '</div>';
+
+      html += '<div class="jg-matches">';
+      m.matches.forEach(function (mt) {
+        const resCls = mt.won ? 'win' : 'loss';
+        const resTxt = mt.won ? 'Ganaron' : 'Perdieron';
+        const rivalTxt = mt.rivalNames.length ? ('vs ' + mt.rivalNames.join(', ')) : 'vs rival';
+        html +=
+          '<div class="jg-match">' +
+            '<div class="jg-match-badge">\u{1F91D}</div>' +
+            '<div class="jg-match-info">' +
+              '<div class="jg-match-line1">' + escapeHtml(mt.score || 'Sin marcador') + '</div>' +
+              '<div class="jg-match-line2">' + escapeHtml(mt.dateStr) + ' &middot; ' + escapeHtml(rivalTxt) + '</div>' +
+            '</div>' +
+            '<div class="jg-match-result ' + resCls + '">' + resTxt + '</div>' +
+          '</div>';
+      });
+      html += '</div>';
+    }
+
+    $h2h.innerHTML = html;
+  }
+
+  // ── Carga y procesa el Head-to-Head ──
+  async function loadH2H(meUid, targetName) {
+    h2hState('loading');
+    const D = db();
+    if (!D) { h2hState('error'); return; }
+
+    const meName = (function () {
+      const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      return (u && u.displayName) ? u.displayName : 'Tú';
+    })();
+
+    try {
+      // array-contains de un solo campo -> NO requiere indice compuesto.
+      const snap = await D.collection('matches')
+        .where('playerUids', 'array-contains', meUid)
+        .limit(200)
+        .get();
+
+      const rivals = { matches: [], winsMe: 0, winsTarget: 0, gMe: 0, gTarget: 0, sMe: 0, sTarget: 0 };
+      const mates  = { matches: [], played: 0, won: 0 };
+
+      const rows = [];
+      snap.forEach(function (d) { rows.push(Object.assign({ _id: d.id }, d.data())); });
+
+      // Orden por fecha desc (endedAt -> createdAt). Se ordena client-side para
+      // no forzar un indice compuesto con el array-contains.
+      rows.sort(function (a, b) {
+        const da = tsToDate(a.endedAt) || tsToDate(a.createdAt);
+        const dbb = tsToDate(b.endedAt) || tsToDate(b.createdAt);
+        return (dbb ? dbb.getTime() : 0) - (da ? da.getTime() : 0);
+      });
+
+      rows.forEach(function (match) {
+        if (match.status !== 'confirmed') return;
+        const uids = Array.isArray(match.playerUids) ? match.playerUids : [];
+        if (uids.indexOf(TARGET_UID) < 0) return;       // el target tambien jugo
+        if (TARGET_UID === meUid) return;               // guard defensivo
+
+        const meTeam = teamOf(match, meUid);
+        const tgTeam = teamOf(match, TARGET_UID);
+        if (!meTeam || !tgTeam) return;                 // datos incompletos
+
+        const tally = tallySets(match.marcador);
+        const winner = (match.marcador && (match.marcador.ganador === 'team1' || match.marcador.ganador === 'team2'))
+          ? match.marcador.ganador
+          : (tally.s1 > tally.s2 ? 'team1' : (tally.s2 > tally.s1 ? 'team2' : null));
+
+        const d = tsToDate(match.endedAt) || tsToDate(match.createdAt);
+        const dateStr = fmtDate(d);
+        const score = scoreText(match.marcador, meTeam);
+
+        const myGames  = (meTeam === 'team2') ? tally.g2 : tally.g1;
+        const myomGames = (meTeam === 'team2') ? tally.g1 : tally.g2; // games del otro equipo
+        const mySets   = (meTeam === 'team2') ? tally.s2 : tally.s1;
+        const otherSets = (meTeam === 'team2') ? tally.s1 : tally.s2;
+        const meWon = winner ? (winner === meTeam) : false;
+
+        if (meTeam === tgTeam) {
+          // ── COMPAÑEROS ──
+          mates.played += 1;
+          if (meWon) mates.won += 1;
+          mates.matches.push({
+            score: score,
+            dateStr: dateStr,
+            won: meWon,
+            rivalNames: teamNames(match, meTeam === 'team1' ? 'team2' : 'team1', null),
+          });
+        } else {
+          // ── RIVALES ── (me vs target en equipos distintos)
+          if (winner === meTeam) rivals.winsMe += 1;
+          else if (winner === tgTeam) rivals.winsTarget += 1;
+          rivals.gMe += myGames;       rivals.gTarget += myomGames;
+          rivals.sMe += mySets;        rivals.sTarget += otherSets;
+          rivals.matches.push({
+            score: score,
+            dateStr: dateStr,
+            meWon: meWon,
+            rivalNames: teamNames(match, tgTeam, null),                 // incluye al target
+            mateNames: teamNames(match, meTeam, meUid),                 // mi compañero (si hubo)
+          });
+        }
+      });
+
+      const total = rivals.matches.length + mates.matches.length;
+      if (!total) { h2hState('empty'); return; }
+      renderH2H({ rivals: rivals, mates: mates, total: total }, meName, targetName);
+    } catch (e) {
+      console.error('[jugador] error cargando head-to-head', e);
+      h2hState('error');
+    }
+  }
+
+  // ── Boot principal ──
+  async function boot() {
+    if (_booted) return;
+    _booted = true;
+
+    if (!TARGET_UID) { show('notfound'); return; }
+
+    const D = db();
+    if (!D) { show('error'); return; }
+
+    const me = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    const isSelf = me && me.uid === TARGET_UID;
+
+    // 1) Perfil publico (users/{uid} = lectura publica).
+    let profile = null;
+    try {
+      profile = window.PuntazoIdentity
+        ? await window.PuntazoIdentity.getProfile(TARGET_UID)
+        : null;
+    } catch (_) { profile = null; }
+
+    // 2) Nivel global (ratings = signedIn). Solo si hay sesion.
+    let ratingCtx = null;
+    let ratingDisplay = '';
+    if (me) {
+      try {
+        const rs = await D.collection('ratings').doc(TARGET_UID).get();
+        if (rs.exists) {
+          const rd = rs.data() || {};
+          ratingDisplay = typeof rd.displayName === 'string' ? rd.displayName : '';
+          const g = rd.byContext && rd.byContext['global:padel'];
+          if (g && typeof g.nivel === 'number') ratingCtx = g;
+        }
+      } catch (e) {
+        console.warn('[jugador] no se pudo leer ratings', e);
+      }
+    }
+
+    // Si no hay perfil NI rating, el jugador no existe (o uid basura).
+    if (!profile && !ratingDisplay && !ratingCtx) {
+      show('notfound');
+      return;
+    }
+
+    const displayName = nameFrom(profile, ratingDisplay, TARGET_UID);
+    renderHeader(profile, ratingCtx, displayName, !!me);
+    show('content');
+
+    // 3) CTA self / login.
+    $selfCta.innerHTML = '';
+    if (isSelf) {
+      $selfCta.innerHTML =
+        '<a class="jg-cta" href="/perfil.html">' +
+          '<span class="jg-cta-emoji">\u{1F464}</span>' +
+          '<span class="jg-cta-text">' +
+            '<span class="jg-cta-title">Este es tu perfil</span>' +
+            '<span class="jg-cta-sub">Ir a Mi perfil para editar y ver tus partidos</span>' +
+          '</span>' +
+          '<span class="jg-cta-arrow">&rarr;</span>' +
+        '</a>';
+      $h2h.innerHTML = ''; // sin head-to-head contra uno mismo
+      return;
+    }
+
+    // 4) Head-to-Head.
+    if (!me) {
+      h2hState('login');
+      return;
+    }
+    loadH2H(me.uid, displayName);
+  }
+
+  // Espera a auth para saber si hay sesion (afecta nivel + H2H). El header
+  // publico igual se puede pintar sin sesion, pero esperamos auth-ready para
+  // no perder el nivel de un user logueado por correr demasiado pronto.
+  window.addEventListener('puntazo:auth-ready', boot);
+  window.addEventListener('puntazo:auth-changed', function () {
+    // Si cambia el estado de sesion despues del primer render, re-evalua.
+    _booted = false;
+    boot();
+  });
+  if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+    boot();
+  } else {
+    // Fallback: si auth nunca dispara (p.ej. sin red), pinta lo publico igual.
+    setTimeout(function () { if (!_booted) boot(); }, 1500);
+  }
+})();
+</script>
+</body>
+</html>
