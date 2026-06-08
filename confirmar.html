@@ -72,6 +72,7 @@
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/auth.js"></script>
 <script src="/assets/identity.js"></script>
+<script src="/assets/friends.js"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/match-confirmation.js"></script>
 <script src="/assets/match-actions.js"></script>
@@ -200,8 +201,18 @@
       return;
     }
 
+    // ¿Soy jugador? Si NO, y hay slots dummy → puedo RECLAMAR mi lugar.
+    var myTeam = MC().teamOf(match, u.uid);
+    if (!myTeam) {
+      var hasDummy = js.some(function(j){ return j && !j.uid; });
+      if (hasDummy) { renderClaim(regName); return; }
+      $("ask").textContent = "No figuras como jugador de este partido.";
+      setActions([]); return;
+    }
+
     var can = MC().canConfirm(match, u.uid);
     if (can.ok) {
+      // Soy del equipo rival: confirmo o disputo ("no jugué" del rival = disputar).
       $("ask").innerHTML = '<span class="hl">' + esc(regName) + '</span> dice que este fue el resultado. ¿Es correcto?';
       setActions([
         { label: "Sí, confirmar ✓", onClick: doConfirm },
@@ -210,14 +221,99 @@
       return;
     }
 
-    // No puede confirmar: o es el registrante, o no es jugador.
+    // No puede confirmar: o es el registrante, o es COMPAÑERO del registrante.
     if (u.uid === match.userId) {
       $("eyebrow").textContent = "Esperando confirmación";
       $("state-box").innerHTML = '<div class="cf-big-emoji">⏳</div><div class="cf-ask">Tú registraste este partido. Falta que <span class="hl">tu rival</span> lo confirme para que cuente.</div>';
+      setActions([]);
     } else {
-      $("ask").textContent = can.reason || "No puedes confirmar este partido.";
+      // Compañero del registrante (entró por claim o lo agregaron directo): queda
+      // asociado; no confirma. Puede declinar ("No jugué") y removerse.
+      $("eyebrow").textContent = "Quedaste asociado";
+      $("state-box").innerHTML = '<div class="cf-big-emoji">🤝</div><div class="cf-ask">Quedaste asociado a este partido como compañero de <span class="hl">' + esc(regName) + '</span>. Falta que un <span class="hl">rival</span> lo confirme para que cuente.</div>';
+      setActions([{ label: "No jugué — quitarme", ghost: true, onClick: doDecline }]);
     }
-    setActions([]);
+  }
+
+  // ── Normaliza un nombre para el match-by-name (sin acentos, alfanumérico) ──
+  function normName(s){
+    return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
+      .replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+  }
+  // Índice del dummy que mejor matchea mi displayName de Google (-1 si ninguno).
+  function bestDummyMatch(myName, dummies){
+    var mn = normName(myName);
+    if (!mn || !dummies.length) return -1;
+    var myTokens = mn.split(" ").filter(Boolean);
+    var best = -1, bestScore = 0;
+    dummies.forEach(function(d){
+      var dn = normName(d.nombre); if (!dn) return;
+      var score = 0;
+      if (dn === mn) score = 100;
+      else {
+        var dTokens = dn.split(" ").filter(Boolean);
+        dTokens.forEach(function(t){ if (myTokens.indexOf(t) >= 0) score += 10; });
+        if (myTokens[0] && dTokens[0] && (dTokens[0].indexOf(myTokens[0]) === 0 || myTokens[0].indexOf(dTokens[0]) === 0)) score += 5;
+      }
+      if (score > bestScore) { bestScore = score; best = d.idx; }
+    });
+    return best;
+  }
+
+  // ── Estado CLAIM: "¿Cuál eres?" listando los slots dummy ──
+  function renderClaim(regName){
+    var u = me();
+    var js = Array.isArray(match.jugadores) ? match.jugadores : [];
+    var dummies = [];
+    js.forEach(function(j, i){ if (j && !j.uid) dummies.push({ idx: i, nombre: j.nombre, equipo: j.equipo }); });
+    var best = bestDummyMatch(u && u.displayName, dummies);
+    $("eyebrow").textContent = "¿Cuál eres?";
+    $("state-box").innerHTML =
+      '<div class="cf-ask"><span class="hl">' + esc(regName) + '</span> registró este partido y te incluyó sin cuenta. Toca tu nombre para reclamar tu lugar y confirmarlo.</div>';
+    var buttons = dummies.map(function(d){
+      var isBest = (d.idx === best);
+      return {
+        label: firstName(d.nombre) + " · " + teamNames(match, d.equipo) + (isBest ? "  ⭐" : ""),
+        ghost: !isBest,
+        onClick: function(){ doClaim(d.idx); },
+      };
+    });
+    setActions(buttons);
+  }
+
+  function reloadMatch(){
+    return db().collection("matches").doc(matchId).get().then(function(snap){
+      if (snap.exists) match = Object.assign({ id: snap.id }, snap.data());
+    });
+  }
+
+  function doClaim(slot){
+    if (busy) return; busy = true; loadingBtn(true); $("err").textContent = "";
+    window.PuntazoMatchActions.claim(matchId, slot).then(function(){
+      return reloadMatch();
+    }).then(function(){
+      busy = false; renderState(); // ahora soy jugador → confirmar o "quedaste asociado"
+    }).catch(function(e){
+      busy = false; loadingBtn(false);
+      $("err").textContent = (e && e.message) ? e.message.replace("[MatchActions] ", "") : "No se pudo reclamar el lugar.";
+      // Recargar por si el slot lo tomó otro (doble-claim) y re-pintar opciones.
+      reloadMatch().then(function(){ renderState(); }).catch(function(){});
+    });
+  }
+
+  function doDecline(){
+    if (busy) return;
+    if (!window.confirm("¿Quitarte de este partido? Le avisaremos a quien lo registró.")) return;
+    busy = true; $("err").textContent = "";
+    window.PuntazoMatchActions.decline(matchId).then(function(){
+      busy = false;
+      $("eyebrow").textContent = "Listo";
+      $("state-box").innerHTML = '<div class="cf-big-emoji">👋</div><div class="cf-ask">Te quitamos de este partido.</div>';
+      setActions([{ label: "Ir al inicio", ghost: true, onClick: function(){ location.href = "/index.html"; } }]);
+    }).catch(function(e){
+      busy = false;
+      $("err").textContent = (e && e.message) ? e.message.replace("[MatchActions] ", "") : "No se pudo declinar.";
+    });
   }
 
   function doConfirm(){

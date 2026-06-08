@@ -199,7 +199,7 @@
     <div class="step" id="s-rivales">
       <div class="eyebrow">Paso 3</div>
       <div class="q">¿Contra quiénes?</div>
-      <div class="q-sub">Tus rivales. Al menos uno con cuenta para que confirme.</div>
+      <div class="q-sub">Tus rivales. Si no tienen cuenta, les mandas el link para que se unan y confirmen.</div>
       <input class="min-input" id="in-r1" type="text" placeholder="Rival 1" autocomplete="off" />
       <div class="acct-tag" id="tag-r1">✓ tiene cuenta de Puntazo</div>
       <input class="min-input" id="in-r2" type="text" placeholder="Rival 2" autocomplete="off" />
@@ -243,7 +243,7 @@
       <div class="center-msg">
         <div class="big-emoji">🎾</div>
         <h2>¡Registrado!</h2>
-        <p>Mándale el link a <span class="hl" id="ok-rival">tu rival</span> para que lo confirme. En cuanto acepte, cuenta para el ranking de los dos.</p>
+        <p>Manda el link a <span class="hl" id="ok-rival">tu rival</span> para que se una y lo confirme. En cuanto un rival con cuenta acepte, cuenta para el ranking de los dos.</p>
         <div class="share-box">
           <button class="min-cta" id="share-wa" type="button" style="background:linear-gradient(135deg,#25d366,#1da851);border-color:#25d366;box-shadow:0 0 30px rgba(37,211,102,0.35)">Enviar por WhatsApp</button>
           <button class="min-cta ghost" id="share-more" type="button" hidden>Compartir…</button>
@@ -366,13 +366,14 @@
     if (name === "compa") ok = !!st.compa.nombre;
     else if (name === "rivales") {
       ok = !!(st.r1.nombre || st.r2.nombre);
-      if (ok && rivalsAccts() === 0) { msg = "Tip: al menos un rival debe tener cuenta (aparece con ✓) para confirmar."; }
+      if (ok && rivalsAccts() === 0) { msg = "Sin cuenta: les llega el link para unirse y confirmar."; }
     }
     else if (name === "score") { updateScoreCta(); return true; }
     else if (name === "sum") {
+      // E3b: ya NO se exige rival con cuenta. Basta marcador con ganador + compañero.
       var w = deduceMatch();
-      ok = !!w.ganador && rivalsAccts() > 0 && st.compa.nombre;
-      if (w.ganador && rivalsAccts() === 0) msg = "Necesitas al menos un rival con cuenta de Puntazo para que confirme.";
+      ok = !!w.ganador && !!st.compa.nombre;
+      if (!w.ganador) msg = "Falta definir quién ganó.";
     }
     cta.disabled = !ok;
     $("err").textContent = msg;

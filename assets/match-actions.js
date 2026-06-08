@@ -9,7 +9,7 @@
    Se mantiene SEPARADO de matches.js (que es CRLF y enorme) para no
    ensuciarlo. Cargar DESPUÉS de matches.js + match-confirmation.js.
 
-   API: window.PuntazoMatchActions = { register, confirm, dispute }
+   API: window.PuntazoMatchActions = { register, confirm, dispute, claim, decline }
 ══════════════════════════════════════════════════════════════ */
 (function () {
   "use strict";
@@ -47,8 +47,10 @@
 
   // ── REGISTRAR un partido ya jugado (jornada B) → pending_confirmation ──
   // opts: { loc, can?, lado?, modo?, deporte?, jugadores[], marcador{sets,ganador}, groupId? }
-  // Reglas: el registrante DEBE figurar con su uid; debe haber ≥1 rival con uid
-  // (para que alguien pueda confirmar). Los demás pueden ser dummies (sin uid).
+  // Reglas (E3b · spec §1/§3): el registrante DEBE figurar con su uid y debe haber
+  // un marcador con ganador. El resto puede ser PUROS dummies (sin uid): el partido
+  // queda pending y el rival reclama+confirma luego vía link (match-actions.claim).
+  // Solo CUENTA para el ranking cuando un rival con cuenta confirma.
   async function register(opts) {
     const o = opts || {};
     const user = currentUser();
@@ -68,10 +70,8 @@
     const myTeam = mc.teamOf({ jugadores: jugadores }, user.uid);
     if (!myTeam) throw new Error("[MatchActions] Debes incluirte (con tu cuenta) como jugador para registrar el partido.");
     const t = mc.teamUids({ jugadores: jugadores });
-    const rivalUids = (myTeam === "team1") ? t.team2 : t.team1;
-    if (rivalUids.length === 0) {
-      throw new Error("[MatchActions] Agrega al menos un rival con cuenta de Puntazo para que pueda confirmar.");
-    }
+    // E3b: ya NO se exige rival con cuenta. Con puros dummies se registra igual;
+    // el rival reclamará su lugar por el link (claim) y entonces podrá confirmar.
 
     const nowMs = Date.now();
     const ref = db().collection(COL).doc();
@@ -143,5 +143,100 @@
     });
   }
 
-  window.PuntazoMatchActions = { register: register, confirm: confirm, dispute: dispute };
+  // ── Auto-amistad best-effort tras un claim (no rompe el claim si falla) ──
+  // Manda solicitud a cada uid distinto al mío que aún no sea amigo/pendiente.
+  async function autoFriend(otherUids) {
+    if (!window.PuntazoFriends || !Array.isArray(otherUids) || !otherUids.length) return;
+    await Promise.all(otherUids.map(function (uid) {
+      if (!uid) return Promise.resolve();
+      return window.PuntazoFriends.getFriendshipStatus(uid).then(function (status) {
+        // Solo si no hay ninguna relación previa (evita duplicar / re-pedir).
+        if (status === "none") {
+          return window.PuntazoFriends.sendFriendRequest(uid).catch(function () {});
+        }
+      }).catch(function () {});
+    }));
+  }
+
+  // ── CLAIM ("yo soy X") → un signedIn que NO es jugador reclama un slot dummy ──
+  // Transacción + revalidación adentro (carrera de doble-claim). Cumple isClaimAction:
+  // delta de playerUids == EXACTAMENTE mi uid; solo toca jugadores/playerUids/updatedAt/
+  // version; NO toca marcador/userId/status/ratingProcessed. Tras éxito: auto-amistad.
+  async function claim(matchId, slotIndex) {
+    const id = nonEmpty(matchId, "matchId");
+    const user = currentUser();
+    const mc = MC();
+    const slot = Number(slotIndex);
+    if (!Number.isInteger(slot) || slot < 0) throw new Error("[MatchActions] Lugar inválido.");
+    const ref = db().collection(COL).doc(id);
+
+    const otherUids = await db().runTransaction(async function (tx) {
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw new Error("[MatchActions] Partido no encontrado.");
+      const data = snap.data();
+      if (data.status !== mc.STATUS.PENDING) throw new Error("[MatchActions] Este partido ya no admite reclamos.");
+      const jugadores = Array.isArray(data.jugadores)
+        ? data.jugadores.map(function (j) { return Object.assign({}, j); })
+        : [];
+      const playerUids = Array.isArray(data.playerUids) ? data.playerUids.slice() : [];
+      if (playerUids.indexOf(user.uid) >= 0) throw new Error("[MatchActions] Ya figuras como jugador de este partido.");
+      if (slot >= jugadores.length || !jugadores[slot]) throw new Error("[MatchActions] Ese lugar no existe.");
+      if (jugadores[slot].uid) throw new Error("[MatchActions] Ese lugar ya fue reclamado por alguien más.");
+
+      jugadores[slot].uid = user.uid;          // el dummy ahora soy yo
+      playerUids.push(user.uid);               // delta == exactamente mi uid (isClaimAction)
+
+      tx.update(ref, {
+        jugadores: jugadores,
+        playerUids: playerUids,
+        updatedAt: FV().serverTimestamp(),
+        version: (Number(data.version) || 0) + 1,
+      });
+      return playerUids.filter(function (u) { return u && u !== user.uid; });
+    });
+
+    await autoFriend(otherUids); // best-effort, no revierte el claim
+    return { claimed: true, slot: slot };
+  }
+
+  // ── DECLINE ("no jugué") del COMPAÑERO → se remueve a sí mismo (slot vuelve dummy) ──
+  // Cumple isDeclineAction: delta de playerUids == quitar EXACTAMENTE mi uid; solo toca
+  // jugadores/playerUids/updatedAt/version. El RIVAL no usa esto: usa dispute (su slot
+  // queda; marca el partido en disputa). El REGISTRANTE no aplica (usa cancelar/borrar).
+  async function decline(matchId) {
+    const id = nonEmpty(matchId, "matchId");
+    const user = currentUser();
+    const mc = MC();
+    const ref = db().collection(COL).doc(id);
+    return db().runTransaction(async function (tx) {
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw new Error("[MatchActions] Partido no encontrado.");
+      const data = snap.data();
+      if (data.status !== mc.STATUS.PENDING) throw new Error("[MatchActions] Este partido ya no se puede declinar.");
+      if (data.userId === user.uid) throw new Error("[MatchActions] Quien registró el partido no puede declinar; cancélalo.");
+      const myTeam = mc.teamOf({ jugadores: data.jugadores }, user.uid);
+      if (!myTeam) throw new Error("[MatchActions] No figuras como jugador de este partido.");
+      const regTeam = mc.teamOf({ jugadores: data.jugadores }, data.userId);
+      if (regTeam && myTeam !== regTeam) {
+        throw new Error("[MatchActions] Eres del equipo rival: para no validarlo, dispútalo.");
+      }
+      const jugadores = (Array.isArray(data.jugadores) ? data.jugadores : []).map(function (j) {
+        if (j && j.uid === user.uid) { var c = Object.assign({}, j); delete c.uid; return c; } // vuelve a dummy
+        return j;
+      });
+      const playerUids = (Array.isArray(data.playerUids) ? data.playerUids : []).filter(function (u) { return u !== user.uid; });
+      tx.update(ref, {
+        jugadores: jugadores,
+        playerUids: playerUids,
+        updatedAt: FV().serverTimestamp(),
+        version: (Number(data.version) || 0) + 1,
+      });
+      return { declined: true };
+    });
+  }
+
+  window.PuntazoMatchActions = {
+    register: register, confirm: confirm, dispute: dispute,
+    claim: claim, decline: decline,
+  };
 })();
