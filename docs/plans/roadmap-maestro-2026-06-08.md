@@ -119,11 +119,23 @@ reclama el slot rival → confirma → verifica que clasificacion/perfil se muev
 partido pending con service account con autorización, pero el claim+confirm reales necesitan 2da cuenta en
 navegador — Admin SDK saltaría las reglas y no validaría nada.)
 
+## GATE E2E claiming — ✅ PARCIAL (8-jun, prueba real de Isaac)
+Maestro sembró match demo (autorizado) `a1Kg6PvIIMEZp8eosWMc` (pareja demo team1 aceptada + 2 dummies team2).
+Isaac, con su sola cuenta, **reclamó el slot de Luis (team2) — el claim FUNCIONA** (su uid quedó grabado,
+reglas vivas lo aceptaron, verificado en backend). Luego picó Disputar (para probar) → match `disputed`,
+ranking NO se movió (correcto). **La mecánica del wedge sirve.** Pero la UX lo confundió → 6 hallazgos
+reales (ver E3b.1). El path de CONFIRMAR (que mueve el ranking) aún no se validó E2E → re-test tras pulido,
+reseteando el match demo a pending.
+
 ## C. Worker activo
-- Workers #1 (E1), #2 (E5), #3 (E3a), #4 (E3b) ✅ cerrados; reglas claim/decline LIVE, loop de claiming en cliente.
-- **Siguiente fork de producto** (decisión de Isaac): (a) validar E2E el loop de claiming primero;
-  (b) **E3c** invitados persistentes (`users/{uid}/guests` ya con reglas de E3a → elegir invitado guardado al
-  registrar + batch-claim, habilita sugerencias/merge E4); (c) arrancar **E6** ligas (estructura+miembros).
+- Workers #1 (E1), #2 (E5), #3 (E3a), #4 (E3b) ✅ cerrados; reglas claim/decline LIVE, loop de claiming en
+  cliente, claim verificado E2E por Isaac.
+- **Worker #5 → E3b.1** (PULIDO del loop, feedback real de Isaac): (1) spinner en botón correcto +
+  deshabilitar botones; (2) marcar "(tú)" al viewer-jugador; (3) re-render tras claim sin reabrir link;
+  (4) marcador con ganador claro + mapeo equipo→games; (5) copy "Soy X"; (6) disputar/finales con salida.
+  Brief: `docs/workers/worker-E3b1-pulido-claiming-confirmar.md`.
+- Pendiente maestro: resetear match demo a pending para re-test del CONFIRM tras E3b.1 + limpiar/recompute al cierre.
+- Después (fork de producto): (b) **E3c** invitados persistentes; (c) **E6** ligas (estructura+miembros).
   Deudas vivas: E0b (JS web read-side), E2 (nav), privacy en vistas públicas, entry points, aviso-al-registrante.
 
 ---
