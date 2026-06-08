@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Tablero global · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/header.js"></script>
+
+<style>
+  html, body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cl-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 90px 16px 60px;
+  }
+  .cl-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-bottom: 14px;
+    padding: 8px 14px;
+    background: rgba(11, 124, 255, 0.10);
+    border: 1px solid rgba(11, 124, 255, 0.30);
+    border-radius: 999px;
+    color: #cfe2ff;
+    font-family: inherit; font-weight: 700; font-size: 0.86rem;
+    text-decoration: none;
+  }
+  .cl-back:hover { background: rgba(11, 124, 255, 0.20); }
+
+  .cl-head {
+    text-align: center;
+    margin-bottom: 22px;
+  }
+  .cl-head h1 {
+    font-size: 1.6rem; font-weight: 900; color: #fff;
+    margin: 0 0 6px; letter-spacing: -0.4px;
+  }
+  .cl-head p {
+    font-size: 0.88rem; color: rgba(234, 242, 255, 0.60);
+    margin: 0;
+  }
+
+  /* Lista de jugadores */
+  .cl-list {
+    display: flex; flex-direction: column;
+    gap: 8px;
+  }
+  .cl-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+  }
+  /* Resalta la fila del usuario actual */
+  .cl-row.is-me {
+    background: rgba(11, 124, 255, 0.16);
+    border-color: rgba(11, 124, 255, 0.55);
+    box-shadow: 0 0 0 1px rgba(11, 124, 255, 0.35), 0 8px 24px rgba(0, 79, 200, 0.20);
+  }
+  .cl-pos {
+    flex-shrink: 0;
+    width: 34px; text-align: center;
+    font-size: 1.0rem; font-weight: 900; color: rgba(234, 242, 255, 0.55);
+    font-variant-numeric: tabular-nums;
+  }
+  .cl-row.is-top1 .cl-pos { color: #ffd97a; }
+  .cl-row.is-top2 .cl-pos { color: #d8e2f0; }
+  .cl-row.is-top3 .cl-pos { color: #e2b07a; }
+  .cl-emoji {
+    flex-shrink: 0;
+    font-size: 1.5rem; line-height: 1;
+  }
+  .cl-info { flex: 1; min-width: 0; }
+  .cl-name {
+    font-size: 0.96rem; font-weight: 800; color: #fff;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .cl-row.is-me .cl-name::after {
+    content: " · tu";
+    color: #8fc0ff; font-weight: 800; font-size: 0.82rem;
+  }
+  .cl-meta {
+    font-size: 0.76rem; color: rgba(234, 242, 255, 0.55);
+    margin-top: 2px;
+  }
+  .cl-calib {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(255, 170, 60, 0.14);
+    border: 1px solid rgba(255, 170, 60, 0.34);
+    color: #ffd497;
+    font-size: 0.66rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.4px;
+    vertical-align: middle;
+  }
+  .cl-nivel {
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .cl-nivel-num {
+    font-size: 1.35rem; font-weight: 900; color: #cfe2ff;
+    line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .cl-row.is-me .cl-nivel-num { color: #fff; }
+  .cl-nivel-lbl {
+    font-size: 0.64rem; color: rgba(234, 242, 255, 0.45);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-top: 2px; font-weight: 700;
+  }
+
+  /* Estados */
+  .cl-state {
+    text-align: center;
+    padding: 54px 20px;
+    color: rgba(234, 242, 255, 0.70);
+  }
+  .cl-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .cl-state a {
+    color: #6fb2ff; text-decoration: none; font-weight: 800;
+  }
+  .cl-disclaimer {
+    margin-top: 22px;
+    padding: 12px 16px;
+    background: rgba(11, 124, 255, 0.06);
+    border: 1px solid rgba(11, 124, 255, 0.18);
+    border-radius: 14px;
+    font-size: 0.78rem; color: rgba(234, 242, 255, 0.65);
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="cl-wrap">
+  <a class="cl-back" href="/perfil.html">&larr; Mi perfil</a>
+
+  <div class="cl-head">
+    <h1>&#127942; Tablero global</h1>
+    <p>Ranking de jugadores por nivel (1.0&ndash;7.0)</p>
+  </div>
+
+  <div id="clLoading" class="cl-state">&#8987; Cargando el tablero&hellip;</div>
+
+  <div id="clList" class="cl-list" style="display:none"></div>
+
+  <div id="clLoginReq" class="cl-state" style="display:none">
+    <div class="icon">&#128274;</div>
+    <p>Necesitas <a href="#" id="clDoLogin">iniciar sesion</a> para ver el tablero global.</p>
+  </div>
+
+  <div id="clEmpty" class="cl-state" style="display:none">
+    <div class="icon">&#127934;</div>
+    <p><b>Aun no hay jugadores rankeados.</b><br>
+    Juega y confirma un partido para aparecer en el tablero.</p>
+  </div>
+
+  <div id="clError" class="cl-state" style="display:none">
+    <div class="icon">&#9888;&#65039;</div>
+    <p>No pudimos cargar el tablero. Intenta recargar la pagina.</p>
+  </div>
+
+  <div id="clDisclaimer" class="cl-disclaimer" style="display:none">
+    El nivel se calcula automaticamente con cada partido validado. Los jugadores
+    marcados como <b>calibrando</b> aun tienen pocos partidos: su nivel puede moverse bastante.
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  const $loading  = document.getElementById('clLoading');
+  const $list     = document.getElementById('clList');
+  const $loginReq = document.getElementById('clLoginReq');
+  const $empty    = document.getElementById('clEmpty');
+  const $error    = document.getElementById('clError');
+  const $doLogin  = document.getElementById('clDoLogin');
+  const $disc     = document.getElementById('clDisclaimer');
+
+  function show(which) {
+    $loading.style.display  = (which === 'loading') ? '' : 'none';
+    $list.style.display     = (which === 'list')    ? '' : 'none';
+    $loginReq.style.display = (which === 'login')   ? '' : 'none';
+    $empty.style.display    = (which === 'empty')   ? '' : 'none';
+    $error.style.display    = (which === 'error')   ? '' : 'none';
+    $disc.style.display     = (which === 'list')    ? '' : 'none';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c];
+    });
+  }
+
+  // Emoji de bucket consistente con assets/ranking.js (BUCKETS, escala 1.0-7.0).
+  // Inline para no acoplar el tablero al motor de ranking (esta pagina es solo lectura).
+  function bucketEmoji(nivel) {
+    const n = Number(nivel) || 0;
+    if (n >= 7.0) return '\u{1F451}'; // crown
+    if (n >= 6.0) return '⚡';    // zap
+    if (n >= 5.0) return '\u{1F525}'; // fire
+    if (n >= 4.0) return '\u{1F985}'; // eagle
+    if (n >= 3.0) return '\u{1F425}'; // baby chick
+    if (n >= 2.0) return '\u{1F423}'; // hatching chick
+    return '\u{1F331}';               // seedling
+  }
+
+  // Fallback de nombre: displayName -> "Jugador <uid corto>".
+  function nameFor(entry, uid) {
+    const dn = entry && typeof entry.displayName === 'string' ? entry.displayName.trim() : '';
+    if (dn) return dn;
+    return 'Jugador ' + String(uid || '').slice(0, 5);
+  }
+
+  function renderRows(entries, myUid) {
+    $list.innerHTML = '';
+    entries.forEach(function (e, i) {
+      const pos = i + 1;
+      const isMe = myUid && e.uid === myUid;
+      const wins = Number.isFinite(e.wins) ? e.wins : 0;
+      const losses = Number.isFinite(e.losses) ? e.losses : 0;
+      const nivel = Number.isFinite(e.nivel) ? e.nivel : 0;
+      const calibTag = e.isCalibrating ? '<span class="cl-calib">calibrando</span>' : '';
+
+      const row = document.createElement('div');
+      row.className = 'cl-row'
+        + (isMe ? ' is-me' : '')
+        + (pos === 1 ? ' is-top1' : pos === 2 ? ' is-top2' : pos === 3 ? ' is-top3' : '');
+      row.innerHTML =
+        '<div class="cl-pos">' + pos + '</div>' +
+        '<div class="cl-emoji">' + bucketEmoji(nivel) + '</div>' +
+        '<div class="cl-info">' +
+          '<div class="cl-name">' + escapeHtml(nameFor(e, e.uid)) + calibTag + '</div>' +
+          '<div class="cl-meta">' + wins + 'V &middot; ' + losses + 'D</div>' +
+        '</div>' +
+        '<div class="cl-nivel">' +
+          '<div class="cl-nivel-num">' + nivel.toFixed(2) + '</div>' +
+          '<div class="cl-nivel-lbl">Nivel</div>' +
+        '</div>';
+      $list.appendChild(row);
+    });
+    show('list');
+  }
+
+  async function loadBoard(user) {
+    show('loading');
+    const db = (window.PuntazoFirebase && window.PuntazoFirebase.db)
+      ? window.PuntazoFirebase.db() : null;
+    if (!db) { show('error'); return; }
+    try {
+      const snap = await db.collection('leaderboards')
+        .doc('global:padel')
+        .collection('entries')
+        .orderBy('nivel', 'desc')
+        .limit(100)
+        .get();
+      const entries = [];
+      snap.forEach(function (d) {
+        entries.push(Object.assign({ uid: d.id }, d.data()));
+      });
+      if (!entries.length) { show('empty'); return; }
+      renderRows(entries, user.uid);
+    } catch (e) {
+      console.error('[clasificacion] error cargando leaderboard', e);
+      if (e && e.code === 'failed-precondition') {
+        console.warn('[clasificacion] Firestore pide indice de campo unico. Sigue el link del error de arriba.');
+      }
+      show('error');
+    }
+  }
+
+  function onAuthReady() {
+    const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) { show('login'); return; }
+    loadBoard(user);
+  }
+
+  if ($doLogin) {
+    $doLogin.addEventListener('click', function (e) {
+      e.preventDefault();
+      try { window.PuntazoAuth.signIn(); } catch (_) {}
+    });
+  }
+
+  window.addEventListener('puntazo:auth-ready', onAuthReady);
+  window.addEventListener('puntazo:auth-changed', onAuthReady);
+  if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+    onAuthReady();
+  } else {
+    setTimeout(function () {
+      if ($loading.style.display !== 'none') onAuthReady();
+    }, 800);
+  }
+})();
+</script>
+</body>
+</html>

@@ -179,6 +179,53 @@
     flex-shrink: 0;
   }
 
+  /* E1: bloque destacado del nivel global del usuario (leaderboards/ratings). */
+  .pz-nivel-global {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 18px;
+    padding: 18px 20px;
+    border-radius: 18px;
+    background:
+      radial-gradient(600px 300px at 12% 0%, rgba(255,217,122,0.14), transparent 60%),
+      linear-gradient(135deg, rgba(11,124,255,0.16), rgba(0,79,200,0.08));
+    border: 1px solid rgba(255,217,122,0.30);
+    text-decoration: none;
+    color: #fff;
+    transition: transform .14s, border-color .14s;
+  }
+  .pz-nivel-global:hover { transform: translateY(-2px); border-color: rgba(255,217,122,0.55); }
+  .pz-nivel-global-emoji {
+    font-size: 2.4rem; flex-shrink: 0; line-height: 1;
+    filter: drop-shadow(0 0 12px rgba(255,217,122,0.40));
+  }
+  .pz-nivel-global-body { flex: 1; min-width: 0; }
+  .pz-nivel-global-lbl {
+    font-size: 0.74rem; font-weight: 800; color: rgba(234,242,255,0.62);
+    text-transform: uppercase; letter-spacing: 0.6px;
+  }
+  .pz-nivel-global-row { display: flex; align-items: baseline; gap: 10px; margin-top: 2px; }
+  .pz-nivel-global-num {
+    font-size: 2.1rem; font-weight: 900; color: #ffd97a; line-height: 1;
+    text-shadow: 0 0 16px rgba(255,217,122,0.40); font-variant-numeric: tabular-nums;
+  }
+  .pz-nivel-global-bucket { font-size: 0.92rem; font-weight: 800; color: #cfe2ff; }
+  .pz-nivel-global-sub { font-size: 0.78rem; color: rgba(234,242,255,0.60); margin-top: 4px; }
+  .pz-nivel-global-calib {
+    display: inline-block; margin-left: 6px;
+    padding: 1px 7px; border-radius: 999px;
+    background: rgba(255,170,60,0.14); border: 1px solid rgba(255,170,60,0.34);
+    color: #ffd497; font-size: 0.66rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.4px; vertical-align: middle;
+  }
+  .pz-nivel-global-arrow { font-size: 1.3rem; color: rgba(255,217,122,0.85); flex-shrink: 0; }
+  /* Variante fallback (sin nivel todavia): tono neutro, sin amarillo. */
+  .pz-nivel-global.is-empty {
+    background: linear-gradient(135deg, rgba(11,124,255,0.12), rgba(0,79,200,0.06));
+    border-color: rgba(11,124,255,0.28);
+  }
+  .pz-nivel-global.is-empty .pz-nivel-global-emoji { filter: drop-shadow(0 0 10px rgba(11,124,255,0.40)); }
+  .pz-nivel-global.is-empty .pz-nivel-global-arrow { color: rgba(11,124,255,0.85); }
+
   /* F87: grid de accesos sociales (grupos + amigos) */
   .pz-social-grid {
     display: grid;
@@ -489,6 +536,11 @@
         </div>
       </div>
 
+      <!-- E1: nivel global destacado. Lee ratings/{uid}.byContext["global:padel"]
+           (server-authoritative). Link al tablero global. JS rellena el contenido
+           y decide entre estado con-nivel / fallback sin partidos. -->
+      <a id="perfilNivelGlobal" class="pz-nivel-global" href="/clasificacion.html" style="display:none"></a>
+
       <!-- F85: link a "Mi nivel" (cliente-side ranking preview) -->
       <a href="/mi-nivel.html" class="pz-nivel-link">
         <span class="pz-nivel-emoji">🎯</span>
@@ -684,6 +736,7 @@
     }
     $perfilName.textContent = user.displayName || user.email || 'Mi perfil';
     updatePlayCta(user); // F122
+    loadGlobalNivel(user); // E1: nivel global destacado
     setupPendingCollapse(); // F135 Fix 1
     loadMyMatches(user);
     loadMyPendingPuntazos(user); // F82
@@ -764,6 +817,69 @@
         $sub.textContent = parts.length ? parts.join(' · ') : 'Continuar donde lo dejaste';
       }
     } catch (e) { /* silencioso: el default queda OK */ }
+  }
+
+  // ============================================================
+  // E1 — Nivel global del usuario (server-authoritative)
+  // Lee ratings/{uid}.byContext["global:padel"] (la Cloud Function lo
+  // escribe; cliente solo lee). Fallback elegante si aun no tiene nivel
+  // (doc o contexto ausente). El bloque entero linkea al tablero global.
+  // ============================================================
+  function bucketFromNivel(nivel) {
+    const n = Number(nivel) || 0;
+    if (n >= 7.0) return { emoji: '👑', name: 'Top' };
+    if (n >= 6.0) return { emoji: '⚡', name: 'Élite' };
+    if (n >= 5.0) return { emoji: '🔥', name: 'Competitivo' };
+    if (n >= 4.0) return { emoji: '🦅', name: 'Avanzado' };
+    if (n >= 3.0) return { emoji: '🐥', name: 'Intermedio' };
+    if (n >= 2.0) return { emoji: '🐣', name: 'Aprendiz' };
+    return { emoji: '🌱', name: 'Principiante' };
+  }
+
+  async function loadGlobalNivel(user) {
+    const $el = document.getElementById('perfilNivelGlobal');
+    if (!$el) return;
+    const db = (window.PuntazoFirebase && window.PuntazoFirebase.db) ? window.PuntazoFirebase.db() : null;
+
+    function renderFallback() {
+      $el.classList.add('is-empty');
+      $el.innerHTML =
+        '<span class="pz-nivel-global-emoji">🎾</span>' +
+        '<span class="pz-nivel-global-body">' +
+          '<span class="pz-nivel-global-lbl">Tu nivel global</span>' +
+          '<span class="pz-nivel-global-sub">Juega y confirma un partido para tener tu nivel. Mira el tablero global &rarr;</span>' +
+        '</span>' +
+        '<span class="pz-nivel-global-arrow">&rarr;</span>';
+      $el.style.display = 'flex';
+    }
+
+    if (!db) { renderFallback(); return; }
+    try {
+      const snap = await db.collection('ratings').doc(user.uid).get();
+      const data = snap.exists ? (snap.data() || {}) : {};
+      const g = data.byContext && data.byContext['global:padel'];
+      if (!g || typeof g.nivel !== 'number') { renderFallback(); return; }
+      const b = bucketFromNivel(g.nivel);
+      const wins = Number.isFinite(g.wins) ? g.wins : 0;
+      const losses = Number.isFinite(g.losses) ? g.losses : 0;
+      const calib = g.isCalibrating ? '<span class="pz-nivel-global-calib">calibrando</span>' : '';
+      $el.classList.remove('is-empty');
+      $el.innerHTML =
+        '<span class="pz-nivel-global-emoji">' + b.emoji + '</span>' +
+        '<span class="pz-nivel-global-body">' +
+          '<span class="pz-nivel-global-lbl">Tu nivel global</span>' +
+          '<span class="pz-nivel-global-row">' +
+            '<span class="pz-nivel-global-num">' + g.nivel.toFixed(2) + '</span>' +
+            '<span class="pz-nivel-global-bucket">' + escapeHTML(b.name) + ' ' + calib + '</span>' +
+          '</span>' +
+          '<span class="pz-nivel-global-sub">' + wins + 'V &middot; ' + losses + 'D &middot; ver tablero global &rarr;</span>' +
+        '</span>' +
+        '<span class="pz-nivel-global-arrow">&rarr;</span>';
+      $el.style.display = 'flex';
+    } catch (e) {
+      console.warn('[perfil nivel-global] no se pudo leer ratings', e);
+      renderFallback();
+    }
   }
 
   // ============================================================
