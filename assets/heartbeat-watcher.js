@@ -52,6 +52,44 @@
       .pz-hb-banner .body { flex: 1; min-width: 0; }
       .pz-hb-banner strong { display: block; color: #fff; font-weight: 900; font-size: 0.88rem; margin-bottom: 2px; }
       .pz-hb-banner .since { font-size: 0.72rem; opacity: 0.75; margin-top: 3px; display: block; }
+
+      /* F145: pill de estado positivo (siempre visible cuando hay señal). */
+      .pz-hb-pill {
+        display: none;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 11px;
+        border-radius: 999px;
+        font-family: inherit;
+        font-size: 0.74rem;
+        font-weight: 700;
+        line-height: 1;
+        border: 1px solid transparent;
+        width: fit-content;
+      }
+      .pz-hb-pill .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .pz-hb-pill.is-online {
+        display: inline-flex;
+        background: rgba(34, 197, 94, 0.12);
+        border-color: rgba(34, 197, 94, 0.40);
+        color: #9af2c0;
+      }
+      .pz-hb-pill.is-online .dot {
+        background: #22c55e;
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.85);
+        animation: pzHbPulse 1.8s infinite;
+      }
+      .pz-hb-pill.is-offline {
+        display: inline-flex;
+        background: rgba(255, 170, 60, 0.12);
+        border-color: rgba(255, 170, 60, 0.42);
+        color: #ffe3b8;
+      }
+      .pz-hb-pill.is-offline .dot { background: #ffaa3c; }
+      @keyframes pzHbPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
     `;
     document.head.appendChild(s);
   }
@@ -179,8 +217,73 @@
     return { destroy: destroy, evaluate: evaluate };
   }
 
+  // ── Status pill (positivo) ───────────────────────────────────────
+  // A diferencia de watch() (que solo avisa cuando hay avería), esta pill
+  // es SIEMPRE visible cuando hay señal: verde "en línea" si el heartbeat
+  // es fresco, ámbar "fuera de línea" si está stale. Si nunca hubo señal
+  // (doc inexistente o read denegado), no se muestra — no inventamos estado.
+  function statusPill(clubId, container, opts) {
+    if (!clubId || !container) return null;
+    opts = opts || {};
+    ensureStyles();
+
+    const pill = document.createElement("div");
+    pill.className = "pz-hb-pill";
+    pill.setAttribute("role", "status");
+    pill.innerHTML = '<span class="dot"></span><span class="txt"></span>';
+    container.appendChild(pill);
+    const $txt = pill.querySelector(".txt");
+
+    let lastSeenAtMs = 0;
+    let unsub = null;
+    let timer = null;
+
+    function render() {
+      if (!lastSeenAtMs) { pill.className = "pz-hb-pill"; return; } // unknown
+      const fresh = (Date.now() - lastSeenAtMs) <= STALE_THRESHOLD_MS;
+      pill.classList.toggle("is-online", fresh);
+      pill.classList.toggle("is-offline", !fresh);
+      $txt.textContent = fresh
+        ? (opts.onlineText || "Cámaras del club en línea")
+        : (opts.offlineText || "Cámaras del club fuera de línea");
+    }
+
+    function subscribe() {
+      const fb = window.PuntazoFirebase;
+      if (!fb || typeof fb.db !== "function") return;
+      const db = fb.db();
+      if (!db) return;
+      try {
+        unsub = db.collection("nuc_heartbeat").doc(clubId).onSnapshot(function (snap) {
+          if (!snap.exists) { lastSeenAtMs = 0; }
+          else {
+            const d = snap.data() || {};
+            lastSeenAtMs = tsToMillis(d.lastSeenAt) || tsToMillis(d.updatedAt) || 0;
+          }
+          render();
+        }, function (err) {
+          console.warn("[heartbeat-pill] read denied o falló:", err && err.code);
+        });
+      } catch (e) {
+        console.warn("[heartbeat-pill] subscribe falló:", e && e.message);
+      }
+    }
+
+    subscribe();
+    timer = setInterval(render, POLL_INTERVAL_MS); // refresca online→offline aunque no llegue snapshot
+
+    return {
+      destroy: function () {
+        if (timer) { clearInterval(timer); timer = null; }
+        if (typeof unsub === "function") { try { unsub(); } catch (_) {} unsub = null; }
+        try { pill.remove(); } catch (_) {}
+      },
+    };
+  }
+
   window.PuntazoHeartbeatWatcher = {
     watch: watch,
+    statusPill: statusPill,
     errorReasonText: errorReasonText,
     STALE_THRESHOLD_MS: STALE_THRESHOLD_MS,
   };

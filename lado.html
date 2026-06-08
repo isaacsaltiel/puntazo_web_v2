@@ -452,6 +452,11 @@ video.video-preview {
     <a href="#" id="btn-volver" class="btn-volver">← Regresar</a>
   </div>
 
+  <!-- F145: pill de estado positivo del club (verde "en línea" si el sistema
+       latió hace <5 min, ámbar si no). A diferencia del banner de avería,
+       este SÍ se ve cuando todo está bien. -->
+  <div id="pz-hb-pill-host" style="margin: 0 0 12px;"></div>
+
   <!-- Filtros de día (generados por script.js en #filtro-dia) -->
   <!-- Filtros de hora (generados por script.js en #filtro-horario) -->
   <div id="filtro-horario"></div>
@@ -1049,6 +1054,11 @@ video.video-preview {
       var hbHost = document.getElementById("pz-hb-host");
       if (hbHost && window.PuntazoHeartbeatWatcher) {
         window.PuntazoHeartbeatWatcher.watch(p.loc, hbHost);
+      }
+      // F145: pill de estado positivo (verde "en línea" / ámbar).
+      var hbPillHost = document.getElementById("pz-hb-pill-host");
+      if (hbPillHost && window.PuntazoHeartbeatWatcher && window.PuntazoHeartbeatWatcher.statusPill) {
+        window.PuntazoHeartbeatWatcher.statusPill(p.loc, hbPillHost);
       }
     } catch (_) {}
 
