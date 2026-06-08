@@ -261,6 +261,18 @@
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: background .4s, border-color .4s, box-shadow .4s;
+  }
+  /* Resaltado al llegar desde la notificación de "clip listo" */
+  .pz-pending-item.pz-pending-flash {
+    background: rgba(34, 197, 94, 0.16);
+    border-color: rgba(34, 197, 94, 0.6);
+    box-shadow: 0 0 0 1px rgba(34,197,94,0.4), 0 0 24px rgba(34,197,94,0.35);
+    animation: pzPendingPulse 1.2s ease-in-out 3;
+  }
+  @keyframes pzPendingPulse {
+    0%,100% { box-shadow: 0 0 0 1px rgba(34,197,94,0.4), 0 0 18px rgba(34,197,94,0.25); }
+    50%     { box-shadow: 0 0 0 1px rgba(34,197,94,0.7), 0 0 34px rgba(34,197,94,0.5); }
   }
   .pz-pending-state {
     flex-shrink: 0;
@@ -874,10 +886,30 @@
     if (which !== 'list') $pendingCount.style.display = 'none';
   }
 
+  // Al llegar desde la notificación de "clip listo" (?pulse=<id>): baja al puntazo
+  // y lo resalta unos segundos para que lo ubiques de inmediato.
+  let _pulseHighlighted = false;
+  function maybeHighlightPulse() {
+    if (_pulseHighlighted) return;
+    let id = '';
+    try { id = new URLSearchParams(location.search).get('pulse') || ''; } catch (_) {}
+    if (!id) return;
+    const el = document.getElementById('pulse-' + id);
+    if (!el) return;
+    _pulseHighlighted = true;
+    setPendingCollapseOpen(true);
+    setTimeout(function () {
+      try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) { el.scrollIntoView(); }
+      el.classList.add('pz-pending-flash');
+      setTimeout(function () { el.classList.remove('pz-pending-flash'); }, 8000);
+    }, 250);
+  }
+
   function renderPendingItem(doc, clubLabel) {
     const info = pendingStateInfo(doc);
     const item = document.createElement('div');
     item.className = 'pz-pending-item';
+    if (doc._id) { item.id = 'pulse-' + doc._id; item.dataset.pulseId = doc._id; }
     const createdDate = tsToDate(doc.created_at);
     const ago = createdDate ? (function () {
       const min = Math.floor((Date.now() - createdDate.getTime()) / 60000);
@@ -969,6 +1001,7 @@
           });
           showPendingState('list');
           setPendingCollapseOpen(true); // F135: hay pendientes → abrir bloque
+          maybeHighlightPulse();
           $pendingCount.textContent = docs.length === 1
             ? '1 en proceso'
             : (docs.length + ' en proceso');

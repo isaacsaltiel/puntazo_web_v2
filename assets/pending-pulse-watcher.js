@@ -41,22 +41,18 @@
   const suppressBanner = SUPPRESS_RE.test(path);
 
   const CHECK_INTERVAL_MS = 60 * 1000;
-  const LS_KEY_PREFIX = "pz.pendingPulse.readyCount.v1.";
+  const LS_KEY_PREFIX = "pz.pendingPulse.readyIds.v2."; // v2: ahora guardamos IDS, no un count
   const QUERY_LIMIT = 100;
   let timer = null;
   let lastShownAtMs = 0;
   const SHOW_COOLDOWN_MS = 30 * 1000; // no re-mostrar el banner antes de 30s tras dismiss.
 
   function storageKey(uid) { return LS_KEY_PREFIX + uid; }
-  function loadCount(uid) {
-    try {
-      const v = localStorage.getItem(storageKey(uid));
-      const n = parseInt(v, 10);
-      return Number.isFinite(n) ? n : null;
-    } catch (_) { return null; }
+  function loadReadyIds(uid) {
+    try { return JSON.parse(localStorage.getItem(storageKey(uid)) || "null"); } catch (_) { return null; }
   }
-  function saveCount(uid, n) {
-    try { localStorage.setItem(storageKey(uid), String(n)); } catch (_) {}
+  function saveReadyIds(uid, ids) {
+    try { localStorage.setItem(storageKey(uid), JSON.stringify(ids || [])); } catch (_) {}
   }
 
   function esc(s) {
@@ -118,7 +114,7 @@
     document.head.appendChild(s);
   }
 
-  function renderBanner(uid, newReadyCount, currentReadyCount) {
+  function renderBanner(uid, newIds, currentIds) {
     // Si match-expiration ya tiene un banner activo, esperamos para no
     // apilar dos (una sola notificación visible a la vez).
     if (document.getElementById("pz-mexp-bar")) return;
@@ -129,15 +125,20 @@
     const old = document.getElementById("pz-ppw-bar");
     if (old) old.remove();
 
+    const n = newIds.length;
     const bar = document.createElement("div");
     bar.id = "pz-ppw-bar";
     bar.className = "pz-ppw-bar";
-    const titleText = newReadyCount === 1
+    const titleText = n === 1
       ? "Tu puntazo ya está listo"
-      : `${newReadyCount} puntazos tuyos ya están listos`;
-    const metaText = newReadyCount === 1
-      ? "El clip que pediste ya se procesó. Velo en tu perfil."
+      : `${n} puntazos tuyos ya están listos`;
+    const metaText = n === 1
+      ? "El clip que pediste ya se procesó. Tócalo para verlo."
       : "Los clips que pediste ya se procesaron. Revísalos en tu perfil.";
+    // Un solo clip nuevo → aterriza en ESE puntazo (se resalta al llegar).
+    const href = (n === 1)
+      ? "/perfil.html?pulse=" + encodeURIComponent(newIds[0]) + "#mis-puntazos"
+      : "/perfil.html#mis-puntazos";
 
     bar.innerHTML =
       '<div class="pz-ppw-head">' +
@@ -149,15 +150,15 @@
         '<button class="pz-ppw-close" type="button" aria-label="Cerrar">×</button>' +
       '</div>' +
       '<div class="pz-ppw-actions">' +
-        '<a class="pz-ppw-btn is-primary" href="/perfil.html#mis-puntazos">Ver mis puntazos</a>' +
+        '<a class="pz-ppw-btn is-primary" href="' + href + '">' + (n === 1 ? "Ver mi puntazo" : "Ver mis puntazos") + '</a>' +
       '</div>';
 
     document.body.appendChild(bar);
 
     function dismiss() {
-      // Al cerrar/clickear: sincronizamos el snapshot al count actual,
-      // así no vuelve a aparecer hasta que SUBA otra vez.
-      saveCount(uid, currentReadyCount);
+      // Al cerrar/clickear: el snapshot pasa a TODOS los ready actuales,
+      // así no vuelve a aparecer hasta que llegue uno NUEVO.
+      saveReadyIds(uid, currentIds);
       lastShownAtMs = Date.now();
       bar.remove();
     }
@@ -182,37 +183,34 @@
         .limit(QUERY_LIMIT)
         .get();
 
-      let readyCount = 0;
+      const readyIds = [];
       snap.forEach(function (doc) {
         const d = doc.data() || {};
-        if (d.consumed_at && !d.error_reason) readyCount++;
+        if (d.consumed_at && !d.error_reason) readyIds.push(doc.id);
       });
 
-      const prev = loadCount(user.uid);
-      if (prev == null) {
+      const prev = loadReadyIds(user.uid);
+      if (prev == null || !Array.isArray(prev)) {
         // Primera visita registrada: solo guardamos baseline. No mostramos
-        // banner para no confundir al usuario con "tienes N listos" la
-        // primera vez (esos clips probablemente ya los vio).
-        saveCount(user.uid, readyCount);
+        // banner para no confundir con "tienes N listos" la primera vez.
+        saveReadyIds(user.uid, readyIds);
         return;
       }
-      if (readyCount > prev) {
-        const diff = readyCount - prev;
+      const prevSet = {};
+      prev.forEach(function (id) { prevSet[id] = 1; });
+      const newIds = readyIds.filter(function (id) { return !prevSet[id]; });
+      if (newIds.length) {
         if (suppressBanner) {
-          // En perfil/boton/recuperar no mostramos banner pero sí
-          // sincronizamos: el user ya vio los pulsos directamente ahí
-          // o está en flujo activo de pedir más.
-          saveCount(user.uid, readyCount);
+          // En perfil/boton/recuperar no mostramos banner pero sí sincronizamos.
+          saveReadyIds(user.uid, readyIds);
         } else {
-          renderBanner(user.uid, diff, readyCount);
-          // NOTA: NO actualizamos saveCount aquí; lo hacemos solo
-          // cuando el user dismisses/click. Eso garantiza que si
-          // recarga sin verlo, el banner vuelve a aparecer.
+          renderBanner(user.uid, newIds, readyIds);
+          // NOTA: NO guardamos aquí; solo en dismiss/click, para que si
+          // recarga sin verlo, el banner reaparezca.
         }
-      } else if (readyCount < prev) {
-        // El count bajó (probablemente porque pulsos viejos consumidos
-        // se filtraron del query por antigüedad o por purge). Re-sync.
-        saveCount(user.uid, readyCount);
+      } else if (readyIds.length < prev.length) {
+        // Algunos ready viejos se purgaron del query → resync.
+        saveReadyIds(user.uid, readyIds);
       }
     } catch (e) {
       // Silencioso: el watcher es best-effort, no crítico.
