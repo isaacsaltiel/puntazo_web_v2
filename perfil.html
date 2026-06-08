@@ -90,6 +90,12 @@
     font-size:0.80rem; font-weight:700; color:rgba(234,242,255,.55);
   }
 
+  /* F145 — fila de pills de estado del sistema por club */
+  .pz-club-status {
+    display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px;
+  }
+  .pz-club-status:empty { display:none; }
+
   /* F135 (Fix 1) — bloque desplegable para "Puntazos pendientes" */
   .pz-collapse { margin: 0 0 14px; }
   .pz-collapse-head {
@@ -530,6 +536,9 @@
         <h3>Mis partidos</h3>
         <span id="matchesCount" class="pz-section-count" style="display:none"></span>
       </div>
+
+      <!-- F145: estado del sistema de cámaras de tus clubs (verde "en línea"). -->
+      <div id="clubStatusHost" class="pz-club-status"></div>
 
       <div id="matchesLoading" class="pz-matches-loading">
         <div class="empty-icon">⏳</div>
@@ -1192,6 +1201,27 @@
     }
   }
 
+  // F145: una pill de estado del sistema por cada club donde el usuario
+  // tiene partidos. Verde "en línea" si el heartbeat es <5 min, ámbar si no.
+  // Cada club se renderiza una sola vez (guard) para no duplicar listeners.
+  const _clubStatusPills = {};
+  function renderClubStatus(locs, cfg) {
+    const host = document.getElementById('clubStatusHost');
+    if (!host || !window.PuntazoHeartbeatWatcher || !window.PuntazoHeartbeatWatcher.statusPill) return;
+    locs.forEach(function (loc) {
+      if (!loc || _clubStatusPills[loc]) return;
+      let name = loc;
+      try {
+        const r = resolveNamesSync(cfg, loc, null, null);
+        if (r && r.locNombre) name = r.locNombre;
+      } catch (_) {}
+      _clubStatusPills[loc] = window.PuntazoHeartbeatWatcher.statusPill(loc, host, {
+        onlineText: name + ' · sistema en línea',
+        offlineText: name + ' · sistema fuera de línea',
+      });
+    });
+  }
+
   function loadMyMatches(user) {
     if (_matchesUnsub) { try { _matchesUnsub(); } catch (_) {} _matchesUnsub = null; }
 
@@ -1272,6 +1302,12 @@
               const tb = (b.match.startedAt && b.match.startedAt.toDate) ? b.match.startedAt.toDate() : new Date(0);
               return tb - ta;
             });
+
+            // F145: pills de estado del sistema por cada club del usuario.
+            try {
+              const _locs = Array.from(new Set(allMatches.map(function (x) { return x.match && x.match.loc; }).filter(Boolean)));
+              renderClubStatus(_locs, cfg);
+            } catch (_) {}
 
             // F123-G: para cada match ended, calcular si NO cuenta para
             // ranking y por qué. Inline (no depende de ranking-client.js)

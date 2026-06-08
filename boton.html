@@ -335,6 +335,9 @@ html, body {
        lleva >5 min sin actualizar. Solo aparece cuando aplica. -->
   <div id="pz-hb-host" style="padding: 0 16px;"></div>
 
+  <!-- F145: pill de estado positivo del club (verde "en línea" / ámbar). -->
+  <div id="pz-hb-pill-host" style="display:flex; justify-content:center; padding: 4px 16px 0;"></div>
+
   <!-- Botón grande -->
   <div class="btn-center">
     <div class="btn-wrap">
@@ -709,6 +712,11 @@ html, body {
     var _hbHost = document.getElementById("pz-hb-host");
     if (_hbHost && window.PuntazoHeartbeatWatcher) {
       window.PuntazoHeartbeatWatcher.watch(LOC, _hbHost);
+    }
+    // F145: pill de estado positivo (verde "en línea" si latió <5 min).
+    var _hbPill = document.getElementById("pz-hb-pill-host");
+    if (_hbPill && window.PuntazoHeartbeatWatcher && window.PuntazoHeartbeatWatcher.statusPill) {
+      window.PuntazoHeartbeatWatcher.statusPill(LOC, _hbPill);
     }
   } catch (_) {}
 
