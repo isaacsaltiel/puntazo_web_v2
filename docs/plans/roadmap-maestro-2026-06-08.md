@@ -70,8 +70,17 @@ intercalar en paralelo.
 
 ---
 
+## Bitácora de etapas
+- **E1 ✅ (commit 90197df45)** — `clasificacion.html` (tablero global) + número global en `perfil.html`
+  + link desde `mi-nivel.html`. Validado con datos reales. OJO: replica thresholds nivel→emoji de
+  ranking.js inline (deuda menor). `tablero.html` ya existía (marcador en vivo) → por eso `clasificacion.html`.
+- **E0 (backend) ✅ (commit efb20b237)** — consolidado en git: `functions/`, `firestore.rules`,
+  `firebase.json`, `firestore.indexes.json`, `.firebaserc`, `tests/`, docs de spec/roadmap.
+  PENDIENTE E0b: revisar+commitear los JS web read-side (`matches.js` −108, `ranking.js` ±, `ranking-read.js`
+  untracked) — cambian el sitio en vivo, requieren validación en navegador. Deuda aislada, no urgente.
+
 ## C. Worker activo
-- **Worker #1 → E1**. Brief: `docs/workers/worker-E1-tablero-global-perfil.md`.
+- Worker #1 (E1) ✅ cerrado. Siguiente: ver recomendación del maestro (E5 head-to-head o E2 nav).
 
 ---
 
