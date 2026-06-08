@@ -255,8 +255,8 @@
       ".pz-notif-item:hover{background:rgba(255,255,255,.06);}" +
       ".pz-notif-ico{font-size:1.25rem;line-height:1.3;flex-shrink:0;}" +
       ".pz-notif-body{flex:1;min-width:0;}" +
-      ".pz-notif-title{color:#fff;font-size:.85rem;font-weight:800;line-height:1.3;}" +
-      ".pz-notif-sub{color:rgba(234,242,255,.62);font-size:.78rem;margin-top:2px;line-height:1.35;" +
+      ".pz-notif-title{display:block;color:#fff;font-size:.85rem;font-weight:800;line-height:1.3;}" +
+      ".pz-notif-sub{display:block;color:rgba(234,242,255,.62);font-size:.78rem;margin-top:3px;line-height:1.35;" +
       "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}" +
       ".pz-notif-accept{margin-top:7px;display:inline-block;border:1px solid rgba(11,124,255,.55);" +
       "background:rgba(11,124,255,.18);color:#eaf2ff;border-radius:8px;padding:5px 10px;font:inherit;" +
