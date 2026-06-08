@@ -151,11 +151,18 @@ del claim. (La limpieza también dejó el backend en cero: 0 partidos confirmado
 
 ## C. Worker activo / siguiente
 - Workers #1 (E1), #2 (E5), #3 (E3a), #4 (E3b), #5 (E3b.1) ✅ cerrados. Loop de claiming COMPLETO y validado E2E.
-- **Worker #6 → EN1 (Campana de notificaciones v1)** — Isaac la eligió tras topar el hueco: las solicitudes de
-  amistad no se notifican en ningún lado (solo dentro de amigos.html). Campana en el header que consolida
-  solicitudes de amistad + partidos por confirmar + clips listos, con badge sin-leer (localStorage). Cliente puro,
-  absorbe los banners flotantes (deja el verde "partido en curso"). Shape de notif estable para v2 (colección
-  server-side futura). Brief: `docs/workers/worker-EN1-campana-notificaciones.md`.
+- **EN1 ✅ (commit 3c7518f76 + hotfix 88ec0855a)** — campana de notificaciones v1 (`assets/notifications.js`):
+  consolida solicitudes de amistad + partidos por confirmar + clips listos, badge sin-leer en localStorage,
+  sobrevive al re-render del auth-slot, reúsa las queries de los vigías (mismo `uid_creator`+`consumed_at`/
+  `array-contains`), absorbe los banners flotantes (deja el verde "partido en curso"). Shape estable para v2.
+  **Validado en vivo por Isaac (escritorio+móvil):** campana+badge=2(→3 con un clip real)+panel+accionables
+  (aceptar amistad y confirmar partido) OK. Hotfix: título y subtítulo eran `<span>` en línea → se pegaban
+  ("confirmarPablo…") → `display:block`. DEUDA menor: la notif de clip va a `perfil.html?pulse=<id>#mis-puntazos`
+  pero NO resalta/scrollea al puntazo concreto (solo abre el perfil) — el deep-link de pulse en perfil.html no
+  enganchó; arreglar al tocar perfil. Datos de prueba sembrados (match DEMO_NOTIF + solicitud Juliette→Isaac) →
+  PENDIENTE limpiar.
+- **Siguiente:** EN2 (notifs server-side v2: colección `notifications/{uid}/items` + onSnapshot + push) o el fork
+  E3c (invitados persistentes) / E6 (ligas).
 - **Fork de producto pendiente (Isaac decide):** (b) **E3c** invitados persistentes (`users/{uid}/guests` ya
   con reglas E3a → elegir invitado guardado al registrar + sugerencias/merge E4); (c) **E6** ligas
   (estructura+miembros, reusa invite-link).
