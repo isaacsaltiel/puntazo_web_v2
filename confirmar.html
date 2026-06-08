@@ -225,6 +225,11 @@
     renderMatch(myTeam);
     var jc = justClaimed; justClaimed = null; // consumir el flag de "recién reclamé"
 
+    // Restaura un #ask limpio en cada render: las ramas pending escriben en $("ask"),
+    // pero renderClaim/terminales reemplazan #state-box y destruyen el #ask original.
+    // Sin esto, re-renderizar en sitio tras reclamar revienta ("set innerHTML of null").
+    $("state-box").innerHTML = '<div class="cf-ask" id="ask"></div>';
+
     // Estados terminales primero — todos con salida de navegación (fix #6).
     if (match.status === S.CONFIRMED) { renderConfirmed(false); return; }
     if (match.status === S.DISPUTED) {
