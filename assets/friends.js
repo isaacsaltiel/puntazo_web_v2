@@ -40,8 +40,13 @@
     if (targetUid === u.uid) throw new Error("No puedes agregarte a ti mismo");
     const fid = makeFriendshipId(u.uid, targetUid);
     const ref = D.collection("friendships").doc(fid);
-    const existing = await ref.get();
-    if (existing.exists) {
+    // OJO: get() sobre un friendship INEXISTENTE lo NIEGAN las reglas (el read rule
+    // referencia resource.data.uidA y resource es null → revienta → permission-denied).
+    // Por eso lo envolvemos: si falla/no existe, seguimos directo a crear la solicitud
+    // (el create tiene su propia regla que sí valida). Verificado en emulador.
+    let existing = null;
+    try { existing = await ref.get(); } catch (e) { existing = null; }
+    if (existing && existing.exists) {
       const data = existing.data();
       if (data.status === "accepted") throw new Error("Ya son amigos");
       if (data.status === "pending" && data.requesterUid === u.uid) throw new Error("Solicitud ya enviada");

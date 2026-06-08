@@ -127,16 +127,35 @@ ranking NO se movió (correcto). **La mecánica del wedge sirve.** Pero la UX lo
 reales (ver E3b.1). El path de CONFIRMAR (que mueve el ranking) aún no se validó E2E → re-test tras pulido,
 reseteando el match demo a pending.
 
-## C. Worker activo
-- Workers #1 (E1), #2 (E5), #3 (E3a), #4 (E3b) ✅ cerrados; reglas claim/decline LIVE, loop de claiming en
-  cliente, claim verificado E2E por Isaac.
-- **Worker #5 → E3b.1** (PULIDO del loop, feedback real de Isaac): (1) spinner en botón correcto +
-  deshabilitar botones; (2) marcar "(tú)" al viewer-jugador; (3) re-render tras claim sin reabrir link;
-  (4) marcador con ganador claro + mapeo equipo→games; (5) copy "Soy X"; (6) disputar/finales con salida.
-  Brief: `docs/workers/worker-E3b1-pulido-claiming-confirmar.md`.
-- Pendiente maestro: resetear match demo a pending para re-test del CONFIRM tras E3b.1 + limpiar/recompute al cierre.
-- Después (fork de producto): (b) **E3c** invitados persistentes; (c) **E6** ligas (estructura+miembros).
-  Deudas vivas: E0b (JS web read-side), E2 (nav), privacy en vistas públicas, entry points, aviso-al-registrante.
+## 🏁 GATE E2E claiming — ✅ COMPLETO (8-jun, prueba real de Isaac, pantalla pulida)
+Tras E3b.1 + hotfix, Isaac corrió el loop ENTERO con su sola cuenta contra infraestructura viva:
+**registrar-con-dummies → "¿Cuál eres?" → reclamar (Mateo, team2) → Confirmar → trigger → ranking se movió**
+(nivel 2.57→3.04, leaderboard actualizado, `processedMatches` idempotente). **El wedge de crecimiento está
+PROBADO end-to-end en producción.** Bug cazado y arreglado en vivo por el maestro (hotfix `8f3df2ba1`):
+renderClaim/terminales reemplazan `#state-box` y destruían `#ask`; el re-render en sitio tras claim reventaba
+con "innerHTML of null" → se restaura `#ask` al inicio de cada `renderState`.
+Limpieza post-prueba (autorizada): borrado match demo + club:DEMO_E2E + 2 pendientes de Isaac; recompute a la
+verdad (1 partido real vs Juliette) → ratings limpios (Isaac 2.57 W/L 0/1, Juliette 3.87 1/0), fantasmas fuera.
+DEUDA descubierta: `recomputeAllRatings` (callable prod) requiere índice compuesto `matches(status,endedAt)`
+que NO estaba en `firestore.indexes.json` (estaba vacío) — lo agregué al archivo; FALTA `firebase deploy
+--only firestore:indexes` para que el callable funcione en prod (el maestro lo corrió local saltando el orderBy).
+
+## 🔧 Fix amistades (8-jun) — "insufficient permissions" al agregar amigo por 1ª vez
+`sendFriendRequest` hacía `ref.get()` ANTES de crear; la regla de read de `friendships` referencia
+`resource.data.uidA`, y en un doc INEXISTENTE `resource` es null → la regla revienta → permission-denied
+en el `.get()` (antes de intentar el create, que SÍ está permitido). Reproducido + validado en emulador con
+reglas vivas (`functions/itest/friends-rules.js`, 5/5: get-inexistente DENIED, create SUCCEEDS, read/accept por
+participante OK, tercero DENIED). **Fix de CLIENTE** (cero deploy de reglas): envolver el `get()` en try/catch y,
+si falla/no existe, ir directo a crear. Commiteado. Desbloquea agregar amigos en `amigos.html` y la auto-amistad
+del claim. (La limpieza también dejó el backend en cero: 0 partidos confirmados, 0 ratings — todo era prueba.)
+
+## C. Worker activo / siguiente
+- Workers #1 (E1), #2 (E5), #3 (E3a), #4 (E3b), #5 (E3b.1) ✅ cerrados. Loop de claiming COMPLETO y validado E2E.
+- **Fork de producto pendiente (Isaac decide):** (b) **E3c** invitados persistentes (`users/{uid}/guests` ya
+  con reglas E3a → elegir invitado guardado al registrar + sugerencias/merge E4); (c) **E6** ligas
+  (estructura+miembros, reusa invite-link).
+  Deudas vivas: deploy índice `matches(status,endedAt)`; E0b (JS web read-side); E2 (nav); privacy en vistas
+  públicas; entry points; aviso-al-registrante cuando un compañero declina; edge logout-a-mitad en confirmar.html.
 
 ---
 
