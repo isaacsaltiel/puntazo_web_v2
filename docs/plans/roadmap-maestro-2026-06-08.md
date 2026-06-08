@@ -161,8 +161,14 @@ del claim. (La limpieza también dejó el backend en cero: 0 partidos confirmado
   pero NO resalta/scrollea al puntazo concreto (solo abre el perfil) — el deep-link de pulse en perfil.html no
   enganchó; arreglar al tocar perfil. Datos de prueba sembrados (match DEMO_NOTIF + solicitud Juliette→Isaac) →
   PENDIENTE limpiar.
-- **Siguiente:** EN2 (notifs server-side v2: colección `notifications/{uid}/items` + onSnapshot + push) o el fork
-  E3c (invitados persistentes) / E6 (ligas).
+- **Orden decidido por Isaac (8-jun): EN2 → E3c → E6.**
+- **Worker #7 → EN2a (notifs server-side, BACKEND)** — partido en 2 sub-etapas como E3 (por el incidente de reglas):
+  EN2a = 3 Cloud Functions que escriben `notifications/{uid}/items/{type__refId}` en cada evento (friendship,
+  match-confirm fan-out, pulse-ready) + bloque de reglas (owner read / owner marca leído / server-only write),
+  probadas en emulador, SIN desplegar (el maestro despliega reconciliado). Shape idéntico al de EN1 para que
+  EN2b solo cambie la fuente a `onSnapshot`. Brief: `docs/workers/worker-EN2a-notificaciones-backend.md`.
+- Después: EN2b (cliente onSnapshot + read/unread server) → E3c → E6. Deudas vivas: deploy índice
+  `matches(status,endedAt)`; deep-link de clip en perfil.html; E0b; E2 nav; privacy; aviso-al-registrante.
 - **Fork de producto pendiente (Isaac decide):** (b) **E3c** invitados persistentes (`users/{uid}/guests` ya
   con reglas E3a → elegir invitado guardado al registrar + sugerencias/merge E4); (c) **E6** ligas
   (estructura+miembros, reusa invite-link).
