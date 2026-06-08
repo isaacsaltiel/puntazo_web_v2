@@ -21,6 +21,26 @@
   .cf-teams .t1{ color:var(--team1-color); } .cf-teams .t2{ color:#dff06a; }
   .cf-vs{ color:var(--muted); font-size:0.8rem; font-weight:700; margin:0.2rem 0; }
   .cf-score{ font-size:2.2rem; font-weight:900; color:#fff; margin:0.9rem 0; letter-spacing:1px; font-variant-numeric:tabular-nums; }
+  /* E3b.1 · marcador mapeado a equipos */
+  .cf-win{ display:inline-flex; align-items:center; gap:6px; font-size:0.88rem; font-weight:800; color:#fff;
+    background:rgba(255,217,122,0.14); border:1px solid rgba(255,217,122,0.4); border-radius:999px;
+    padding:0.35rem 0.85rem; margin:0.1rem 0 0.9rem; }
+  .cf-win b{ color:#ffe6a8; }
+  .cf-grid{ display:flex; flex-direction:column; gap:6px; margin:0.1rem 0 0.2rem; }
+  .cf-grow{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:12px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); }
+  .cf-grow.is-mine{ background:rgba(11,124,255,0.16); border-color:var(--team1-color-border);
+    box-shadow:0 0 0 1px rgba(11,124,255,0.30); }
+  .cf-trophy{ flex-shrink:0; font-size:0.95rem; line-height:1; }
+  .cf-gname{ flex:1; min-width:0; text-align:left; font-weight:800; font-size:0.92rem; color:#fff;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cf-gname .you{ color:#8fc0ff; font-weight:800; font-size:0.8rem; margin-left:4px; }
+  .cf-gsets{ display:flex; gap:4px; flex-shrink:0; }
+  .cf-gset{ min-width:24px; height:30px; padding:0 4px; display:flex; align-items:center; justify-content:center;
+    font-size:1.05rem; font-weight:900; color:#fff; background:rgba(5,9,20,0.5); border-radius:8px;
+    font-variant-numeric:tabular-nums; }
+  .cf-grow.is-win .cf-gset{ color:#ffe6a8; }
+  .cf-noscore{ color:var(--muted); font-size:0.92rem; margin-top:0.3rem; }
   .cf-ask{ color:var(--muted); font-size:0.98rem; line-height:1.55; margin:0.4rem 0 0.2rem; }
   .cf-ask .hl{ color:#fff; font-weight:800; }
   .cf-big-emoji{ font-size:2.6rem; margin-bottom:0.6rem; }
@@ -84,6 +104,7 @@
   var matchId = new URLSearchParams(location.search).get("id");
   var match = null;       // doc del partido
   var busy = false;
+  var justClaimed = null; // {name, team} tras reclamar, para el mensaje "Listo, ahora eres…"
 
   function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
   function firstName(n){ return String(n||"").trim().split(/\s+/)[0] || n; }
@@ -96,15 +117,36 @@
     var ns = js.filter(function(j){ return j && j.equipo === team; }).map(function(j){ return firstName(j.nombre); }).filter(Boolean);
     return ns.length ? ns.join(" / ") : (team === "team1" ? "Equipo 1" : "Equipo 2");
   }
-  function scoreStr(m){
-    var sets = (m.marcador && Array.isArray(m.marcador.sets)) ? m.marcador.sets : [];
-    return sets.map(function(s){ return s.team1 + "-" + s.team2; }).join("  ") || "—";
-  }
 
-  function renderMatch(){
-    $("team1").textContent = teamNames(match, "team1");
-    $("team2").textContent = teamNames(match, "team2");
-    $("score").textContent = scoreStr(match);
+  // Marcador mapeado a equipos: banner de ganador + 2 renglones (games por set),
+  // resaltando el equipo del viewer y marcando su nombre con "(tú)". (fix #2/#4)
+  function renderMatch(viewerTeam){
+    var s = MC().summarizeScore(match);
+    var u = me();
+    var myUid = (u && viewerTeam) ? u.uid : null; // "(tú)" solo si hay sesión y es jugador
+    function rowHtml(row){
+      var cls = "cf-grow" + (row.isWinner ? " is-win" : "") + (viewerTeam && row.team === viewerTeam ? " is-mine" : "");
+      var names = row.players.map(function(p){
+        var nm = esc(firstName(p.nombre));
+        if (myUid && p.uid === myUid) nm += '<span class="you">(tú)</span>';
+        return nm;
+      }).join(" / ") || (row.team === "team1" ? "Equipo 1" : "Equipo 2");
+      var sets = s.hasScore
+        ? row.games.map(function(g){ return '<span class="cf-gset">' + (g == null ? "–" : g) + '</span>'; }).join("")
+        : "";
+      return '<div class="' + cls + '">' +
+        (row.isWinner ? '<span class="cf-trophy">🏆</span>' : '') +
+        '<span class="cf-gname">' + names + '</span>' +
+        '<span class="cf-gsets">' + sets + '</span></div>';
+    }
+    var banner = "";
+    if (s.winnerTeam) {
+      var wn = s.winnerNames.map(firstName).map(esc).join(" / ");
+      banner = '<div class="cf-win">🏆 Ganó ' + (wn ? '<b>' + wn + '</b>' : 'un equipo') + '</div>';
+    }
+    var grid = s.rows.map(rowHtml).join("");
+    $("match-box").innerHTML = banner + '<div class="cf-grid">' + grid + '</div>' +
+      (s.hasScore ? "" : '<div class="cf-noscore">Sin marcador detallado.</div>');
   }
 
   function setActions(buttons){
@@ -117,15 +159,28 @@
       btn.className = "cf-cta" + (b.ghost ? " ghost" : "");
       btn.type = "button";
       btn.innerHTML = '<span class="spin"></span><span>' + esc(b.label) + '</span>';
-      btn.addEventListener("click", b.onClick);
+      btn.addEventListener("click", function(ev){ b.onClick(ev); });
       a.appendChild(btn);
     });
   }
 
+  // Spinner en el PRIMER botón (pantallas de una sola acción: confirmar).
   function loadingBtn(on){
     var b = $("actions").querySelector(".cf-cta");
     if (!b) return;
     b.classList.toggle("loading", on); b.disabled = on;
+  }
+  // Spinner en un botón concreto + (des)habilitar TODOS (claim: evita doble-claim).
+  function setBtnLoading(btn, on){ if (btn) btn.classList.toggle("loading", on); }
+  function disableActions(on){
+    Array.prototype.forEach.call($("actions").querySelectorAll(".cf-cta"), function(b){ b.disabled = on; });
+  }
+  // Navegación de cierre reusable para todos los estados terminales (fix #6).
+  function navButtons(){
+    return [
+      { label: "Ver mi ranking →", onClick: function(){ location.href = "/mi-nivel.html"; } },
+      { label: "Ir al inicio", ghost: true, onClick: function(){ location.href = "/index.html"; } },
+    ];
   }
 
   // ── Estados de la pantalla ──
@@ -159,34 +214,33 @@
       '<div class="cf-ask">' + (justNow ? "¡Listo! Quedó confirmado." : "Este partido ya está confirmado.") +
       ' Cuenta para el ranking de los dos.</div>';
     var amPlayer = MC().teamOf(match, me() && me().uid);
-    setActions([
-      { label: "Ver mi ranking →", onClick: function () { location.href = "/mi-nivel.html"; } },
-      { label: "Ir al inicio", ghost: true, onClick: function () { location.href = "/index.html"; } },
-    ]);
+    setActions(navButtons());
     if (amPlayer) showWinnerLevel();
   }
 
   function renderState(){
-    renderMatch();
     var u = me();
     var S = MC().STATUS;
+    var myTeam = (u && match) ? MC().teamOf(match, u.uid) : null;
+    renderMatch(myTeam);
+    var jc = justClaimed; justClaimed = null; // consumir el flag de "recién reclamé"
 
-    // Estados terminales primero
+    // Estados terminales primero — todos con salida de navegación (fix #6).
     if (match.status === S.CONFIRMED) { renderConfirmed(false); return; }
     if (match.status === S.DISPUTED) {
       $("eyebrow").textContent = "En disputa";
-      $("state-box").innerHTML = '<div class="cf-big-emoji">⚖️</div><div class="cf-ask">Este resultado fue marcado como disputado. No cuenta para el ranking hasta resolverse.</div>';
-      setActions([]); return;
+      $("state-box").innerHTML = '<div class="cf-big-emoji">⚖️</div><div class="cf-ask">Marcamos este resultado como <span class="hl">disputado</span>. No cuenta para el ranking hasta que se resuelva.</div>';
+      setActions(navButtons()); return;
     }
     if (match.status === S.VOID || match.status === S.CANCELLED) {
       $("eyebrow").textContent = "No disponible";
       $("state-box").innerHTML = '<div class="cf-big-emoji">⌛</div><div class="cf-ask">Este registro caducó o fue cancelado.</div>';
-      setActions([]); return;
+      setActions(navButtons()); return;
     }
     if (MC().isExpired(match, Date.now())) {
       $("eyebrow").textContent = "Caducado";
       $("state-box").innerHTML = '<div class="cf-big-emoji">⌛</div><div class="cf-ask">El plazo de 7 días para confirmar este partido ya pasó.</div>';
-      setActions([]); return;
+      setActions(navButtons()); return;
     }
 
     // Pendiente de confirmación
@@ -196,16 +250,17 @@
     regName = reg ? firstName(reg.nombre) : "Tu rival";
 
     if (!u) {
+      $("eyebrow").textContent = "Confirmar partido";
       $("ask").innerHTML = '<span class="hl">' + esc(regName) + '</span> registró este partido y te pide confirmarlo.';
       setActions([{ label: "Iniciar sesión para confirmar", onClick: function(){ window.PuntazoAuth && window.PuntazoAuth.signIn && window.PuntazoAuth.signIn(); } }]);
       return;
     }
 
     // ¿Soy jugador? Si NO, y hay slots dummy → puedo RECLAMAR mi lugar.
-    var myTeam = MC().teamOf(match, u.uid);
     if (!myTeam) {
       var hasDummy = js.some(function(j){ return j && !j.uid; });
       if (hasDummy) { renderClaim(regName); return; }
+      $("eyebrow").textContent = "Confirmar partido";
       $("ask").textContent = "No figuras como jugador de este partido.";
       setActions([]); return;
     }
@@ -213,7 +268,10 @@
     var can = MC().canConfirm(match, u.uid);
     if (can.ok) {
       // Soy del equipo rival: confirmo o disputo ("no jugué" del rival = disputar).
-      $("ask").innerHTML = '<span class="hl">' + esc(regName) + '</span> dice que este fue el resultado. ¿Es correcto?';
+      $("eyebrow").textContent = jc ? "Reclamaste tu lugar" : "Confirmar partido";
+      $("ask").innerHTML = jc
+        ? 'Listo, ahora eres <span class="hl">' + esc(jc.name) + '</span> en este partido. ¿El resultado es correcto?'
+        : '<span class="hl">' + esc(regName) + '</span> dice que este fue el resultado. ¿Es correcto?';
       setActions([
         { label: "Sí, confirmar ✓", onClick: doConfirm },
         { label: "No es correcto — disputar", ghost: true, onClick: doDispute },
@@ -230,7 +288,9 @@
       // Compañero del registrante (entró por claim o lo agregaron directo): queda
       // asociado; no confirma. Puede declinar ("No jugué") y removerse.
       $("eyebrow").textContent = "Quedaste asociado";
-      $("state-box").innerHTML = '<div class="cf-big-emoji">🤝</div><div class="cf-ask">Quedaste asociado a este partido como compañero de <span class="hl">' + esc(regName) + '</span>. Falta que un <span class="hl">rival</span> lo confirme para que cuente.</div>';
+      $("state-box").innerHTML = '<div class="cf-big-emoji">🤝</div><div class="cf-ask">' +
+        (jc ? 'Listo, ahora eres <span class="hl">' + esc(jc.name) + '</span>. ' : '') +
+        'Quedaste asociado a este partido como compañero de <span class="hl">' + esc(regName) + '</span>. Falta que un <span class="hl">rival</span> lo confirme para que cuente.</div>';
       setActions([{ label: "No jugué — quitarme", ghost: true, onClick: doDecline }]);
     }
   }
@@ -267,15 +327,16 @@
     var dummies = [];
     js.forEach(function(j, i){ if (j && !j.uid) dummies.push({ idx: i, nombre: j.nombre, equipo: j.equipo }); });
     var best = bestDummyMatch(u && u.displayName, dummies);
-    $("eyebrow").textContent = "¿Cuál eres?";
+    $("eyebrow").textContent = "¿Cuál eres tú?";
     $("state-box").innerHTML =
-      '<div class="cf-ask"><span class="hl">' + esc(regName) + '</span> registró este partido y te incluyó sin cuenta. Toca tu nombre para reclamar tu lugar y confirmarlo.</div>';
+      '<div class="cf-ask"><span class="hl">' + esc(regName) + '</span> registró este partido y te incluyó sin cuenta. Dinos cuál de estos jugadores <span class="hl">eres tú</span> para reclamar tu lugar.</div>';
     var buttons = dummies.map(function(d){
       var isBest = (d.idx === best);
+      var compa = teamNames(match, d.equipo); // nombres del equipo de ese slot (para ubicarse)
       return {
-        label: firstName(d.nombre) + " · " + teamNames(match, d.equipo) + (isBest ? "  ⭐" : ""),
+        label: "Soy " + firstName(d.nombre) + " · " + compa + (isBest ? "  ⭐" : ""),
         ghost: !isBest,
-        onClick: function(){ doClaim(d.idx); },
+        onClick: function(ev){ doClaim(d.idx, ev); },
       };
     });
     setActions(buttons);
@@ -287,14 +348,22 @@
     });
   }
 
-  function doClaim(slot){
-    if (busy) return; busy = true; loadingBtn(true); $("err").textContent = "";
+  function doClaim(slot, ev){
+    if (busy) return; busy = true;
+    var clicked = ev && ev.currentTarget;
+    // Capturo nombre/equipo del slot ANTES de recargar, para el mensaje post-claim.
+    var js = Array.isArray(match.jugadores) ? match.jugadores : [];
+    var claimedName = (js[slot] && js[slot].nombre) || "";
+    var claimedTeam = (js[slot] && js[slot].equipo) || null;
+    disableActions(true); setBtnLoading(clicked, true); $("err").textContent = "";
     window.PuntazoMatchActions.claim(matchId, slot).then(function(){
       return reloadMatch();
     }).then(function(){
-      busy = false; renderState(); // ahora soy jugador → confirmar o "quedaste asociado"
+      busy = false;
+      justClaimed = { name: firstName(claimedName), team: claimedTeam };
+      renderState(); // ahora soy jugador → confirmar (rival) o "quedaste asociado" (compañero)
     }).catch(function(e){
-      busy = false; loadingBtn(false);
+      busy = false; setBtnLoading(clicked, false); disableActions(false);
       $("err").textContent = (e && e.message) ? e.message.replace("[MatchActions] ", "") : "No se pudo reclamar el lugar.";
       // Recargar por si el slot lo tomó otro (doble-claim) y re-pintar opciones.
       reloadMatch().then(function(){ renderState(); }).catch(function(){});

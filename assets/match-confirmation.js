@@ -150,6 +150,40 @@
     };
   }
 
+  // Resumen del marcador mapeado a equipos, para UI clara (E3b.1). PURA.
+  // Devuelve { winnerTeam, winnerNames, rows:[{team, players:[{nombre,uid}],
+  // games:[n|null,...], isWinner}], setCount, hasScore }. Degrada con gracia:
+  // sin sets → hasScore:false (games vacíos); sin ganador → winnerTeam:null;
+  // valor de un set ausente/no numérico → null en games (la vista pinta "–").
+  function summarizeScore(match) {
+    var m = match || {};
+    var marcador = m.marcador || {};
+    var sets = Array.isArray(marcador.sets) ? marcador.sets : [];
+    var winnerTeam = (marcador.ganador === "team1" || marcador.ganador === "team2")
+      ? marcador.ganador : null;
+    var js = Array.isArray(m.jugadores) ? m.jugadores : [];
+    function playersOf(team) {
+      return js.filter(function (j) { return j && j.equipo === team; })
+               .map(function (j) { return { nombre: j.nombre || "", uid: j.uid || null }; });
+    }
+    function gamesOf(team) {
+      return sets.map(function (s) {
+        var v = s && s[team];
+        return (typeof v === "number" && isFinite(v)) ? v : null;
+      });
+    }
+    var rows = ["team1", "team2"].map(function (t) {
+      return { team: t, players: playersOf(t), games: gamesOf(t), isWinner: winnerTeam === t };
+    });
+    return {
+      winnerTeam: winnerTeam,
+      winnerNames: winnerTeam ? playersOf(winnerTeam).map(function (p) { return p.nombre; }) : [],
+      rows: rows,
+      setCount: sets.length,
+      hasScore: sets.length > 0,
+    };
+  }
+
   // ¿Está vencido un pending? (para expiración; el server lo hace por scheduler,
   // pero el cliente lo usa para UI "expirado").
   function isExpired(match, nowMs) {
@@ -170,6 +204,7 @@
     computeConfirm: computeConfirm,
     canDispute: canDispute,
     computeDispute: computeDispute,
+    summarizeScore: summarizeScore,
     isExpired: isExpired,
   };
 
