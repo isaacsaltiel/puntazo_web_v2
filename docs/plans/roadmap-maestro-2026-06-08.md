@@ -172,8 +172,15 @@ del claim. (La limpieza también dejó el backend en cero: 0 partidos confirmado
   loops) + bloque de reglas top-level `notifications/{ownerUid}/items` (owner read / marca leído / server-only).
   Worker flageó schema duplicado: existía un bloque HUÉRFANO `users/{uid}/notifications` (nada lo usaba,
   confirmado por grep) → el maestro lo ELIMINÓ; canónico = top-level. Emulador reconfirmado por separado:
-  notifications-rules 13/13, friends-rules 5/5, rules-emu 22/22. PENDIENTE deploy maestro (functions + rules).
-- Después: EN2b (cliente onSnapshot + read/unread server) → E3c → E6. Deudas vivas: deploy índice
+  notifications-rules 13/13, friends-rules 5/5, rules-emu 22/22.
+  **DEPLOYADO LIVE (8-jun, OK Isaac):** `firebase deploy --only functions,firestore:rules` → 3 funciones creadas
+  + reglas liberadas, a la primera. SMOKE TEST en prod PASÓ: crear friendship pending → trigger escribió el notif
+  (title/read OK); borrar friendship → trigger borró el notif. El servidor ya escribe/limpia notifs en vivo.
+- **Worker #8 → EN2b (cliente en tiempo real)** — cambiar `assets/notifications.js` de agregación a `onSnapshot`
+  sobre `notifications/{uid}/items`; `read/readAt` del servidor reemplaza el localStorage; badge = no-leídos;
+  abrir panel marca leído (update read/readAt, permitido por reglas). Shape ya idéntico → solo cambia la fuente.
+  Brief: `docs/workers/worker-EN2b-campana-tiempo-real.md`.
+- Después: E3c → E6. Deudas vivas: deploy índice
   `matches(status,endedAt)`; deep-link de clip en perfil.html; E0b; E2 nav; privacy; aviso-al-registrante.
 - **Fork de producto pendiente (Isaac decide):** (b) **E3c** invitados persistentes (`users/{uid}/guests` ya
   con reglas E3a → elegir invitado guardado al registrar + sugerencias/merge E4); (c) **E6** ligas
