@@ -21,7 +21,11 @@ const admin = require("firebase-admin");
 
 const APPLY = process.argv.indexOf("--apply") >= 0;
 
-admin.initializeApp({ projectId: process.env.GCLOUD_PROJECT || "puntazo-clips" });
+// Credencial: service account si está disponible (operación admin local), con
+// fallback a ADC/projectId. Mismo patrón que los demás scripts admin del repo.
+let _cred = null;
+try { _cred = admin.credential.cert(require("C:/Users/Isaac/.puntazo-secrets/service_account.json")); } catch (_) {}
+admin.initializeApp(_cred ? { credential: _cred } : { projectId: process.env.GCLOUD_PROJECT || "puntazo-clips" });
 const db = admin.firestore();
 
 async function main() {
