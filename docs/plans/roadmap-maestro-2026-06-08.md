@@ -176,11 +176,17 @@ del claim. (La limpieza también dejó el backend en cero: 0 partidos confirmado
   **DEPLOYADO LIVE (8-jun, OK Isaac):** `firebase deploy --only functions,firestore:rules` → 3 funciones creadas
   + reglas liberadas, a la primera. SMOKE TEST en prod PASÓ: crear friendship pending → trigger escribió el notif
   (title/read OK); borrar friendship → trigger borró el notif. El servidor ya escribe/limpia notifs en vivo.
-- **Worker #8 → EN2b (cliente en tiempo real)** — cambiar `assets/notifications.js` de agregación a `onSnapshot`
-  sobre `notifications/{uid}/items`; `read/readAt` del servidor reemplaza el localStorage; badge = no-leídos;
-  abrir panel marca leído (update read/readAt, permitido por reglas). Shape ya idéntico → solo cambia la fuente.
-  Brief: `docs/workers/worker-EN2b-campana-tiempo-real.md`.
-- Después: E3c → E6. Deudas vivas: deploy índice
+- **EN2b ✅ (commit 5c432147c)** — `assets/notifications.js` migrado a `onSnapshot` sobre `notifications/{uid}/items`;
+  `read/readAt` del servidor reemplaza el localStorage; badge = no-leídos; abrir marca leído; listener idempotente
+  + desuscribe al desmontar/cerrar sesión; eliminado poll de 60s + las 3 fuentes de agregación. **VALIDADO EN VIVO
+  por Isaac:** sembré 1 solicitud + 1 partido → la campana subió a 2 SOLA sin recargar (tiempo real ✓), abrir bajó
+  a 0 (✓), persiste cross-device (✓). Demo limpiada (triggers borran notifs al borrar las fuentes).
+  **🎉 EN2 COMPLETO: notificaciones server-authoritative en tiempo real, LIVE.**
+- DEUDA EN2c (menor): jubilar los vigías redundantes (`match-confirm-watcher`/`pending-pulse-watcher`) — su banner ya
+  está suprimido pero siguen consultando Firestore cada 60s; retirarlos o que no consulten. + verificar que
+  `notifications/items orderBy(createdAt desc)` no pida índice compuesto (orderBy simple en subcolección, normalmente no).
+- **Worker #9 → E3c (invitados persistentes)** — siguiente en el orden de Isaac. Brief: `docs/workers/worker-E3c-invitados-persistentes.md`.
+- Después: E6 (ligas). Deudas vivas: deploy índice
   `matches(status,endedAt)`; deep-link de clip en perfil.html; E0b; E2 nav; privacy; aviso-al-registrante.
 - **Fork de producto pendiente (Isaac decide):** (b) **E3c** invitados persistentes (`users/{uid}/guests` ya
   con reglas E3a → elegir invitado guardado al registrar + sugerencias/merge E4); (c) **E6** ligas
