@@ -99,11 +99,13 @@
       <input type="text" id="gpName" placeholder="Nombre del grupo (ej: Los Martes del Resi)" maxlength="60" />
       <input type="text" id="gpDesc" placeholder="Descripción (opcional)" maxlength="280" />
       <select id="gpType">
-        <option value="friends">👤 Liga de amigos</option>
-        <option value="residencial">🏘️ Liga del residencial</option>
-        <option value="club">🎾 Liga del club</option>
-        <option value="liga">🏆 Liga formal</option>
+        <option value="friends">👤 Grupo de amigos</option>
+        <option value="residencial">🏘️ Grupo del residencial</option>
+        <option value="club">🎾 Grupo del club</option>
       </select>
+      <div style="font-size:.78rem;color:rgba(234,242,255,.55);margin-top:-4px">
+        ¿Buscas una competencia con tabla de posiciones? Crea una <a href="/ligas.html" style="color:#d7ef72;font-weight:800;text-decoration:none">liga &rarr;</a>
+      </div>
       <button id="gpCreateBtn" class="gp-create-btn" type="button">Crear grupo</button>
       <div id="gpMsg" class="gp-msg"></div>
     </div>
