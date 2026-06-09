@@ -62,6 +62,11 @@
   .cf-cta.loading .spin{ display:inline-block; }
   .cf-note{ color:var(--muted); font-size:0.86rem; line-height:1.5; margin-top:1.2rem; }
   .cf-err{ color:#ffb4a1; font-size:0.86rem; min-height:1.1em; margin-top:0.7rem; }
+  /* E4 · sugerencia retroactiva ("también apareces en N partidos más") */
+  .cf-retro{ margin-top:1.2rem; padding:1rem; border-radius:16px;
+    background:rgba(11,124,255,0.10); border:1px solid var(--team1-color-border); }
+  .cf-retro-msg{ color:#dbe9ff; font-size:0.95rem; line-height:1.5; margin-bottom:0.8rem; }
+  .cf-retro-msg .hl{ color:#fff; font-weight:800; } .cf-retro-msg b{ color:#8fc0ff; }
   [hidden]{ display:none !important; }
 </style>
 </head>
@@ -93,6 +98,7 @@
 <script src="/assets/auth.js"></script>
 <script src="/assets/identity.js"></script>
 <script src="/assets/friends.js"></script>
+<script src="/assets/guests.js"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/match-confirmation.js"></script>
 <script src="/assets/match-actions.js"></script>
@@ -356,10 +362,14 @@
   function doClaim(slot, ev){
     if (busy) return; busy = true;
     var clicked = ev && ev.currentTarget;
-    // Capturo nombre/equipo del slot ANTES de recargar, para el mensaje post-claim.
+    // Capturo nombre/equipo/guestId/ownerUid del slot ANTES de recargar: para el
+    // mensaje post-claim y para la sugerencia retroactiva E4 (otros partidos donde
+    // aparezco como este mismo invitado).
     var js = Array.isArray(match.jugadores) ? match.jugadores : [];
     var claimedName = (js[slot] && js[slot].nombre) || "";
     var claimedTeam = (js[slot] && js[slot].equipo) || null;
+    var claimedGuestId = (js[slot] && js[slot].guestId) || null;
+    var claimedOwnerUid = (js[slot] && js[slot].ownerUid) || match.userId || null;
     disableActions(true); setBtnLoading(clicked, true); $("err").textContent = "";
     window.PuntazoMatchActions.claim(matchId, slot).then(function(){
       return reloadMatch();
@@ -367,12 +377,100 @@
       busy = false;
       justClaimed = { name: firstName(claimedName), team: claimedTeam };
       renderState(); // ahora soy jugador → confirmar (rival) o "quedaste asociado" (compañero)
+      // E4: sugerir los OTROS partidos del mismo dueño donde figuro como este guest.
+      // Best-effort, se monta sobre el render normal; si falla, no rompe nada.
+      maybeSuggestRetro(claimedGuestId, claimedOwnerUid, firstName(claimedName));
     }).catch(function(e){
       busy = false; setBtnLoading(clicked, false); disableActions(false);
       $("err").textContent = (e && e.message) ? e.message.replace("[MatchActions] ", "") : "No se pudo reclamar el lugar.";
       // Recargar por si el slot lo tomó otro (doble-claim) y re-pintar opciones.
       reloadMatch().then(function(){ renderState(); }).catch(function(){});
     });
+  }
+
+  // ── E4 · Sugerencia retroactiva tras reclamar ──
+  // Busca otros pending del MISMO dueño (matches read es público) con un slot del
+  // mismo guestId (o alias) SIN uid, donde yo aún no figuro. Devuelve [{matchId,slotIndex,nombre}].
+  function findClaimableTwins(guestIds, ownerUid){
+    var u = me();
+    if (!u || !ownerUid || !guestIds || !guestIds.length) return Promise.resolve([]);
+    var gset = {}; guestIds.forEach(function(g){ if (g) gset[g] = true; });
+    return db().collection("matches").where("userId","==",ownerUid).limit(100).get().then(function(snap){
+      var out = [];
+      snap.forEach(function(d){
+        if (d.id === matchId) return;                      // excluye el recién reclamado
+        var m = d.data() || {};
+        if (m.status !== MC().STATUS.PENDING) return;       // solo pendientes
+        if (MC().isExpired(m, Date.now())) return;          // no vencidos
+        var pu = Array.isArray(m.playerUids) ? m.playerUids : [];
+        if (pu.indexOf(u.uid) >= 0) return;                 // yo ya figuro
+        var mjs = Array.isArray(m.jugadores) ? m.jugadores : [];
+        for (var i = 0; i < mjs.length; i++){
+          var j = mjs[i];
+          if (j && !j.uid && j.guestId && gset[j.guestId]) { out.push({ matchId: d.id, slotIndex: i, nombre: j.nombre || "" }); break; }
+        }
+      });
+      return out;
+    });
+  }
+
+  // Expande el guestId a sus alias (best-effort; en este flujo el claimer NO es el
+  // dueño del guest, así que aliasGuestIds degrada a [guestId] — el match por
+  // guestId exacto cubre el caso headline: dos partidos con el MISMO invitado).
+  function maybeSuggestRetro(guestId, ownerUid, displayName){
+    if (!guestId || !ownerUid) return;            // sin guestId no hay sugerencia
+    var u = me(); if (!u) return;
+    var aliasP = (window.PuntazoGuests && window.PuntazoGuests.aliasGuestIds)
+      ? window.PuntazoGuests.aliasGuestIds(guestId).catch(function(){ return [guestId]; })
+      : Promise.resolve([guestId]);
+    aliasP.then(function(ids){
+      if (!ids || !ids.length) ids = [guestId];
+      return findClaimableTwins(ids, ownerUid);
+    }).then(function(twins){
+      if (twins && twins.length) renderRetroSuggestion(twins, displayName);
+    }).catch(function(){ /* degrada en silencio: el claim normal ya quedó */ });
+  }
+
+  function renderRetroSuggestion(twins, displayName){
+    var n = twins.length;
+    var box = document.createElement("div");
+    box.className = "cf-retro";
+    box.innerHTML = '<div class="cf-retro-msg">También apareces como <span class="hl">' +
+      esc(firstName(displayName) || "ese invitado") + '</span> en <b>' + n + '</b> partido' +
+      (n === 1 ? '' : 's') + ' más.</div>';
+    var act = document.createElement("div");
+    act.className = "cf-actions";
+    var claimBtn = document.createElement("button");
+    claimBtn.className = "cf-cta"; claimBtn.type = "button";
+    claimBtn.innerHTML = '<span class="spin"></span><span>Reclamar ' + (n === 1 ? 'ese partido' : 'los ' + n) + '</span>';
+    claimBtn.addEventListener("click", function(){ doClaimAll(twins, box); });
+    var noBtn = document.createElement("button");
+    noBtn.className = "cf-cta ghost"; noBtn.type = "button";
+    noBtn.innerHTML = '<span class="spin"></span><span>Ahora no</span>';
+    noBtn.addEventListener("click", function(){ box.parentNode && box.parentNode.removeChild(box); });
+    act.appendChild(claimBtn); act.appendChild(noBtn);
+    box.appendChild(act);
+    $("state-box").appendChild(box);
+  }
+
+  // Reclama en serie cada partido gemelo (reusa match-actions.claim → cumple
+  // isClaimAction y auto-amistad). Best-effort: un fallo no aborta los demás.
+  function doClaimAll(twins, box){
+    if (busy) return; busy = true;
+    Array.prototype.forEach.call(box.querySelectorAll("button"), function(b){ b.disabled = true; });
+    var primary = box.querySelector(".cf-cta"); setBtnLoading(primary, true);
+    var done = 0, idx = 0;
+    (function next(){
+      if (idx >= twins.length){
+        busy = false;
+        box.innerHTML = '<div class="cf-retro-msg">✅ Reclamaste <b>' + done + '</b> de ' + twins.length +
+          ' partido' + (twins.length === 1 ? '' : 's') + '.</div>';
+        return;
+      }
+      var t = twins[idx++];
+      window.PuntazoMatchActions.claim(t.matchId, t.slotIndex)
+        .then(function(){ done++; }).catch(function(){}).then(next);
+    })();
   }
 
   function doDecline(){

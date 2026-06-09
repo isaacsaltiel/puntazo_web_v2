@@ -71,6 +71,14 @@
   .am-btn-remove { background:transparent; color:rgba(234,242,255,.45); border-color:rgba(255,255,255,.10); }
   .am-btn-remove:hover { color:#ffb1a3; border-color:rgba(255,80,80,.35); }
 
+  .am-merge-sel {
+    max-width:140px; padding:6px 8px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.18); background:rgba(0,0,0,.40);
+    color:#fff; font-family:inherit; font-weight:700; font-size:.74rem;
+  }
+  .am-btn-merge { background:rgba(255,204,102,.16); color:#ffd98a; border-color:rgba(255,204,102,.36); }
+  .am-btn-merge:hover { background:rgba(255,204,102,.28); }
+
   .am-empty, .am-loading, .am-loginreq, .am-msg {
     text-align:center; padding:20px;
     color:rgba(234,242,255,.60);
@@ -177,8 +185,11 @@
   // E3c: invitados persistentes del dueño (users/{uid}/guests). Listar +
   // renombrar (prompt) + borrar (confirm). Best-effort: si la API no está o
   // falla, la sección queda vacía sin romper la página de amigos.
+  let _guests = []; // E4: último roster de invitados, para construir el <select> de fusión
+
   function renderGuests(guests) {
     const list = Array.isArray(guests) ? guests : [];
+    _guests = list;
     $guestsCount.textContent = list.length;
     if (!list.length) {
       $guests.innerHTML = '';
@@ -186,6 +197,7 @@
       return;
     }
     $guestsEmpty.style.display = 'none';
+    const canMerge = list.length >= 2; // fusionar requiere ≥2 invitados
     $guests.innerHTML = list.map(function (g) {
       const nm = g.name || '';
       const initial = nm ? nm.charAt(0).toUpperCase() : '?';
@@ -196,6 +208,7 @@
           '<div class="am-item-handle">invitado</div>' +
         '</div>' +
         '<div class="am-item-actions">' +
+          (canMerge ? '<button class="am-btn-mini am-btn-merge" data-action="guest-merge" data-gid="' + escapeHtml(g.guestId) + '" data-name="' + escapeHtml(nm) + '">Fusionar</button>' : '') +
           '<button class="am-btn-mini am-btn-remove" data-action="guest-rename" data-gid="' + escapeHtml(g.guestId) + '" data-name="' + escapeHtml(nm) + '">Renombrar</button>' +
           '<button class="am-btn-mini am-btn-reject" data-action="guest-del" data-gid="' + escapeHtml(g.guestId) + '">Borrar</button>' +
         '</div>' +
@@ -294,6 +307,33 @@
         if (!confirm('¿Borrar este invitado? No afecta partidos ya registrados.')) { btn.disabled = false; return; }
         await window.PuntazoGuests.deleteGuest(btn.dataset.gid);
         refreshGuests(); btn.disabled = false; return;
+      } else if (action === 'guest-merge') {
+        // E4: abre un <select> inline con los OTROS invitados como destino canónico.
+        const fromGid = btn.dataset.gid;
+        const fromName = btn.dataset.name || '';
+        const others = _guests.filter(function (g) { return g.guestId !== fromGid; });
+        if (!others.length) { alert('Necesitas al menos otro invitado para fusionar.'); btn.disabled = false; return; }
+        const actions = btn.closest('.am-item-actions');
+        const opts = others.map(function (g) {
+          return '<option value="' + escapeHtml(g.guestId) + '">' + escapeHtml(g.name || '') + '</option>';
+        }).join('');
+        actions.innerHTML =
+          '<select class="am-merge-sel">' + opts + '</select>' +
+          '<button class="am-btn-mini am-btn-merge" data-action="guest-merge-do" data-gid="' + escapeHtml(fromGid) + '" data-name="' + escapeHtml(fromName) + '">Es el mismo</button>' +
+          '<button class="am-btn-mini am-btn-remove" data-action="guest-merge-cancel">Cancelar</button>';
+        return;
+      } else if (action === 'guest-merge-cancel') {
+        refreshGuests(); return;
+      } else if (action === 'guest-merge-do') {
+        const fromGid = btn.dataset.gid;
+        const fromName = btn.dataset.name || '';
+        const sel = btn.closest('.am-item-actions').querySelector('.am-merge-sel');
+        const intoGid = sel && sel.value;
+        const intoName = (sel && sel.options[sel.selectedIndex]) ? sel.options[sel.selectedIndex].text : '';
+        if (!intoGid) { btn.disabled = false; return; }
+        if (!confirm("Vas a fusionar '" + fromName + "' en '" + intoName + "'. Los partidos viejos de '" + fromName + "' seguirán como están; los nuevos usarán '" + intoName + "'.")) { btn.disabled = false; return; }
+        await window.PuntazoGuests.mergeGuests(fromGid, intoGid);
+        refreshGuests(); return;
       } else if (action === 'add') {
         const uid = btn.dataset.uid;
         const st = await window.PuntazoFriends.getFriendshipStatus(uid);
