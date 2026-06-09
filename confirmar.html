@@ -67,6 +67,13 @@
     background:rgba(11,124,255,0.10); border:1px solid var(--team1-color-border); }
   .cf-retro-msg{ color:#dbe9ff; font-size:0.95rem; line-height:1.5; margin-bottom:0.8rem; }
   .cf-retro-msg .hl{ color:#fff; font-weight:800; } .cf-retro-msg b{ color:#8fc0ff; }
+  /* E4.1 · detalle de cada partido gemelo (para reconocer que sí eras tú) */
+  .cf-twin{ text-align:left; padding:0.6rem 0.7rem; border-radius:12px; margin-bottom:0.5rem;
+    background:rgba(5,9,20,0.45); border:1px solid rgba(255,255,255,0.08); }
+  .cf-twin-ctx{ color:#fff; font-size:0.88rem; font-weight:700; line-height:1.35; }
+  .cf-twin-ctx .lbl{ color:var(--muted); font-weight:700; }
+  .cf-twin-meta{ color:var(--muted); font-size:0.8rem; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .cf-twin-meta .sc{ color:#dff06a; font-weight:800; }
   [hidden]{ display:none !important; }
 </style>
 </head>
@@ -407,7 +414,22 @@
         var mjs = Array.isArray(m.jugadores) ? m.jugadores : [];
         for (var i = 0; i < mjs.length; i++){
           var j = mjs[i];
-          if (j && !j.uid && j.guestId && gset[j.guestId]) { out.push({ matchId: d.id, slotIndex: i, nombre: j.nombre || "" }); break; }
+          if (j && !j.uid && j.guestId && gset[j.guestId]) {
+            // E4.1: detalle para reconocer el partido (compañeros / rivales / marcador / fecha)
+            var gTeam = j.equipo, compas = [], rivales = [];
+            mjs.forEach(function(p, pi){
+              if (pi === i || !p) return;
+              var nm = firstName(p.nombre); if (!nm) return;
+              if (p.equipo === gTeam) compas.push(nm); else rivales.push(nm);
+            });
+            var sets = (m.marcador && Array.isArray(m.marcador.sets)) ? m.marcador.sets : [];
+            var score = sets.map(function(s){ return (s && s.team1 != null ? s.team1 : "–") + "-" + (s && s.team2 != null ? s.team2 : "–"); }).join(" ");
+            var dt = m.endedAt || m.createdAt;
+            var dms = dt && dt.toMillis ? dt.toMillis() : (dt && dt.seconds ? dt.seconds * 1000 : 0);
+            out.push({ matchId: d.id, slotIndex: i, nombre: j.nombre || "",
+                       compas: compas, rivales: rivales, score: score, dateMs: dms });
+            break;
+          }
         }
       });
       return out;
@@ -431,13 +453,35 @@
     }).catch(function(){ /* degrada en silencio: el claim normal ya quedó */ });
   }
 
+  // Fecha relativa corta ("hoy", "ayer", "hace N días", o fecha) para ubicar el partido.
+  function fmtWhen(ms){
+    if (!ms) return "";
+    var days = Math.floor((Date.now() - ms) / 86400000);
+    if (days <= 0) return "hoy";
+    if (days === 1) return "ayer";
+    if (days < 7) return "hace " + days + " días";
+    try { return new Date(ms).toLocaleDateString("es-MX", { day: "numeric", month: "short" }); }
+    catch (_) { return "hace " + days + " días"; }
+  }
+
   function renderRetroSuggestion(twins, displayName){
     var n = twins.length;
     var box = document.createElement("div");
     box.className = "cf-retro";
-    box.innerHTML = '<div class="cf-retro-msg">También apareces como <span class="hl">' +
-      esc(firstName(displayName) || "ese invitado") + '</span> en <b>' + n + '</b> partido' +
-      (n === 1 ? '' : 's') + ' más.</div>';
+    var who = esc(firstName(displayName) || "ese invitado");
+    var head = '<div class="cf-retro-msg">También apareces como <span class="hl">' + who +
+      '</span> en <b>' + n + '</b> partido' + (n === 1 ? '' : 's') +
+      ' más. Revisa que sí eras tú:</div>';
+    var list = twins.map(function(t){
+      var vs = (t.rivales && t.rivales.length) ? esc(t.rivales.join(", ")) : "¿?";
+      var con = (t.compas && t.compas.length) ? '<span class="lbl">con</span> ' + esc(t.compas.join(", ")) + ' · ' : "";
+      var meta = (t.score ? '<span class="sc">' + esc(t.score) + '</span>' : "") +
+                 (t.dateMs ? (t.score ? " · " : "") + esc(fmtWhen(t.dateMs)) : "");
+      return '<div class="cf-twin"><div class="cf-twin-ctx">' + con +
+        '<span class="lbl">vs</span> ' + vs + '</div>' +
+        (meta ? '<div class="cf-twin-meta">' + meta + '</div>' : '') + '</div>';
+    }).join("");
+    box.innerHTML = head + list;
     var act = document.createElement("div");
     act.className = "cf-actions";
     var claimBtn = document.createElement("button");
