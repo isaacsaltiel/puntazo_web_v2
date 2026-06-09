@@ -185,8 +185,18 @@ del claim. (La limpieza también dejó el backend en cero: 0 partidos confirmado
 - DEUDA EN2c (menor): jubilar los vigías redundantes (`match-confirm-watcher`/`pending-pulse-watcher`) — su banner ya
   está suprimido pero siguen consultando Firestore cada 60s; retirarlos o que no consulten. + verificar que
   `notifications/items orderBy(createdAt desc)` no pida índice compuesto (orderBy simple en subcolección, normalmente no).
-- **Worker #9 → E3c (invitados persistentes)** — siguiente en el orden de Isaac. Brief: `docs/workers/worker-E3c-invitados-persistentes.md`.
-- Después: E6 (ligas). Deudas vivas: deploy índice
+- **E3c ✅ (commit 390df439c)** — invitados persistentes: `assets/guests.js` (`PuntazoGuests` list/ensure/rename/delete,
+  dedup por searchName reusando `identity.normalizeName`), `sanitizeJugadores` extendido (preserva `guestId/ownerUid`
+  en dummies sin uid), hook best-effort en `register` (attachea guestId+ownerUid, doble try/catch, no rompe la tx),
+  autocomplete sugiere guests ("· invitado"), gestión "Mis invitados" en amigos.html. Node tests 5/5 (preservación +
+  dedup Gabo/gabo/GABO/Gábo). Revisado por el maestro: hook y round-trip correctos. Validación live (browser) pendiente.
+- **🔧 DEUDA E0b (matches.js) RESUELTA:** el worker cazó que el working-tree `matches.js` estaba ROTO por un borrado
+  foráneo de −108 líneas (create/get/updateMatch/end/cancel → SyntaxError) que llevaba toda la sesión latente; origin
+  estaba limpio (sitio en vivo OK). El maestro lo MIRÓ (borraba el CRUD de partidos, basura accidental) y lo descartó
+  (`git checkout -- assets/matches.js` → válido). E0b restante: `ranking.js` (M) + `ranking-read.js` (untracked) siguen
+  sin commitear pero son VÁLIDOS (node --check OK) — read-side, cambian el sitio, requieren validación browser antes de commitear.
+- **Siguiente (Isaac decide): E4** (sugerencias retroactivas + merge de duplicados — completa el arco de invitados/claim,
+  ya con guestId/ownerUid en los slots) **o E6** (ligas, el grande). Deudas vivas: deploy índice
   `matches(status,endedAt)`; deep-link de clip en perfil.html; E0b; E2 nav; privacy; aviso-al-registrante.
 - **Fork de producto pendiente (Isaac decide):** (b) **E3c** invitados persistentes (`users/{uid}/guests` ya
   con reglas E3a → elegir invitado guardado al registrar + sugerencias/merge E4); (c) **E6** ligas
