@@ -15,6 +15,7 @@
 <script src="/assets/auth.js"></script>
 <script src="/assets/header.js"></script>
 <script src="/assets/identity.js"></script>
+<script src="/assets/guests.js"></script>
 <script src="/assets/friends.js"></script>
 
 <style>
@@ -110,6 +111,12 @@
     <div id="amFriendsEmpty" class="am-empty" style="display:none">
       Aún no tienes amigos en Puntazo.<br>Busca a alguien por handle arriba.
     </div>
+
+    <div class="am-section-title">Mis invitados (<span id="amGuestsCount">0</span>)</div>
+    <div id="amGuests" class="am-list"></div>
+    <div id="amGuestsEmpty" class="am-empty" style="display:none">
+      Aún no tienes invitados.<br>Se crean solos al registrar un partido con un jugador sin cuenta.
+    </div>
   </div>
 
   <div id="amLoading" class="am-loading">⏳ Cargando…</div>
@@ -132,6 +139,9 @@
   const $friends = document.getElementById('amFriends');
   const $friendsEmpty = document.getElementById('amFriendsEmpty');
   const $friendsCount = document.getElementById('amFriendsCount');
+  const $guests = document.getElementById('amGuests');
+  const $guestsEmpty = document.getElementById('amGuestsEmpty');
+  const $guestsCount = document.getElementById('amGuestsCount');
 
   function show(which) {
     $loading.style.display  = (which === 'loading') ? '' : 'none';
@@ -164,6 +174,46 @@
     return '';
   }
 
+  // E3c: invitados persistentes del dueño (users/{uid}/guests). Listar +
+  // renombrar (prompt) + borrar (confirm). Best-effort: si la API no está o
+  // falla, la sección queda vacía sin romper la página de amigos.
+  function renderGuests(guests) {
+    const list = Array.isArray(guests) ? guests : [];
+    $guestsCount.textContent = list.length;
+    if (!list.length) {
+      $guests.innerHTML = '';
+      $guestsEmpty.style.display = '';
+      return;
+    }
+    $guestsEmpty.style.display = 'none';
+    $guests.innerHTML = list.map(function (g) {
+      const nm = g.name || '';
+      const initial = nm ? nm.charAt(0).toUpperCase() : '?';
+      return '<div class="am-item">' +
+        '<div class="am-item-avatar" style="background:rgba(255,204,102,.22);color:#ffcc66">' + escapeHtml(initial) + '</div>' +
+        '<div class="am-item-info">' +
+          '<div class="am-item-name">' + escapeHtml(nm) + '</div>' +
+          '<div class="am-item-handle">invitado</div>' +
+        '</div>' +
+        '<div class="am-item-actions">' +
+          '<button class="am-btn-mini am-btn-remove" data-action="guest-rename" data-gid="' + escapeHtml(g.guestId) + '" data-name="' + escapeHtml(nm) + '">Renombrar</button>' +
+          '<button class="am-btn-mini am-btn-reject" data-action="guest-del" data-gid="' + escapeHtml(g.guestId) + '">Borrar</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  async function refreshGuests() {
+    if (!window.PuntazoGuests) { renderGuests([]); return; }
+    try {
+      const guests = await window.PuntazoGuests.listMyGuests();
+      renderGuests(guests);
+    } catch (e) {
+      console.warn('[amigos] guests', e);
+      renderGuests([]);
+    }
+  }
+
   async function refresh() {
     const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     if (!u) { show('login'); return; }
@@ -173,6 +223,7 @@
         window.PuntazoFriends.listMyFriends(),
         window.PuntazoFriends.listPendingRequests(),
       ]);
+      refreshGuests();
 
       if (pending.length) {
         $pendingSec.style.display = '';
@@ -234,6 +285,15 @@
       } else if (action === 'remove') {
         if (!confirm('¿Quitar este amigo?')) { btn.disabled = false; return; }
         await window.PuntazoFriends.removeFriend(btn.dataset.uid);
+      } else if (action === 'guest-rename') {
+        const nuevo = prompt('Nuevo nombre del invitado:', btn.dataset.name || '');
+        if (nuevo == null || !nuevo.trim()) { btn.disabled = false; return; }
+        await window.PuntazoGuests.renameGuest(btn.dataset.gid, nuevo.trim());
+        refreshGuests(); btn.disabled = false; return;
+      } else if (action === 'guest-del') {
+        if (!confirm('¿Borrar este invitado? No afecta partidos ya registrados.')) { btn.disabled = false; return; }
+        await window.PuntazoGuests.deleteGuest(btn.dataset.gid);
+        refreshGuests(); btn.disabled = false; return;
       } else if (action === 'add') {
         const uid = btn.dataset.uid;
         const st = await window.PuntazoFriends.getFriendshipStatus(uid);

@@ -389,6 +389,10 @@
     searchUsers: searchUsers,
     normalizeHandle: normalizeHandle,
     validateHandle: validateHandle,
+    // E3c: expuestos para que guests.js use EXACTAMENTE la misma normalización
+    // de búsqueda (dedup de invitados por searchName, consistente con users).
+    normalizeName: normalizeName,
+    buildSearchName: buildSearchName,
     clearCache: clearCache,
     _ensureProfile: ensureProfile,
   };

@@ -100,6 +100,14 @@
       if (raw.claimedByUid && typeof raw.claimedByUid === "string") {
         out.claimedByUid = raw.claimedByUid;
       }
+      // E3c (invitados persistentes): un slot dummy (SIN uid) puede llevar
+      // guestId + ownerUid (strings) para ligar "todos los partidos de Gabo".
+      // Un jugador con cuenta (uid) NUNCA lleva guestId. Preservarlos en el
+      // round-trip (write en register → read vía normalizeMatchFromDoc).
+      if (!out.uid) {
+        if (raw.guestId && typeof raw.guestId === "string") out.guestId = raw.guestId;
+        if (raw.ownerUid && typeof raw.ownerUid === "string") out.ownerUid = raw.ownerUid;
+      }
       return out;
     });
   }

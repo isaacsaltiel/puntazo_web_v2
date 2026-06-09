@@ -96,12 +96,45 @@
     }
   }
 
+  // E3c: pool = jugadores recientes (de matches) + invitados persistentes del
+  // dueño (users/{uid}/guests). Dedup por nombre normalizado: si un invitado
+  // ya aparece como reciente, NO se duplica. Los invitados van marcados
+  // (isGuest) para mostrarse como "· invitado" en el dropdown.
+  async function buildPool(uid) {
+    const pool = await buildPoolFromMatches(uid);
+    const seen = {};
+    pool.forEach(function (p) { seen[normalize(p.displayName)] = 1; });
+    try {
+      if (window.PuntazoGuests && typeof window.PuntazoGuests.listMyGuests === "function") {
+        const guests = await window.PuntazoGuests.listMyGuests();
+        (guests || []).forEach(function (g) {
+          const nm = String(g.name || "").trim();
+          if (!nm) return;
+          const key = normalize(nm);
+          if (!key || seen[key]) return;   // ya está como reciente → no duplicar
+          seen[key] = 1;
+          pool.push({
+            displayName: nm,
+            uid: null,
+            isGuest: true,
+            guestId: g.guestId || null,
+            count: null,
+            photoURL: null,
+          });
+        });
+      }
+    } catch (e) {
+      console.warn("[player-autocomplete] merge guests error", e);
+    }
+    return pool;
+  }
+
   async function prefetchPool(uid) {
     if (_pool) return _pool;
     if (_poolFetchPromise) return _poolFetchPromise;
     const u = uid || (me() && me().uid);
     if (!u) return [];
-    _poolFetchPromise = buildPoolFromMatches(u).then(function (pool) {
+    _poolFetchPromise = buildPool(u).then(function (pool) {
       _pool = pool;
       _poolFetchPromise = null;
       return pool;
@@ -194,8 +227,10 @@
       meta.style.fontSize = "0.7rem";
       meta.style.color = "rgba(234, 242, 255, 0.55)";
       meta.style.fontWeight = "600";
-      // Jugador reciente → "N partidos"; usuario de toda la base → @handle / "en Puntazo".
-      if (p.count != null) meta.textContent = p.count + " " + (p.count === 1 ? "partido" : "partidos");
+      // Invitado del dueño → "· invitado"; jugador reciente → "N partidos";
+      // usuario de toda la base → @handle / "en Puntazo".
+      if (p.isGuest) meta.textContent = "· invitado";
+      else if (p.count != null) meta.textContent = p.count + " " + (p.count === 1 ? "partido" : "partidos");
       else meta.textContent = p.handle ? ("@" + p.handle) : "en Puntazo";
       item.appendChild(dot);
       item.appendChild(txt);

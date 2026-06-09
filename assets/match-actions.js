@@ -62,6 +62,24 @@
     const deporte = DEPORTES.includes(o.deporte) ? o.deporte : "padel";
     const jugadores = PM()._sanitizeJugadores(o.jugadores || []);
 
+    // E3c (invitados persistentes): para cada dummy (sin uid) con nombre,
+    // asegurar un guest del dueño y attachear guestId + ownerUid al slot ANTES
+    // de escribir. Best-effort y en paralelo: si la API no está o falla, el
+    // registro procede con el dummy plano (NO rompe la transacción ni el flujo).
+    try {
+      if (window.PuntazoGuests && typeof window.PuntazoGuests.ensureGuest === "function") {
+        await Promise.all(jugadores.map(async function (j) {
+          if (!j || j.uid) return;                      // cuentas reales no llevan guest
+          const nombre = (j.nombre || "").trim();
+          if (!nombre) return;
+          try {
+            const g = await window.PuntazoGuests.ensureGuest(nombre);
+            if (g && g.guestId) { j.guestId = g.guestId; j.ownerUid = user.uid; }
+          } catch (_) {}
+        }));
+      }
+    } catch (_) {}
+
     const marcador = o.marcador || null;
     if (!marcador || (marcador.ganador !== "team1" && marcador.ganador !== "team2")) {
       throw new Error("[MatchActions] El partido necesita un marcador con ganador para registrarse.");
