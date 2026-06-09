@@ -167,6 +167,12 @@ del claim. (La limpieza también dejó el backend en cero: 0 partidos confirmado
   match-confirm fan-out, pulse-ready) + bloque de reglas (owner read / owner marca leído / server-only write),
   probadas en emulador, SIN desplegar (el maestro despliega reconciliado). Shape idéntico al de EN1 para que
   EN2b solo cambie la fuente a `onSnapshot`. Brief: `docs/workers/worker-EN2a-notificaciones-backend.md`.
+- **EN2a ✅ (commit 4af9525dd + reconciliación maestro)** — 3 triggers `onFriendshipNotify`/`onMatchNotify`/
+  `onPulseNotify` (additive en index.js, lógica pura en `lib/notify.js`, idempotentes, fan-out con deltas, sin
+  loops) + bloque de reglas top-level `notifications/{ownerUid}/items` (owner read / marca leído / server-only).
+  Worker flageó schema duplicado: existía un bloque HUÉRFANO `users/{uid}/notifications` (nada lo usaba,
+  confirmado por grep) → el maestro lo ELIMINÓ; canónico = top-level. Emulador reconfirmado por separado:
+  notifications-rules 13/13, friends-rules 5/5, rules-emu 22/22. PENDIENTE deploy maestro (functions + rules).
 - Después: EN2b (cliente onSnapshot + read/unread server) → E3c → E6. Deudas vivas: deploy índice
   `matches(status,endedAt)`; deep-link de clip en perfil.html; E0b; E2 nav; privacy; aviso-al-registrante.
 - **Fork de producto pendiente (Isaac decide):** (b) **E3c** invitados persistentes (`users/{uid}/guests` ya

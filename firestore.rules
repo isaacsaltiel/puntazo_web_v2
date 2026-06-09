@@ -262,14 +262,9 @@ service cloud.firestore {
         allow read, write: if isMe(uid);
       }
 
-      match /notifications/{notifId} {
-        allow read: if isMe(uid);
-        allow create: if false;
-        allow update: if isMe(uid)
-                      && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['read','readAt']);
-        allow delete: if isMe(uid);
-      }
+      // (EN2a) El bloque huérfano users/{uid}/notifications/{notifId} se eliminó:
+      // las notificaciones server-side viven en la colección top-level
+      // notifications/{ownerUid}/items/{notifId} (ver más abajo). Nada lo usaba.
 
       match /torneos5/{docId} {
         allow read, write: if isMe(uid);
