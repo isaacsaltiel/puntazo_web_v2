@@ -1,18 +1,19 @@
 /*
- * EN1 — notifications.js  (centro de notificaciones · campana 🔔 · v1)
+ * EN2b — notifications.js  (centro de notificaciones · campana 🔔 · v2)
  *
- * Consolida en UN SOLO lugar (la campana del header) las señales hoy
- * dispersas: solicitudes de amistad, partidos por confirmar y clips listos.
- * Con badge de "sin leer" persistido en localStorage.
+ * Consolida en UN SOLO lugar (la campana del header) las señales que el
+ * SERVIDOR ya escribe en notifications/{uid}/items (solicitudes de amistad,
+ * partidos por confirmar, clips listos). Lee en TIEMPO REAL con un onSnapshot;
+ * el "leído" vive en el documento (read/readAt), no en localStorage, así que
+ * persiste entre dispositivos.
  *
- * CLIENTE PURO — no toca backend, functions ni reglas. Reusa las MISMAS
- * queries que los vigías (match-confirm-watcher / pending-pulse-watcher) y
- * PuntazoFriends.listPendingRequests(). Se refresca al montar, cada 60s y al
- * abrir el panel.
+ * CLIENTE PURO — no toca backend, functions ni reglas. Reglas LIVE: el dueño
+ * LEE sus items y puede UPDATE solo ['read','readAt']; create/delete son
+ * server-only. El cliente marca leído; no crea ni borra.
  *
- * Diseñado contra un SHAPE de notificación estable para que la v2 (colección
- * notifications/ escrita por Cloud Functions) entre encima sin rehacer la UI:
- *   { type, id, icon, title, subtitle, href, ts }
+ * Schema del item (doc.id = notifId determinístico type+"__"+refId):
+ *   { type, refId, icon, title, subtitle, href, createdAt, read, readAt }
+ *   refId de friend_request = friendshipId (para el botón "Aceptar").
  *
  * La campana:
  *  - Se inserta en .pz-nav-right--internal ANTES de .pz-auth-slot (solo variant
@@ -22,20 +23,17 @@
  *  - Setea window.PuntazoNotifications.active = true al montar, para que los
  *    vigías jubilen su banner flotante (la campana ya los muestra).
  *
- * Requiere (carga perezosa best-effort si faltan): PuntazoAuth, PuntazoFirebase,
- * PuntazoFriends, PuntazoIdentity.
+ * Requiere: PuntazoAuth, PuntazoFirebase. Para "Aceptar" carga friends.js
+ * (e identity.js) perezosamente best-effort.
  */
 (function () {
   "use strict";
 
   if (window.PuntazoNotifications) return;
 
-  var CHECK_INTERVAL_MS = 60 * 1000;
-  var LS_SEEN = "pz.notifs.seen.v1"; // array de ids ya vistos
-  var MATCH_LIMIT = 50;
-  var PULSE_LIMIT = 100;
+  var ITEMS_LIMIT = 30;
 
-  var timer = null;
+  var unsub = null;          // función para desuscribir el onSnapshot activo
   var panelOpen = false;
   var state = { items: [] };
   var outsideHandlersBound = false;
@@ -46,7 +44,6 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c];
     });
   }
-  function firstName(n) { return String(n || "").trim().split(/\s+/)[0] || n; }
 
   function currentUser() {
     return (window.PuntazoAuth && window.PuntazoAuth.currentUser) || null;
@@ -59,39 +56,22 @@
       return (db && db.collection) ? db : null;
     } catch (_) { return null; }
   }
-
-  // Firestore Timestamp | number | {seconds} → ms (best-effort)
-  function tsToMs(v) {
-    try {
-      if (!v) return 0;
-      if (typeof v === "number") return v;
-      if (typeof v.toMillis === "function") return v.toMillis();
-      if (typeof v.seconds === "number") return v.seconds * 1000;
-    } catch (_) {}
-    return 0;
+  function serverTs() {
+    try { return firebase.firestore.FieldValue.serverTimestamp(); }
+    catch (_) { return null; }
   }
 
-  // ── localStorage "sin leer" ──────────────────────────────────
-  function loadSeen() {
-    try {
-      var v = JSON.parse(localStorage.getItem(LS_SEEN) || "[]");
-      return Array.isArray(v) ? v : [];
-    } catch (_) { return []; }
+  // notifications/{uid}/items
+  function itemsRef(db, uid) {
+    return db.collection("notifications").doc(uid).collection("items");
   }
-  function saveSeen(arr) {
-    try { localStorage.setItem(LS_SEEN, JSON.stringify(arr || [])); } catch (_) {}
-  }
-  function seenSet() {
-    var s = Object.create(null);
-    loadSeen().forEach(function (id) { s[id] = 1; });
-    return s;
-  }
+
+  // ── No leído = read !== true (server-side, sin localStorage) ──
   function unseenCount() {
-    var s = seenSet();
-    return state.items.filter(function (it) { return !s[it.id]; }).length;
+    return state.items.filter(function (it) { return it.read !== true; }).length;
   }
 
-  // ── Carga perezosa de dependencias (best-effort) ─────────────
+  // ── Carga perezosa de dependencias (best-effort, solo "Aceptar") ─
   function ensureScript(src, ready) {
     return new Promise(function (resolve) {
       try {
@@ -116,112 +96,63 @@
     });
   }
   async function ensureFriendsDeps() {
-    // identity.js primero (listPendingRequests lo usa para hidratar el nombre)
+    // identity.js primero (algunas rutas de friends.js lo usan para hidratar)
     await ensureScript("/assets/identity.js", function () { return !!window.PuntazoIdentity; });
     await ensureScript("/assets/friends.js", function () { return !!window.PuntazoFriends; });
   }
 
-  // ── Fuentes (cada una degrada a [] si falla) ─────────────────
-  async function fetchFriendRequests(user) {
-    await ensureFriendsDeps();
-    if (!window.PuntazoFriends || typeof window.PuntazoFriends.listPendingRequests !== "function") return [];
-    var reqs = await window.PuntazoFriends.listPendingRequests();
-    return (reqs || []).map(function (r) {
-      var p = r.profile || {};
-      var name = p.displayName || p.realName || p.handle || "Alguien";
-      return {
-        type: "friend_request",
-        id: "friend:" + r.friendshipId,
-        icon: "🤝",
-        title: "Te mandó solicitud de amistad",
-        subtitle: name,
-        href: "/amigos.html",
-        ts: tsToMs(r.createdAt),
-        _action: { kind: "accept", friendshipId: r.friendshipId },
-      };
-    });
-  }
-
-  function isExpired(m) {
-    var exp = m.confirmation && m.confirmation.expiresAtMs;
-    return typeof exp === "number" && Date.now() > exp;
-  }
-  async function fetchMatchConfirms(user) {
+  // ── Fuente: onSnapshot de notifications/{uid}/items ──────────
+  function startListener(user) {
+    if (unsub) return;                 // idempotente: no dupliques listeners
     var db = getDb();
-    if (!db) return [];
-    var snap = await db.collection("matches")
-      .where("playerUids", "array-contains", user.uid)
-      .limit(MATCH_LIMIT)
-      .get();
-    var out = [];
-    snap.forEach(function (doc) {
-      var m = doc.data() || {};
-      if (m.status !== "pending_confirmation") return;     // mismo filtro que el vigía
-      if (m.userId === user.uid) return;                   // yo lo registré
-      if (m.scoreAcceptedBy && m.scoreAcceptedBy[user.uid]) return; // ya acepté
-      if (isExpired(m)) return;                            // vencido
-      var js = Array.isArray(m.jugadores) ? m.jugadores : [];
-      var reg = js.find(function (j) { return j && j.uid === m.userId; });
-      var regName = reg ? firstName(reg.nombre) : "Alguien";
-      out.push({
-        type: "match_confirm",
-        id: "match:" + doc.id,
-        icon: "🎾",
-        title: "Tienes un partido por confirmar",
-        subtitle: regName + " registró un partido contigo",
-        href: "/confirmar.html?id=" + encodeURIComponent(doc.id),
-        ts: tsToMs(m.createdAt),
-      });
-    });
-    return out;
+    if (!db || !user) return;
+    try {
+      unsub = itemsRef(db, user.uid)
+        .orderBy("createdAt", "desc")
+        .limit(ITEMS_LIMIT)
+        .onSnapshot(onSnap, onSnapError);
+    } catch (_) {
+      // Si la suscripción ni siquiera arranca, degradamos a panel vacío.
+      state.items = [];
+      renderBadge();
+      if (panelOpen) renderPanel();
+    }
   }
-
-  async function fetchClipReady(user) {
-    var db = getDb();
-    if (!db) return [];
-    var snap = await db.collection("pending_pulses")
-      .where("uid_creator", "==", user.uid)
-      .limit(PULSE_LIMIT)
-      .get();
-    var out = [];
-    snap.forEach(function (doc) {
-      var d = doc.data() || {};
-      if (d.consumed_at && !d.error_reason) {              // mismo "ready" que el vigía
-        out.push({
-          type: "clip_ready",
-          id: "clip:" + doc.id,
-          icon: "🎬",
-          title: "Tu puntazo ya está listo",
-          subtitle: "El clip que pediste ya se procesó",
-          href: "/perfil.html?pulse=" + encodeURIComponent(doc.id) + "#mis-puntazos",
-          ts: tsToMs(d.consumed_at),
-        });
-      }
-    });
-    return out;
+  function stopListener() {
+    if (unsub) { try { unsub(); } catch (_) {} unsub = null; }
   }
-
-  // ── Agregador ────────────────────────────────────────────────
-  async function refresh() {
-    var user = currentUser();
-    if (!user) { state.items = []; renderBadge(); return; }
-    var results = await Promise.all([
-      fetchFriendRequests(user).catch(function () { return []; }),
-      fetchMatchConfirms(user).catch(function () { return []; }),
-      fetchClipReady(user).catch(function () { return []; }),
-    ]);
-    var items = [].concat(results[0], results[1], results[2]);
-    items.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+  function onSnap(snap) {
+    var items = [];
+    snap.forEach(function (doc) {
+      items.push(Object.assign({ id: doc.id }, doc.data()));
+    });
     state.items = items;
-
-    // Podar "seen" a solo ids vigentes → localStorage acotado y sin stale.
-    var present = Object.create(null);
-    items.forEach(function (it) { present[it.id] = 1; });
-    var pruned = loadSeen().filter(function (id) { return present[id]; });
-    if (pruned.length !== loadSeen().length) saveSeen(pruned);
-
     renderBadge();
     if (panelOpen) renderPanel();
+  }
+  function onSnapError(_err) {
+    // Permiso/red: degradar sin romper el header.
+    state.items = [];
+    renderBadge();
+    if (panelOpen) renderPanel();
+  }
+
+  // ── Marcar leído en el servidor (solo read/readAt) ───────────
+  function markAllRead() {
+    var db = getDb();
+    var user = currentUser();
+    if (!db || !user) return;
+    var unread = state.items.filter(function (it) { return it.read !== true; });
+    if (!unread.length) return;
+    var ref = itemsRef(db, user.uid);
+    var ts = serverTs();
+    // Optimista: bajamos el badge ya; el snapshot confirmará read=true.
+    unread.forEach(function (it) { it.read = true; });
+    renderBadge();
+    unread.forEach(function (it) {
+      try { ref.doc(it.id).update({ read: true, readAt: ts }).catch(function () {}); }
+      catch (_) {}
+    });
   }
 
   // ── Estilos ──────────────────────────────────────────────────
@@ -292,8 +223,8 @@
       html += '<div class="pz-notif-empty">No tienes notificaciones</div>';
     } else {
       state.items.forEach(function (it) {
-        var acceptBtn = (it._action && it._action.kind === "accept")
-          ? '<button type="button" class="pz-notif-accept" data-accept="' + esc(it._action.friendshipId) + '">Aceptar</button>'
+        var acceptBtn = (it.type === "friend_request" && it.refId)
+          ? '<button type="button" class="pz-notif-accept" data-accept="' + esc(it.refId) + '">Aceptar</button>'
           : "";
         html +=
           '<a class="pz-notif-item" href="' + esc(it.href) + '">' +
@@ -308,18 +239,20 @@
     }
     panel.innerHTML = html;
 
-    // Botón "Aceptar" inline (best-effort, no rompe la lista si falla)
+    // Botón "Aceptar" inline (best-effort, no rompe la lista si falla).
+    // Tras aceptar, el trigger del servidor borra el notif → el onSnapshot lo
+    // quita solo; no hacemos remove manual.
     panel.querySelectorAll("[data-accept]").forEach(function (btn) {
       btn.addEventListener("click", async function (e) {
         e.preventDefault(); e.stopPropagation();
         var fid = btn.getAttribute("data-accept");
         btn.disabled = true; btn.textContent = "Aceptando…";
         try {
+          await ensureFriendsDeps();
           if (window.PuntazoFriends && typeof window.PuntazoFriends.acceptFriendRequest === "function") {
             await window.PuntazoFriends.acceptFriendRequest(fid);
           }
-          await refresh();
-          renderPanel();
+          // El onSnapshot reflejará el borrado del notif por el servidor.
         } catch (_) {
           btn.disabled = false; btn.textContent = "Aceptar";
         }
@@ -334,12 +267,7 @@
     panelOpen = true;
     renderPanel();
     panel.classList.add("is-open");
-    // Marcar como vistos los ids mostrados → badge baja a 0.
-    var seen = seenSet();
-    state.items.forEach(function (it) { seen[it.id] = 1; });
-    saveSeen(Object.keys(seen));
-    renderBadge();
-    refresh(); // refresca al abrir (puede traer/quitar items)
+    markAllRead(); // marca leído en el servidor → badge a 0
   }
   function closePanel() {
     var panel = document.getElementById("pz-notif-panel");
@@ -363,8 +291,13 @@
   function mountBell() {
     var container = document.querySelector(".pz-nav-right--internal");
     if (!container) return;            // solo variant internal
-    if (!currentUser()) { unmountBell(); return; } // sin sesión: no campana
-    if (document.getElementById("pz-notif-bell")) return; // idempotente
+    var user = currentUser();
+    if (!user) { unmountBell(); return; } // sin sesión: no campana
+    if (document.getElementById("pz-notif-bell")) {
+      // Ya montada: asegúrate de que el listener esté vivo (idempotente).
+      startListener(user);
+      return;
+    }
 
     ensureStyles();
     var wrap = document.createElement("div");
@@ -393,30 +326,23 @@
       var b = document.getElementById(id);
       if (b) { try { b.remove(); } catch (_) {} }
     });
-    refresh();
-    startTimer();
+    renderBadge();
+    startListener(user);
   }
   function unmountBell() {
+    stopListener();
     var wrap = document.getElementById("pz-notif-bell");
     if (wrap) { try { wrap.remove(); } catch (_) {} }
     panelOpen = false;
-    stopTimer();
+    state.items = [];
   }
-
-  function startTimer() {
-    if (timer) clearInterval(timer);
-    timer = setInterval(function () {
-      if (!currentUser()) { unmountBell(); return; }
-      refresh();
-    }, CHECK_INTERVAL_MS);
-  }
-  function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
 
   // ── API pública ──────────────────────────────────────────────
   window.PuntazoNotifications = {
     active: false,
-    refresh: refresh,
     mount: mountBell,
+    // Re-render desde el estado en memoria (el onSnapshot es la fuente real).
+    refresh: function () { renderBadge(); if (panelOpen) renderPanel(); },
     _state: state,
   };
 
