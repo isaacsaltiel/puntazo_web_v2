@@ -226,6 +226,136 @@ async function deleteCollection(name) {
   await writer.close();
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// EN2a — Notificaciones server-side (ADDITIVE). Escriben en
+// notifications/{ownerUid}/items/{notifId}. Como escriben en `notifications/`
+// (NO en su colección fuente) NO se auto-disparan. Idempotentes (notifId
+// determinístico = type+"__"+refId) + limpieza cuando el estado de origen cambia.
+// La lógica pura del "set objetivo" vive en ./lib/notify.js (unit-testeada).
+// ═══════════════════════════════════════════════════════════════════════════
+const notify = require("./lib/notify.js");
+
+function notifItemRef(ownerUid, id) {
+  return db.collection("notifications").doc(ownerUid).collection("items").doc(id);
+}
+
+// Crear-si-ausente: si ya existe, NO lo reescribe (preserva createdAt/read/readAt).
+async function ensureNotif(ownerUid, payload) {
+  if (!ownerUid) return;
+  const ref = notifItemRef(ownerUid, notify.notifId(payload.type, payload.refId));
+  const snap = await ref.get();
+  if (snap.exists) return;
+  await ref.set(Object.assign({}, payload, {
+    createdAt: FieldValue.serverTimestamp(),
+    read: false,
+    readAt: null,
+  }));
+}
+
+// Borrar-si-existe (delete de un doc inexistente es un no-op exitoso).
+async function removeNotif(ownerUid, type, refId) {
+  if (!ownerUid) return;
+  await notifItemRef(ownerUid, notify.notifId(type, refId)).delete();
+}
+
+// displayName del solicitante para el subtítulo (fallback "Alguien"; cero mojibake).
+async function userDisplayName(uid) {
+  try {
+    const snap = await db.collection("users").doc(uid).get();
+    if (snap.exists) {
+      const d = snap.data() || {};
+      return d.displayName || d.realName || d.handle || "Alguien";
+    }
+  } catch (e) {
+    logger.warn("[notify] userDisplayName error", { uid: uid, err: e.message });
+  }
+  return "Alguien";
+}
+
+// 1) Amistad → friend_request al RECEPTOR (participante != requesterUid).
+exports.onFriendshipNotify = onDocumentWritten(
+  { region: REGION, document: "friendships/{fid}" },
+  async function (event) {
+    const fid = event.params.fid;
+    const before = (event.data.before && event.data.before.exists) ? event.data.before.data() : null;
+    const after = (event.data.after && event.data.after.exists) ? event.data.after.data() : null;
+    const data = after || before;
+    if (!data) return null;
+    const receptor = notify.friendReceptor(data);
+    if (!receptor) return null;
+    try {
+      if (after && after.status === "pending") {
+        const name = await userDisplayName(data.requesterUid);
+        await ensureNotif(receptor, notify.friendRequestPayload(fid, name));
+      } else {
+        // accepted / blocked / borrado (reject) → ya no es solicitud pendiente.
+        await removeNotif(receptor, "friend_request", fid);
+      }
+    } catch (e) {
+      logger.error("[onFriendshipNotify] error", { fid: fid, err: e.message });
+      throw e; // reintento del runtime; ensure/remove son idempotentes.
+    }
+    return null;
+  }
+);
+
+// 2) Match → match_confirm a cada rival que falta por confirmar (fan-out).
+exports.onMatchNotify = onDocumentWritten(
+  { region: REGION, document: "matches/{matchId}" },
+  async function (event) {
+    const matchId = event.params.matchId;
+    const before = (event.data.before && event.data.before.exists) ? event.data.before.data() : null;
+    const after = (event.data.after && event.data.after.exists) ? event.data.after.data() : null;
+    const match = after || before;
+    if (!match) return null;
+    // Borrado: el match ya no existe → quitar el match_confirm de TODOS sus players.
+    const targets = after
+      ? notify.computeMatchTargets(after)
+      : { ensure: [], remove: Array.isArray(before.playerUids) ? before.playerUids : [] };
+    const regName = notify.registrantName(match);
+    try {
+      await Promise.all([].concat(
+        targets.ensure.map(function (uid) {
+          return ensureNotif(uid, notify.matchConfirmPayload(matchId, regName));
+        }),
+        targets.remove.map(function (uid) {
+          return removeNotif(uid, "match_confirm", matchId);
+        })
+      ));
+    } catch (e) {
+      logger.error("[onMatchNotify] error", { matchId: matchId, err: e.message });
+      throw e;
+    }
+    return null;
+  }
+);
+
+// 3) Pulso → clip_ready al creador cuando queda procesado (consumed && !error).
+exports.onPulseNotify = onDocumentWritten(
+  { region: REGION, document: "pending_pulses/{pulseId}" },
+  async function (event) {
+    const pulseId = event.params.pulseId;
+    const before = (event.data.before && event.data.before.exists) ? event.data.before.data() : null;
+    const after = (event.data.after && event.data.after.exists) ? event.data.after.data() : null;
+    const data = after || before;
+    if (!data) return null;
+    const owner = data.uid_creator;
+    if (!owner) return null; // pulsos in-club sin creador → no hay a quién avisar.
+    try {
+      if (after && notify.pulseIsReady(after)) {
+        await ensureNotif(owner, notify.clipReadyPayload(pulseId));
+      } else {
+        // error_reason, aún no consumido, o borrado → quitar el clip_ready.
+        await removeNotif(owner, "clip_ready", pulseId);
+      }
+    } catch (e) {
+      logger.error("[onPulseNotify] error", { pulseId: pulseId, err: e.message });
+      throw e;
+    }
+    return null;
+  }
+);
+
 // Export para tests de integración (emulador).
 exports._applyRankingTx = applyRankingTx;
 exports._recomputeCore = recomputeCore;

@@ -412,6 +412,20 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════
+    // EN2a — Notificaciones server-authoritative
+    // notifications/{ownerUid}/items/{notifId}. Las ESCRIBE/BORRA sólo la Cloud
+    // Function (Admin SDK, omite reglas). El dueño puede LEER sus items y
+    // marcarlos como leídos (sólo read/readAt). Nada más desde cliente.
+    // ════════════════════════════════════════════════════
+    match /notifications/{ownerUid}/items/{notifId} {
+      allow read: if isMe(ownerUid);
+      allow update: if isMe(ownerUid)
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['read', 'readAt']);
+      allow create, delete: if false;
+    }
+
+    // ════════════════════════════════════════════════════
     // Catch-all denegado
     // ════════════════════════════════════════════════════
     match /{document=**} {
