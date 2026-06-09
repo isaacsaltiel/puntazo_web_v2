@@ -437,6 +437,75 @@
     return d.getDate() + ' ' + MESES[d.getMonth()];
   }
 
+  // ── FUENTE DE VERDAD ÚNICA: servidor (ratings/{uid}) ──────────────────────
+  // Decisión 8-jun (docs/plans/decision-unificacion-nivel): el nivel mostrado
+  // sale SIEMPRE de ratings/{uid}.byContext["global:padel"], idéntico a
+  // perfil.html#loadGlobalNivel — para que "Mi nivel" y "Tu nivel global"
+  // nunca se contradigan. El recálculo cliente queda solo para el DETALLE
+  // (historial / partidos por confirmar), nunca para el número headline.
+  function bucketFromNivel(nivel) {
+    const n = Number(nivel) || 0;
+    if (n >= 7.0) return { emoji: '👑', name: 'Top' };
+    if (n >= 6.0) return { emoji: '⚡', name: 'Élite' };
+    if (n >= 5.0) return { emoji: '🔥', name: 'Competitivo' };
+    if (n >= 4.0) return { emoji: '🦅', name: 'Avanzado' };
+    if (n >= 3.0) return { emoji: '🐥', name: 'Intermedio' };
+    if (n >= 2.0) return { emoji: '🐣', name: 'Aprendiz' };
+    return { emoji: '🌱', name: 'Principiante' };
+  }
+
+  async function loadServerGlobal(uid) {
+    try {
+      const db = (window.PuntazoFirebase && window.PuntazoFirebase.db) ? window.PuntazoFirebase.db() : null;
+      if (!db) return null;
+      const snap = await db.collection('ratings').doc(uid).get();
+      const data = snap.exists ? (snap.data() || {}) : {};
+      const g = data.byContext && data.byContext['global:padel'];
+      return (g && typeof g.nivel === 'number') ? g : null;
+    } catch (e) { console.warn('[mi-nivel] no se pudo leer ratings del servidor', e); return null; }
+  }
+
+  const CALIB_CHIP = '<span style="font-size:.6rem;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:#ffd97a;background:rgba(255,217,122,.14);border:1px solid rgba(255,217,122,.35);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:middle;">calibrando</span>';
+
+  // Hero desde el SERVIDOR (autoritativo). Muestra el número incluso en
+  // calibración (con chip), igual que perfil — coherencia total entre páginas.
+  function renderHeroServer(g) {
+    const b = bucketFromNivel(g.nivel);
+    const rd = Number.isFinite(g.RD) ? g.RD : 0;
+    const rating = Number.isFinite(g.rating) ? g.rating : 0;
+    $hero.innerHTML = `
+      <div class="ml-bucket-emoji">${b.emoji}</div>
+      <div class="ml-bucket-name">${escapeHtml(b.name)}${g.isCalibrating ? ' ' + CALIB_CHIP : ''}</div>
+      <div class="ml-nivel">Nivel <span class="ml-nivel-num">${Number(g.nivel).toFixed(1)}</span></div>
+      <div class="ml-range">Rating <strong>${fmtRange(rating, rd)}</strong></div>
+    `;
+  }
+
+  // Fallback IDÉNTICO en intención al de perfil cuando el servidor aún no tiene
+  // nivel (no se inventa un número client-side que contradiga a perfil).
+  function renderHeroFallback() {
+    $hero.innerHTML = `
+      <div class="ml-bucket-emoji">🎾</div>
+      <div class="ml-bucket-name">Aún sin nivel oficial</div>
+      <div class="ml-range" style="margin-top:8px">Juega y <strong>confirma</strong> un partido para tener tu nivel global. Cuando un rival valide el resultado, aparece aquí.</div>
+    `;
+  }
+
+  function renderStatsServer(g) {
+    const wins = Number.isFinite(g.wins) ? g.wins : 0;
+    const losses = Number.isFinite(g.losses) ? g.losses : 0;
+    const mc = Number.isFinite(g.matchCount) ? g.matchCount : (wins + losses);
+    const winRate = (wins + losses) > 0 ? Math.round(wins / (wins + losses) * 100) : 0;
+    $stats.innerHTML = `
+      <div class="ml-stat"><div class="ml-stat-val">${mc}</div><div class="ml-stat-lbl">Partidos</div></div>
+      <div class="ml-stat"><div class="ml-stat-val">${wins}-${losses}</div><div class="ml-stat-lbl">Wins-Losses</div></div>
+      <div class="ml-stat"><div class="ml-stat-val">${winRate}%</div><div class="ml-stat-lbl">Win rate</div></div>
+    `;
+  }
+
+  // Legacy (recálculo cliente) — conservado solo por compatibilidad; ya NO se
+  // usa para el headline (ver compute()). Quedará deprecado al completar la
+  // Parte 2 de la migración (alimentar el servidor + recompute).
   function renderHero(r) {
     if (r.isCalibrating) {
       $hero.innerHTML = `
@@ -690,20 +759,37 @@
   async function compute(user) {
     show('loading');
     try {
-      const r = await window.PuntazoRankingClient.computeMyRating(user.uid);
-      // F99 P3: solo empty si NUNCA terminó ningún partido. Si tiene partidos
-      // jugados aunque ninguno rankable → mostramos content con bloque de
-      // status explicando "necesitas invitar al rival".
-      const played = r.totalMatchesPlayed || 0;
-      if (played === 0 && r.totalMatchesRankable === 0) {
+      // Servidor (autoritativo, para el headline) + cliente (solo detalle).
+      const [r, sg] = await Promise.all([
+        window.PuntazoRankingClient.computeMyRating(user.uid).catch(function () { return null; }),
+        loadServerGlobal(user.uid),
+      ]);
+
+      const played = r ? (r.totalMatchesPlayed || 0) : 0;
+      const rankable = r ? (r.totalMatchesRankable || 0) : 0;
+
+      // Empty solo si NO hay nivel en el servidor Y tampoco partidos jugados.
+      if (!sg && played === 0 && rankable === 0) {
         show('empty');
         return;
       }
-      renderHero(r);
-      renderStatusBlock(r); // F99 P3
-      renderStats(r);
-      renderSparkline(r.history);
-      renderHistory(r.history);
+
+      // HEADLINE = servidor (fuente de verdad única). Sin nivel server →
+      // fallback coherente con perfil (no se inventa número client-side).
+      if (sg) {
+        renderHeroServer(sg);
+        renderStatsServer(sg);
+      } else {
+        renderHeroFallback();
+        $stats.innerHTML = '';
+      }
+
+      // DETALLE = recálculo cliente (historial + partidos por confirmar).
+      if (r) {
+        renderStatusBlock(r);
+        renderSparkline(r.history || []);
+        renderHistory(r.history || []);
+      }
       show('content');
     } catch (e) {
       console.error('[mi-nivel] error', e);
