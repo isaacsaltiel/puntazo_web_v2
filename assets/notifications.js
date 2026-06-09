@@ -70,6 +70,45 @@
   function unseenCount() {
     return state.items.filter(function (it) { return it.read !== true; }).length;
   }
+  var loadError = false;       // distinguir "error de red/permiso" de "vacío"
+  var prevUnseen = 0;          // para animar el badge cuando SUBE
+
+  // Fecha relativa humana desde un Timestamp de Firestore (o ms). "" si no hay.
+  function tsToDate(ts) {
+    try {
+      if (!ts) return null;
+      if (typeof ts.toDate === "function") return ts.toDate();
+      if (typeof ts.seconds === "number") return new Date(ts.seconds * 1000);
+      if (typeof ts === "number") return new Date(ts);
+    } catch (_) {}
+    return null;
+  }
+  function fmtRel(ts) {
+    var d = tsToDate(ts);
+    if (!d) return "";
+    var min = Math.floor((Date.now() - d.getTime()) / 60000);
+    if (min < 1) return "ahora";
+    if (min < 60) return "hace " + min + " min";
+    var h = Math.floor(min / 60);
+    if (h < 24) return "hace " + h + " h";
+    var days = Math.floor(h / 24);
+    if (days < 7) return "hace " + days + " d";
+    var M = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+    return d.getDate() + " " + M[d.getMonth()];
+  }
+
+  // Marca UN item como leído (al tocarlo) — solo read/readAt (lo permite la regla).
+  function markOneRead(id) {
+    var db = getDb();
+    var user = currentUser();
+    if (!db || !user || !id) return;
+    var it = state.items.find(function (x) { return x.id === id; });
+    if (!it || it.read === true) return;
+    it.read = true;
+    renderBadge();
+    try { itemsRef(db, user.uid).doc(id).update({ read: true, readAt: serverTs() }).catch(function () {}); }
+    catch (_) {}
+  }
 
   // ── Carga perezosa de dependencias (best-effort, solo "Aceptar") ─
   function ensureScript(src, ready) {
@@ -126,12 +165,14 @@
     snap.forEach(function (doc) {
       items.push(Object.assign({ id: doc.id }, doc.data()));
     });
+    loadError = false;
     state.items = items;
     renderBadge();
     if (panelOpen) renderPanel();
   }
   function onSnapError(_err) {
-    // Permiso/red: degradar sin romper el header.
+    // Permiso/red: marcar error (distinto de "vacío") sin romper el header.
+    loadError = true;
     state.items = [];
     renderBadge();
     if (panelOpen) renderPanel();
@@ -172,29 +213,45 @@
       "border-radius:999px;background:#ff3b5c;color:#fff;font-size:.66rem;font-weight:900;line-height:18px;" +
       "text-align:center;box-shadow:0 0 0 2px rgba(8,14,28,.9),0 4px 10px rgba(255,59,92,.45);display:none;}" +
       ".pz-notif-badge.is-on{display:block;}" +
+      ".pz-notif-badge.is-pop{animation:pzNotifPop .42s cubic-bezier(.2,1.4,.4,1);}" +
+      "@keyframes pzNotifPop{0%{transform:scale(.4);}60%{transform:scale(1.25);}100%{transform:scale(1);}}" +
       ".pz-notif-panel{position:absolute;top:calc(100% + 10px);right:0;width:330px;max-width:calc(100vw - 24px);" +
       "max-height:min(70vh,460px);overflow-y:auto;background:rgba(8,14,28,.94);border:1px solid rgba(255,255,255,.10);" +
       "border-radius:16px;box-shadow:0 22px 46px rgba(0,0,0,.44);backdrop-filter:blur(18px);overflow-x:hidden;" +
       "display:none;z-index:1200;}" +
       ".pz-notif-panel.is-open{display:block;}" +
-      ".pz-notif-head{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);" +
-      "color:#fff;font-size:.9rem;font-weight:800;}" +
+      ".pz-notif-head{display:flex;align-items:center;justify-content:space-between;gap:10px;" +
+      "padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);color:#fff;font-size:.9rem;font-weight:800;}" +
+      ".pz-notif-markall{appearance:none;border:none;background:transparent;color:#6fb2ff;font:inherit;" +
+      "font-size:.74rem;font-weight:800;cursor:pointer;padding:0;}" +
+      ".pz-notif-markall:hover{text-decoration:underline;}" +
       ".pz-notif-empty{padding:22px 16px;color:rgba(234,242,255,.58);font-size:.85rem;text-align:center;}" +
+      ".pz-notif-err{padding:20px 16px;color:#ffb1a3;font-size:.84rem;text-align:center;}" +
+      ".pz-notif-err button{display:block;margin:10px auto 0;border:1px solid rgba(255,255,255,.18);" +
+      "background:rgba(255,255,255,.06);color:#eaf2ff;border-radius:8px;padding:6px 14px;font:inherit;" +
+      "font-size:.78rem;font-weight:800;cursor:pointer;}" +
       ".pz-notif-item{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;text-decoration:none;" +
-      "border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s;}" +
+      "border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s;position:relative;}" +
       ".pz-notif-item:last-child{border-bottom:none;}" +
       ".pz-notif-item:hover{background:rgba(255,255,255,.06);}" +
+      ".pz-notif-item.is-unread{background:rgba(11,124,255,.10);}" +
+      ".pz-notif-item.is-unread:hover{background:rgba(11,124,255,.16);}" +
+      ".pz-notif-item.is-unread::before{content:'';position:absolute;left:5px;top:50%;transform:translateY(-50%);" +
+      "width:6px;height:6px;border-radius:50%;background:#0B7CFF;box-shadow:0 0 6px rgba(11,124,255,.8);}" +
       ".pz-notif-ico{font-size:1.25rem;line-height:1.3;flex-shrink:0;}" +
       ".pz-notif-body{flex:1;min-width:0;}" +
+      ".pz-notif-toprow{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}" +
       ".pz-notif-title{display:block;color:#fff;font-size:.85rem;font-weight:800;line-height:1.3;}" +
-      ".pz-notif-sub{display:block;color:rgba(234,242,255,.62);font-size:.78rem;margin-top:3px;line-height:1.35;" +
-      "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}" +
+      ".pz-notif-time{flex-shrink:0;color:rgba(234,242,255,.45);font-size:.68rem;font-weight:700;white-space:nowrap;}" +
+      ".pz-notif-sub{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;color:rgba(234,242,255,.72);" +
+      "font-size:.78rem;margin-top:3px;line-height:1.35;overflow:hidden;}" +
       ".pz-notif-accept{margin-top:7px;display:inline-block;border:1px solid rgba(11,124,255,.55);" +
       "background:rgba(11,124,255,.18);color:#eaf2ff;border-radius:8px;padding:5px 10px;font:inherit;" +
       "font-size:.76rem;font-weight:800;cursor:pointer;}" +
       ".pz-notif-accept:hover{background:rgba(11,124,255,.3);}" +
       ".pz-notif-accept[disabled]{opacity:.55;cursor:default;}" +
-      "@media(max-width:860px){.pz-notif-panel{right:-8px;width:300px;}}";
+      "@media(max-width:860px){.pz-notif-panel{right:-8px;width:300px;}" +
+      ".pz-notif-btn{width:44px;height:44px;}}";
     document.head.appendChild(s);
   }
 
@@ -211,48 +268,95 @@
     var badge = document.getElementById("pz-notif-badge");
     if (!badge) return;
     var n = unseenCount();
-    if (n > 0) { badge.textContent = n > 9 ? "9+" : String(n); badge.classList.add("is-on"); }
-    else { badge.classList.remove("is-on"); }
+    if (n > 0) {
+      badge.textContent = n > 9 ? "9+" : String(n);
+      badge.classList.add("is-on");
+      // Pop solo cuando SUBE el conteo (algo nuevo llegó), no en cada render.
+      if (n > prevUnseen) {
+        badge.classList.remove("is-pop");
+        void badge.offsetWidth; // reinicia la animación
+        badge.classList.add("is-pop");
+      }
+    } else {
+      badge.classList.remove("is-on");
+    }
+    // aria: anuncia el conteo a lectores de pantalla.
+    var btn = document.querySelector("[data-notif-btn]");
+    if (btn) btn.setAttribute("aria-label", n > 0 ? ("Notificaciones, " + n + " sin leer") : "Notificaciones");
+    prevUnseen = n;
   }
 
   function renderPanel() {
     var panel = document.getElementById("pz-notif-panel");
     if (!panel) return;
-    var html = '<div class="pz-notif-head">Notificaciones</div>';
-    if (!state.items.length) {
-      html += '<div class="pz-notif-empty">No tienes notificaciones</div>';
+    var unread = unseenCount();
+    var head =
+      '<div class="pz-notif-head"><span>Notificaciones</span>' +
+        (unread > 0 ? '<button type="button" class="pz-notif-markall" data-markall>Marcar todas como leídas</button>' : "") +
+      '</div>';
+
+    var body;
+    if (loadError) {
+      body = '<div class="pz-notif-err">No pudimos cargar tus notificaciones.' +
+             '<button type="button" data-notif-retry>Reintentar</button></div>';
+    } else if (!state.items.length) {
+      body = '<div class="pz-notif-empty">Estás al día — no tienes notificaciones.</div>';
     } else {
-      state.items.forEach(function (it) {
+      body = state.items.map(function (it) {
         var acceptBtn = (it.type === "friend_request" && it.refId)
           ? '<button type="button" class="pz-notif-accept" data-accept="' + esc(it.refId) + '">Aceptar</button>'
           : "";
-        html +=
-          '<a class="pz-notif-item" href="' + esc(it.href) + '">' +
+        var when = fmtRel(it.createdAt);
+        var unreadCls = (it.read !== true) ? " is-unread" : "";
+        return '<a class="pz-notif-item' + unreadCls + '" href="' + esc(it.href) + '" data-read-id="' + esc(it.id) + '">' +
             '<span class="pz-notif-ico">' + esc(it.icon) + '</span>' +
             '<span class="pz-notif-body">' +
-              '<span class="pz-notif-title">' + esc(it.title) + '</span>' +
+              '<span class="pz-notif-toprow">' +
+                '<span class="pz-notif-title">' + esc(it.title) + '</span>' +
+                (when ? '<span class="pz-notif-time">' + esc(when) + '</span>' : "") +
+              '</span>' +
               '<span class="pz-notif-sub">' + esc(it.subtitle) + '</span>' +
               acceptBtn +
             '</span>' +
           '</a>';
-      });
+      }).join("");
     }
-    panel.innerHTML = html;
+    panel.innerHTML = head + body;
 
-    // Botón "Aceptar" inline (best-effort, no rompe la lista si falla).
-    // Tras aceptar, el trigger del servidor borra el notif → el onSnapshot lo
-    // quita solo; no hacemos remove manual.
+    // "Marcar todas como leídas" — control explícito para bajar el badge sin
+    // tener que abrir cada notificación (el abrir ya NO marca todo leído).
+    var markAllBtn = panel.querySelector("[data-markall]");
+    if (markAllBtn) markAllBtn.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation(); markAllRead(); renderPanel();
+    });
+
+    // Reintentar tras error de red/permiso.
+    var retryBtn = panel.querySelector("[data-notif-retry]");
+    if (retryBtn) retryBtn.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      loadError = false; stopListener(); startListener(currentUser()); renderPanel();
+    });
+
+    // Tocar un ítem lo marca leído (read = "interactuado", patrón estándar) y
+    // deja que la navegación del <a> proceda. No preventDefault.
+    panel.querySelectorAll("[data-read-id]").forEach(function (a) {
+      a.addEventListener("click", function () { markOneRead(a.getAttribute("data-read-id")); });
+    });
+
+    // Botón "Aceptar" inline (best-effort). Marca leído y, tras aceptar, el
+    // trigger del servidor borra el notif → el onSnapshot lo quita solo.
     panel.querySelectorAll("[data-accept]").forEach(function (btn) {
       btn.addEventListener("click", async function (e) {
         e.preventDefault(); e.stopPropagation();
         var fid = btn.getAttribute("data-accept");
+        var card = btn.closest("[data-read-id]");
+        if (card) markOneRead(card.getAttribute("data-read-id"));
         btn.disabled = true; btn.textContent = "Aceptando…";
         try {
           await ensureFriendsDeps();
           if (window.PuntazoFriends && typeof window.PuntazoFriends.acceptFriendRequest === "function") {
             await window.PuntazoFriends.acceptFriendRequest(fid);
           }
-          // El onSnapshot reflejará el borrado del notif por el servidor.
         } catch (_) {
           btn.disabled = false; btn.textContent = "Aceptar";
         }
@@ -267,12 +371,17 @@
     panelOpen = true;
     renderPanel();
     panel.classList.add("is-open");
-    markAllRead(); // marca leído en el servidor → badge a 0
+    // NO marcamos todo leído al abrir: el badge persiste hasta que tocas una
+    // notificación o usas "Marcar todas". Patrón estándar (leído = interactuado).
+    var btn = document.querySelector("[data-notif-btn]");
+    if (btn) btn.setAttribute("aria-expanded", "true");
   }
   function closePanel() {
     var panel = document.getElementById("pz-notif-panel");
     panelOpen = false;
     if (panel) panel.classList.remove("is-open");
+    var btn = document.querySelector("[data-notif-btn]");
+    if (btn) btn.setAttribute("aria-expanded", "false");
   }
   function togglePanel() { panelOpen ? closePanel() : openPanel(); }
 
@@ -284,7 +393,11 @@
       var wrap = document.getElementById("pz-notif-bell");
       if (wrap && !wrap.contains(e.target)) closePanel();
     });
-    window.addEventListener("scroll", function () { if (panelOpen) closePanel(); }, { passive: true });
+    // Cerrar con Esc (accesibilidad). NO cerramos por scroll (molesto en mobile:
+    // el gesto de leer/scrollear dentro o fuera del panel lo cerraba de golpe).
+    document.addEventListener("keydown", function (e) {
+      if (panelOpen && (e.key === "Escape" || e.key === "Esc")) closePanel();
+    });
   }
 
   // ── Montaje / desmontaje (sobrevive a updateNavUI) ───────────
@@ -304,7 +417,7 @@
     wrap.id = "pz-notif-bell";
     wrap.className = "pz-notif-wrap";
     wrap.innerHTML =
-      '<button type="button" class="pz-notif-btn" data-notif-btn aria-label="Notificaciones">' +
+      '<button type="button" class="pz-notif-btn" data-notif-btn aria-label="Notificaciones" aria-haspopup="true" aria-expanded="false">' +
         bellSVG() +
         '<span class="pz-notif-badge" id="pz-notif-badge"></span>' +
       '</button>' +
