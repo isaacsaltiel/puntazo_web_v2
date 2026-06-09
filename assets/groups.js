@@ -117,6 +117,10 @@
       createdAt: nowTS(),
       creatorUid: u.uid,
       admins: [u.uid],
+      // memberUids: espejo (array) de la subcolección members. NECESARIO para el
+      // heurístico ≥3 server-side de E7 (índice inverso uid→liga sin 4 get()) y para
+      // las reglas de self-join. Se mantiene ATÓMICAMENTE en create/join/add/leave/kick.
+      memberUids: [u.uid],
       memberCount: 1,
       matchCount: 0,
       isPublic: !!opts.isPublic,
@@ -225,7 +229,11 @@
     const existing = await memberRef.get();
     if (existing.exists) return; // ya member
     const profile = window.PuntazoIdentity ? await window.PuntazoIdentity.getMyProfile() : null;
-    await memberRef.set({
+    // memberUids + member doc en la MISMA operación (batch): el self-join agrega
+    // EXACTAMENTE tu uid a memberUids (invariante de conjunto que la regla valida).
+    // memberCount sigue como increment best-effort dentro del mismo batch.
+    const batch = D.batch();
+    batch.set(memberRef, {
       uid: u.uid,
       joinedAt: nowTS(),
       invitedBy: (opts && opts.invitedBy) || null,
@@ -234,12 +242,11 @@
       photoURL: (profile && profile.photoURL) || u.photoURL || "",
       isActive: true,
     });
-    // Incrementar memberCount (best-effort, sin transacción para keep simple)
-    try {
-      await groupRef.update({
-        memberCount: firebase.firestore.FieldValue.increment(1),
-      });
-    } catch (_) {}
+    batch.update(groupRef, {
+      memberUids: firebase.firestore.FieldValue.arrayUnion(u.uid),
+      memberCount: firebase.firestore.FieldValue.increment(1),
+    });
+    await batch.commit();
   }
 
   async function leaveGroup(groupId) {
@@ -247,23 +254,30 @@
     const D = db();
     if (!u || !D) return;
     const memberRef = D.collection("groups").doc(groupId).collection("members").doc(u.uid);
-    await memberRef.delete();
-    try {
-      await D.collection("groups").doc(groupId).update({
-        memberCount: firebase.firestore.FieldValue.increment(-1),
-      });
-    } catch (_) {}
+    const groupRef = D.collection("groups").doc(groupId);
+    // memberUids arrayRemove + delete del member doc en el MISMO batch (atómico).
+    const batch = D.batch();
+    batch.delete(memberRef);
+    batch.update(groupRef, {
+      memberUids: firebase.firestore.FieldValue.arrayRemove(u.uid),
+      memberCount: firebase.firestore.FieldValue.increment(-1),
+    });
+    await batch.commit();
   }
 
   async function kickMember(groupId, uid) {
     const D = db();
     if (!D) return;
-    await D.collection("groups").doc(groupId).collection("members").doc(uid).delete();
-    try {
-      await D.collection("groups").doc(groupId).update({
-        memberCount: firebase.firestore.FieldValue.increment(-1),
-      });
-    } catch (_) {}
+    const groupRef = D.collection("groups").doc(groupId);
+    const memberRef = groupRef.collection("members").doc(uid);
+    // memberUids arrayRemove + delete en el MISMO batch (admin kick, atómico).
+    const batch = D.batch();
+    batch.delete(memberRef);
+    batch.update(groupRef, {
+      memberUids: firebase.firestore.FieldValue.arrayRemove(uid),
+      memberCount: firebase.firestore.FieldValue.increment(-1),
+    });
+    await batch.commit();
   }
 
   async function addAdmin(groupId, uid) {
@@ -326,11 +340,14 @@
     const D = db();
     if (!u || !D) throw new Error("Debes iniciar sesión");
     if (!groupId || !uid) throw new Error("Faltan datos");
-    const memberRef = D.collection("groups").doc(groupId).collection("members").doc(uid);
+    const groupRef = D.collection("groups").doc(groupId);
+    const memberRef = groupRef.collection("members").doc(uid);
     const existing = await memberRef.get();
     if (existing.exists) return; // ya member → no dupliques
     const p = profile || {};
-    await memberRef.set({
+    // memberUids arrayUnion + member doc en el MISMO batch (admin alta, atómico).
+    const batch = D.batch();
+    batch.set(memberRef, {
       uid: uid,
       joinedAt: nowTS(),
       invitedBy: u.uid,
@@ -339,12 +356,11 @@
       photoURL: p.photoURL || "",
       isActive: true,
     });
-    // Incremento best-effort (no aborta el alta si falla).
-    try {
-      await D.collection("groups").doc(groupId).update({
-        memberCount: firebase.firestore.FieldValue.increment(1),
-      });
-    } catch (_) {}
+    batch.update(groupRef, {
+      memberUids: firebase.firestore.FieldValue.arrayUnion(uid),
+      memberCount: firebase.firestore.FieldValue.increment(1),
+    });
+    await batch.commit();
   }
 
   // ── Temporadas ──
@@ -391,6 +407,21 @@
     return ref.id;
   }
 
+  // Inicializa el bloque `league` de una liga LEGACY (type:"liga" sin `league`).
+  // Crea la 1ª temporada y escribe el bloque completo (incluye `mode`, que solo
+  // se puede fijar la primera vez — luego es inmutable por reglas). Admin only.
+  async function initLeagueBlock(groupId, opts) {
+    const D = db();
+    if (!D || !groupId) throw new Error("Faltan datos");
+    const groupRef = D.collection("groups").doc(groupId);
+    const seasonRef = groupRef.collection("seasons").doc();
+    const seasonDoc = Object.assign(buildSeasonDoc(seasonRef.id, (opts && opts.season) || { name: "Temporada 1", startMs: Date.now() }), { createdAt: nowTS() });
+    await seasonRef.set(seasonDoc);
+    const block = buildLeagueBlock((opts && opts.league) || { mode: "individual" }, seasonRef.id);
+    await groupRef.update({ league: block });
+    return seasonRef.id;
+  }
+
   // Config de liga (admin). `mode` es INMUTABLE (sanitize lo descarta).
   async function updateLeagueConfig(groupId, changes) {
     const D = db();
@@ -420,6 +451,7 @@
     removeAdmin: removeAdmin,
     updateGroup: updateGroup,
     updateLeagueConfig: updateLeagueConfig,
+    initLeagueBlock: initLeagueBlock,
     listSeasons: listSeasons,
     getActiveSeason: getActiveSeason,
     createSeason: createSeason,

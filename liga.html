@@ -11,12 +11,15 @@
 <link rel="stylesheet" href="assets/estilo.css" />
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/auth.js"></script>
 <script src="/assets/header.js"></script>
 <script src="/assets/identity.js"></script>
 <script src="/assets/friends.js"></script>
 <script src="/assets/groups.js"></script>
+<script src="/assets/match-confirmation.js"></script>
+<script src="/assets/standings.js"></script>
 
 <style>
   html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
@@ -122,6 +125,56 @@
   }
   .gr-invite-actions button:hover { background:rgba(34,197,94,.30); }
 
+  /* ── Tabla de posiciones ── */
+  .gr-tabs { display:flex; gap:6px; margin:6px 0 12px; flex-wrap:wrap; }
+  .gr-tab {
+    padding:7px 14px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.25);
+    color:rgba(234,242,255,.75); font-family:inherit; font-weight:800; font-size:.8rem;
+    cursor:pointer; transition:all .14s;
+  }
+  .gr-tab.is-active { background:linear-gradient(180deg, #0b7cff, #1d4ed8); border-color:transparent; color:#fff; }
+  .gr-sortrow { display:flex; gap:6px; margin-bottom:10px; align-items:center; }
+  .gr-sortrow .gr-sortlbl { font-size:.72rem; font-weight:800; color:rgba(234,242,255,.5); text-transform:uppercase; letter-spacing:.5px; }
+  .gr-sort { padding:5px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.25); color:rgba(234,242,255,.75); font-family:inherit; font-weight:800; font-size:.74rem; cursor:pointer; }
+  .gr-sort.is-active { background:rgba(200,232,53,.16); border-color:rgba(200,232,53,.4); color:#d7ef72; }
+
+  .gr-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:14px; border:1px solid rgba(255,255,255,.08); }
+  table.gr-table { width:100%; border-collapse:collapse; font-size:.86rem; min-width:520px; }
+  table.gr-table th, table.gr-table td { padding:10px 8px; text-align:center; white-space:nowrap; }
+  table.gr-table th { font-size:.66rem; font-weight:900; text-transform:uppercase; letter-spacing:.4px; color:rgba(234,242,255,.55); background:rgba(255,255,255,.03); position:sticky; top:0; }
+  table.gr-table td { border-top:1px solid rgba(255,255,255,.06); }
+  table.gr-table td.gr-td-name, table.gr-table th.gr-th-name { text-align:left; }
+  table.gr-table .gr-rank { font-weight:900; color:rgba(234,242,255,.45); width:28px; }
+  table.gr-table .gr-unit { font-weight:800; color:#fff; }
+  table.gr-table .gr-pct { font-weight:900; color:#d7ef72; }       /* % vista de primer nivel */
+  table.gr-table .gr-pts { font-weight:900; color:#9fc6ff; }
+  table.gr-table tr.is-me td { background:rgba(11,124,255,.14); }
+  table.gr-table tr.is-me .gr-unit::after { content:" · Tú"; font-size:.7rem; color:rgba(159,198,255,.85); font-weight:800; }
+  table.gr-table tr.not-rankable td { opacity:.5; }
+  .gr-medal { font-size:.95rem; }
+
+  .gr-recent { display:flex; flex-direction:column; gap:7px; }
+  .gr-recent-item { display:flex; align-items:center; gap:10px; padding:9px 12px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px; font-size:.84rem; }
+  .gr-recent-score { font-weight:900; color:#9fc6ff; font-variant-numeric:tabular-nums; }
+  .gr-recent-teams { flex:1; min-width:0; color:#eaf2ff; }
+  .gr-recent-teams .win { color:#9af2c0; font-weight:800; }
+  .gr-recent-when { font-size:.72rem; color:rgba(234,242,255,.5); }
+
+  .gr-needcfg { text-align:center; padding:26px 18px; color:#ffd97a; background:rgba(255,217,122,.08); border:1px dashed rgba(255,217,122,.35); border-radius:14px; }
+
+  /* Definir parejas (admin, modo pairs) */
+  .gr-pairdef { margin-top:8px; padding:12px 14px; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.10); border-radius:12px; }
+  .gr-pairdef .pd-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+  .gr-pairdef select { flex:1; min-width:120px; padding:9px 10px; border-radius:9px; border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.30); color:#fff; font-family:inherit; font-size:.86rem; }
+  .gr-pairdef input.pd-name { flex:1; min-width:120px; padding:9px 10px; border-radius:9px; border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.30); color:#fff; font-family:inherit; font-size:.86rem; }
+  .gr-pairdef .pd-del { padding:0 12px; align-self:stretch; border-radius:8px; border:1px solid rgba(255,80,80,.30); background:rgba(255,80,80,.14); color:#ffb1a3; font-family:inherit; font-weight:900; cursor:pointer; }
+  .gr-pairdef .pd-add { padding:8px 14px; border-radius:8px; border:1px solid rgba(11,124,255,.40); background:rgba(11,124,255,.16); color:#cfe2ff; font-family:inherit; font-weight:800; font-size:.8rem; cursor:pointer; }
+  .gr-pairdef .pd-save { margin-left:8px; padding:8px 16px; border-radius:8px; border:none; background:linear-gradient(180deg, #0b7cff, #1d4ed8); color:#fff; font-family:inherit; font-weight:900; font-size:.8rem; cursor:pointer; }
+
+  .gr-champ { margin-top:10px; padding:12px 14px; background:rgba(200,232,53,.10); border:1px solid rgba(200,232,53,.35); border-radius:12px; color:#eaf2ff; font-size:.86rem; }
+  .gr-champ b { color:#d7ef72; }
+
   .gr-loading, .gr-error, .gr-notmember {
     text-align:center; padding:40px 20px;
     color:rgba(234,242,255,.70);
@@ -172,10 +225,61 @@
       </div>
     </div>
 
+    <!-- Aviso: liga sin configuración (legacy / type liga sin bloque league) -->
+    <div id="grNeedCfg" class="gr-needcfg" style="display:none">
+      <p id="grNeedCfgMsg">Esta liga necesita configuración.</p>
+      <button id="grInitBtn" class="gr-btn gr-btn-primary" type="button" style="display:none; margin-top:10px;">Inicializar liga (Individual)</button>
+    </div>
+
+    <!-- ── POSICIONES (la estrella) ── -->
+    <div id="grStandingsSection">
+      <div class="gr-section-title">Posiciones</div>
+      <div class="gr-tabs" id="grTabs">
+        <button class="gr-tab" data-period="week" type="button">Semana</button>
+        <button class="gr-tab" data-period="month" type="button">Mes</button>
+        <button class="gr-tab" data-period="year" type="button">Año</button>
+        <button class="gr-tab is-active" data-period="season" type="button">Temporada</button>
+      </div>
+      <div class="gr-sortrow">
+        <span class="gr-sortlbl">Ordenar por</span>
+        <button class="gr-sort is-active" data-sort="points" type="button">Puntos</button>
+        <button class="gr-sort" data-sort="pct" type="button">% Victorias</button>
+      </div>
+      <div id="grTableWrap" class="gr-table-wrap"></div>
+      <div id="grTablePlaceholder" class="gr-placeholder" style="display:none">
+        🚧 La tabla aparece cuando jueguen partidos de la liga.
+      </div>
+    </div>
+
+    <!-- Últimos enfrentamientos -->
+    <div id="grRecentSection" style="display:none">
+      <div class="gr-section-title">Últimos enfrentamientos</div>
+      <div id="grRecent" class="gr-recent"></div>
+    </div>
+
+    <!-- Campeón de temporadas cerradas -->
+    <div id="grChampSection" style="display:none">
+      <div class="gr-section-title">Campeones</div>
+      <div id="grChamps"></div>
+    </div>
+
     <!-- Parejas (solo modo pairs y si hay definidas) -->
     <div id="grPairsSection" style="display:none">
       <div class="gr-section-title">Parejas</div>
       <div id="grPairs" class="gr-pairs"></div>
+    </div>
+
+    <!-- Definir parejas (admin, modo pairs) -->
+    <div id="grPairDefSection" style="display:none">
+      <div class="gr-section-title">Definir parejas</div>
+      <div class="gr-pairdef" id="grPairDef">
+        <div id="grPairDefRows"></div>
+        <div style="margin-top:6px;">
+          <button type="button" class="pd-add" id="grPairAdd">+ Agregar pareja</button>
+          <button type="button" class="pd-save" id="grPairSave">Guardar parejas</button>
+        </div>
+        <div id="grPairMsg" class="gr-msg"></div>
+      </div>
     </div>
 
     <div class="gr-section-title">Miembros (<span id="grMemberCount">0</span>)</div>
@@ -188,9 +292,10 @@
       <div id="grAddMsg" class="gr-msg"></div>
     </div>
 
-    <div class="gr-section-title">Posiciones</div>
-    <div class="gr-placeholder">
-      🚧 La tabla aparece cuando jueguen partidos de la liga.
+    <!-- Cierre de temporada (admin) -->
+    <div id="grCloseSection" style="display:none; margin-top:18px;">
+      <button id="grCloseBtn" class="gr-btn gr-btn-danger" type="button">🏁 Cerrar temporada y coronar campeón</button>
+      <div id="grCloseMsg" class="gr-msg"></div>
     </div>
   </div>
 </main>
@@ -245,6 +350,255 @@
     };
   }
 
+  // ── Estado de la tabla (período/orden activos) + cache de partidos ──
+  const standingsState = { period: 'season', sortBy: 'points', matches: null, ctx: null };
+  let myPositionLabel = null; // para el texto de compartir ("Voy #1...")
+
+  function fmtWhen(ms) {
+    if (!Number.isFinite(ms)) return '';
+    const days = Math.floor((Date.now() - ms) / 86400000);
+    if (days <= 0) return 'hoy';
+    if (days === 1) return 'ayer';
+    if (days < 7) return 'hace ' + days + ' d';
+    return fmtDate(ms);
+  }
+
+  // Carga los partidos confirmados de la liga (tagged) una sola vez.
+  async function loadLeagueMatches(leagueGroupId) {
+    const D = window.PuntazoFirebase && window.PuntazoFirebase.db();
+    if (!D) return [];
+    try {
+      const snap = await D.collection('matches')
+        .where('leagueGroupId', '==', leagueGroupId)
+        .where('status', '==', 'confirmed')
+        .limit(2000).get();
+      const out = [];
+      snap.forEach(function (d) { out.push(Object.assign({ id: d.id }, d.data())); });
+      return out;
+    } catch (e) {
+      console.warn('[liga] loadLeagueMatches', e);
+      return [];
+    }
+  }
+
+  // Render principal de la tabla + LOOP visual + parejas + cierre de temporada.
+  async function renderStandingsAndLoop(group, league, members, activeSeason, isAdmin, u) {
+    standingsState.ctx = { group: group, league: league, activeSeason: activeSeason, members: members, u: u };
+    const matches = await loadLeagueMatches(group.groupId);
+    standingsState.matches = matches;
+
+    // Tabs de período.
+    Array.prototype.forEach.call(document.querySelectorAll('#grTabs .gr-tab'), function (btn) {
+      btn.onclick = function () {
+        standingsState.period = btn.getAttribute('data-period');
+        Array.prototype.forEach.call(document.querySelectorAll('#grTabs .gr-tab'), function (b) {
+          b.classList.toggle('is-active', b === btn);
+        });
+        paintTable();
+      };
+    });
+    // Orden (Puntos / %).
+    Array.prototype.forEach.call(document.querySelectorAll('.gr-sort'), function (btn) {
+      btn.onclick = function () {
+        standingsState.sortBy = btn.getAttribute('data-sort');
+        Array.prototype.forEach.call(document.querySelectorAll('.gr-sort'), function (b) {
+          b.classList.toggle('is-active', b === btn);
+        });
+        paintTable();
+      };
+    });
+
+    paintTable();
+    renderRecent();
+    renderChampions(group.groupId);
+
+    // Definir parejas (admin, modo pairs).
+    if (isAdmin && league.mode === 'pairs') {
+      renderPairDef(group, league, members);
+    }
+    // Cierre de temporada (admin, con temporada activa).
+    if (isAdmin && activeSeason) {
+      const $closeSection = document.getElementById('grCloseSection');
+      $closeSection.style.display = '';
+      const $closeBtn = document.getElementById('grCloseBtn');
+      const $closeMsg = document.getElementById('grCloseMsg');
+      $closeBtn.onclick = async function () {
+        if (!confirm('¿Cerrar "' + (activeSeason.name || 'la temporada') + '"? Se coronará al líder y arrancará una nueva temporada.')) return;
+        $closeBtn.disabled = true;
+        $closeMsg.className = 'gr-msg'; $closeMsg.textContent = 'Cerrando…';
+        try {
+          const fn = window.firebase.app().functions('us-central1').httpsCallable('closeSeason');
+          const r = await fn({ groupId: group.groupId });
+          const champ = r && r.data && r.data.championRef;
+          $closeMsg.className = 'gr-msg ok';
+          $closeMsg.textContent = champ ? ('🏆 Campeón: ' + (champ.name || '—')) : 'Temporada cerrada.';
+          setTimeout(loadAndRender, 1200);
+        } catch (e) {
+          console.error('[liga] closeSeason', e);
+          $closeBtn.disabled = false;
+          $closeMsg.className = 'gr-msg bad';
+          $closeMsg.textContent = (e && e.message) ? e.message : 'No se pudo cerrar.';
+        }
+      };
+    }
+  }
+
+  function paintTable() {
+    const ctx = standingsState.ctx;
+    if (!ctx) return;
+    const league = ctx.league, activeSeason = ctx.activeSeason, u = ctx.u;
+    const matches = standingsState.matches || [];
+    const res = window.PuntazoStandings.computeStandings(matches, {
+      mode: league.mode, pairs: league.pairs,
+      pointsWin: league.pointsWin, pointsLoss: league.pointsLoss,
+      period: standingsState.period, now: Date.now(),
+      seasonStartMs: activeSeason ? activeSeason.startMs : null,
+      seasonEndMs: activeSeason ? activeSeason.endMs : null,
+      sortBy: standingsState.sortBy,
+    });
+    const $wrap = document.getElementById('grTableWrap');
+    const $ph = document.getElementById('grTablePlaceholder');
+    if (!res.rows.length) {
+      $wrap.innerHTML = '';
+      $ph.style.display = '';
+      myPositionLabel = null;
+      return;
+    }
+    $ph.style.display = 'none';
+    const myUid = u && u.uid;
+    let myRow = null;
+    const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
+    const body = res.rows.map(function (r) {
+      const isMe = myUid && (r.key === myUid || (Array.isArray(r.uids) && r.uids.indexOf(myUid) >= 0));
+      if (isMe) myRow = r;
+      const medal = medals[r.rank] ? '<span class="gr-medal">' + medals[r.rank] + '</span> ' : '';
+      return '<tr class="' + (isMe ? 'is-me ' : '') + (r.rankable ? '' : 'not-rankable') + '">' +
+        '<td class="gr-rank">' + (medals[r.rank] ? '' : r.rank) + '</td>' +
+        '<td class="gr-td-name gr-unit">' + medal + escapeHtml(r.name || '—') + '</td>' +
+        '<td>' + r.pj + '</td>' +
+        '<td>' + r.g + '</td>' +
+        '<td>' + r.p + '</td>' +
+        '<td class="gr-pts">' + r.pts + '</td>' +
+        '<td class="gr-pct">' + r.pct.toFixed(0) + '%</td>' +
+        '<td>' + (r.setDiff > 0 ? '+' : '') + r.setDiff + '</td>' +
+        '<td>' + (r.gameDiff > 0 ? '+' : '') + r.gameDiff + '</td>' +
+      '</tr>';
+    }).join('');
+    $wrap.innerHTML =
+      '<table class="gr-table"><thead><tr>' +
+        '<th></th><th class="gr-th-name">Jugador</th><th>PJ</th><th>G</th><th>P</th>' +
+        '<th>Pts</th><th>%</th><th>±Sets</th><th>±Games</th>' +
+      '</tr></thead><tbody>' + body + '</tbody></table>';
+
+    // Posición propia → texto de compartir.
+    if (myRow) {
+      myPositionLabel = 'Voy #' + myRow.rank + ' en la ' + (ctx.group.name || 'liga') + ' 🏆';
+    } else {
+      myPositionLabel = null;
+    }
+  }
+
+  function renderRecent() {
+    const ctx = standingsState.ctx;
+    if (!ctx) return;
+    const league = ctx.league;
+    const recent = window.PuntazoStandings.computeRecent(standingsState.matches || [], {
+      mode: league.mode, pairs: league.pairs, limit: 8,
+    });
+    const $section = document.getElementById('grRecentSection');
+    const $list = document.getElementById('grRecent');
+    if (!recent.length) { $section.style.display = 'none'; return; }
+    $section.style.display = '';
+    $list.innerHTML = recent.map(function (r) {
+      const sets = (r.sets || []).map(function (s) {
+        return (s && s.team1 != null ? s.team1 : '–') + '-' + (s && s.team2 != null ? s.team2 : '–');
+      }).join(' ');
+      const t1 = (r.team1 || []).join(' / ') || 'Equipo 1';
+      const t2 = (r.team2 || []).join(' / ') || 'Equipo 2';
+      const t1c = (r.winner === 'team1') ? '<span class="win">' + escapeHtml(t1) + '</span>' : escapeHtml(t1);
+      const t2c = (r.winner === 'team2') ? '<span class="win">' + escapeHtml(t2) + '</span>' : escapeHtml(t2);
+      return '<div class="gr-recent-item">' +
+        '<span class="gr-recent-score">' + escapeHtml(sets || '—') + '</span>' +
+        '<span class="gr-recent-teams">' + t1c + ' vs ' + t2c + '</span>' +
+        '<span class="gr-recent-when">' + escapeHtml(fmtWhen(r.endMs)) + '</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  async function renderChampions(groupId) {
+    let seasons = [];
+    try { seasons = await window.PuntazoGroups.listSeasons(groupId); } catch (_) {}
+    const closed = seasons.filter(function (s) { return s && s.closed && s.championRef; });
+    const $section = document.getElementById('grChampSection');
+    const $list = document.getElementById('grChamps');
+    if (!closed.length) { $section.style.display = 'none'; return; }
+    closed.sort(function (a, b) { return (b.startMs || 0) - (a.startMs || 0); });
+    $section.style.display = '';
+    $list.innerHTML = closed.map(function (s) {
+      return '<div class="gr-champ">🏆 <b>' + escapeHtml((s.championRef && s.championRef.name) || '—') +
+        '</b> ganó ' + escapeHtml(s.name || 'la temporada') + '</div>';
+    }).join('');
+  }
+
+  // Definir parejas (admin, modo pairs): cada pareja = 2 miembros reales + nombre.
+  function renderPairDef(group, league, members) {
+    const $section = document.getElementById('grPairDefSection');
+    const $rows = document.getElementById('grPairDefRows');
+    const $msg = document.getElementById('grPairMsg');
+    $section.style.display = '';
+
+    function memberOpts(selected) {
+      return '<option value="">— jugador —</option>' + members.map(function (m) {
+        const sel = (m.uid === selected) ? ' selected' : '';
+        return '<option value="' + escapeHtml(m.uid) + '"' + sel + '>' + escapeHtml(m.displayName || m.uid) + '</option>';
+      }).join('');
+    }
+    function addRow(pair) {
+      pair = pair || { uids: [], name: '' };
+      const row = document.createElement('div');
+      row.className = 'pd-row';
+      row.innerHTML =
+        '<select class="pd-a">' + memberOpts(pair.uids[0]) + '</select>' +
+        '<select class="pd-b">' + memberOpts(pair.uids[1]) + '</select>' +
+        '<input class="pd-name" type="text" maxlength="60" placeholder="Nombre (opcional)" value="' + escapeHtml(pair.name || '') + '" />' +
+        '<button type="button" class="pd-del">✕</button>';
+      row.querySelector('.pd-del').onclick = function () { row.remove(); };
+      $rows.appendChild(row);
+    }
+    $rows.innerHTML = '';
+    const existing = Array.isArray(league.pairs) ? league.pairs : [];
+    if (existing.length) existing.forEach(addRow); else { addRow(); addRow(); }
+    document.getElementById('grPairAdd').onclick = function () { addRow(); };
+    document.getElementById('grPairSave').onclick = async function () {
+      const pairs = [];
+      let i = 0; let bad = false;
+      Array.prototype.forEach.call($rows.querySelectorAll('.pd-row'), function (row) {
+        const a = row.querySelector('.pd-a').value;
+        const b = row.querySelector('.pd-b').value;
+        let name = row.querySelector('.pd-name').value.trim();
+        if (!a || !b) return;             // pareja incompleta → la ignora
+        if (a === b) { bad = true; return; }
+        if (!name) {
+          const ma = members.find(function (m) { return m.uid === a; });
+          const mb = members.find(function (m) { return m.uid === b; });
+          name = ((ma && ma.displayName) || 'A') + ' & ' + ((mb && mb.displayName) || 'B');
+        }
+        i++;
+        pairs.push({ pairId: 'p' + i, uids: [a, b], name: name.slice(0, 60) });
+      });
+      if (bad) { $msg.className = 'gr-msg bad'; $msg.textContent = 'Una pareja tiene al mismo jugador dos veces.'; return; }
+      $msg.className = 'gr-msg'; $msg.textContent = 'Guardando…';
+      try {
+        await window.PuntazoGroups.updateLeagueConfig(group.groupId, { pairs: pairs });
+        $msg.className = 'gr-msg ok'; $msg.textContent = '✓ Parejas guardadas';
+        setTimeout(loadAndRender, 800);
+      } catch (e) {
+        console.error('[liga] savePairs', e);
+        $msg.className = 'gr-msg bad'; $msg.textContent = 'No se pudieron guardar.';
+      }
+    };
+  }
+
   async function loadAndRender() {
     if (!groupId) { show('error'); return; }
     show('loading');
@@ -280,9 +634,54 @@
         return;
       }
 
+      // ── Fase 0.4: liga sin bloque `league` (legacy) ──
+      // No asumas "Individual" por defecto: avisa y, si eres admin, ofrece inicializar.
+      const hasLeague = !!(group.league && group.league.mode);
+      const $needCfg = document.getElementById('grNeedCfg');
+      const $standingsSection = document.getElementById('grStandingsSection');
+      if (!hasLeague) {
+        document.getElementById('grName').textContent = group.name;
+        document.getElementById('grModeBadge').style.display = 'none';
+        $standingsSection.style.display = 'none';
+        $needCfg.style.display = '';
+        const initBtn = document.getElementById('grInitBtn');
+        if (isAdmin) {
+          document.getElementById('grNeedCfgMsg').textContent =
+            'Esta liga aún no está configurada. Inicialízala para empezar a llevar la tabla.';
+          initBtn.style.display = '';
+          initBtn.onclick = async function () {
+            initBtn.disabled = true;
+            try {
+              // Crea el bloque league (modo individual) + 1ª temporada. `mode` solo
+              // se fija aquí (la primera vez); luego es inmutable por reglas.
+              await window.PuntazoGroups.initLeagueBlock(groupId, {
+                league: { mode: 'individual' },
+                season: { name: 'Temporada 1', startMs: Date.now() },
+              });
+              loadAndRender();
+            } catch (e) {
+              console.error('[liga] init', e);
+              initBtn.disabled = false;
+              document.getElementById('grNeedCfgMsg').textContent = 'No se pudo inicializar (revisa reglas/permisos).';
+            }
+          };
+        } else {
+          document.getElementById('grNeedCfgMsg').textContent =
+            'Esta liga todavía no está configurada. Pídele al organizador que la inicialice.';
+          initBtn.style.display = 'none';
+        }
+      } else {
+        $needCfg.style.display = 'none';
+        $standingsSection.style.display = '';
+      }
+
       // ── Header ──
       document.getElementById('grName').textContent = group.name;
-      document.getElementById('grModeBadge').textContent = (league.mode === 'pairs') ? '👥 Parejas' : '👤 Individual';
+      const $modeBadge = document.getElementById('grModeBadge');
+      if (hasLeague) {
+        $modeBadge.style.display = '';
+        $modeBadge.textContent = (league.mode === 'pairs') ? '👥 Parejas' : '👤 Individual';
+      }
 
       // Temporada activa
       const activeSeason = await window.PuntazoGroups.getActiveSeason(groupId);
@@ -305,6 +704,11 @@
         document.getElementById('grPairs').innerHTML = league.pairs.map(function (p) {
           return '<div class="gr-pair">' + escapeHtml(p.name || 'Pareja') + '</div>';
         }).join('');
+      }
+
+      // ── TABLA + últimos enfrentamientos + parejas/temporada (solo si hay league) ──
+      if (hasLeague) {
+        renderStandingsAndLoop(group, league, members, activeSeason, isAdmin, u);
       }
 
       // ── Miembros ──
@@ -402,7 +806,11 @@
         }).catch(function () { alert('No se pudo copiar.'); });
       };
       document.getElementById('grWhatsappBtn').onclick = function () {
-        const text = 'Únete a mi liga "' + group.name + '" en Puntazo: ' + leagueLink();
+        // Compartir lleva la POSICIÓN si la tengo ("Voy #1... ¿te atreves?"), no un link vacío.
+        const brag = myPositionLabel ? (myPositionLabel + ' ¿te atreves? ') : '';
+        const text = brag
+          ? (brag + 'Únete a la liga "' + group.name + '" en Puntazo: ' + leagueLink())
+          : ('Únete a mi liga "' + group.name + '" en Puntazo: ' + leagueLink());
         window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
       };
       document.getElementById('grLeaveBtn').onclick = async function () {

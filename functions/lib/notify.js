@@ -102,6 +102,98 @@ function clipReadyPayload(pulseId) {
   };
 }
 
+// ── E7 · EL LOOP ─────────────────────────────────────────────────────────────
+// Subtítulo de movimiento de liga: "Ganaste 3 pts. Subiste al #2 de {liga}, a 1
+// victoria del líder Ana." (rivalidad concreta: nombra al rival inmediato arriba).
+// `info` = { leagueName, rank, ptsGained, rivalName, gap } (gap = pts para alcanzar
+// al de arriba; null si ya eres #1). Cero mojibake.
+function leagueRankSubtitle(info) {
+  info = info || {};
+  const name = info.leagueName || "tu liga";
+  const rank = Number.isFinite(info.rank) ? info.rank : null;
+  const gained = Number.isFinite(info.ptsGained) ? info.ptsGained : 0;
+  let s = (gained > 0 ? ("Ganaste " + gained + " pts. ") : "");
+  if (rank === 1) {
+    s += "Eres #1 de " + name + ". ¡A defenderlo!";
+  } else if (rank != null) {
+    s += "Vas #" + rank + " de " + name;
+    if (info.rivalName && Number.isFinite(info.gap) && info.gap > 0) {
+      s += ", a " + info.gap + " pts de " + info.rivalName + ".";
+    } else {
+      s += ".";
+    }
+  } else {
+    s += "Tu posición en " + name + " se actualizó.";
+  }
+  return s;
+}
+
+// refId del league_rank: por liga+temporada (un solo notif vivo por liga; el nuevo
+// movimiento PISA al anterior — el trigger borra+recrea para refrescar el subtítulo).
+function leagueRankRefId(groupId, seasonId) {
+  return String(groupId) + ":" + String(seasonId || "active");
+}
+
+function leagueRankPayload(groupId, seasonId, info) {
+  return {
+    type: "league_rank",
+    refId: leagueRankRefId(groupId, seasonId),
+    icon: "📊",
+    title: "Te moviste en " + ((info && info.leagueName) || "tu liga"),
+    subtitle: leagueRankSubtitle(info),
+    href: "/liga.html?id=" + groupId,
+  };
+}
+
+// Resumen semanal (onSchedule, domingo PM). refId por liga+semana (idempotente/sem).
+function leagueWeeklyRefId(groupId, weekKey) {
+  return String(groupId) + ":" + String(weekKey);
+}
+function leagueWeeklyPayload(groupId, weekKey, info) {
+  info = info || {};
+  const name = info.leagueName || "tu liga";
+  let sub;
+  if (Number.isFinite(info.rank) && info.rank === 1) {
+    sub = "Cierras la semana como líder de " + name + ". Próximo rival: " + (info.chaserName || "el grupo") + ".";
+  } else if (Number.isFinite(info.rank)) {
+    sub = "Vas #" + info.rank + " en " + name +
+          (info.leaderName ? (". Líder: " + info.leaderName) : "") +
+          (info.nextName && Number.isFinite(info.gap) ? (". A " + info.gap + " pts de " + info.nextName + ".") : ".");
+  } else {
+    sub = "Resumen semanal de " + name + ".";
+  }
+  return {
+    type: "league_weekly",
+    refId: leagueWeeklyRefId(groupId, weekKey),
+    icon: "🗓️",
+    title: "Resumen de la semana · " + name,
+    subtitle: sub,
+    href: "/liga.html?id=" + groupId,
+  };
+}
+
+// Campeón de temporada (notif a TODOS los miembros). refId por liga+temporada.
+function seasonChampionRefId(groupId, seasonId) {
+  return String(groupId) + ":" + String(seasonId);
+}
+function seasonChampionPayload(groupId, seasonId, info) {
+  info = info || {};
+  const name = info.leagueName || "tu liga";
+  const champ = info.championName || "El campeón";
+  const seasonName = info.seasonName || "la temporada";
+  const youWon = !!info.youAreChampion;
+  return {
+    type: "season_champion",
+    refId: seasonChampionRefId(groupId, seasonId),
+    icon: "🏆",
+    title: youWon ? ("¡Ganaste " + seasonName + "!") : ("Campeón de " + name),
+    subtitle: youWon
+      ? ("Te coronaste campeón de " + seasonName + " en " + name + ". ¡Felicidades!")
+      : (champ + " ganó " + seasonName + " de " + name + "."),
+    href: "/liga.html?id=" + groupId,
+  };
+}
+
 module.exports = {
   notifId: notifId,
   friendReceptor: friendReceptor,
@@ -112,4 +204,12 @@ module.exports = {
   friendRequestPayload: friendRequestPayload,
   matchConfirmPayload: matchConfirmPayload,
   clipReadyPayload: clipReadyPayload,
+  // E7 · EL LOOP
+  leagueRankSubtitle: leagueRankSubtitle,
+  leagueRankRefId: leagueRankRefId,
+  leagueRankPayload: leagueRankPayload,
+  leagueWeeklyRefId: leagueWeeklyRefId,
+  leagueWeeklyPayload: leagueWeeklyPayload,
+  seasonChampionRefId: seasonChampionRefId,
+  seasonChampionPayload: seasonChampionPayload,
 };
