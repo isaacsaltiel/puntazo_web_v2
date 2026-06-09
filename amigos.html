@@ -208,12 +208,51 @@
           '<div class="am-item-handle">invitado</div>' +
         '</div>' +
         '<div class="am-item-actions">' +
+          '<button class="am-btn-mini" data-action="guest-invite" data-gid="' + escapeHtml(g.guestId) + '" data-name="' + escapeHtml(nm) + '" style="background:rgba(37,211,102,.16);border-color:rgba(37,211,102,.45);color:#9af2c0">📲 Invitar</button>' +
           (canMerge ? '<button class="am-btn-mini am-btn-merge" data-action="guest-merge" data-gid="' + escapeHtml(g.guestId) + '" data-name="' + escapeHtml(nm) + '">Fusionar</button>' : '') +
           '<button class="am-btn-mini am-btn-remove" data-action="guest-rename" data-gid="' + escapeHtml(g.guestId) + '" data-name="' + escapeHtml(nm) + '">Renombrar</button>' +
           '<button class="am-btn-mini am-btn-reject" data-action="guest-del" data-gid="' + escapeHtml(g.guestId) + '">Borrar</button>' +
         '</div>' +
       '</div>';
     }).join('');
+  }
+
+  // G1 — loop de crecimiento: invitar a un invitado por WhatsApp con un link de
+  // RECLAMO real (su partido) + mensaje que vende su activo (clips + nivel).
+  // El dueño (yo) arma el link sobre MIS partidos → privacidad respetada.
+  async function inviteGuestWhatsApp(guestId, name) {
+    const origin = window.location.origin || 'https://puntazoclips.com';
+    let link = origin + '/';  // fallback: bienvenida
+    try {
+      const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      const db = (window.PuntazoFirebase && window.PuntazoFirebase.db) ? window.PuntazoFirebase.db() : null;
+      if (u && db && guestId) {
+        // Expande a los alias del invitado (canónico + fusionados) para no perder
+        // coincidencias; solo lee MIS guests (degrada a [guestId]).
+        let gids = [guestId];
+        try {
+          if (window.PuntazoGuests && window.PuntazoGuests.aliasGuestIds) {
+            const a = await window.PuntazoGuests.aliasGuestIds(guestId);
+            if (Array.isArray(a) && a.length) gids = a;
+          }
+        } catch (_) {}
+        const snap = await db.collection('matches').where('userId', '==', u.uid).limit(80).get();
+        let best = null; // preferir pending_confirmation (reclamable) sobre cualquiera
+        snap.forEach(function (d) {
+          const m = d.data() || {};
+          const js = Array.isArray(m.jugadores) ? m.jugadores : [];
+          const has = js.some(function (j) { return j && !j.uid && gids.indexOf(j.guestId) >= 0; });
+          if (!has) return;
+          const pending = (m.status === 'pending_confirmation');
+          if (!best || (pending && !best.pending)) best = { id: d.id, pending: pending };
+        });
+        if (best) link = origin + '/confirmar.html?id=' + encodeURIComponent(best.id);
+      }
+    } catch (e) { console.warn('[amigos] invite link', e); }
+    const nm = (name || '').trim();
+    const msg = '¡Jugué contigo' + (nm ? (', ' + nm) : '') + '! 🎾 Te tengo tus partidos guardados en ' +
+      'Puntazo, con tus clips y tu nivel. Reclámalos aquí 👉 ' + link;
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
   }
 
   async function refreshGuests() {
@@ -298,6 +337,9 @@
       } else if (action === 'remove') {
         if (!confirm('¿Quitar este amigo?')) { btn.disabled = false; return; }
         await window.PuntazoFriends.removeFriend(btn.dataset.uid);
+      } else if (action === 'guest-invite') {
+        await inviteGuestWhatsApp(btn.dataset.gid, btn.dataset.name);
+        btn.disabled = false; return;
       } else if (action === 'guest-rename') {
         const nuevo = prompt('Nuevo nombre del invitado:', btn.dataset.name || '');
         if (nuevo == null || !nuevo.trim()) { btn.disabled = false; return; }
