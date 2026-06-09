@@ -238,20 +238,23 @@ Diseño visual: reusar tokens/estilo de `clasificacion.html` (tabla) y `confirma
 
 ---
 
-## 12. Decisiones abiertas para Isaac
+## 12. Decisiones — LOCKED por Isaac (8-jun)
 
-1. **Tagging de partidos:** ¿server-side al confirmar (robusto, toca backend) o client-side al registrar
-   (simple, v1)? — *Recomiendo server-side; arrancar client-side si quieres E7 sin deploy.*
-2. **Multi-liga por partido:** ¿`leagueIds` array (un partido cuenta para varias ligas) o 1 liga por
-   partido (más simple)? — *Recomiendo array.*
-3. **Visibilidad:** ¿ligas solo para miembros, o públicas/descubribles (cualquiera ve la tabla)? —
-   *v1: members_only (ya es el default de groups). Públicas = futuro.*
-4. **Parejas:** ¿el creador define las parejas fijas, o se auto-detectan del primer partido de cada par? —
-   *v1: el creador las define al crear.*
-5. **Empates de pádel:** confirmamos que NO hay empates (siempre hay ganador) → puntos 3/0, sin "E".
-6. **¿Auto-amistad al unirse a una liga?** (como el claim) — *sugiero sí, best-effort.*
-7. **Conteo ≥3:** ¿estricto (exactamente la regla) o el registrante elige manualmente a qué liga?
-   — *Recomiendo: auto-sugerir cuando ≥3, el registrante confirma con un chip.*
+1. ✅ **Tagging = SERVIDOR al confirmar.** Extender `onMatchConfirmed`: al pasar a confirmed, el servidor
+   calcula a qué liga pertenece el partido (≥3 miembros) y escribe el `groupId`. Robusto, server-only → cero
+   superficie de abuso en reglas. (E7 toca backend; se prueba en emulador y despliega el maestro.)
+2. ✅ **1 liga por partido** → **reusar el `groupId` singular que YA existe** (no se necesita `leagueIds` array).
+   El match pertenece a UNA liga. Edge (un jugador en 2 ligas que califican): el registrante puede pre-elegir la
+   liga al registrar; si no, el servidor toma la liga donde los 4/≥3 coinciden, o la que comparten todos.
+3. ✅ **Visibilidad: solo miembros** (default de groups `members_only`). Públicas = futuro.
+4. ✅ **Parejas: las define el creador** al armar la liga (no auto-detección).
+5. ✅ **Auto-amistad al unirse a una liga:** SÍ, best-effort (como el claim).
+6. (confirmado) Pádel sin empates → puntos 3/0, sin "E".
+
+**Implicación de #1+#2:** el modelo se simplifica — el match sigue con `groupId` (singular, ya escrito por
+`register` y ya usado por el contexto Glicko `group:{groupId}:padel`). Standings = `matches where
+groupId == {ligaGroupId} and status=="confirmed"`. El servidor solo VALIDA/asigna el groupId por el ≥3 al
+confirmar. **NO se agrega `leagueIds`.** Actualizar §2.2 y §3 en consecuencia (reusar groupId, no array).
 
 ---
 

@@ -195,14 +195,27 @@ del claim. (La limpieza también dejó el backend en cero: 0 partidos confirmado
   estaba limpio (sitio en vivo OK). El maestro lo MIRÓ (borraba el CRUD de partidos, basura accidental) y lo descartó
   (`git checkout -- assets/matches.js` → válido). E0b restante: `ranking.js` (M) + `ranking-read.js` (untracked) siguen
   sin commitear pero son VÁLIDOS (node --check OK) — read-side, cambian el sitio, requieren validación browser antes de commitear.
-- **Siguiente (Isaac decide): E4** (sugerencias retroactivas + merge de duplicados — completa el arco de invitados/claim,
-  ya con guestId/ownerUid en los slots) **o E6** (ligas, el grande). Deudas vivas: deploy índice
-  `matches(status,endedAt)`; deep-link de clip en perfil.html; E0b; E2 nav; privacy; aviso-al-registrante.
-- **Fork de producto pendiente (Isaac decide):** (b) **E3c** invitados persistentes (`users/{uid}/guests` ya
-  con reglas E3a → elegir invitado guardado al registrar + sugerencias/merge E4); (c) **E6** ligas
-  (estructura+miembros, reusa invite-link).
-  Deudas vivas: deploy índice `matches(status,endedAt)`; E0b (JS web read-side); E2 (nav); privacy en vistas
-  públicas; entry points; aviso-al-registrante cuando un compañero declina; edge logout-a-mitad en confirmar.html.
+- **E4 ✅ (commit e5d49d4af)** — cierre del arco invitados/claim, cliente puro: (A) sugerencia retroactiva en
+  `confirmar.html` (al reclamar un slot de invitado, sugiere los otros pendientes del mismo dueño con ese guestId →
+  "Reclamar todos", best-effort reusando `claim`); (B) fusión de invitados por puntero `mergedInto` en `guests.js`
+  (NO reescribe matches — bloqueado por reglas en pending), `listMyGuests` excluye fusionados, `ensureGuest` sigue al
+  canónico, anti-ciclo (MAX_DEPTH 8); UI de fusión en amigos.html. Node tests 18/18 (resolveCanonicalId anti-ciclo +
+  findClaimableTwins). Revisado por el maestro. LÍMITE conocido: alias del dueño NO visibles al claimer (no puede leer
+  guests ajenos) → partidos viejos pre-fusión no se sugieren; el caso común (mismo guestId) sí. Validación live pendiente (siembra).
+
+## 🏆 LIGAS — diseño + decisiones LOCKED (8-jun). Doc: `docs/plans/diseno-ligas-2026-06-08.md`
+**Insight:** una liga = un GROUP (`groups.js` ya tiene type "liga", miembros, invite-link, roles, join) + una capa de
+standings record-based. El motor ya da `group:{groupId}:padel` (Glicko). ⇒ E6 (estructura+miembros) está ~70% hecho.
+**Decisiones de Isaac:** (1) tagging SERVER-side al confirmar; (2) **1 liga por partido → reusar `groupId` singular**
+(sin `leagueIds` array); (3) visibilidad solo-miembros; (4) parejas las define el creador; (5) auto-amistad al unirse.
+Standings = `matches where groupId==ligaId, confirmed`, cómputo cliente v1 (helper puro `computeStandings`).
+- **E6 — estructura+miembros** (sobre groups.js): ligas.html, crear liga (modo/temporada/parejas), liga.html home +
+  invite/join + alta por buscador, `memberUids` self-join (invariante de conjunto, emulador→deploy). SIN tabla aún.
+- **E7 — juego+standings:** trigger tagea groupId por ≥3 al confirmar; `computeStandings` (PJ/G/P/Pts/%/±sets/±games,
+  desempate Torneo-5, multi-período sem/mes/año/temporada), últimos enfrentamientos, cierre temporada+campeón;
+  notif `league_invite`/`season_champion`.
+- Deudas vivas: deploy índice `matches(status,endedAt)`; deep-link clip en perfil.html; EN2c (vigías redundantes);
+  E0b (ranking.js/ranking-read.js sin commitear, válidos); E2 nav; privacy; aviso-al-registrante; E4 alias pre-fusión.
 
 ---
 
