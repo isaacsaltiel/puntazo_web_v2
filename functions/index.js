@@ -327,6 +327,18 @@ exports.onMatchNotify = onDocumentWritten(
           return removeNotif(uid, "match_confirm", matchId);
         })
       ));
+      // G1-B — cerrar el loop del invitado: si alguien reclamó un slot que era
+      // invitado (guestId+ownerUid, sin uid → ahora con uid), marca el guest del
+      // DUEÑO como reclamado y avísale. Server-only: el claimer NO puede escribir
+      // guests ajenos (lo hace el Admin SDK aquí). Idempotente (merge + ensureNotif).
+      const claims = notify.detectGuestClaims(before, after);
+      await Promise.all(claims.map(async function (c) {
+        try {
+          await db.collection("users").doc(c.ownerUid).collection("guests").doc(c.guestId)
+            .set({ claimedByUid: c.claimerUid, claimedAt: FieldValue.serverTimestamp() }, { merge: true });
+        } catch (_) {}
+        return ensureNotif(c.ownerUid, notify.guestClaimedPayload(c.guestId, c.claimerName));
+      }));
     } catch (e) {
       logger.error("[onMatchNotify] error", { matchId: matchId, err: e.message });
       throw e;

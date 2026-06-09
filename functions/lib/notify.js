@@ -194,8 +194,42 @@ function seasonChampionPayload(groupId, seasonId, info) {
   };
 }
 
+// ── G1-B · cerrar el loop del invitado ───────────────────────────────────────
+// Detecta slots que pasaron de INVITADO (guestId, sin uid) a RECLAMADO (con uid),
+// comparando before/after por índice (el claim agrega uid in-place conservando el
+// guestId). Devuelve [{ guestId, ownerUid, claimerUid, claimerName }]. PURA.
+// Ignora el caso dueño-se-reclama-a-sí-mismo y slots sin dueño.
+function detectGuestClaims(before, after) {
+  const out = [];
+  if (!before || !after) return out;
+  const bj = Array.isArray(before.jugadores) ? before.jugadores : [];
+  const aj = Array.isArray(after.jugadores) ? after.jugadores : [];
+  aj.forEach(function (ja, i) {
+    if (!ja || !ja.uid || !ja.guestId) return;            // ahora con uid y conserva guestId
+    const jb = bj[i];
+    if (!jb || jb.guestId !== ja.guestId || jb.uid) return; // antes: mismo guest, SIN uid
+    const ownerUid = ja.ownerUid || jb.ownerUid || (after.userId || null);
+    if (!ownerUid || ownerUid === ja.uid) return;          // sin dueño o auto-reclamo
+    out.push({ guestId: ja.guestId, ownerUid: ownerUid, claimerUid: ja.uid, claimerName: firstName(ja.nombre) });
+  });
+  return out;
+}
+
+function guestClaimedPayload(guestId, claimerName) {
+  return {
+    type: "guest_claimed",
+    refId: guestId,
+    icon: "🎉",
+    title: "Tu invitado se unió a Puntazo",
+    subtitle: (claimerName || "Alguien") + " reclamó su lugar y ya tiene cuenta",
+    href: "/amigos.html#invitados",
+  };
+}
+
 module.exports = {
   notifId: notifId,
+  detectGuestClaims: detectGuestClaims,
+  guestClaimedPayload: guestClaimedPayload,
   friendReceptor: friendReceptor,
   firstName: firstName,
   registrantName: registrantName,
