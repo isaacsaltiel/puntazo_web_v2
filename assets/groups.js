@@ -127,10 +127,14 @@
       },
     };
 
-    // ── Capa LIGA (aditiva): bloque `league` + 1ª temporada en el MISMO batch ──
+    // ── Capa LIGA (aditiva): bloque `league` + 1ª temporada ──
+    // OJO: la temporada NO va en el batch del grupo. La regla de seasons.create valida
+    // `uid in get(grupo).admins`, y get() en reglas NO ve escrituras pendientes del mismo
+    // batch → el grupo aún no existe a mitad del batch y la season sería DENEGADA. Por eso
+    // se crea en un 2º paso, ya con el grupo committeado (verificado en emulador,
+    // functions/itest/league-create-flow.js).
     let seasonRef = null, seasonDoc = null;
     if (isLiga) {
-      // seasonId generado ANTES del batch para referenciarlo en league.activeSeasonId.
       const seasonId = groupRef.collection("seasons").doc().id;
       data.league = buildLeagueBlock(opts.league, seasonId);
       seasonRef = groupRef.collection("seasons").doc(seasonId);
@@ -151,8 +155,15 @@
       photoURL: (profile && profile.photoURL) || u.photoURL || "",
       isActive: true,
     });
-    if (isLiga && seasonRef) batch.set(seasonRef, seasonDoc);
     await batch.commit();
+
+    // 2º paso: la 1ª temporada, ya con el grupo existente (la regla resuelve admins).
+    // Best-effort: si fallara, la liga queda creada con activeSeasonId colgante
+    // (getActiveSeason → null, la UI lo tolera); no abortamos la creación de la liga.
+    if (isLiga && seasonRef) {
+      try { await seasonRef.set(seasonDoc); }
+      catch (e) { console.warn("[groups] temporada inicial no se pudo crear (liga creada igual)", e); }
+    }
     return groupRef.id;
   }
 
