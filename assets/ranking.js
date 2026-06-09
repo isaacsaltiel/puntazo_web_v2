@@ -26,9 +26,16 @@
 ══════════════════════════════════════════════════════════════ */
 (function () {
   "use strict";
-  if (window.PuntazoRanking) return;
+  // Export dual browser + Node (la MISMA fuente la usa la web y la Cloud Function).
+  var root = (typeof window !== "undefined")
+    ? window
+    : (typeof globalThis !== "undefined" ? globalThis : this);
+  if (root.PuntazoRanking) {
+    if (typeof module !== "undefined" && module.exports) module.exports = root.PuntazoRanking;
+    return;
+  }
 
-  const ALGORITHM_VERSION = "glicko2-v1.0";
+  const ALGORITHM_VERSION = "glicko2-v2.0";  // v2: resultado suave por games + bono de competitividad (2026-06-07)
 
   // ── Constantes Glicko-2 ──────────────────────────────────────
   const INITIAL_RATING = 1500;
@@ -46,16 +53,31 @@
   const DECAY_RD_PER_WEEK = 5;
   const MAX_RD = 350;
 
-  // Anti-farm
-  const ANTIFARM_WINDOW_HOURS = 24;
-  const ANTIFARM_BASE = 0.5;      // 1, 0.67, 0.5, 0.4, 0.33, ...
+  // Anti-farm (ventana 3 días: el gain decae al repetir vs el mismo rival)
+  const ANTIFARM_WINDOW_HOURS = 72;
+  const ANTIFARM_BASE = 0.5;      // peso 1, 0.67, 0.5, 0.4, 0.33, ...
 
-  // MOV (margen de victoria)
+  // Modelo de margen v2 (aprobado por Isaac 2026-06-07): "resultado suave" por
+  // games + bono de competitividad (premia jugar parejo, pesa más para el underdog).
+  const BONUS_MAX = 16;           // puntos de rating máx del bono (~0.064 de nivel)
+  const COMP_FLOOR = 0.6;         // closeness mínimo para que el bono cuente; debajo = derrota no tan peleada, sin bono
+  const LOSS_WEIGHT = 0.7;        // una DERROTA pesa hacia 0 (perder cuesta; el mérito solo lo da el bono en partidazos)
+  const WINNER_FLOOR = 1;         // el ganador del PARTIDO nunca baja (mín +1 pt de rating)
+  // Mezcla equipo/individual: manda el PROMEDIO del equipo, pero se considera el
+  // rating INDIVIDUAL. Esto hace que la pareja importe, que el más fuerte se mueva
+  // algo menos que el débil, y que compañeros inseparables converjan lento (su
+  // parte individual los jala al nivel que sus resultados justifican).
+  const INDIVIDUAL_WEIGHT = 0.25; // 0 = delta 100% compartido ; 1 = 100% individual (lo de hoy, roto)
+
+  // MOV legacy (función exportada por compat; el motor v2 ya NO la usa)
   const MOV_LOG_COEFFICIENT = 0.12;
   const MOV_CAP = 1.3;
 
   // Conservative rating
   const CONSERVATIVE_RD_FACTOR = 0.5;
+
+  // Siembra de rating local (grupo/club) desde el global (D3): RD mínimo inflado.
+  const SEED_LOCAL_RD = 200;
 
   // Bucket display (escala 1.0–7.0)
   const BUCKET_BASE = 800;        // conservative_rating de 800 = nivel 1.0
@@ -184,10 +206,15 @@
   // ── MOV: margen de victoria ─────────────────────────────────
   // Calcula multiplier basado en diferencia de games del partido.
   // Devuelve s_adjusted (score adjusted), input s = 0..1
-  function applyMOV(s, diffGames) {
+  function applyMOV(s, diffGames, eloDiffFavorWinner) {
     if (s === 0.5) return 0.5;  // empates no ajustados
     if (!Number.isFinite(diffGames) || diffGames < 0) return s;
-    const mult = 1 + Math.log(1 + diffGames) * MOV_LOG_COEFFICIENT;
+    // Corrección de autocorrelación (FiveThirtyEight): amortigua el MOV cuando
+    // el ganador YA era favorito (eloDiff>0) y lo amplifica si era underdog
+    // (eloDiff<0). Sin 3er arg (eloDiff=0) ⇒ comportamiento clásico idéntico.
+    const ed = Number.isFinite(eloDiffFavorWinner) ? eloDiffFavorWinner : 0;
+    const autocorr = 2.2 / Math.max(0.5, ed * 0.001 + 2.2); // clamp anti div0/negativo
+    const mult = 1 + Math.log(1 + diffGames) * MOV_LOG_COEFFICIENT * autocorr;
     const sAdj = s * Math.min(mult, MOV_CAP);
     return Math.max(0, Math.min(1.3, sAdj));
   }
@@ -230,6 +257,34 @@
       }
     }
     return { emoji: "🌱", name: "Principiante", nivel: nivel };
+  }
+
+  // ── Siembra local desde global (D3) ─────────────────────────
+  // Un rating LOCAL (grupo/club) nace heredando la habilidad estimada del GLOBAL
+  // pero con RD inflado: "sé tu nivel en general, no sé aún cómo te va AQUÍ".
+  // Mata el smurfing y es creíble desde el primer partido del contexto.
+  function seedLocalFromGlobal(globalState) {
+    const g = globalState || {};
+    const rating = Number.isFinite(g.rating) ? g.rating : INITIAL_RATING;
+    const rd = Number.isFinite(g.RD) ? g.RD : INITIAL_RD;
+    const vol = Number.isFinite(g.volatility) ? g.volatility : INITIAL_VOLATILITY;
+    return {
+      rating: rating,
+      RD: Math.max(rd, SEED_LOCAL_RD),
+      volatility: vol,
+      matchCount: 0,
+      lastMatchAt: null,
+      recentOpponents: {},
+      isCalibrating: true,
+      seededFromGlobal: true,
+    };
+  }
+
+  // ── Fiabilidad para UI (estilo DUPR) ────────────────────────
+  // Deriva un 0–100 desde el RD: RD 50 → 100% (muy fiable), RD 350 → 0% (nuevo).
+  function reliability(rd) {
+    const v = 100 * (1 - (Number(rd) - 50) / 300);
+    return Math.max(0, Math.min(100, Math.round(v)));
   }
 
   // ── applyMatchToRatings: la función central ─────────────────
@@ -277,30 +332,28 @@
       return { newRatings: {}, audit };
     }
 
-    // Score base
+    // Resultado del partido
     const winner = match.marcador.ganador;
-    const scoreT1 = winner === "team1" ? 1.0 : 0.0;
-    const scoreT2 = winner === "team2" ? 1.0 : 0.0;
 
-    // Diff de games total para MOV
-    let diffGames = 0;
+    // Games por equipo → decisividad d ∈ [0,1] FIRMADA por el ganador del partido
+    // (0 = partidazo / ganó con menos games ; 1 = paliza total).
+    let t1g = 0, t2g = 0;
     if (Array.isArray(match.marcador.sets)) {
-      let t1g = 0, t2g = 0;
       match.marcador.sets.forEach(function (s) {
         t1g += Number(s.team1) || 0;
         t2g += Number(s.team2) || 0;
       });
-      diffGames = Math.abs(t1g - t2g);
     }
-
-    // Aplicar MOV
-    let scoreT1Adj = scoreT1;
-    let scoreT2Adj = scoreT2;
-    if (!opts.skipMOV) {
-      scoreT1Adj = applyMOV(scoreT1, diffGames);
-      scoreT2Adj = applyMOV(scoreT2, diffGames);
-      audit.movMultiplier = 1 + Math.log(1 + diffGames) * MOV_LOG_COEFFICIENT;
-    }
+    const gamesWinner = winner === "team1" ? t1g : t2g;
+    const gamesLoser = winner === "team1" ? t2g : t1g;
+    const totalGames = Math.max(1, gamesWinner + gamesLoser);
+    const d = Math.max(0, Math.min(1, (gamesWinner - gamesLoser) / totalGames));
+    const shareLoser = gamesLoser / totalGames;   // fracción de games del perdedor (0..~0.5)
+    const softLose = LOSS_WEIGHT * shareLoser;    // perdedor: una DERROTA pesa hacia 0 (perder cuesta)
+    const softWin = 1 - softLose;                 // ganador: complementario → el core CONSERVA rating (no infla ni deflacta)
+    const closeness = 1 - d;                      // 1 = partidazo, 0 = paliza
+    audit.decisiveness = d;
+    audit.softWin = softWin;
 
     // Helper: obtener / inicializar rating de un uid
     function getRating(uid) {
@@ -335,64 +388,101 @@
     const t1Agg = teamRating(team1);
     const t2Agg = teamRating(team2);
 
-    // Para cada jugador, aplicar update vs el agregado del equipo rival
-    // (con MOV + anti-farm + decay aplicado al RD entrante)
+    // Para cada jugador: update Glicko vs el agregado rival con su "score suave",
+    // + bono de competitividad, + freno anti-farm, + piso para el ganador.
     const newRatings = {};
 
-    function processTeam(myTeam, oppTeam, oppAgg, myScoreAdj) {
-      myTeam.forEach(function (player) {
-        const cur = getRating(player.uid);
-        audit.before[player.uid] = {
-          rating: cur.rating, RD: cur.RD, volatility: cur.volatility,
-        };
+    // Procesa un equipo. El esperado, el "score suave" y el bono se calculan a
+    // nivel EQUIPO (promedio vs promedio) → la pareja importa. El cambio de cada
+    // jugador MEZCLA el delta del equipo (manda, 1-INDIVIDUAL_WEIGHT) con su delta
+    // INDIVIDUAL (su rating propio vs el promedio rival), para que lo individual se
+    // considere y los compañeros inseparables converjan lento.
+    function processTeam(myTeam, oppTeam, myAgg, oppAgg, won) {
+      const softScore = won ? softWin : softLose;
 
-        // Decay temporal antes de aplicar este match
-        let rdEffective = cur.RD;
-        if (cur.lastMatchAt) {
-          const last = (cur.lastMatchAt instanceof Date)
-            ? cur.lastMatchAt
-            : new Date(cur.lastMatchAt);
-          const days = (new Date(match.endedAt || Date.now()) - last) / (1000 * 60 * 60 * 24);
-          rdEffective = decayRDForInactivity(cur.RD, days);
-        }
+      // Núcleo a nivel equipo (promedio vs promedio)
+      const myG2 = toGlicko2(myAgg.rating, myAgg.rd);
+      const oppG2 = toGlicko2(oppAgg.rating, oppAgg.rd);
+      const expectedTeam = E(myG2.mu, oppG2.mu, oppG2.phi);
+      const teamUpd = updatePlayer(myAgg.rating, myAgg.rd, INITIAL_VOLATILITY,
+        [{ rating: oppAgg.rating, rd: oppAgg.rd, score: softScore }]);
+      const teamCoreDelta = teamUpd.rating - myAgg.rating;
 
-        // Anti-farm: cuántas veces ha jugado contra estos oponentes en 24h
-        let antifarmW = 1.0;
-        if (!opts.skipAntifarm) {
+      // Bono de competitividad (nivel equipo): premia jugar parejo, pesa más al
+      // equipo underdog. Da mérito por hacerle partido al mejor. SOLO cuenta para
+      // partidos GENUINAMENTE peleados: por debajo de COMP_FLOOR de closeness (≈
+      // perder por más de ~2 games/set) el bono es ~0 — así perder 3-6 4-6 repetido
+      // NO te sube. Sube rápido (al cuadrado) hacia los partidazos reales.
+      const comp = Math.max(0, Math.min(1, (closeness - COMP_FLOOR) / (1 - COMP_FLOOR)));
+      // ZERO-SUM para evitar INFLACIÓN global (un bono que solo suma infla el sistema
+      // ~700 pts/temporada, comprobado en Monte Carlo). El bono es un TRANSFER del
+      // favorito al underdog: (1 - 2·expected) → underdog >0, favorito <0, parejo =0.
+      // Suma 0 sobre los 4 jugadores → la media del sistema NO se infla. El mérito de
+      // hacerle partido al mejor se conserva (y se afila).
+      const bonus = BONUS_MAX * comp * comp * (1 - 2 * expectedTeam);
+
+      // Anti-farm a nivel EQUIPO (mismo peso para los dos → no rompe el delta
+      // compartido). Toma el vínculo más "farmeado" de la pareja vs el rival.
+      let antifarmW = 1.0;
+      if (!opts.skipAntifarm) {
+        const cutoff = (new Date(match.endedAt || Date.now()).getTime()) - (ANTIFARM_WINDOW_HOURS * 60 * 60 * 1000);
+        let maxCount = 0;
+        myTeam.forEach(function (player) {
+          const c = currentRatings[player.uid];
           let count = 0;
           oppTeam.forEach(function (opp) {
-            const recents = (cur.recentOpponents && cur.recentOpponents[opp.uid]) || [];
-            const cutoff = (new Date(match.endedAt || Date.now()).getTime()) - (ANTIFARM_WINDOW_HOURS * 60 * 60 * 1000);
+            const recents = (c && c.recentOpponents && c.recentOpponents[opp.uid]) || [];
             count += recents.filter(function (t) {
               return (typeof t === "number" ? t : new Date(t).getTime()) >= cutoff;
             }).length;
           });
-          antifarmW = antifarmWeight(count);
-          audit.antifarmWeightsByPair[player.uid] = antifarmW;
-        }
-        const finalScore = applyAntifarm(myScoreAdj, antifarmW);
+          if (count > maxCount) maxCount = count;
+        });
+        antifarmW = antifarmWeight(maxCount);
+      }
 
-        // Update Glicko-2
-        const updated = updatePlayer(
-          cur.rating, rdEffective, cur.volatility,
-          [{ rating: oppAgg.rating, rd: oppAgg.rd, score: finalScore }]
-        );
+      myTeam.forEach(function (player) {
+        const cur = getRating(player.uid);
+        audit.before[player.uid] = { rating: cur.rating, RD: cur.RD, volatility: cur.volatility };
+        if (!opts.skipAntifarm) audit.antifarmWeightsByPair[player.uid] = antifarmW;
+
+        // Decay del RD antes de evolucionar la incertidumbre
+        let rdEffective = cur.RD;
+        if (cur.lastMatchAt) {
+          const last = (cur.lastMatchAt instanceof Date) ? cur.lastMatchAt : new Date(cur.lastMatchAt);
+          const days = (new Date(match.endedAt || Date.now()) - last) / (1000 * 60 * 60 * 24);
+          rdEffective = decayRDForInactivity(cur.RD, days);
+        }
+
+        // Paso Glicko INDIVIDUAL (su rating vs el promedio rival): aporta el delta
+        // individual + la evolución de su incertidumbre (RD/volatilidad).
+        const updSelf = updatePlayer(cur.rating, rdEffective, cur.volatility,
+          [{ rating: oppAgg.rating, rd: oppAgg.rd, score: softScore }]);
+        const individualCoreDelta = updSelf.rating - cur.rating;
+        const finalRD = updSelf.rd;
+        const finalVol = updSelf.volatility;
+
+        // MEZCLA: manda el equipo, se considera lo individual.
+        const blendedCore = (1 - INDIVIDUAL_WEIGHT) * teamCoreDelta + INDIVIDUAL_WEIGHT * individualCoreDelta;
+
+        // Rating final + piso (el ganador del partido nunca baja).
+        let finalRating = cur.rating + antifarmW * (blendedCore + bonus);
+        if (won && finalRating < cur.rating) finalRating = cur.rating + WINNER_FLOOR;
 
         const newRecentOpponents = Object.assign({}, cur.recentOpponents || {});
         oppTeam.forEach(function (opp) {
           const arr = (newRecentOpponents[opp.uid] || []).slice();
           arr.push((match.endedAt instanceof Date ? match.endedAt : new Date(match.endedAt || Date.now())).getTime());
-          // Mantener solo últimas 10 entries por oponente
           newRecentOpponents[opp.uid] = arr.slice(-10);
         });
 
-        const cR = conservativeRating(updated.rating, updated.rd);
+        const cR = conservativeRating(finalRating, finalRD);
         const buck = bucketForRating(cR);
 
         newRatings[player.uid] = {
-          rating: updated.rating,
-          RD: updated.rd,
-          volatility: updated.volatility,
+          rating: finalRating,
+          RD: finalRD,
+          volatility: finalVol,
           matchCount: (cur.matchCount || 0) + 1,
           lastMatchAt: match.endedAt || new Date(),
           recentOpponents: newRecentOpponents,
@@ -403,19 +493,19 @@
         };
 
         audit.after[player.uid] = {
-          rating: updated.rating, RD: updated.rd, volatility: updated.volatility,
+          rating: finalRating, RD: finalRD, volatility: finalVol,
         };
       });
     }
 
-    processTeam(team1, team2, t2Agg, scoreT1Adj);
-    processTeam(team2, team1, t1Agg, scoreT2Adj);
+    processTeam(team1, team2, t1Agg, t2Agg, winner === "team1");
+    processTeam(team2, team1, t2Agg, t1Agg, winner === "team2");
 
     return { newRatings: newRatings, audit: audit };
   }
 
   // ── API pública ──────────────────────────────────────────────
-  window.PuntazoRanking = {
+  var api = {
     ALGORITHM_VERSION: ALGORITHM_VERSION,
     INITIAL_RATING: INITIAL_RATING,
     INITIAL_RD: INITIAL_RD,
@@ -428,6 +518,9 @@
     bucketForRating: bucketForRating,
     nivelFromConservativeRating: nivelFromConservativeRating,
     conservativeRating: conservativeRating,
+    seedLocalFromGlobal: seedLocalFromGlobal,
+    reliability: reliability,
+    SEED_LOCAL_RD: SEED_LOCAL_RD,
     decayRDForInactivity: decayRDForInactivity,
     applyMOV: applyMOV,
     antifarmWeight: antifarmWeight,
@@ -440,4 +533,7 @@
     _toGlicko2: toGlicko2,
     _fromGlicko2: fromGlicko2,
   };
+
+  root.PuntazoRanking = api;
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();
