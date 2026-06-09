@@ -119,9 +119,11 @@
       </select>
 
       <div id="lgPairsBlock">
-        <div class="gp-label">Parejas (nombre, ej. "Ana &amp; Beto")</div>
-        <div id="lgPairsRows"></div>
-        <button type="button" class="lg-pair-add" id="lgAddPair">+ Agregar pareja</button>
+        <div class="gp-label">Parejas</div>
+        <p style="margin:0; font-size:.82rem; color:rgba(234,242,255,.7); line-height:1.45;">
+          Define las parejas <b>dentro de la liga</b> cuando se unan los jugadores: cada
+          pareja se arma seleccionando a 2 miembros reales. Así sus partidos cuentan correctamente.
+        </p>
       </div>
 
       <div class="gp-label">Primera temporada</div>
@@ -161,8 +163,6 @@
   const $name = document.getElementById('lgName');
   const $mode = document.getElementById('lgMode');
   const $pairsBlock = document.getElementById('lgPairsBlock');
-  const $pairsRows = document.getElementById('lgPairsRows');
-  const $addPair = document.getElementById('lgAddPair');
   const $seasonName = document.getElementById('lgSeasonName');
   const $start = document.getElementById('lgStart');
   const $end = document.getElementById('lgEnd');
@@ -190,34 +190,13 @@
     }[c]));
   }
 
-  // ── Parejas editor (solo modo "pairs") ──
-  function addPairRow(value) {
-    const row = document.createElement('div');
-    row.className = 'lg-pair-row';
-    const inp = document.createElement('input');
-    inp.type = 'text'; inp.maxLength = 60; inp.placeholder = 'Ana & Beto';
-    if (value) inp.value = value;
-    const del = document.createElement('button');
-    del.type = 'button'; del.className = 'lg-pair-del'; del.textContent = '✕';
-    del.onclick = function () { row.remove(); };
-    row.appendChild(inp); row.appendChild(del);
-    $pairsRows.appendChild(row);
-  }
-  $addPair.addEventListener('click', function () { addPairRow(''); });
+  // ── Modo "pairs": las parejas se definen DENTRO de la liga (liga.html), con
+  //    uids reales, una vez que los miembros se unieron. Al CREAR solo mostramos
+  //    la explicación; NO capturamos nombres sueltos (uids:[] vacíos = no-funcional
+  //    para standings, hallazgo de la auditoría). El mode queda fijo al crear.
   $mode.addEventListener('change', function () {
-    const isPairs = $mode.value === 'pairs';
-    $pairsBlock.style.display = isPairs ? 'flex' : 'none';
-    if (isPairs && $pairsRows.children.length === 0) { addPairRow(''); addPairRow(''); }
+    $pairsBlock.style.display = ($mode.value === 'pairs') ? 'flex' : 'none';
   });
-
-  function collectPairs() {
-    const out = [];
-    Array.prototype.forEach.call($pairsRows.querySelectorAll('input'), function (inp) {
-      const name = inp.value.trim();
-      if (name) out.push({ name: name, uids: [] });
-    });
-    return out;
-  }
 
   function dateToMs(val) {
     if (!val) return null;
@@ -267,8 +246,9 @@
     $createBtn.textContent = 'Creando…';
     $msg.textContent = '';
     try {
+      // pairs arranca vacío: se definen en liga.html con uids reales.
       const league = { mode: mode };
-      if (mode === 'pairs') league.pairs = collectPairs();
+      if (mode === 'pairs') league.pairs = [];
       const season = {
         name: $seasonName.value.trim() || 'Temporada 1',
         startMs: startMs, endMs: endMs,

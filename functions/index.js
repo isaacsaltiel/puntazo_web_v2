@@ -20,6 +20,11 @@ const admin = require("firebase-admin");
 const { FieldValue } = require("firebase-admin/firestore");
 
 const { planRatingUpdate, realPlayerUids } = require("./lib/rating.js");
+const leaguesLib = require("./lib/leagues.js");
+// Motor de standings (PURO, compartido con el navegador). Vendorizado a
+// functions/vendor/ por scripts/vendor-ranking.js (pretest/predeploy), igual que
+// el motor de ranking — `firebase deploy` solo sube functions/.
+const standings = require("./vendor/standings.js");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -356,6 +361,335 @@ exports.onPulseNotify = onDocumentWritten(
   }
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// E7 — LIGAS: tagging server-side + EL LOOP
+//
+// Decisión LOCKED: 1 liga por partido. El servidor, al confirmar, resuelve a qué
+// liga pertenece (≥3 miembros / pareja-vs-pareja) y escribe el tag en el match.
+//
+// IMPLEMENTACIÓN CONSERVADORA (documentada en el reporte): el tag se escribe en un
+// campo DEDICADO `leagueGroupId` (singular, NO un array `leagueIds`), NO en
+// `match.groupId`. Razón: `groupId` ya alimenta el contexto Glicko del grupo y lo
+// escribe el cliente; sobrescribirlo arriesgaría el ranking existente y un caso en
+// que un match es de un grupo genérico Y de una liga distinta. `leagueGroupId`
+// respeta "reusar singular / no leagueIds[]" sin tocar el flujo de ranking. Las
+// standings (liga.html) consultan `matches where leagueGroupId == {ligaId}`.
+// Idempotente: si el tag ya coincide, no reescribe.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Candidatas: ligas (groups type=="liga") que comparten ≥1 jugador del match.
+// Una query por uid (array-contains) — barato; dedup por groupId.
+async function candidateLeaguesForMatch(match) {
+  const uids = leaguesLib.realPlayerUids(match);
+  if (!uids.length) return [];
+  const seen = {};
+  const out = [];
+  const snaps = await Promise.all(uids.map(function (uid) {
+    return db.collection("groups")
+      .where("type", "==", "liga")
+      .where("memberUids", "array-contains", uid)
+      .get();
+  }));
+  snaps.forEach(function (snap) {
+    snap.forEach(function (d) {
+      if (seen[d.id]) return;
+      seen[d.id] = true;
+      out.push(Object.assign({ groupId: d.id }, d.data()));
+    });
+  });
+  return out;
+}
+
+// Lee todos los matches confirmados de una liga (tagged). Para standings server-side.
+async function confirmedLeagueMatches(leagueGroupId) {
+  const snap = await db.collection("matches")
+    .where("leagueGroupId", "==", leagueGroupId)
+    .where("status", "==", "confirmed")
+    .limit(2000)
+    .get();
+  const out = [];
+  snap.forEach(function (d) { out.push(Object.assign({ id: d.id }, d.data())); });
+  return out;
+}
+
+// displayName de un miembro (subcol members → fallback users → "Alguien").
+async function memberName(groupId, uid) {
+  try {
+    const m = await db.collection("groups").doc(groupId).collection("members").doc(uid).get();
+    if (m.exists && m.data().displayName) return notify.firstName(m.data().displayName);
+  } catch (e) {}
+  return notify.firstName(await userDisplayName(uid));
+}
+
+// El "rival inmediato" arriba de `rank` en las filas (clave=uid en individual / pairId).
+function rowAtRank(rows, rank) {
+  return rows.find(function (r) { return r.rank === rank; }) || null;
+}
+
+// Dispara league_rank a cada jugador-miembro del match tras recomputar la tabla.
+// Re-crea el notif (borrar+ensure) para refrescar el subtítulo con el dato nuevo.
+async function fireLeagueRankNotifs(league, match) {
+  const groupId = league.groupId;
+  const block = league.league || {};
+  const seasonId = block.activeSeasonId || "active";
+  const matches = await confirmedLeagueMatches(groupId);
+  let seasonStartMs = null, seasonEndMs = null;
+  try {
+    if (block.activeSeasonId) {
+      const s = await db.collection("groups").doc(groupId).collection("seasons").doc(block.activeSeasonId).get();
+      if (s.exists) { seasonStartMs = s.data().startMs; seasonEndMs = s.data().endMs; }
+    }
+  } catch (e) {}
+  const table = standings.computeStandings(matches, {
+    mode: block.mode, pairs: block.pairs,
+    pointsWin: block.pointsWin, pointsLoss: block.pointsLoss,
+    period: "season", now: Date.now(),
+    seasonStartMs: seasonStartMs, seasonEndMs: seasonEndMs,
+  });
+  const rows = table.rows;
+  if (!rows.length) return;
+
+  // Jugadores del match que son miembros (individual) — a ellos les notificamos.
+  const memberSet = {};
+  (Array.isArray(league.memberUids) ? league.memberUids : []).forEach(function (u) { memberSet[u] = true; });
+  const matchUids = leaguesLib.realPlayerUids(match).filter(function (u) { return memberSet[u]; });
+
+  await Promise.all(matchUids.map(async function (uid) {
+    // En modo pairs, la fila del jugador es la de su pareja (key = pairId con su uid).
+    const row = rows.find(function (r) {
+      return r.key === uid || (Array.isArray(r.uids) && r.uids.indexOf(uid) >= 0);
+    });
+    if (!row) return;
+    const above = (row.rank > 1) ? rowAtRank(rows, row.rank - 1) : null;
+    const rivalName = above ? above.name : null;
+    const gap = above ? (above.pts - row.pts) : null;
+    // pts ganados en ESTE partido: pointsWin si su equipo ganó, si no pointsLoss.
+    const won = didMatchWinnerIncludes(match, uid);
+    const ptsGained = won ? (Number.isFinite(block.pointsWin) ? block.pointsWin : 3)
+                          : (Number.isFinite(block.pointsLoss) ? block.pointsLoss : 0);
+    const info = {
+      leagueName: league.name || "tu liga",
+      rank: row.rank, ptsGained: ptsGained,
+      rivalName: rivalName, gap: gap,
+    };
+    const payload = notify.leagueRankPayload(groupId, seasonId, info);
+    // refrescar: borrar el anterior (mismo refId) y recrear con el subtítulo nuevo.
+    await removeNotif(uid, "league_rank", payload.refId);
+    await ensureNotif(uid, payload);
+  }));
+}
+
+// ¿el uid pertenece al equipo ganador del match?
+function didMatchWinnerIncludes(match, uid) {
+  const g = match && match.marcador && match.marcador.ganador;
+  const js = Array.isArray(match && match.jugadores) ? match.jugadores : [];
+  const j = js.find(function (x) { return x && x.uid === uid; });
+  return !!(j && (j.equipo === g));
+}
+
+// Trigger de tagging + LOOP: al confirmar un match, resuelve su liga y notifica.
+exports.onMatchLeagueTag = onDocumentWritten(
+  { region: REGION, document: "matches/{matchId}" },
+  async function (event) {
+    const matchId = event.params.matchId;
+    const before = (event.data.before && event.data.before.exists) ? event.data.before.data() : {};
+    const after = (event.data.after && event.data.after.exists) ? event.data.after.data() : null;
+    if (!after) return null;
+    const becameConfirmed = before.status !== "confirmed" && after.status === "confirmed";
+    if (!becameConfirmed) return null;
+    try {
+      const match = Object.assign({ id: matchId }, after);
+      const candidates = await candidateLeaguesForMatch(match);
+      // preChosen = groupId del match SI es una liga candidata (el cliente pre-eligió).
+      const preChosen = candidates.some(function (c) { return c.groupId === after.groupId; })
+        ? after.groupId : null;
+      const res = leaguesLib.resolveLeagueGroupId(match, candidates, preChosen);
+      const tag = res.groupId || null;
+
+      // Idempotente: solo escribe si cambió.
+      if ((after.leagueGroupId || null) !== tag) {
+        await db.collection("matches").doc(matchId).update({
+          leagueGroupId: tag,
+          leagueTaggedAt: FieldValue.serverTimestamp(),
+        });
+      }
+      if (!tag) {
+        logger.info("[onMatchLeagueTag] sin liga", { matchId: matchId, reason: res.reason });
+        return null;
+      }
+      const league = candidates.find(function (c) { return c.groupId === tag; });
+      if (league) {
+        // EL LOOP: recompute + notif de movimiento a los miembros del match.
+        // El match recién taggeado ya está en `confirmed`, así que confirmedLeagueMatches
+        // lo incluye (la query lee leagueGroupId que acabamos de escribir).
+        await fireLeagueRankNotifs(Object.assign({}, league, { groupId: tag }), match);
+      }
+      logger.info("[onMatchLeagueTag] tagged", { matchId: matchId, leagueGroupId: tag, reason: res.reason });
+    } catch (e) {
+      logger.error("[onMatchLeagueTag] error", { matchId: matchId, err: e.message });
+      throw e; // reintento; idempotente.
+    }
+    return null;
+  }
+);
+
+// ── Resumen semanal automático (onSchedule, domingo 19:00 CT) ────────────────
+// Itera ligas con actividad en la semana (≥1 match confirmado tagueado en rango)
+// y notifica a cada miembro su posición/líder/próximo rival. Cuida costo: salta
+// ligas sin actividad reciente.
+exports.leagueWeeklyDigest = onSchedule(
+  { region: REGION, schedule: "0 19 * * 0", timeZone: "America/Mexico_City" },
+  async function () {
+    const now = Date.now();
+    const weekKey = weekKeyFor(now);
+    const leaguesSnap = await db.collection("groups").where("type", "==", "liga").limit(500).get();
+    let touched = 0;
+    for (const lgDoc of leaguesSnap.docs) {
+      const league = Object.assign({ groupId: lgDoc.id }, lgDoc.data());
+      const block = league.league || {};
+      const matches = await confirmedLeagueMatches(league.groupId);
+      // ¿hubo actividad esta semana?
+      const wkRange = standings._periodRange("week", now);
+      const active = matches.some(function (m) {
+        const ms = standings._matchEndMs(m);
+        return ms != null && ms >= wkRange.start && ms < wkRange.end;
+      });
+      if (!active) continue;
+      let seasonStartMs = null, seasonEndMs = null;
+      if (block.activeSeasonId) {
+        try {
+          const s = await db.collection("groups").doc(league.groupId).collection("seasons").doc(block.activeSeasonId).get();
+          if (s.exists) { seasonStartMs = s.data().startMs; seasonEndMs = s.data().endMs; }
+        } catch (e) {}
+      }
+      const table = standings.computeStandings(matches, {
+        mode: block.mode, pairs: block.pairs,
+        pointsWin: block.pointsWin, pointsLoss: block.pointsLoss,
+        period: "season", now: now, seasonStartMs: seasonStartMs, seasonEndMs: seasonEndMs,
+      });
+      const rows = table.rows;
+      if (!rows.length) continue;
+      const leaderName = rows[0] ? rows[0].name : null;
+      const members = Array.isArray(league.memberUids) ? league.memberUids : [];
+      await Promise.all(members.map(async function (uid) {
+        const row = rows.find(function (r) {
+          return r.key === uid || (Array.isArray(r.uids) && r.uids.indexOf(uid) >= 0);
+        });
+        if (!row) return;
+        const above = (row.rank > 1) ? rowAtRank(rows, row.rank - 1) : null;
+        const info = {
+          leagueName: league.name || "tu liga",
+          rank: row.rank, leaderName: leaderName,
+          nextName: above ? above.name : null,
+          gap: above ? (above.pts - row.pts) : null,
+          chaserName: (rows[1] ? rows[1].name : null),
+        };
+        await ensureNotif(uid, notify.leagueWeeklyPayload(league.groupId, weekKey, info));
+      }));
+      touched++;
+    }
+    logger.info("[leagueWeeklyDigest] ligas notificadas", { count: touched });
+    return null;
+  }
+);
+
+// Clave de semana ISO-ish (YYYY-Www, lunes) para idempotencia del resumen.
+function weekKeyFor(ms) {
+  const d = new Date(ms);
+  const day = d.getDay();
+  const diff = (day === 0) ? 6 : (day - 1);
+  const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - diff);
+  const onejan = new Date(monday.getFullYear(), 0, 1);
+  const week = Math.ceil((((monday - onejan) / 86400000) + onejan.getDay() + 1) / 7);
+  return monday.getFullYear() + "-W" + (week < 10 ? "0" + week : week);
+}
+
+// ── Cierre de temporada = EVENTO social (callable admin) ─────────────────────
+// Congela la tabla de la temporada, corona al #1 (championRef), notifica a TODOS
+// los miembros (season_champion) y ARRANCA la siguiente temporada (loop continuo).
+// Server-side (Admin SDK) → protege closed/championRef sin abrir reglas.
+exports.closeSeason = onCall({ region: REGION }, async function (req) {
+  const uid = req.auth && req.auth.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "Login requerido.");
+  const groupId = req.data && req.data.groupId;
+  if (!groupId) throw new HttpsError("invalid-argument", "Falta groupId.");
+
+  const groupRef = db.collection("groups").doc(groupId);
+  const groupSnap = await groupRef.get();
+  if (!groupSnap.exists) throw new HttpsError("not-found", "Liga no existe.");
+  const group = groupSnap.data();
+  if (group.type !== "liga") throw new HttpsError("failed-precondition", "No es una liga.");
+  const admins = Array.isArray(group.admins) ? group.admins : [];
+  if (admins.indexOf(uid) < 0) throw new HttpsError("permission-denied", "Solo admin.");
+
+  const block = group.league || {};
+  const seasonId = (req.data && req.data.seasonId) || block.activeSeasonId;
+  if (!seasonId) throw new HttpsError("failed-precondition", "Liga sin temporada activa.");
+  const seasonRef = groupRef.collection("seasons").doc(seasonId);
+  const seasonSnap = await seasonRef.get();
+  if (!seasonSnap.exists) throw new HttpsError("not-found", "Temporada no existe.");
+  const season = seasonSnap.data();
+  if (season.closed === true) throw new HttpsError("failed-precondition", "Temporada ya cerrada.");
+
+  // 1) Calcular el campeón (tabla de la temporada).
+  const matches = await confirmedLeagueMatches(groupId);
+  const table = standings.computeStandings(matches, {
+    mode: block.mode, pairs: block.pairs,
+    pointsWin: block.pointsWin, pointsLoss: block.pointsLoss,
+    period: "season", now: Date.now(),
+    seasonStartMs: season.startMs, seasonEndMs: season.endMs,
+  });
+  const champRow = table.rows.length ? table.rows[0] : null;
+  const championRef = champRow ? {
+    key: champRow.key, name: champRow.name,
+    uids: champRow.uids || [], pts: champRow.pts, pj: champRow.pj,
+  } : null;
+
+  // 2) Congelar la temporada actual + arrancar la siguiente (loop continuo).
+  const nextRef = groupRef.collection("seasons").doc();
+  const nextName = (req.data && req.data.nextSeasonName) || nextSeasonName(season.name);
+  const batch = db.batch();
+  batch.update(seasonRef, {
+    closed: true,
+    closedAt: FieldValue.serverTimestamp(),
+    championRef: championRef,
+  });
+  batch.set(nextRef, {
+    seasonId: nextRef.id, name: nextName,
+    startMs: Date.now(), endMs: null, closed: false,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+  batch.update(groupRef, { "league.activeSeasonId": nextRef.id });
+  await batch.commit();
+
+  // 3) season_champion a TODOS los miembros (cada uno sabe si ganó él).
+  const members = Array.isArray(group.memberUids) ? group.memberUids : [];
+  const champUids = championRef ? (championRef.uids || []) : [];
+  await Promise.all(members.map(function (m) {
+    const info = {
+      leagueName: group.name || "tu liga",
+      seasonName: season.name || "la temporada",
+      championName: championRef ? championRef.name : "El campeón",
+      youAreChampion: champUids.indexOf(m) >= 0,
+    };
+    return ensureNotif(m, notify.seasonChampionPayload(groupId, seasonId, info));
+  }));
+
+  return { ok: true, championRef: championRef, nextSeasonId: nextRef.id };
+});
+
+// "Temporada 2026" → "Temporada 2027"; si no hay número, sufija " · 2".
+function nextSeasonName(name) {
+  const s = String(name || "Temporada");
+  const m = s.match(/(\d+)\s*$/);
+  if (m) {
+    const n = parseInt(m[1], 10) + 1;
+    return s.replace(/(\d+)\s*$/, String(n));
+  }
+  return s + " · 2";
+}
+
 // Export para tests de integración (emulador).
 exports._applyRankingTx = applyRankingTx;
 exports._recomputeCore = recomputeCore;
+exports._candidateLeaguesForMatch = candidateLeaguesForMatch;

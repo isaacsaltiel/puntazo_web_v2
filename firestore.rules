@@ -307,8 +307,48 @@ service cloud.firestore {
                     && request.auth.uid in request.resource.data.admins
                     && request.resource.data.createdAt == request.time;
 
+      // ── Update ──────────────────────────────────────────────────────────
+      // (a) ADMIN: edita la metadata del grupo, PERO `type` y, en ligas,
+      //     `league.mode` son INMUTABLES (cambiarlos corrompe la historia de
+      //     standings de E7). El cliente ya los descarta (sanitizeLeagueConfigChanges),
+      //     pero la regla lo blinda contra cualquier admin/herramienta.
+      // (b) SELF-JOIN: un signedIn que NO es admin se AGREGA a sí mismo a
+      //     `memberUids` (invariante de conjunto: el delta es EXACTAMENTE su uid,
+      //     nadie más entra/sale), tocando solo memberUids/memberCount. Mismo
+      //     patrón blindado que el claim de matches. Permite unirse por link.
       allow update: if signedIn()
-                    && request.auth.uid in resource.data.admins;
+                    && groupTypeUnchanged()
+                    && leagueModeUnchanged()
+                    && (
+                         (request.auth.uid in resource.data.admins)
+                         || isSelfJoinToMemberUids()
+                       );
+
+      function groupTypeUnchanged() {
+        return request.resource.data.type == resource.data.type;
+      }
+      // league.mode INMUTABLE una vez que existe el bloque `league`.
+      //  - grupo genérico (sin league en ningún lado): OK.
+      //  - inicializar liga legacy (no había league → ahora sí): PERMITIDO (admin
+      //    puede crear el bloque la primera vez; se valida abajo que sea admin).
+      //  - liga ya configurada: el `mode` NO puede cambiar.
+      function leagueModeUnchanged() {
+        return ( !( 'league' in resource.data ) )
+          || ( 'league' in request.resource.data
+               && request.resource.data.league.mode == resource.data.league.mode );
+      }
+      // El delta de memberUids agrega EXACTAMENTE al caller; nadie más entra/sale;
+      // y SOLO se tocan memberUids/memberCount (no admins/type/league/etc.).
+      function isSelfJoinToMemberUids() {
+        return resource.data.memberUids is list
+          && request.resource.data.memberUids is list
+          && request.resource.data.memberUids.toSet()
+               .difference(resource.data.memberUids.toSet()) == [request.auth.uid].toSet()
+          && resource.data.memberUids.toSet()
+               .difference(request.resource.data.memberUids.toSet()).size() == 0
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['memberUids', 'memberCount']);
+      }
 
       allow delete: if signedIn()
                     && request.auth.uid == resource.data.creatorUid;

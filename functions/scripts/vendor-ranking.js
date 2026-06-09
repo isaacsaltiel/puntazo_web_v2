@@ -12,17 +12,26 @@
 const fs = require("fs");
 const path = require("path");
 
-const SRC = path.resolve(__dirname, "..", "..", "assets", "ranking.js");
 const DEST_DIR = path.resolve(__dirname, "..", "vendor");
-const DEST = path.join(DEST_DIR, "ranking.js");
-
-if (!fs.existsSync(SRC)) {
-  console.error("[vendor] NO encuentro la fuente:", SRC);
-  process.exit(1);
-}
 fs.mkdirSync(DEST_DIR, { recursive: true });
-const banner =
-  "/* GENERADO — NO EDITAR. Copia de assets/ranking.js (fuente unica).\n" +
-  "   Regenerar: node scripts/vendor-ranking.js  (corre en pretest/predeploy). */\n";
-fs.writeFileSync(DEST, banner + fs.readFileSync(SRC, "utf8"));
-console.log("[vendor] ranking.js ->", path.relative(process.cwd(), DEST));
+
+// Fuentes UNICAS en assets/ que la Cloud Function necesita require(). `firebase
+// deploy` solo sube functions/, asi que las copiamos a functions/vendor/ (gitignored).
+const SOURCES = [
+  { src: "ranking.js",   reason: "motor Glicko-2 (fuente unica, la usa la web)" },
+  { src: "standings.js", reason: "motor de standings de liga (E7, compartido con la web)" },
+];
+
+SOURCES.forEach(function (item) {
+  const SRC = path.resolve(__dirname, "..", "..", "assets", item.src);
+  if (!fs.existsSync(SRC)) {
+    console.error("[vendor] NO encuentro la fuente:", SRC);
+    process.exit(1);
+  }
+  const DEST = path.join(DEST_DIR, item.src);
+  const banner =
+    "/* GENERADO — NO EDITAR. Copia de assets/" + item.src + " (fuente unica).\n" +
+    "   Regenerar: node scripts/vendor-ranking.js  (corre en pretest/predeploy). */\n";
+  fs.writeFileSync(DEST, banner + fs.readFileSync(SRC, "utf8"));
+  console.log("[vendor] " + item.src + " ->", path.relative(process.cwd(), DEST));
+});
