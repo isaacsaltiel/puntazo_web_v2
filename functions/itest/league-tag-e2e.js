@@ -101,7 +101,9 @@ async function main() {
   await sleep(1000);
   await db.collection("matches").doc(m2).update({ status: "confirmed", updatedAt: admin.firestore.FieldValue.serverTimestamp() });
   const tag2 = await pollLeagueTag(m2, null);
-  assert.strictEqual(tag2, null, "match con 2 miembros NO debe taggearse (leagueGroupId=null)");
+  // No-taggeado correcto = el trigger NO escribe leagueGroupId (queda undefined),
+  // NO un null explícito. `== null` cubre ambos (undefined y null).
+  assert.ok(tag2 == null, "match con 2 miembros NO debe taggearse (leagueGroupId ausente)");
 
   console.log("LEAGUE-TAG-E2E-OK");
 }
