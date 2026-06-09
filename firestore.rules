@@ -331,6 +331,13 @@ service cloud.firestore {
           || request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.admins
         );
       }
+
+      // E6 — Temporadas de liga: leen los signedIn; sólo admin escribe.
+      match /seasons/{seasonId} {
+        allow read: if signedIn();
+        allow create, update, delete: if signedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.admins;
+      }
     }
 
     // F96: collectionGroup('members') para grupos.html "Mis grupos".

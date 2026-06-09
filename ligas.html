@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Mis ligas · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/header.js"></script>
+<script src="/assets/identity.js"></script>
+<script src="/assets/groups.js"></script>
+
+<style>
+  html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .gp-wrap { max-width: 720px; margin: 0 auto; padding: 90px 16px 60px; }
+  .gp-back { display:inline-flex; align-items:center; gap:6px; margin-bottom:14px; padding:8px 14px; background:rgba(11,124,255,.10); border:1px solid rgba(11,124,255,.30); border-radius:999px; color:#cfe2ff; font-weight:700; font-size:.86rem; text-decoration:none; }
+  h1 { font-size:1.55rem; font-weight:900; color:#fff; margin:0 0 18px; }
+
+  .gp-create-card {
+    background: linear-gradient(135deg, rgba(11,124,255,0.18), rgba(0,79,200,0.10));
+    border: 1px solid rgba(11,124,255,0.30);
+    border-radius: 16px;
+    padding: 18px 18px 14px;
+    margin-bottom: 20px;
+  }
+  .gp-create-card h3 { font-size:.94rem; font-weight:800; color:#fff; margin:0 0 12px; text-transform:uppercase; letter-spacing:.5px; }
+  .gp-create-form { display:flex; flex-direction:column; gap:10px; }
+  .gp-create-form input, .gp-create-form select {
+    width:100%; padding:11px 14px; border-radius:10px;
+    border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.30);
+    color:#fff; font-family:inherit; font-size:.95rem; font-weight:600;
+  }
+  .gp-create-form input:focus, .gp-create-form select:focus { outline:none; border-color:rgba(11,124,255,.55); }
+  .gp-label { font-size:.76rem; font-weight:800; color:rgba(234,242,255,.6); text-transform:uppercase; letter-spacing:.5px; margin-bottom:-4px; }
+  .gp-row { display:flex; gap:10px; }
+  .gp-row > * { flex:1; min-width:0; }
+  .gp-create-btn {
+    margin-top:6px;
+    padding:12px; border:none; border-radius:10px;
+    background:linear-gradient(180deg, #0b7cff, #1d4ed8);
+    color:#fff; font-family:inherit; font-weight:900; font-size:.95rem;
+    cursor:pointer; transition:filter .14s;
+  }
+  .gp-create-btn:hover { filter:brightness(1.08); }
+  .gp-create-btn:disabled { opacity:.55; cursor:not-allowed; }
+
+  /* Parejas editor */
+  #lgPairsBlock { display:none; flex-direction:column; gap:8px; padding:10px 12px; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.10); border-radius:10px; }
+  .lg-pair-row { display:flex; gap:8px; }
+  .lg-pair-row input { flex:1; }
+  .lg-pair-del { padding:0 12px; border-radius:8px; border:1px solid rgba(255,80,80,.30); background:rgba(255,80,80,.14); color:#ffb1a3; font-family:inherit; font-weight:900; cursor:pointer; }
+  .lg-pair-add { align-self:flex-start; padding:8px 14px; border-radius:8px; border:1px solid rgba(11,124,255,.40); background:rgba(11,124,255,.16); color:#cfe2ff; font-family:inherit; font-weight:800; font-size:.82rem; cursor:pointer; }
+
+  /* Unirme con link */
+  .gp-join-card { background:rgba(34,197,94,.07); border:1px solid rgba(34,197,94,.25); border-radius:14px; padding:14px 16px; margin-bottom:20px; }
+  .gp-join-card h3 { font-size:.9rem; font-weight:800; color:#c8f7dc; margin:0 0 10px; text-transform:uppercase; letter-spacing:.5px; }
+  .gp-join-card input { width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(34,197,94,.30); background:rgba(0,0,0,.28); color:#fff; font-family:inherit; font-size:.9rem; }
+  .gp-join-card button { margin-top:8px; padding:10px 16px; border-radius:10px; border:1px solid rgba(34,197,94,.40); background:rgba(34,197,94,.18); color:#9af2c0; font-family:inherit; font-weight:800; cursor:pointer; }
+
+  .gp-list { display:flex; flex-direction:column; gap:10px; margin-bottom:30px; }
+  .gp-card {
+    display:flex; align-items:center; gap:14px;
+    padding:14px 16px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:14px;
+    text-decoration:none; color:inherit;
+    transition:transform .14s, border-color .14s;
+  }
+  .gp-card:hover { transform:translateY(-2px); border-color:rgba(11,124,255,.35); }
+  .gp-card-icon {
+    width:42px; height:42px; border-radius:50%;
+    background:rgba(11,124,255,.18);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.3rem; flex-shrink:0;
+  }
+  .gp-card-info { flex:1; min-width:0; }
+  .gp-card-name { font-size:1.02rem; font-weight:900; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gp-card-meta { font-size:.78rem; color:rgba(234,242,255,.55); margin-top:2px; }
+  .gp-card-arrow { color:rgba(11,124,255,.85); font-size:1.3rem; flex-shrink:0; }
+
+  .gp-empty, .gp-loading, .gp-loginreq {
+    text-align:center; padding:30px 20px;
+    color:rgba(234,242,255,.65);
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:14px;
+  }
+  .gp-loginreq a { color:#6fb2ff; font-weight:800; text-decoration:none; }
+  .gp-msg { margin-top:10px; font-size:.82rem; font-weight:700; min-height:18px; }
+  .gp-msg.ok { color:#9af2c0; }
+  .gp-msg.bad { color:#f87171; }
+</style>
+</head>
+<body>
+
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="gp-wrap">
+  <a class="gp-back" href="/grupos.html">← Mis grupos</a>
+  <h1>🏆 Mis ligas</h1>
+
+  <div class="gp-create-card">
+    <h3>Crear nueva liga</h3>
+    <div class="gp-create-form">
+      <input type="text" id="lgName" placeholder="Nombre de la liga (ej: Liga de los Jueves)" maxlength="60" />
+
+      <div class="gp-label">Modo (no se puede cambiar después)</div>
+      <select id="lgMode">
+        <option value="individual">👤 Individual — cada jugador rankeado solo</option>
+        <option value="pairs">👥 Parejas fijas</option>
+      </select>
+
+      <div id="lgPairsBlock">
+        <div class="gp-label">Parejas (nombre, ej. "Ana &amp; Beto")</div>
+        <div id="lgPairsRows"></div>
+        <button type="button" class="lg-pair-add" id="lgAddPair">+ Agregar pareja</button>
+      </div>
+
+      <div class="gp-label">Primera temporada</div>
+      <input type="text" id="lgSeasonName" placeholder="Nombre de la temporada (ej: Temporada 2026)" maxlength="60" />
+      <div class="gp-row">
+        <input type="date" id="lgStart" />
+        <input type="date" id="lgEnd" />
+      </div>
+
+      <button id="lgCreateBtn" class="gp-create-btn" type="button">Crear liga</button>
+      <div id="lgMsg" class="gp-msg"></div>
+    </div>
+  </div>
+
+  <div class="gp-join-card">
+    <h3>Unirme con un link</h3>
+    <input type="text" id="lgJoinInput" placeholder="Pega el link de invitación de la liga" />
+    <button id="lgJoinBtn" type="button">Ir a la liga</button>
+    <div id="lgJoinMsg" class="gp-msg"></div>
+  </div>
+
+  <h3 style="font-size:.94rem; font-weight:800; color:rgba(234,242,255,.85); margin:0 0 10px; text-transform:uppercase; letter-spacing:.5px;">Mis ligas actuales</h3>
+
+  <div id="gpLoading" class="gp-loading">⏳ Cargando…</div>
+  <div id="gpList" class="gp-list" style="display:none"></div>
+  <div id="gpEmpty" class="gp-empty" style="display:none">
+    Aún no perteneces a ninguna liga. Crea una arriba o pídele a un amigo que te comparta su link.
+  </div>
+  <div id="gpLoginReq" class="gp-loginreq" style="display:none">
+    Necesitas <a href="#" id="gpDoLogin">iniciar sesión</a> para ver tus ligas.
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const $name = document.getElementById('lgName');
+  const $mode = document.getElementById('lgMode');
+  const $pairsBlock = document.getElementById('lgPairsBlock');
+  const $pairsRows = document.getElementById('lgPairsRows');
+  const $addPair = document.getElementById('lgAddPair');
+  const $seasonName = document.getElementById('lgSeasonName');
+  const $start = document.getElementById('lgStart');
+  const $end = document.getElementById('lgEnd');
+  const $createBtn = document.getElementById('lgCreateBtn');
+  const $msg = document.getElementById('lgMsg');
+  const $joinInput = document.getElementById('lgJoinInput');
+  const $joinBtn = document.getElementById('lgJoinBtn');
+  const $joinMsg = document.getElementById('lgJoinMsg');
+  const $list = document.getElementById('gpList');
+  const $loading = document.getElementById('gpLoading');
+  const $empty = document.getElementById('gpEmpty');
+  const $loginReq = document.getElementById('gpLoginReq');
+  const $doLogin = document.getElementById('gpDoLogin');
+
+  function show(which) {
+    $loading.style.display  = (which === 'loading') ? '' : 'none';
+    $list.style.display     = (which === 'list')    ? '' : 'none';
+    $empty.style.display    = (which === 'empty')   ? '' : 'none';
+    $loginReq.style.display = (which === 'login')   ? '' : 'none';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
+    }[c]));
+  }
+
+  // ── Parejas editor (solo modo "pairs") ──
+  function addPairRow(value) {
+    const row = document.createElement('div');
+    row.className = 'lg-pair-row';
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.maxLength = 60; inp.placeholder = 'Ana & Beto';
+    if (value) inp.value = value;
+    const del = document.createElement('button');
+    del.type = 'button'; del.className = 'lg-pair-del'; del.textContent = '✕';
+    del.onclick = function () { row.remove(); };
+    row.appendChild(inp); row.appendChild(del);
+    $pairsRows.appendChild(row);
+  }
+  $addPair.addEventListener('click', function () { addPairRow(''); });
+  $mode.addEventListener('change', function () {
+    const isPairs = $mode.value === 'pairs';
+    $pairsBlock.style.display = isPairs ? 'flex' : 'none';
+    if (isPairs && $pairsRows.children.length === 0) { addPairRow(''); addPairRow(''); }
+  });
+
+  function collectPairs() {
+    const out = [];
+    Array.prototype.forEach.call($pairsRows.querySelectorAll('input'), function (inp) {
+      const name = inp.value.trim();
+      if (name) out.push({ name: name, uids: [] });
+    });
+    return out;
+  }
+
+  function dateToMs(val) {
+    if (!val) return null;
+    const t = new Date(val + 'T00:00:00').getTime();
+    return Number.isFinite(t) ? t : null;
+  }
+
+  function typeIcon() { return '🏆'; }
+
+  async function refresh() {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!u) { show('login'); return; }
+    show('loading');
+    try {
+      const leagues = await window.PuntazoGroups.listMyLeagues();
+      if (!leagues.length) { show('empty'); return; }
+      $list.innerHTML = leagues.map(function (g) {
+        const mode = (g.league && g.league.mode === 'pairs') ? 'Parejas' : 'Individual';
+        return '<a class="gp-card" href="/liga.html?id=' + encodeURIComponent(g.groupId) + '">' +
+          '<div class="gp-card-icon">' + typeIcon() + '</div>' +
+          '<div class="gp-card-info">' +
+            '<div class="gp-card-name">' + escapeHtml(g.name || 'Sin nombre') + '</div>' +
+            '<div class="gp-card-meta">' + escapeHtml(mode) + ' · ' + (g.memberCount || 1) + ' miembros</div>' +
+          '</div>' +
+          '<div class="gp-card-arrow">→</div>' +
+        '</a>';
+      }).join('');
+      show('list');
+    } catch (e) {
+      console.error('[ligas] refresh error', e);
+      show('empty');
+    }
+  }
+
+  $createBtn.addEventListener('click', async function () {
+    const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!u) { show('login'); return; }
+    const name = $name.value.trim();
+    if (!name) { $msg.className='gp-msg bad'; $msg.textContent='Pon un nombre.'; return; }
+    const mode = $mode.value === 'pairs' ? 'pairs' : 'individual';
+    const startMs = dateToMs($start.value);
+    const endMs = dateToMs($end.value);
+    if (startMs != null && endMs != null && endMs < startMs) {
+      $msg.className='gp-msg bad'; $msg.textContent='La fecha de fin es anterior al inicio.'; return;
+    }
+    $createBtn.disabled = true;
+    $createBtn.textContent = 'Creando…';
+    $msg.textContent = '';
+    try {
+      const league = { mode: mode };
+      if (mode === 'pairs') league.pairs = collectPairs();
+      const season = {
+        name: $seasonName.value.trim() || 'Temporada 1',
+        startMs: startMs, endMs: endMs,
+      };
+      const groupId = await window.PuntazoGroups.createGroup({
+        name: name, type: 'liga', league: league, season: season,
+      });
+      $msg.className='gp-msg ok'; $msg.textContent='✓ Liga creada, te llevamos…';
+      setTimeout(function () { window.location.href = '/liga.html?id=' + encodeURIComponent(groupId); }, 600);
+    } catch (e) {
+      console.error('[ligas] create', e);
+      $msg.className='gp-msg bad'; $msg.textContent = e && e.message ? e.message : 'Error creando liga.';
+    } finally {
+      $createBtn.disabled = false;
+      $createBtn.textContent = 'Crear liga';
+    }
+  });
+
+  // Unirme con link: acepta un link completo o un groupId pegado.
+  $joinBtn.addEventListener('click', function () {
+    const raw = $joinInput.value.trim();
+    if (!raw) { $joinMsg.className='gp-msg bad'; $joinMsg.textContent='Pega un link.'; return; }
+    let groupId = null, invite = null;
+    try {
+      const url = new URL(raw, window.location.origin);
+      groupId = url.searchParams.get('id') || url.searchParams.get('groupId');
+      invite = url.searchParams.get('invite');
+    } catch (_) {
+      groupId = raw; // quizás pegó solo el id
+    }
+    if (!groupId) { $joinMsg.className='gp-msg bad'; $joinMsg.textContent='No reconocí el link.'; return; }
+    let dest = '/liga.html?id=' + encodeURIComponent(groupId);
+    if (invite) dest += '&invite=' + encodeURIComponent(invite);
+    window.location.href = dest;
+  });
+
+  if ($doLogin) {
+    $doLogin.addEventListener('click', function (e) {
+      e.preventDefault();
+      try { window.PuntazoAuth.signIn(); } catch (_) {}
+    });
+  }
+
+  window.addEventListener('puntazo:auth-ready', refresh);
+  window.addEventListener('puntazo:auth-changed', refresh);
+  if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+    refresh();
+  } else {
+    setTimeout(function () { if ($loading.style.display !== 'none') refresh(); }, 800);
+  }
+})();
+</script>
+</body>
+</html>

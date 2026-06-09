@@ -27,7 +27,7 @@
 ══════════════════════════════════════════════════════════════ */
 (function () {
   "use strict";
-  if (window.PuntazoGroups) return;
+  if (typeof window !== "undefined" && window.PuntazoGroups) return;
 
   function db() {
     return window.PuntazoFirebase && window.PuntazoFirebase.db()
@@ -45,6 +45,60 @@
     return s;
   }
 
+  // ── Helpers PUROS (sin Firestore/firebase/window): testeables en Node ──
+
+  // Construye el bloque `league` del doc del grupo. seasonId ya generado afuera.
+  // mode default "individual"; "pairs" añade el array `pairs`. Retorna objeto plano.
+  function buildLeagueBlock(leagueOpts, seasonId) {
+    const o = leagueOpts || {};
+    const mode = (o.mode === "pairs") ? "pairs" : "individual";
+    const block = {
+      mode: mode,
+      sport: "padel",
+      pointsWin: 3,
+      pointsLoss: 0,
+      countThreshold: 3,
+      activeSeasonId: seasonId || null,
+    };
+    if (mode === "pairs") {
+      block.pairs = Array.isArray(o.pairs) ? o.pairs.map(function (p, i) {
+        p = p || {};
+        return {
+          pairId: String(p.pairId || ("p" + (i + 1))),
+          uids: Array.isArray(p.uids) ? p.uids.slice(0, 2) : [],
+          name: String(p.name || "").trim().slice(0, 60),
+        };
+      }) : [];
+    }
+    return block;
+  }
+
+  // Construye el doc de una temporada (SIN createdAt: el caller le añade serverTimestamp).
+  function buildSeasonDoc(seasonId, seasonOpts) {
+    const o = seasonOpts || {};
+    return {
+      seasonId: seasonId,
+      name: String(o.name || "Temporada 1").trim().slice(0, 60),
+      startMs: Number.isFinite(o.startMs) ? o.startMs : null,
+      endMs: Number.isFinite(o.endMs) ? o.endMs : null,
+      closed: false,
+    };
+  }
+
+  // Filtra cambios permitidos de league config. `mode` es INMUTABLE (nunca pasa).
+  // Devuelve un mapa de update con paths dot-notation (`league.activeSeasonId`, …).
+  function sanitizeLeagueConfigChanges(changes) {
+    const out = {};
+    if (!changes || typeof changes !== "object") return out;
+    if ("activeSeasonId" in changes) out["league.activeSeasonId"] = changes.activeSeasonId;
+    if ("pointsWin" in changes && Number.isFinite(changes.pointsWin)) out["league.pointsWin"] = changes.pointsWin;
+    if ("pointsLoss" in changes && Number.isFinite(changes.pointsLoss)) out["league.pointsLoss"] = changes.pointsLoss;
+    if ("countThreshold" in changes && Number.isFinite(changes.countThreshold)) out["league.countThreshold"] = changes.countThreshold;
+    if ("pairs" in changes && Array.isArray(changes.pairs)) out["league.pairs"] = changes.pairs;
+    // `mode` se ignora deliberadamente: cambiarlo corrompe la historia de standings (E7).
+    return out;
+  }
+
   async function createGroup(opts) {
     const u = me();
     const D = db();
@@ -53,6 +107,7 @@
 
     const groupRef = D.collection("groups").doc();
     const inviteCode = randomToken(12);
+    const isLiga = (opts.type === "liga");
     const data = {
       groupId: groupRef.id,
       name: String(opts.name).trim().slice(0, 60),
@@ -72,6 +127,16 @@
       },
     };
 
+    // ── Capa LIGA (aditiva): bloque `league` + 1ª temporada en el MISMO batch ──
+    let seasonRef = null, seasonDoc = null;
+    if (isLiga) {
+      // seasonId generado ANTES del batch para referenciarlo en league.activeSeasonId.
+      const seasonId = groupRef.collection("seasons").doc().id;
+      data.league = buildLeagueBlock(opts.league, seasonId);
+      seasonRef = groupRef.collection("seasons").doc(seasonId);
+      seasonDoc = Object.assign(buildSeasonDoc(seasonId, opts.season), { createdAt: nowTS() });
+    }
+
     // Crear grupo + agregar creador como member en una transacción.
     const memberRef = groupRef.collection("members").doc(u.uid);
     const profile = window.PuntazoIdentity ? await window.PuntazoIdentity.getMyProfile() : null;
@@ -86,6 +151,7 @@
       photoURL: (profile && profile.photoURL) || u.photoURL || "",
       isActive: true,
     });
+    if (isLiga && seasonRef) batch.set(seasonRef, seasonDoc);
     await batch.commit();
     return groupRef.id;
   }
@@ -235,17 +301,125 @@
            "&invite=" + encodeURIComponent(inviteCode);
   }
 
-  window.PuntazoGroups = {
+  // Invite-link de LIGA → liga.html (param `id`, consistente con lo que lee liga.html).
+  function generateLeagueInviteLink(groupId, inviteCode) {
+    const origin = (window.location && window.location.origin) || "https://puntazoclips.com";
+    return origin + "/liga.html?id=" + encodeURIComponent(groupId) +
+           "&invite=" + encodeURIComponent(inviteCode);
+  }
+
+  // ── Alta de miembro por un ADMIN (buscador). Idempotente: si ya existe, no-op ──
+  // La regla members/{uid}.create permite a un admin crear el doc de otro uid.
+  async function addMember(groupId, uid, profile) {
+    const u = me();
+    const D = db();
+    if (!u || !D) throw new Error("Debes iniciar sesión");
+    if (!groupId || !uid) throw new Error("Faltan datos");
+    const memberRef = D.collection("groups").doc(groupId).collection("members").doc(uid);
+    const existing = await memberRef.get();
+    if (existing.exists) return; // ya member → no dupliques
+    const p = profile || {};
+    await memberRef.set({
+      uid: uid,
+      joinedAt: nowTS(),
+      invitedBy: u.uid,
+      role: "member",
+      displayName: p.displayName || "",
+      photoURL: p.photoURL || "",
+      isActive: true,
+    });
+    // Incremento best-effort (no aborta el alta si falla).
+    try {
+      await D.collection("groups").doc(groupId).update({
+        memberCount: firebase.firestore.FieldValue.increment(1),
+      });
+    } catch (_) {}
+  }
+
+  // ── Temporadas ──
+  async function listSeasons(groupId) {
+    const D = db();
+    if (!D || !groupId) return [];
+    try {
+      const snap = await D.collection("groups").doc(groupId).collection("seasons").get();
+      const out = [];
+      snap.forEach(function (d) { out.push(Object.assign({ seasonId: d.id }, d.data())); });
+      return out;
+    } catch (e) {
+      console.warn("[groups] listSeasons error", e);
+      return [];
+    }
+  }
+
+  async function getActiveSeason(groupId) {
+    const D = db();
+    if (!D || !groupId) return null;
+    const g = await getGroup(groupId);
+    const activeId = g && g.league && g.league.activeSeasonId;
+    if (!activeId) return null;
+    try {
+      const snap = await D.collection("groups").doc(groupId).collection("seasons").doc(activeId).get();
+      if (!snap.exists) return null;
+      return Object.assign({ seasonId: snap.id }, snap.data());
+    } catch (e) {
+      console.warn("[groups] getActiveSeason error", e);
+      return null;
+    }
+  }
+
+  async function createSeason(groupId, opts) {
+    const D = db();
+    if (!D || !groupId) throw new Error("Faltan datos");
+    const ref = D.collection("groups").doc(groupId).collection("seasons").doc();
+    const doc = Object.assign(buildSeasonDoc(ref.id, opts), { createdAt: nowTS() });
+    await ref.set(doc);
+    // Apuntar la temporada activa a la nueva (admin: lo permite la regla de update del grupo).
+    try {
+      await D.collection("groups").doc(groupId).update({ "league.activeSeasonId": ref.id });
+    } catch (_) {}
+    return ref.id;
+  }
+
+  // Config de liga (admin). `mode` es INMUTABLE (sanitize lo descarta).
+  async function updateLeagueConfig(groupId, changes) {
+    const D = db();
+    if (!D || !groupId) return;
+    const upd = sanitizeLeagueConfigChanges(changes);
+    if (Object.keys(upd).length === 0) return;
+    await D.collection("groups").doc(groupId).update(upd);
+  }
+
+  // Conveniencia para ligas.html: mis grupos filtrados a type=="liga".
+  async function listMyLeagues() {
+    const groups = await listMyGroups();
+    return groups.filter(function (g) { return g && g.type === "liga"; });
+  }
+
+  const api = {
     createGroup: createGroup,
     getGroup: getGroup,
     listMyGroups: listMyGroups,
+    listMyLeagues: listMyLeagues,
     listGroupMembers: listGroupMembers,
     joinGroup: joinGroup,
     leaveGroup: leaveGroup,
     kickMember: kickMember,
+    addMember: addMember,
     addAdmin: addAdmin,
     removeAdmin: removeAdmin,
     updateGroup: updateGroup,
+    updateLeagueConfig: updateLeagueConfig,
+    listSeasons: listSeasons,
+    getActiveSeason: getActiveSeason,
+    createSeason: createSeason,
     generateInviteLink: generateInviteLink,
+    generateLeagueInviteLink: generateLeagueInviteLink,
+    // Helpers puros expuestos para tests Node.
+    _buildLeagueBlock: buildLeagueBlock,
+    _buildSeasonDoc: buildSeasonDoc,
+    _sanitizeLeagueConfigChanges: sanitizeLeagueConfigChanges,
   };
+
+  if (typeof window !== "undefined") window.PuntazoGroups = api;
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

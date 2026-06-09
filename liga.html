@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<base href="/" />
+<title>Liga · Puntazo</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/estilo.css" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+<script src="/assets/header.js"></script>
+<script src="/assets/identity.js"></script>
+<script src="/assets/friends.js"></script>
+<script src="/assets/groups.js"></script>
+
+<style>
+  html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .gr-wrap { max-width: 720px; margin: 0 auto; padding: 90px 16px 60px; }
+  .gr-back { display:inline-flex; align-items:center; gap:6px; margin-bottom:14px; padding:8px 14px; background:rgba(11,124,255,.10); border:1px solid rgba(11,124,255,.30); border-radius:999px; color:#cfe2ff; font-weight:700; font-size:.86rem; text-decoration:none; }
+
+  .gr-header {
+    background:rgba(11,124,255,.10);
+    border:1px solid rgba(11,124,255,.30);
+    border-radius:18px;
+    padding:22px 22px 18px;
+    margin-bottom:18px;
+  }
+  .gr-header-icon { font-size:2.2rem; margin-bottom:8px; }
+  .gr-header-name { font-size:1.6rem; font-weight:900; color:#fff; margin-bottom:6px; }
+  .gr-badges { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  .gr-badge { font-size:.7rem; font-weight:900; padding:4px 10px; border-radius:999px; text-transform:uppercase; letter-spacing:.5px; }
+  .gr-badge-mode { background:rgba(11,124,255,.18); color:#9fc6ff; border:1px solid rgba(11,124,255,.40); }
+  .gr-badge-season { background:rgba(200,232,53,.12); color:#d7ef72; border:1px solid rgba(200,232,53,.35); }
+  .gr-header-meta { color:rgba(234,242,255,.55); font-size:.82rem; font-weight:700; }
+
+  .gr-actions { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .gr-btn {
+    padding:10px 16px; border-radius:999px;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(0,0,0,.30); color:#fff;
+    font-family:inherit; font-weight:800; font-size:.84rem;
+    cursor:pointer; transition:all .14s; text-decoration:none;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .gr-btn:hover { background:rgba(11,124,255,.20); border-color:rgba(11,124,255,.55); }
+  .gr-btn-primary { background:linear-gradient(180deg, #0b7cff, #1d4ed8); border-color:transparent; }
+  .gr-btn-primary:hover { filter:brightness(1.08); background:linear-gradient(180deg, #0b7cff, #1d4ed8); }
+  .gr-btn-danger { color:#ffb1a3; border-color:rgba(255,80,80,.30); }
+  .gr-btn-danger:hover { background:rgba(255,80,80,.16); border-color:rgba(255,80,80,.55); }
+
+  .gr-section-title {
+    font-size:.94rem; font-weight:800; color:rgba(234,242,255,.85);
+    margin:20px 0 10px; text-transform:uppercase; letter-spacing:.5px;
+  }
+  .gr-members { display:flex; flex-direction:column; gap:8px; }
+  .gr-member {
+    display:flex; align-items:center; gap:12px;
+    padding:11px 14px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;
+  }
+  .gr-member-avatar {
+    width:38px; height:38px; border-radius:50%;
+    background:rgba(0,79,200,.35); display:flex; align-items:center; justify-content:center;
+    font-weight:900; color:#fff; flex-shrink:0; overflow:hidden;
+  }
+  .gr-member-avatar img { width:100%; height:100%; object-fit:cover; }
+  .gr-member-info { flex:1; min-width:0; }
+  .gr-member-name { font-size:.96rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gr-member-meta { font-size:.74rem; color:rgba(234,242,255,.55); }
+  .gr-member-role {
+    font-size:.66rem; font-weight:900;
+    padding:3px 8px; border-radius:999px;
+    background:rgba(255, 217, 122, .14); color:#ffd97a;
+    border:1px solid rgba(255, 217, 122, .35);
+    text-transform:uppercase; letter-spacing:.5px;
+  }
+
+  /* Buscador alta de miembros */
+  .gr-add { margin-top:10px; }
+  .gr-add input { width:100%; padding:11px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.14); background:rgba(0,0,0,.30); color:#fff; font-family:inherit; font-size:.92rem; }
+  .gr-add input:focus { outline:none; border-color:rgba(11,124,255,.55); }
+  .gr-results { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .gr-result { display:flex; align-items:center; gap:10px; padding:8px 12px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px; cursor:pointer; }
+  .gr-result:hover { border-color:rgba(11,124,255,.45); }
+  .gr-result-av { width:30px; height:30px; border-radius:50%; background:rgba(0,79,200,.35); display:flex; align-items:center; justify-content:center; font-weight:900; color:#fff; font-size:.8rem; overflow:hidden; flex-shrink:0; }
+  .gr-result-av img { width:100%; height:100%; object-fit:cover; }
+  .gr-result-name { flex:1; font-weight:700; color:#fff; font-size:.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gr-result-add { color:#9af2c0; font-weight:900; font-size:.9rem; }
+
+  .gr-pairs { display:flex; flex-direction:column; gap:6px; }
+  .gr-pair { padding:9px 13px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px; font-weight:700; color:#eaf2ff; font-size:.9rem; }
+
+  .gr-placeholder { text-align:center; padding:28px 20px; color:rgba(234,242,255,.6); background:rgba(255,255,255,.03); border:1px dashed rgba(255,255,255,.14); border-radius:14px; }
+
+  .gr-invite {
+    margin-top:18px; padding:14px 16px;
+    background:rgba(34,197,94,.08); border:1px solid rgba(34,197,94,.30);
+    border-radius:12px;
+    color:#c8f7dc; font-size:.84rem;
+  }
+  .gr-invite-link {
+    margin-top:8px;
+    padding:8px 10px; background:rgba(0,0,0,.30);
+    border-radius:8px;
+    font-family:'Monaco','Menlo',monospace; font-size:.74rem;
+    word-break:break-all;
+    color:#9af2c0;
+  }
+  .gr-invite-actions { display:flex; gap:8px; margin-top:8px; }
+  .gr-invite-actions button {
+    padding:8px 12px; border-radius:8px;
+    border:1px solid rgba(34,197,94,.40); background:rgba(34,197,94,.16);
+    color:#9af2c0; font-family:inherit; font-weight:800; font-size:.8rem;
+    cursor:pointer; transition:all .14s;
+  }
+  .gr-invite-actions button:hover { background:rgba(34,197,94,.30); }
+
+  .gr-loading, .gr-error, .gr-notmember {
+    text-align:center; padding:40px 20px;
+    color:rgba(234,242,255,.70);
+  }
+  .gr-notmember h2 { color:#fff; font-size:1.2rem; margin-bottom:8px; }
+  .gr-msg { margin-top:8px; font-size:.8rem; font-weight:700; min-height:16px; }
+  .gr-msg.ok { color:#9af2c0; }
+  .gr-msg.bad { color:#f87171; }
+</style>
+</head>
+<body>
+
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="gr-wrap">
+  <a class="gr-back" href="/ligas.html">← Mis ligas</a>
+
+  <div id="grLoading" class="gr-loading">⏳ Cargando…</div>
+  <div id="grError" class="gr-error" style="display:none">No pudimos cargar esta liga.</div>
+
+  <div id="grNotMember" class="gr-notmember" style="display:none">
+    <h2 id="grNmName">Liga</h2>
+    <p>No eres miembro de esta liga aún.</p>
+    <button id="grJoinBtn" class="gr-btn gr-btn-primary" type="button">Unirme a la liga</button>
+  </div>
+
+  <div id="grContent" style="display:none">
+    <div class="gr-header">
+      <div class="gr-header-icon">🏆</div>
+      <div class="gr-header-name" id="grName">Liga</div>
+      <div class="gr-badges">
+        <span class="gr-badge gr-badge-mode" id="grModeBadge">Individual</span>
+        <span class="gr-badge gr-badge-season" id="grSeasonBadge" style="display:none"></span>
+      </div>
+      <div class="gr-header-meta" id="grMeta"></div>
+      <div class="gr-actions">
+        <button id="grShareBtn" class="gr-btn gr-btn-primary" type="button">📤 Compartir liga</button>
+        <button id="grLeaveBtn" class="gr-btn gr-btn-danger" type="button">Salir de la liga</button>
+      </div>
+    </div>
+
+    <div id="grInviteBlock" class="gr-invite" style="display:none">
+      <b>Link de invitación a la liga:</b>
+      <div id="grInviteLink" class="gr-invite-link"></div>
+      <div class="gr-invite-actions">
+        <button id="grCopyBtn" type="button">Copiar link</button>
+        <button id="grWhatsappBtn" type="button">Enviar por WhatsApp</button>
+      </div>
+    </div>
+
+    <!-- Parejas (solo modo pairs y si hay definidas) -->
+    <div id="grPairsSection" style="display:none">
+      <div class="gr-section-title">Parejas</div>
+      <div id="grPairs" class="gr-pairs"></div>
+    </div>
+
+    <div class="gr-section-title">Miembros (<span id="grMemberCount">0</span>)</div>
+    <div id="grMembers" class="gr-members"></div>
+
+    <!-- Alta por buscador (solo admin) -->
+    <div id="grAddBlock" class="gr-add" style="display:none">
+      <input type="text" id="grSearch" placeholder="Buscar jugador por nombre o @handle…" />
+      <div id="grResults" class="gr-results"></div>
+      <div id="grAddMsg" class="gr-msg"></div>
+    </div>
+
+    <div class="gr-section-title">Posiciones</div>
+    <div class="gr-placeholder">
+      🚧 La tabla aparece cuando jueguen partidos de la liga.
+    </div>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const params = new URLSearchParams(window.location.search);
+  const groupId = params.get('id') || params.get('groupId');
+
+  const $loading = document.getElementById('grLoading');
+  const $error = document.getElementById('grError');
+  const $notMember = document.getElementById('grNotMember');
+  const $content = document.getElementById('grContent');
+  const $nmName = document.getElementById('grNmName');
+  const $joinBtn = document.getElementById('grJoinBtn');
+
+  function show(which) {
+    $loading.style.display   = (which === 'loading') ? '' : 'none';
+    $error.style.display     = (which === 'error')   ? '' : 'none';
+    $notMember.style.display = (which === 'notmember') ? '' : 'none';
+    $content.style.display   = (which === 'content') ? '' : 'none';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
+    }[c]));
+  }
+
+  function fmtDate(ms) {
+    if (!Number.isFinite(ms)) return '';
+    try { return new Date(ms).toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' }); }
+    catch (_) { return ''; }
+  }
+
+  // ── Auto-amistad best-effort (mismo mecanismo que el claim en match-actions.js):
+  //    solo si no hay relación previa, manda solicitud vía PuntazoFriends. No aborta nada. ──
+  function autoFriend(uid) {
+    if (!window.PuntazoFriends || !uid) return Promise.resolve();
+    return window.PuntazoFriends.getFriendshipStatus(uid).then(function (status) {
+      if (status === 'none') return window.PuntazoFriends.sendFriendRequest(uid).catch(function () {});
+    }).catch(function () {});
+  }
+
+  function debounce(fn, ms) {
+    let t = null;
+    return function () {
+      const args = arguments, ctx = this;
+      clearTimeout(t);
+      t = setTimeout(function () { fn.apply(ctx, args); }, ms);
+    };
+  }
+
+  async function loadAndRender() {
+    if (!groupId) { show('error'); return; }
+    show('loading');
+    try {
+      const group = await window.PuntazoGroups.getGroup(groupId);
+      if (!group) { show('error'); return; }
+      if (group.type !== 'liga') {
+        // No es una liga → redirige a la vista de grupo genérico.
+        window.location.replace('/grupo.html?groupId=' + encodeURIComponent(groupId));
+        return;
+      }
+      const u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+      const members = await window.PuntazoGroups.listGroupMembers(groupId);
+      const isMember = u && members.some(function (m) { return m.uid === u.uid; });
+      const isAdmin = u && Array.isArray(group.admins) && group.admins.indexOf(u.uid) >= 0;
+      const league = group.league || {};
+
+      if (!isMember) {
+        $nmName.textContent = group.name;
+        show('notmember');
+        $joinBtn.onclick = async function () {
+          if (!u) { try { window.PuntazoAuth.signIn(); } catch (_) {} return; }
+          $joinBtn.disabled = true;
+          try {
+            await window.PuntazoGroups.joinGroup(groupId, { invitedBy: group.creatorUid || null });
+            loadAndRender();
+          } catch (e) {
+            console.error('[liga] join', e);
+            $joinBtn.disabled = false;
+            alert('No se pudo unir a la liga.');
+          }
+        };
+        return;
+      }
+
+      // ── Header ──
+      document.getElementById('grName').textContent = group.name;
+      document.getElementById('grModeBadge').textContent = (league.mode === 'pairs') ? '👥 Parejas' : '👤 Individual';
+
+      // Temporada activa
+      const activeSeason = await window.PuntazoGroups.getActiveSeason(groupId);
+      const $seasonBadge = document.getElementById('grSeasonBadge');
+      if (activeSeason) {
+        let label = activeSeason.name || 'Temporada';
+        const range = [fmtDate(activeSeason.startMs), fmtDate(activeSeason.endMs)].filter(Boolean).join(' – ');
+        if (range) label += ' · ' + range;
+        $seasonBadge.textContent = label;
+        $seasonBadge.style.display = '';
+      }
+
+      document.getElementById('grMeta').textContent =
+        members.length + ' miembro' + (members.length !== 1 ? 's' : '');
+      document.getElementById('grMemberCount').textContent = members.length;
+
+      // ── Parejas (si las hay) ──
+      if (league.mode === 'pairs' && Array.isArray(league.pairs) && league.pairs.length) {
+        document.getElementById('grPairsSection').style.display = '';
+        document.getElementById('grPairs').innerHTML = league.pairs.map(function (p) {
+          return '<div class="gr-pair">' + escapeHtml(p.name || 'Pareja') + '</div>';
+        }).join('');
+      }
+
+      // ── Miembros ──
+      const $members = document.getElementById('grMembers');
+      $members.innerHTML = members.map(function (m) {
+        const initial = (m.displayName || 'Y').charAt(0).toUpperCase();
+        const photo = m.photoURL
+          ? '<img src="' + escapeHtml(m.photoURL) + '" alt="" referrerpolicy="no-referrer" />'
+          : initial;
+        const role = (group.admins || []).indexOf(m.uid) >= 0
+          ? '<span class="gr-member-role">Admin</span>'
+          : '';
+        return '<div class="gr-member">' +
+          '<div class="gr-member-avatar">' + photo + '</div>' +
+          '<div class="gr-member-info">' +
+            '<div class="gr-member-name">' + escapeHtml(m.displayName || 'Sin nombre') + '</div>' +
+            '<div class="gr-member-meta">' + (m.uid === (u && u.uid) ? 'Tú' : '') + '</div>' +
+          '</div>' +
+          role +
+        '</div>';
+      }).join('');
+
+      // ── Alta por buscador (solo admin) ──
+      if (isAdmin) {
+        const $addBlock = document.getElementById('grAddBlock');
+        const $search = document.getElementById('grSearch');
+        const $results = document.getElementById('grResults');
+        const $addMsg = document.getElementById('grAddMsg');
+        $addBlock.style.display = '';
+        const memberUids = members.map(function (m) { return m.uid; });
+
+        async function doAdd(profile) {
+          $addMsg.className = 'gr-msg';
+          $addMsg.textContent = 'Agregando…';
+          try {
+            await window.PuntazoGroups.addMember(groupId, profile.uid, {
+              displayName: profile.displayName, photoURL: profile.photoURL,
+            });
+            // Auto-amistad best-effort (decisión LOCKED #5).
+            autoFriend(profile.uid);
+            $addMsg.className = 'gr-msg ok';
+            $addMsg.textContent = '✓ ' + (profile.displayName || 'Miembro') + ' agregado';
+            $search.value = '';
+            $results.innerHTML = '';
+            setTimeout(loadAndRender, 700);
+          } catch (e) {
+            console.error('[liga] addMember', e);
+            $addMsg.className = 'gr-msg bad';
+            $addMsg.textContent = (e && e.message) ? e.message : 'No se pudo agregar.';
+          }
+        }
+
+        const runSearch = debounce(async function () {
+          const q = $search.value.trim();
+          $addMsg.textContent = '';
+          if (q.length < 2) { $results.innerHTML = ''; return; }
+          if (!window.PuntazoIdentity || !window.PuntazoIdentity.searchUsers) {
+            $results.innerHTML = ''; return;
+          }
+          let found = [];
+          try { found = await window.PuntazoIdentity.searchUsers(q, { limit: 8, excludeUid: u && u.uid }); }
+          catch (_) { found = []; }
+          found = found.filter(function (p) { return memberUids.indexOf(p.uid) < 0; });
+          if (!found.length) { $results.innerHTML = '<div class="gr-msg">Sin resultados.</div>'; return; }
+          $results.innerHTML = '';
+          found.forEach(function (p) {
+            const row = document.createElement('div');
+            row.className = 'gr-result';
+            const initial = (p.displayName || '?').charAt(0).toUpperCase();
+            const av = p.photoURL
+              ? '<img src="' + escapeHtml(p.photoURL) + '" alt="" referrerpolicy="no-referrer" />'
+              : initial;
+            row.innerHTML = '<div class="gr-result-av">' + av + '</div>' +
+              '<div class="gr-result-name">' + escapeHtml(p.displayName || 'Jugador') +
+              (p.handle ? ' <span style="opacity:.6">@' + escapeHtml(p.handle) + '</span>' : '') + '</div>' +
+              '<div class="gr-result-add">+ Agregar</div>';
+            row.onclick = function () { doAdd(p); };
+            $results.appendChild(row);
+          });
+        }, 280);
+        $search.oninput = runSearch;
+      }
+
+      // ── Compartir / salir ──
+      function leagueLink() {
+        return window.PuntazoGroups.generateLeagueInviteLink(groupId, group.inviteCode);
+      }
+      document.getElementById('grShareBtn').onclick = function () {
+        document.getElementById('grInviteLink').textContent = leagueLink();
+        document.getElementById('grInviteBlock').style.display = '';
+      };
+      document.getElementById('grCopyBtn').onclick = function () {
+        navigator.clipboard.writeText(leagueLink()).then(function () {
+          alert('Link copiado.');
+        }).catch(function () { alert('No se pudo copiar.'); });
+      };
+      document.getElementById('grWhatsappBtn').onclick = function () {
+        const text = 'Únete a mi liga "' + group.name + '" en Puntazo: ' + leagueLink();
+        window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+      };
+      document.getElementById('grLeaveBtn').onclick = async function () {
+        if (!confirm('¿Salir de la liga "' + group.name + '"?')) return;
+        try {
+          await window.PuntazoGroups.leaveGroup(groupId);
+          window.location.href = '/ligas.html';
+        } catch (e) {
+          alert('No se pudo salir.');
+        }
+      };
+
+      show('content');
+    } catch (e) {
+      console.error('[liga] error', e);
+      show('error');
+    }
+  }
+
+  // F100 P4: fix race auth-ready
+  window.addEventListener('puntazo:auth-ready', loadAndRender);
+  window.addEventListener('puntazo:auth-changed', loadAndRender);
+  if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+    loadAndRender();
+  } else {
+    setTimeout(function () { if ($loading.style.display !== 'none') loadAndRender(); }, 800);
+  }
+})();
+</script>
+</body>
+</html>
