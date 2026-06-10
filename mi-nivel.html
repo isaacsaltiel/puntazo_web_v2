@@ -357,6 +357,14 @@
     color: #6fb2ff; text-decoration: none; font-weight: 800;
   }
   .ml-empty .icon { font-size: 3rem; margin-bottom: 12px; }
+/* (2026-06-10) Toggle estilo swipe: Mi nivel | Ranking global */
+.ml-tabs{display:flex;gap:4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  border-radius:999px;padding:4px;margin:4px 0 18px;}
+.ml-tab{flex:1;appearance:none;border:none;background:transparent;cursor:pointer;
+  padding:10px 0;border-radius:999px;font-family:inherit;font-weight:800;font-size:.86rem;
+  color:rgba(234,242,255,.6);transition:background .2s ease,color .2s ease,box-shadow .2s ease;}
+.ml-tab.is-active{background:linear-gradient(135deg,#0B7CFF,#004FC8);color:#fff;
+  box-shadow:0 6px 16px rgba(0,79,200,.35);}
 </style>
 </head>
 <body>
@@ -365,8 +373,17 @@
 
 <main class="ml-wrap">
   <a class="ml-back" href="/perfil.html">← Mi perfil</a>
-  <a class="ml-back" href="/clasificacion.html" style="margin-left:8px">🏆 Tablero global</a>
 
+  <!-- (2026-06-10) Pantalla unificada: Mi nivel + Ranking global en tabs.
+       clasificacion.html ahora redirige aquí con ?tab=ranking. -->
+  <div class="ml-tabs" role="tablist" aria-label="Vista de nivel">
+    <button type="button" class="ml-tab is-active" id="mlTabNivel" role="tab" aria-selected="true">🎯 Mi nivel</button>
+    <button type="button" class="ml-tab" id="mlTabRanking" role="tab" aria-selected="false">🏆 Ranking global</button>
+  </div>
+
+  <div id="mlPanelRanking" style="display:none"></div>
+
+  <div id="mlPanelNivel">
   <div id="mlLoading" class="ml-hero ml-hero-loading">
     ⏳ Calculando tu nivel…
   </div>
@@ -412,6 +429,7 @@
     Juega tu primer partido desde <a href="/entrada.html">la entrada</a>
     o reclama tu slot si un amigo te comparte el link de su partido.</p>
   </div>
+  </div><!-- /mlPanelNivel -->
 </main>
 
 <script>
@@ -835,6 +853,53 @@
       if ($loading.style.display !== 'none' && !$content.style.display) onAuthReady();
     }, 800);
   }
+})();
+</script>
+<script src="/assets/leaderboard-widget.js"></script>
+<script>
+// (2026-06-10) Tabs Mi nivel | Ranking global (pantalla unificada).
+(function () {
+  "use strict";
+  var $panelNivel = document.getElementById("mlPanelNivel");
+  var $panelRank = document.getElementById("mlPanelRanking");
+  var $tabN = document.getElementById("mlTabNivel");
+  var $tabR = document.getElementById("mlTabRanking");
+  var rankRendered = false;
+
+  function renderRanking() {
+    var u = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!u) {
+      $panelRank.innerHTML = '<div class="pz-lb-state" style="text-align:center;padding:44px 20px;color:rgba(234,242,255,.7)">🔒 Inicia sesión para ver el ranking global.</div>';
+      return;
+    }
+    rankRendered = true;
+    window.PuntazoLeaderboard.render($panelRank, { ctx: "global:padel", myUid: u.uid, limit: 100 });
+  }
+
+  function setTab(which) {
+    var ranking = which === "ranking";
+    $tabN.classList.toggle("is-active", !ranking);
+    $tabR.classList.toggle("is-active", ranking);
+    $tabN.setAttribute("aria-selected", String(!ranking));
+    $tabR.setAttribute("aria-selected", String(ranking));
+    $panelNivel.style.display = ranking ? "none" : "";
+    $panelRank.style.display = ranking ? "" : "none";
+    if (ranking && !rankRendered) renderRanking();
+    try {
+      var url = new URL(location.href);
+      if (ranking) url.searchParams.set("tab", "ranking"); else url.searchParams.delete("tab");
+      history.replaceState(null, "", url.toString());
+    } catch (_) {}
+  }
+
+  $tabN.addEventListener("click", function () { setTab("nivel"); });
+  $tabR.addEventListener("click", function () { setTab("ranking"); });
+  // Si el user entra al ranking sin sesión y luego inicia, re-render.
+  window.addEventListener("puntazo:auth-changed", function () {
+    if ($panelRank.style.display !== "none" && !rankRendered) renderRanking();
+  });
+
+  if (new URLSearchParams(location.search).get("tab") === "ranking") setTab("ranking");
 })();
 </script>
 </body>

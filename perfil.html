@@ -127,7 +127,7 @@
   .pz-more-btn:hover { background:rgba(11,124,255,0.22); border-color:rgba(11,124,255,0.6); }
   .pz-more-btn:active { transform:scale(0.96); }
 
-  .pz-matches-list { display:flex; flex-direction:column; gap:12px; margin-bottom:14px; }
+  .pz-matches-list { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
 
   /* F125-H1: wrapper que contiene la scoreboard-card + el botón
      "Ver foto del resumen" debajo. Solo se renderea el botón para
@@ -255,37 +255,47 @@
      entrada o mi-partido sin tener que buscar el banner global del header.
      Por defecto apunta a entrada.html; si hay match activo del user, el
      boot JS lo cambia in-place a "Volver a tu partido aquí". */
+  /* (2026-06-10) CTA de jugar con identidad de marca: azul sólido + glow
+     verde pelota en el botón + destello sutil. Antes era un card genérico. */
   .pz-play-cta {
     display: flex; align-items: center; gap: 14px;
-    padding: 18px 18px;
+    padding: 16px 18px;
     margin: 8px 0 28px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, rgba(11,124,255,0.22), rgba(0,79,200,0.10));
-    border: 1px solid rgba(11,124,255,0.45);
+    border-radius: 18px;
+    background: linear-gradient(135deg, #0B7CFF, #004FC8);
+    border: 1px solid rgba(140, 190, 255, 0.5);
     text-decoration: none;
     color: #fff;
-    box-shadow: 0 10px 30px rgba(0,79,200,0.18);
-    transition: transform .14s, background .14s, border-color .14s, box-shadow .14s;
+    position: relative; overflow: hidden;
+    box-shadow: 0 14px 34px rgba(0,79,200,0.32);
+    transition: transform .14s, border-color .14s, box-shadow .14s;
   }
+  .pz-play-cta::after {
+    content: ""; position: absolute; top: 0; left: -60%; width: 38%; height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,.16), transparent);
+    transform: skewX(-18deg);
+    animation: pzPlayShine 5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes pzPlayShine { 0%, 72% { left: -60%; } 88%, 100% { left: 130%; } }
   .pz-play-cta:hover {
     transform: translateY(-2px);
-    background: linear-gradient(135deg, rgba(11,124,255,0.32), rgba(0,79,200,0.16));
-    border-color: rgba(11,124,255,0.65);
-    box-shadow: 0 14px 36px rgba(0,79,200,0.26);
+    border-color: rgba(200, 232, 53, 0.55);
+    box-shadow: 0 18px 42px rgba(0,79,200,0.42);
   }
   .pz-play-cta-icon {
-    width: 56px; height: 56px;
+    width: 58px; height: 58px;
     border-radius: 50%;
-    background: rgba(11,124,255,0.18);
+    background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.22), rgba(3,8,18,0.25));
     display: inline-flex; align-items: center; justify-content: center;
     flex-shrink: 0;
-    filter: drop-shadow(0 0 14px rgba(11,124,255,0.45));
+    filter: drop-shadow(0 0 16px rgba(200,232,53,0.5));
   }
   .pz-play-cta-icon img { width: 100%; height: 100%; object-fit: contain; }
   .pz-play-cta-text { flex:1; min-width:0; }
   .pz-play-cta-title { font-size: 1.05rem; font-weight: 900; color: #fff; line-height: 1.15; }
-  .pz-play-cta-sub { font-size: 0.82rem; color: rgba(234,242,255,0.78); margin-top: 3px; }
-  .pz-play-cta-arrow { font-size: 1.4rem; color: rgba(11,124,255,0.92); flex-shrink: 0; }
+  .pz-play-cta-sub { font-size: 0.82rem; color: rgba(234,242,255,0.82); margin-top: 3px; }
+  .pz-play-cta-arrow { font-size: 1.4rem; color: #c8e835; flex-shrink: 0; }
   .pz-play-cta--active {
     background: linear-gradient(135deg, rgba(34,197,94,0.22), rgba(11,124,255,0.10));
     border-color: rgba(34,197,94,0.55);
@@ -398,12 +408,13 @@
     border-color: rgba(11, 124, 255, 0.55);
   }
 
+  /* (2026-06-10) Cards más finitas: la lista de partidos ocupaba demasiado. */
   .pz-match-card {
     background:rgba(255,255,255,0.055);
     border:1px solid rgba(255,255,255,0.10);
-    border-radius:16px;
-    padding:16px 16px 14px;
-    box-shadow:0 6px 20px rgba(0,0,0,0.18);
+    border-radius:14px;
+    padding:10px 14px 9px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.14);
     backdrop-filter:blur(10px);
     transition:border-color .18s ease, transform .18s ease;
   }
@@ -411,7 +422,7 @@
 
   .pz-match-head {
     display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
-    margin-bottom:8px;
+    margin-bottom:4px;
   }
   .pz-match-date {
     font-size:0.80rem; font-weight:700; color:rgba(234,242,255,.58);
@@ -435,20 +446,20 @@
   @keyframes pz-pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
 
   .pz-match-loc {
-    font-size:1.05rem; font-weight:900; color:#fff; line-height:1.2;
-    letter-spacing:-0.3px; margin-bottom:2px;
+    font-size:0.98rem; font-weight:900; color:#fff; line-height:1.2;
+    letter-spacing:-0.3px; margin-bottom:1px;
   }
   .pz-match-sub {
-    font-size:0.84rem; color:rgba(234,242,255,.62); margin-bottom:10px;
+    font-size:0.8rem; color:rgba(234,242,255,.62); margin-bottom:6px;
   }
 
   .pz-match-score {
-    font-size:0.90rem; font-weight:800; color:#cfe2ff;
-    letter-spacing:.3px; margin-bottom:10px;
+    font-size:0.88rem; font-weight:800; color:#cfe2ff;
+    letter-spacing:.3px; margin-bottom:6px;
   }
   .pz-match-score .pz-score-sep { color:rgba(207,226,255,.45); margin:0 6px; }
   .pz-match-score-empty {
-    font-size:0.82rem; color:rgba(234,242,255,.45); font-style:italic; margin-bottom:10px;
+    font-size:0.8rem; color:rgba(234,242,255,.45); font-style:italic; margin-bottom:6px;
   }
 
   .pz-match-foot {
@@ -534,17 +545,10 @@
       <!-- E1: nivel global destacado. Lee ratings/{uid}.byContext["global:padel"]
            (server-authoritative). Link al tablero global. JS rellena el contenido
            y decide entre estado con-nivel / fallback sin partidos. -->
-      <a id="perfilNivelGlobal" class="pz-nivel-global" href="/clasificacion.html" style="display:none"></a>
-
-      <!-- F85: link a "Mi nivel" (cliente-side ranking preview) -->
-      <a href="/mi-nivel.html" class="pz-nivel-link">
-        <span class="pz-nivel-emoji">🎯</span>
-        <div class="pz-nivel-text">
-          <div class="pz-nivel-title">Ver mi nivel</div>
-          <div class="pz-nivel-sub">Ranking, win rate, evolución de tus partidos</div>
-        </div>
-        <span class="pz-nivel-arrow">→</span>
-      </a>
+      <!-- (2026-06-10) Un solo punto de entrada al nivel: el bloque dorado lleva
+           a la pantalla unificada (mi-nivel.html = Mi nivel | Ranking global).
+           La card "Ver mi nivel" duplicada se eliminó. -->
+      <a id="perfilNivelGlobal" class="pz-nivel-global" href="/mi-nivel.html" style="display:none"></a>
 
       <!-- F122: CTA primary para iniciar partido / volver al activo.
            Por defecto apunta a entrada.html. El boot JS más abajo lo
@@ -839,7 +843,7 @@
         '<span class="pz-nivel-global-emoji">🎾</span>' +
         '<span class="pz-nivel-global-body">' +
           '<span class="pz-nivel-global-lbl">Tu nivel global</span>' +
-          '<span class="pz-nivel-global-sub">Juega y confirma un partido para tener tu nivel. Mira el tablero global &rarr;</span>' +
+          '<span class="pz-nivel-global-sub">Juega y confirma un partido para tener tu nivel. Mira tu nivel y el ranking &rarr;</span>' +
         '</span>' +
         '<span class="pz-nivel-global-arrow">&rarr;</span>';
       $el.style.display = 'flex';
@@ -864,7 +868,7 @@
             '<span class="pz-nivel-global-num">' + g.nivel.toFixed(2) + '</span>' +
             '<span class="pz-nivel-global-bucket">' + escapeHTML(b.name) + ' ' + calib + '</span>' +
           '</span>' +
-          '<span class="pz-nivel-global-sub">' + wins + 'V &middot; ' + losses + 'D &middot; ver tablero global &rarr;</span>' +
+          '<span class="pz-nivel-global-sub">' + wins + 'V &middot; ' + losses + 'D &middot; ver mi nivel y ranking &rarr;</span>' +
         '</span>' +
         '<span class="pz-nivel-global-arrow">&rarr;</span>';
       $el.style.display = 'flex';
