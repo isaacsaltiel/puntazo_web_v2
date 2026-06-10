@@ -12,6 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
+<script src="/assets/util.js"></script>
 <script src="/assets/auth.js"></script>
 <script src="/assets/header.js"></script>
 <script src="/assets/identity.js"></script>
@@ -335,18 +336,18 @@
       } else if (action === 'reject') {
         await window.PuntazoFriends.rejectFriendRequest(btn.dataset.fid);
       } else if (action === 'remove') {
-        if (!confirm('¿Quitar este amigo?')) { btn.disabled = false; return; }
+        if (!(await PZ.confirm('Dejarán de verse en sus listas de amigos.', { title: '¿Quitar este amigo?', okLabel: 'Quitar', danger: true }))) { btn.disabled = false; return; }
         await window.PuntazoFriends.removeFriend(btn.dataset.uid);
       } else if (action === 'guest-invite') {
         await inviteGuestWhatsApp(btn.dataset.gid, btn.dataset.name);
         btn.disabled = false; return;
       } else if (action === 'guest-rename') {
-        const nuevo = prompt('Nuevo nombre del invitado:', btn.dataset.name || '');
+        const nuevo = await PZ.prompt(null, { title: 'Renombrar invitado', input: { value: btn.dataset.name || '', placeholder: 'Nombre del invitado' }, okLabel: 'Guardar' });
         if (nuevo == null || !nuevo.trim()) { btn.disabled = false; return; }
         await window.PuntazoGuests.renameGuest(btn.dataset.gid, nuevo.trim());
         refreshGuests(); btn.disabled = false; return;
       } else if (action === 'guest-del') {
-        if (!confirm('¿Borrar este invitado? No afecta partidos ya registrados.')) { btn.disabled = false; return; }
+        if (!(await PZ.confirm('No afecta partidos ya registrados.', { title: '¿Borrar este invitado?', okLabel: 'Borrar', danger: true }))) { btn.disabled = false; return; }
         await window.PuntazoGuests.deleteGuest(btn.dataset.gid);
         refreshGuests(); btn.disabled = false; return;
       } else if (action === 'guest-merge') {
@@ -354,7 +355,7 @@
         const fromGid = btn.dataset.gid;
         const fromName = btn.dataset.name || '';
         const others = _guests.filter(function (g) { return g.guestId !== fromGid; });
-        if (!others.length) { alert('Necesitas al menos otro invitado para fusionar.'); btn.disabled = false; return; }
+        if (!others.length) { PZ.toast('Necesitas al menos otro invitado para fusionar.', { type: 'err' }); btn.disabled = false; return; }
         const actions = btn.closest('.am-item-actions');
         const opts = others.map(function (g) {
           return '<option value="' + escapeHtml(g.guestId) + '">' + escapeHtml(g.name || '') + '</option>';
@@ -373,7 +374,7 @@
         const intoGid = sel && sel.value;
         const intoName = (sel && sel.options[sel.selectedIndex]) ? sel.options[sel.selectedIndex].text : '';
         if (!intoGid) { btn.disabled = false; return; }
-        if (!confirm("Vas a fusionar '" + fromName + "' en '" + intoName + "'. Los partidos viejos de '" + fromName + "' seguirán como están; los nuevos usarán '" + intoName + "'.")) { btn.disabled = false; return; }
+        if (!(await PZ.confirm("Los partidos viejos de '" + fromName + "' seguirán como están; los nuevos usarán '" + intoName + "'.", { title: "¿Fusionar '" + fromName + "' en '" + intoName + "'?", okLabel: 'Fusionar', danger: true }))) { btn.disabled = false; return; }
         await window.PuntazoGuests.mergeGuests(fromGid, intoGid);
         refreshGuests(); return;
       } else if (action === 'add') {
@@ -389,7 +390,7 @@
       refresh();
     } catch (err) {
       console.error('[amigos]', err);
-      alert(err && err.message ? err.message : 'Error');
+      PZ.toast(err && err.message ? err.message : 'Algo falló. Intenta de nuevo.', { type: 'err' });
       btn.disabled = false;
     }
   });

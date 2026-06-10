@@ -102,6 +102,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
+<script src="/assets/util.js"></script>
 <script src="/assets/auth.js"></script>
 <script src="/assets/identity.js"></script>
 <script src="/assets/friends.js"></script>
@@ -519,7 +520,14 @@
 
   function doDecline(){
     if (busy) return;
-    if (!window.confirm("¿Quitarte de este partido? Le avisaremos a quien lo registró.")) return;
+    PZ.confirm("Le avisaremos a quien lo registró para que corrija a los jugadores.", {
+      title: "¿Quitarte de este partido?",
+      okLabel: "Quitarme", cancelLabel: "Volver", danger: true,
+    }).then(function(ok){ if (ok) reallyDecline(); });
+  }
+
+  function reallyDecline(){
+    if (busy) return;
     busy = true; $("err").textContent = "";
     window.PuntazoMatchActions.decline(matchId).then(function(){
       busy = false;
@@ -551,7 +559,16 @@
 
   function doDispute(){
     if (busy) return;
-    var reason = window.prompt("¿Qué estuvo mal? (opcional)") || "";
+    PZ.prompt(null, {
+      title: "¿Qué estuvo mal?",
+      chips: ["El marcador está mal", "No jugué este partido", "Los equipos están mal"],
+      input: { placeholder: "Cuéntanos más (opcional)" },
+      okLabel: "Enviar disputa", cancelLabel: "Volver", danger: true, allowEmpty: true,
+    }).then(function(reason){ if (reason !== null) reallyDispute(reason || ""); });
+  }
+
+  function reallyDispute(reason){
+    if (busy) return;
     busy = true; $("err").textContent = "";
     window.PuntazoMatchActions.dispute(matchId, reason).then(function(){
       busy = false; match.status = "disputed"; renderState();
