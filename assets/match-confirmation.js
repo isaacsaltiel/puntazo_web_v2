@@ -125,12 +125,14 @@
     return { ok: true, patch: patch, becameConfirmed: !!st.bothTeamsAccepted };
   }
 
-  // ¿Puede `uid` DISPUTAR? (cualquier jugador con uid, mientras esté pending o
-  // recién confirmed). Marca disputed para revisión humana → void si no concilia.
+  // ¿Puede `uid` DISPUTAR? (cualquier jugador con uid, SOLO mientras esté
+  // pending — las reglas Firestore exigen status=='pending_confirmation' en
+  // isRivalConfirmAction; ofrecer disputa sobre confirmed era un botón muerto
+  // que fallaba con permission-denied). Marca disputed para revisión humana.
   function canDispute(match, uid) {
     if (!match) return { ok: false, reason: "Sin partido" };
-    if (match.status !== STATUS.PENDING && match.status !== STATUS.CONFIRMED) {
-      return { ok: false, reason: "Solo se puede disputar un partido pendiente o recién confirmado" };
+    if (match.status !== STATUS.PENDING) {
+      return { ok: false, reason: "Solo se puede disputar un partido pendiente de confirmar" };
     }
     if (!teamOf(match, uid)) return { ok: false, reason: "No figuras como jugador de este partido" };
     return { ok: true };

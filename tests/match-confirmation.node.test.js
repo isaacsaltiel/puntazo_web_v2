@@ -81,13 +81,15 @@ test("sin auto-aceptación del registrante, 1 rival NO basta (necesita 1 de CADA
   assert.strictEqual(r.patch.status, undefined);
 });
 
-test("disputa: cualquier jugador puede disputar pending o confirmed → disputed", () => {
+test("disputa: cualquier jugador puede disputar un pending → disputed (confirmed NO: las reglas lo niegan)", () => {
   const m = pendingMatch();
   const r = MC.computeDispute(m, "ana", "El marcador está mal, ganamos nosotros");
   assert.ok(r.ok);
   assert.strictEqual(r.patch.status, MC.STATUS.DISPUTED);
   assert.strictEqual(r.patch["confirmation.disputedByUid"], "ana");
   assert.ok(r.patch["confirmation.disputeReason"].length > 0);
+  const rc = MC.computeDispute(pendingMatch({ status: MC.STATUS.CONFIRMED }), "ana", "ya no");
+  assert.strictEqual(rc.ok, false, "confirmed ya no es disputable desde cliente (permission-denied en reglas)");
   assert.strictEqual(r.patch.ratingProcessed, false, "fuerza recompute/reversión");
 });
 

@@ -341,4 +341,44 @@ test("guests: el dueño lee/escribe su invitado ✓; otro usuario ✗", async ()
   await assertFails(malRef.set({ name: "hack" }));
 });
 
+// ── SEC-P0 (2026-06-09): flags es server-only en users/{uid} ────────────────
+test("users: NO puede crearse con flags ni escribirse flags.isAdmin (escalación admin)", async () => {
+  const eve = env.authenticatedContext("eve").firestore();
+  // create con flags → ✗
+  await assertFails(eve.collection("users").doc("eve")
+    .set({ uid: "eve", displayName: "Eve", flags: { isAdmin: true } }));
+  // create limpio → ✓
+  await assertSucceeds(eve.collection("users").doc("eve")
+    .set({ uid: "eve", displayName: "Eve" }));
+  // update metiendo flags → ✗
+  await assertFails(eve.collection("users").doc("eve")
+    .set({ uid: "eve", flags: { isAdmin: true } }, { merge: true }));
+  // update benigno → ✓
+  await assertSucceeds(eve.collection("users").doc("eve")
+    .set({ uid: "eve", displayName: "Eve B." }, { merge: true }));
+  // y aunque el server le haya puesto flags, no puede tocarlos
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await ctx.firestore().collection("users").doc("eve")
+      .set({ flags: { isAdmin: false } }, { merge: true });
+  });
+  await assertFails(eve.collection("users").doc("eve")
+    .set({ uid: "eve", flags: { isAdmin: true } }, { merge: true }));
+});
+
+// ── SEC-P0 (2026-06-09): clip_edits create exige sesión + uid_creator propio ─
+test("clip_edits: anónimo NO encola; signedIn solo con su uid_creator", async () => {
+  const { serverTimestamp } = require("firebase/firestore");
+  function editDoc(uid) {
+    return {
+      kind: "edit", source_video_id: "vid1", status: "pending",
+      uid_creator: uid, created_at: serverTimestamp(),
+    };
+  }
+  const unauth = env.unauthenticatedContext().firestore();
+  await assertFails(unauth.collection("clip_edits").doc("e1").set(editDoc(null)));
+  const pedro = env.authenticatedContext("pedro").firestore();
+  await assertSucceeds(pedro.collection("clip_edits").doc("e2").set(editDoc("pedro")));
+  await assertFails(pedro.collection("clip_edits").doc("e3").set(editDoc("carlos")));
+});
+
 test("teardown", async () => { await env.cleanup(); });

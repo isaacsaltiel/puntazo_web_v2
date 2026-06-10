@@ -250,11 +250,17 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if true;
 
+      // SEC-P0 (2026-06-09): `flags` (p.ej. flags.isAdmin) es SERVER-ONLY.
+      // Sin este candado, cualquier usuario podía escribirse flags.isAdmin=true
+      // y disparar el callable destructivo recomputeAllRatings (functions/index.js).
       allow create: if isMe(uid)
-                    && request.resource.data.uid == uid;
+                    && request.resource.data.uid == uid
+                    && !('flags' in request.resource.data);
 
       allow update: if isMe(uid)
-                    && request.resource.data.uid == resource.data.uid;
+                    && request.resource.data.uid == resource.data.uid
+                    && !request.resource.data.diff(resource.data).affectedKeys()
+                         .hasAny(['flags']);
 
       allow delete: if false;
 
@@ -419,7 +425,11 @@ service cloud.firestore {
     // NUEVO R8 — Cola de ediciones de clip (render en la nube)
     // ════════════════════════════════════════════════════
     match /clip_edits/{editId} {
-      allow create: if request.resource.data.kind in ['edit', 'puntazo']
+      // SEC-P0 (2026-06-09): create exige sesión y uid_creator propio — antes
+      // cualquier anónimo podía encolar renders (gasto de Actions/Dropbox).
+      allow create: if request.auth != null
+                    && request.resource.data.uid_creator == request.auth.uid
+                    && request.resource.data.kind in ['edit', 'puntazo']
                     && request.resource.data.source_video_id is string
                     && request.resource.data.status == 'pending'
                     && request.resource.data.created_at == request.time;

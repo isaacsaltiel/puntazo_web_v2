@@ -404,6 +404,10 @@
       if (submitted) return;
       const btn = this;
       if (!(outT > inT)) { showMsg("err", "Marca un recorte válido (inicio < fin)."); return; }
+      // SEC-P0: las reglas de clip_edits exigen sesión (uid_creator == auth.uid).
+      var edUser = (window.PuntazoAuth && window.PuntazoAuth.currentUser)
+        || (firebase.auth && firebase.auth().currentUser) || null;
+      if (!edUser) { showMsg("err", "Inicia sesión para editar clips (toca el avatar arriba o entra desde Mis clips)."); return; }
       btn.disabled = true; btn.textContent = "Enviando…";
       try {
         const reframe = {
