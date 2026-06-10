@@ -172,8 +172,17 @@
 
 .hero-primary{position:relative;z-index:1;margin-top:0.6rem;margin-bottom:0.2rem}
 .hero-primary .btn-primary{padding:1.25rem 2.6rem;font-size:1.05rem}
-.hero-secondaries{display:flex;gap:0.9rem;justify-content:center;flex-wrap:wrap;position:relative;z-index:1;margin-top:0.4rem}
-.hero-secondaries .btn-outline,.hero-secondaries .btn-live{padding:0.9rem 1.85rem;font-size:0.9rem}
+/* Secundarios como links discretos (no pills): un solo botón manda en el
+   hero; estos dos quedan un escalón abajo para no saturar. */
+.hero-secondaries{display:flex;gap:1.1rem;align-items:center;justify-content:center;flex-wrap:wrap;position:relative;z-index:1;margin-top:0.8rem}
+.hero-link{
+  color:rgba(234,242,255,0.7);font-weight:700;font-size:0.9rem;
+  text-decoration:none;padding:0.45rem 0.2rem;
+  border-bottom:1.5px solid transparent;
+  transition:color .15s ease, border-color .15s ease;
+}
+.hero-link:hover{color:#fff;border-bottom-color:rgba(200,232,53,0.75)}
+.hero-sep{width:4px;height:4px;border-radius:50%;background:rgba(234,242,255,0.32);flex-shrink:0}
 .btn-primary{
   background:var(--blue);color:#fff;
   padding:1rem 2.2rem;border-radius:50px;
@@ -232,16 +241,6 @@
     box-shadow:0 0 55px rgba(11,124,255,0.8), 0 8px 30px rgba(0,0,0,0.4);
   }
 }
-.btn-live{
-  background:#ffffff;color:#000;
-  padding:1rem 2.2rem;border-radius:50px;
-  text-decoration:none;font-weight:800;font-size:0.92rem;
-  letter-spacing:0.5px;
-  border:2px solid rgba(255,255,255,0.85);
-  box-shadow:0 8px 30px rgba(0,0,0,0.3);
-  transition:all .2s;
-}
-.btn-live:hover{opacity:0.92;transform:translateY(-2px);}
 .btn-secondary{
   background:transparent;color:#fff;
   padding:1rem 2.2rem;border-radius:50px;
@@ -648,13 +647,13 @@
   .hero h1{font-size:2.6rem;line-height:1.02}
   .hero-sub{font-size:0.95rem;margin-bottom:0.9rem}
   .hero-primary .btn-primary{width:100%;padding:1rem 1.25rem;font-size:1rem}
-  .hero-secondaries{flex-direction:row;gap:0.6rem}
-  .hero-secondaries .btn-outline,.hero-secondaries .btn-live{padding:0.75rem 1rem}
+  .hero-secondaries{flex-direction:row;gap:0.8rem}
+  .hero-link{font-size:0.84rem;padding:0.4rem 0.1rem}
 }
 
 /* ══════════════════════════════════════════════════════════
    F121 — Modos y herramientas (reemplaza "Lo nuevo")
-   Cards visuales con badges (Con clips / Estable / Beta) por modo.
+   Cards visuales con badges (Con clips / LIVE) por modo.
    Grid responsive 1-2-3 columnas según viewport.
    ══════════════════════════════════════════════════════════ */
 .modes-grid{
@@ -714,12 +713,18 @@
 .mode-badge--live{
   color:#d8f1ff;background:rgba(11,124,255,0.18);border:1px solid rgba(11,124,255,0.45);
 }
-.mode-badge--stable{
-  color:rgba(180,240,200,0.95);background:rgba(34,197,94,0.14);border:1px solid rgba(34,197,94,0.42);
+/* Herramientas en producción: badge LIVE verde pelota con punto pulsante.
+   (Antes Estable/Beta — todas las herramientas ya están terminadas.) */
+.mode-badge--on{
+  color:#dff79a;background:rgba(200,232,53,0.12);border:1px solid rgba(200,232,53,0.45);
+  display:inline-flex;align-items:center;gap:5px;
 }
-.mode-badge--beta{
-  color:rgba(220,195,255,0.95);background:rgba(180,120,255,0.16);border:1px solid rgba(180,120,255,0.45);
+.mode-badge--on::before{
+  content:"";width:5px;height:5px;border-radius:50%;background:#c8e835;
+  animation:liveDot 1.8s ease-in-out infinite;
 }
+@keyframes liveDot{0%,100%{opacity:1}50%{opacity:0.35}}
+@media (prefers-reduced-motion: reduce){.mode-badge--on::before{animation:none}}
 .modes-note{
   margin:1.5rem auto 0;max-width:760px;
   padding:14px 18px;border-radius:12px;
@@ -814,8 +819,9 @@
   </div>
 
   <div class="hero-secondaries">
-    <a href="explorar.html" class="btn-outline" onclick="try{gtag('event','hero_cta_clips',{event_category:'CTA',event_label:'hero'});}catch(e){}" aria-label="Encuentra tus clips">Encuentra tus clips</a>
-    <a href="/entrada.html?modo=boton" target="_blank" rel="noopener" class="btn-live" onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'hero'});}catch(e){}" aria-label="Usar teléfono como botón">📲 Usar teléfono como botón</a>
+    <a href="explorar.html" class="hero-link" onclick="try{gtag('event','hero_cta_clips',{event_category:'CTA',event_label:'hero'});}catch(e){}" aria-label="Encuentra tus clips">🎬 Encuentra tus clips</a>
+    <span class="hero-sep" aria-hidden="true"></span>
+    <a href="/entrada.html?modo=boton" target="_blank" rel="noopener" class="hero-link" onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'hero'});}catch(e){}" aria-label="Usar teléfono como botón">📲 Usar teléfono como botón</a>
   </div>
 
   <div class="hero-scroll">
@@ -851,7 +857,7 @@
       <div class="mode-body">
         <div class="mode-head">
           <h3>Torneo 5 jugadores</h3>
-          <span class="mode-badge mode-badge--stable">Estable</span>
+          <span class="mode-badge mode-badge--on">LIVE</span>
         </div>
         <p>5 partidos, cada quien juega 4 y descansa 1. Sorteo automático, tabla en vivo, resumen final compartible.</p>
       </div>
@@ -862,7 +868,7 @@
       <div class="mode-body">
         <div class="mode-head">
           <h3>King of the Court</h3>
-          <span class="mode-badge mode-badge--beta">Beta</span>
+          <span class="mode-badge mode-badge--on">LIVE</span>
         </div>
         <p>4-12 jugadores con cola. Ganadores se quedan, perdedores al final de la fila. Leaderboard en vivo.</p>
       </div>
@@ -873,7 +879,7 @@
       <div class="mode-body">
         <div class="mode-head">
           <h3>Americano</h3>
-          <span class="mode-badge mode-badge--beta">Beta</span>
+          <span class="mode-badge mode-badge--on">LIVE</span>
         </div>
         <p>4 jugadores, 3 rondas con todas las combinaciones de parejas. Gana el del puntaje individual más alto.</p>
       </div>
@@ -884,7 +890,7 @@
       <div class="mode-body">
         <div class="mode-head">
           <h3>Sortear parejas</h3>
-          <span class="mode-badge mode-badge--beta">Beta</span>
+          <span class="mode-badge mode-badge--on">LIVE</span>
         </div>
         <p>Mete los nombres, le das al botón dorado y arma equipos al azar. Si son más de 4, organiza canchas y descansos.</p>
       </div>
@@ -895,7 +901,7 @@
       <div class="mode-body">
         <div class="mode-head">
           <h3>Marcador libre</h3>
-          <span class="mode-badge mode-badge--beta">Beta</span>
+          <span class="mode-badge mode-badge--on">LIVE</span>
         </div>
         <p>Lleva el marcador en cualquier cancha. Sets, games y puntos con un toque. Sin login, persiste local.</p>
       </div>
@@ -903,7 +909,7 @@
   </div>
 
   <div class="modes-note">
-    <strong>¿No tienes Puntazo en tu club?</strong> Las herramientas marcadas como Estable o Beta funcionan en cualquier cancha. Solo el partido oficial con clips requiere las cámaras instaladas.<br>
+    <strong>¿No tienes Puntazo en tu club?</strong> Todas las herramientas LIVE funcionan en cualquier cancha. Solo el partido oficial con clips requiere las cámaras instaladas.<br>
     <a href="/herramientas.html" class="modes-note-link" onclick="try{gtag('event','modes_ver_todas_click',{event_category:'CTA'});}catch(e){}">Ver todas las herramientas →</a>
   </div>
 </div>
