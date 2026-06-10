@@ -63,6 +63,7 @@
       .pz-auth-dropdown-email{color:rgba(234,242,255,.58);font-size:0.78rem;margin-top:3px;line-height:1.4;word-break:break-word;}
       .pz-auth-dropdown a,.pz-auth-dropdown button{width:100%;border:none;background:transparent;color:#eaf2ff;text-decoration:none;text-align:left;padding:12px 14px;font:inherit;font-size:0.88rem;font-weight:700;cursor:pointer;display:block;}
       .pz-auth-dropdown a:hover,.pz-auth-dropdown button:hover{background:rgba(255,255,255,.06);}
+      .pz-auth-dropdown-sep{height:1px;background:rgba(255,255,255,.08);margin:4px 0;}
       .pz-auth-slot--landing{margin-left:6px;}
 
       /* ── Nav derecho (internal) ── */
@@ -329,7 +330,15 @@
             <div class="pz-auth-dropdown-name">${safeName}</div>
             <div class="pz-auth-dropdown-email">${safeEmail}</div>
           </div>
-          <a href="perfil.html">Mi perfil</a>
+          <a href="perfil.html">👤 Mi perfil</a>
+          <a href="mis-partidos.html">🎾 Mis partidos</a>
+          <a href="mis-clips.html">🎬 Mis clips</a>
+          <a href="mi-nivel.html">📊 Mi nivel</a>
+          <div class="pz-auth-dropdown-sep" role="separator"></div>
+          <a href="amigos.html">🤝 Amigos</a>
+          <a href="grupos.html">🏆 Grupos y ligas</a>
+          <a href="registrar-min.html">➕ Registrar partido</a>
+          <div class="pz-auth-dropdown-sep" role="separator"></div>
           <button type="button" data-auth-logout>Cerrar sesión</button>
         </div>
       </div>`;
