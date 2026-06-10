@@ -381,4 +381,20 @@ test("clip_edits: anónimo NO encola; signedIn solo con su uid_creator", async (
   await assertFails(pedro.collection("clip_edits").doc("e3").set(editDoc("carlos")));
 });
 
+// ── (2026-06-10) video_stats: contador de views público, increment de a 1 ──
+test("video_stats: lee cualquiera; create views=1; increment +1; sin saltos/campos extra/delete", async () => {
+  const { serverTimestamp, increment } = require("firebase/firestore");
+  const unauth = env.unauthenticatedContext().firestore();
+  await assertSucceeds(unauth.collection("video_stats").doc("v1")
+    .set({ views: 1, updatedAt: serverTimestamp(), club: "BreakPoint" }));
+  await assertSucceeds(unauth.collection("video_stats").doc("v1")
+    .set({ views: increment(1), updatedAt: serverTimestamp() }, { merge: true }));
+  await assertFails(unauth.collection("video_stats").doc("v1")
+    .set({ views: increment(5), updatedAt: serverTimestamp() }, { merge: true }));
+  await assertFails(unauth.collection("video_stats").doc("v1")
+    .set({ views: increment(1), hacked: true }, { merge: true }));
+  await assertFails(unauth.collection("video_stats").doc("v1").delete());
+  await assertSucceeds(unauth.collection("video_stats").doc("v1").get());
+});
+
 test("teardown", async () => { await env.cleanup(); });

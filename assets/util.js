@@ -204,8 +204,33 @@
     return openModal("prompt", Object.assign({ message: message }, opts || {}));
   }
 
+  // ── Views (2026-06-10): contador de reproducciones en video_stats/{id}. ──
+  // 1 view por video por sesión de browser; increment validado por reglas.
+  // Fail-silent: medir nunca debe romper la reproducción.
+  function trackVideoView(videoId, meta) {
+    try {
+      if (!videoId) return;
+      var key = "pzv_" + videoId;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+      var db = (window.PuntazoFirebase && window.PuntazoFirebase.db) ? window.PuntazoFirebase.db() : null;
+      if (!db || !window.firebase || !firebase.firestore) return;
+      var doc = {
+        views: firebase.firestore.FieldValue.increment(1),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+      meta = meta || {};
+      if (meta.club) doc.club = meta.club;
+      if (meta.cancha) doc.cancha = meta.cancha;
+      if (meta.lado) doc.lado = meta.lado;
+      db.collection("video_stats").doc(String(videoId)).set(doc, { merge: true })
+        .catch(function (e) { console.warn("[PZ.trackVideoView]", e && e.code); });
+    } catch (_) {}
+  }
+
   window.PZ = {
     escapeHtml: escapeHtml,
+    trackVideoView: trackVideoView,
     tsToDate: tsToDate,
     tsToMillis: tsToMillis,
     toast: toast,

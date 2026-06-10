@@ -258,8 +258,13 @@
             for (let i = 0; i < matchesList.length; i++) {
               const m = matchesList[i];
               if (!m) continue;
-              const { locNombre, canNombre } = resolveNames(cfg, m.loc, m.can);
               const status = m.status || 'active';
+              // (2026-06-10) Ruido fuera de la lista: cancelados/anulados nunca,
+              // y los terminados/confirmados SIN marcador tampoco (no aportan).
+              if (status === 'cancelled' || status === 'void') continue;
+              const hasScore = !!(m.marcador && Array.isArray(m.marcador.sets) && m.marcador.sets.length);
+              if (!hasScore && status !== 'active' && status !== 'pending_confirmation') continue;
+              const { locNombre, canNombre } = resolveNames(cfg, m.loc, m.can);
               // F90 BLOQUE 1.B: ended → detalle.html (Flujo B). resumen.html
               // queda solo para Flujo A (recién terminé desde mi-partido).
               const href = (status === 'ended')

@@ -721,6 +721,10 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     real.className = "real"; real.controls = true; real.playsInline = true; real.preload = "metadata"; real.src = entry.url;
     real.style.display = "none"; real.style.width = "100%"; real.style.borderRadius = "8px";
     real.addEventListener("play", () => { trackEvent("play_video", gaCtx({ video_name: entry.nombre })); }, { once: true });
+    // (2026-06-10) Métrica de reproducciones server-side (video_stats).
+    real.addEventListener("play", () => {
+      if (window.PZ && PZ.trackVideoView) PZ.trackVideoView(entry.nombre, { club: entry.loc || null, cancha: entry.can || null, lado: entry.lado || null });
+    });
     const preview = createPreviewOverlay(entry.url, entry.duracion || 60, card);
     preview.style.width = "100%"; preview.style.borderRadius = "8px";
     wrap.appendChild(real); wrap.appendChild(preview); card.appendChild(wrap);

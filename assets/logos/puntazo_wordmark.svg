@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 140" role="img" aria-label="PUNTAZO">
+  <!-- (2026-06-10) Tercer logo: wordmark PUNTAZO sin raqueta.
+       La O es la pelota (verde pelota #c8e835) con costura — hereda la
+       identidad sin el ícono. Variante blanco-sobre-transparente; para fondo
+       claro cambiar fill del texto a #050914.
+       NOTA: usa Montserrat vía @import (perfecto en web). Para imprenta /
+       contextos sin red, convertir texto a paths (Illustrator/Inkscape). -->
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,900&amp;display=swap');
+      .wm { font-family: 'Montserrat', 'Arial Black', sans-serif; font-weight: 900; font-style: italic; }
+    </style>
+    <radialGradient id="ball" cx="38%" cy="32%" r="75%">
+      <stop offset="0%" stop-color="#e8fb7a"/>
+      <stop offset="55%" stop-color="#c8e835"/>
+      <stop offset="100%" stop-color="#9fc40e"/>
+    </radialGradient>
+  </defs>
+
+  <!-- PUNTAZ -->
+  <text x="8" y="103" class="wm" font-size="104" letter-spacing="2" fill="#ffffff">PUNTAZ</text>
+
+  <!-- O = pelota -->
+  <g transform="translate(672 70)">
+    <circle r="46" fill="url(#ball)"/>
+    <!-- costura de la pelota -->
+    <path d="M -32 -33 C -10 -14, -10 14, -32 33" fill="none" stroke="rgba(5,9,20,.55)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M 32 -33 C 10 -14, 10 14, 32 33" fill="none" stroke="rgba(5,9,20,.55)" stroke-width="5" stroke-linecap="round"/>
+    <!-- brillo -->
+    <ellipse cx="-14" cy="-18" rx="12" ry="7" fill="rgba(255,255,255,.45)" transform="rotate(-28 -14 -18)"/>
+  </g>
+</svg>

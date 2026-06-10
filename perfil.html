@@ -14,6 +14,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
+<script src="/assets/util.js"></script>
 <script src="/assets/auth.js"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/match-expiration.js"></script>
@@ -1270,6 +1271,7 @@
         myUid: myUid,
         locNombre: locNombre,
         canNombre: canNombre,
+        compact: true, // (2026-06-10) cards finitas en el perfil
       }));
     } else {
       // Fallback minimal (en teoría no debería pasar nunca)

@@ -478,6 +478,23 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════
+    // (2026-06-10) video_stats/{videoId} — contador de reproducciones.
+    // Reemplaza al modelo muerto `reactions`. Cualquiera puede leer y
+    // SOLO incrementar views de 1 en 1 (los clips son públicos, las views
+    // anónimas cuentan). Meta (club/cancha/lado) solo se fija al crear.
+    // ════════════════════════════════════════════════════
+    match /video_stats/{videoId} {
+      allow read: if true;
+      allow create: if request.resource.data.views == 1
+                    && request.resource.data.keys()
+                         .hasOnly(['views', 'updatedAt', 'club', 'cancha', 'lado']);
+      allow update: if request.resource.data.views == resource.data.views + 1
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['views', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // ════════════════════════════════════════════════════
     // Catch-all denegado
     // ════════════════════════════════════════════════════
     match /{document=**} {

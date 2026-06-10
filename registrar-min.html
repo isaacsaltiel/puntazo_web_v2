@@ -147,7 +147,7 @@
   <div class="min-top" id="top" hidden>
     <button class="min-back" id="back" type="button" aria-label="Atrás">‹</button>
     <div class="min-dots" id="dots"></div>
-    <img class="min-logo" src="/assets/img/P_blanca_transparente.png" alt="" onerror="this.style.display='none'">
+    <a href="/perfil.html" aria-label="Ir a mi perfil"><img class="min-logo" src="/assets/img/P_blanca_transparente.png" alt="Puntazo" onerror="this.style.display='none'"></a>
   </div>
 
   <!-- Body -->
@@ -319,7 +319,10 @@
     idx = i;
     var name = STEPS[i];
     $("top").hidden = false; $("foot").hidden = false;
-    $("back").hidden = (i === 0);
+    // (2026-06-10) En el paso 1 el "atrás" ya NO desaparece: sale del flujo
+    // (antes la pantalla no tenía escapatoria).
+    $("back").hidden = false;
+    $("back").setAttribute("aria-label", i === 0 ? "Salir" : "Atrás");
     showStep(name);
     var eb = stepEls[name].querySelector(".eyebrow");
     if (eb && name !== "sum") eb.textContent = "Paso " + (i + 1);
@@ -512,7 +515,16 @@
     if (!w.ganador) { $("err").textContent = "Falta definir quién ganó (ajusta el marcador)."; return; }
     next(); renderSummary();
   });
-  $("back").addEventListener("click", back);
+  $("back").addEventListener("click", function () {
+    if (idx === 0) {
+      // Escapatoria del flujo: con historial regresa; si llegó directo
+      // (link de WhatsApp), al perfil.
+      if (history.length > 1 && document.referrer) history.back();
+      else location.href = "/perfil.html";
+      return;
+    }
+    back();
+  });
 
   // ── Submit ──
   async function submit() {

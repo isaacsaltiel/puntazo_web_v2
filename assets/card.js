@@ -284,6 +284,12 @@ window.PuntazoCard = (function () {
     video.playsInline = true;
     video.preload = 'metadata';
     if (entry.url) video.src = entry.url;
+    // (2026-06-10) Métrica de reproducciones: 1 view por video por sesión.
+    video.addEventListener('play', function () {
+      if (window.PZ && PZ.trackVideoView) {
+        PZ.trackVideoView(entry.nombre, { club: entry.loc || entry.club || null, cancha: entry.can || entry.cancha || null, lado: entry.lado || null });
+      }
+    });
     wrap.appendChild(video);
     card.appendChild(wrap);
 

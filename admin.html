@@ -265,7 +265,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
     <div class="kpi src-gh"><div class="kpi-value" id="kpiDias">—</div><div class="kpi-label">Días con videos</div></div>
     <div class="kpi src-gh"><div class="kpi-value" id="kpiClubs">—</div><div class="kpi-label">Clubs activos</div></div>
     <div class="kpi src-gh"><div class="kpi-value" id="kpiActivos">—</div><div class="kpi-label">Videos ahora (24h)</div></div>
-    <div class="kpi src-fs"><div class="kpi-value" id="kpiViews">—</div><div class="kpi-label">Confirmados (últ. 400)</div></div>
+    <div class="kpi src-fs"><div class="kpi-value" id="kpiViews">—</div><div class="kpi-label">Reproducciones</div></div>
     <div class="kpi src-green"><div class="kpi-value" id="kpiSaves">—</div><div class="kpi-label">Grupos · Ligas</div></div>
     <div class="kpi src-green"><div class="kpi-value" id="kpiUsers">—</div><div class="kpi-label">Usuarios</div></div>
   </div>
@@ -998,14 +998,17 @@ async function fetchGH(){
 // son del modelo viejo (reglas removidas en Etapa 14 → permission-denied, el
 // badge marcaba "Firestore: error"). Hoy la verdad social vive en matches/
 // (read público), users/ (read público) y groups/ (signedIn).
-let _matches=[],_groups=[];
+let _matches=[],_groups=[],_videoStats=[];
 async function fetchFS(){
   const db=window.PuntazoFirebase.db();
-  const[mSnap,uSnap,gSnap]=await Promise.all([
+  const[mSnap,uSnap,gSnap,vSnap]=await Promise.all([
     db.collection('matches').orderBy('createdAt','desc').limit(400).get(),
     db.collection('users').limit(1000).get(),
     db.collection('groups').limit(200).get(),
+    // (2026-06-10) reproducciones reales: video_stats (incrementa el cliente)
+    db.collection('video_stats').orderBy('views','desc').limit(200).get().catch(()=>({forEach(){}})),
   ]);
+  _videoStats=[];vSnap.forEach(d=>_videoStats.push(Object.assign({videoId:d.id},d.data())));
   _matches=[];mSnap.forEach(d=>_matches.push(Object.assign({id:d.id},d.data())));
   _users=[];uSnap.forEach(d=>{const x=d.data()||{};_users.push({uid:d.id,displayName:x.displayName||'',handle:x.handle||'',photoURL:x.photoURL||'',createdAt:x.createdAt||null});});
   _groups=[];gSnap.forEach(d=>_groups.push(Object.assign({id:d.id},d.data())));
@@ -1030,7 +1033,7 @@ function renderKPIs(){
   s('kpiDias',          fmt(t.dias_con_videos));
   s('kpiClubs',         fmt(t.clubs_activos));
   s('kpiActivos',       fmt(t.videos_activos));
-  s('kpiViews', fmt(_matches.filter(m=>m.status==='confirmed').length));
+  s('kpiViews', fmt(_videoStats.reduce((a,v)=>a+(v.views||0),0)));
   s('kpiSaves', fmt(_groups.length));
   s('kpiUsers', fmt(_users.length));
 }
@@ -1130,12 +1133,29 @@ function renderMatchesTab(){
       <td>${ST_PILL[m.status]||esc(m.status||'—')}</td>
     </tr>`;
   }).join('');
+  // Top clips por reproducciones (video_stats, modelo 2026-06-10).
+  let clipsHtml='';
+  if(_videoStats.length){
+    const maxV=_videoStats[0]?.views||1;
+    const crows=_videoStats.slice(0,15).map((v,i)=>`<tr>
+      <td class="td-rank">${rankEmoji(i)}</td>
+      <td class="td-name"><a href="/clip.html?videoId=${encodeURIComponent(v.videoId)}" target="_blank" style="color:#eaf2ff;text-decoration:none">${videoLabel(v)}<small>${esc(v.club||'')} ${v.cancha?'· '+esc(v.cancha):''}</small></a></td>
+      <td class="td-bar"><div class="bar"><div class="bar-fill" style="width:${Math.round((v.views||0)/maxV*100)}%"></div></div></td>
+      <td class="td-num">${fmt(v.views||0)}</td>
+    </tr>`).join('');
+    clipsHtml=`<div class="section">
+      <div class="section-title">▶ Top clips por reproducciones <span class="badge">${_videoStats.length}</span><span class="src-tag fs">Firestore</span></div>
+      <div class="table-wrap"><table><thead><tr><th>#</th><th>Clip</th><th style="min-width:80px"></th><th>Views</th></tr></thead><tbody>${crows}</tbody></table></div>
+    </div>`;
+  }else{
+    clipsHtml=`<div class="info-box" style="font-size:.75rem">▶ Reproducciones: el contador (video_stats) arrancó el 10-jun-2026 — se llena conforme la gente vea clips.</div>`;
+  }
   $pane.innerHTML=`
     <div class="info-box" style="font-size:.78rem">Últimos <strong>${_matches.length}</strong> partidos · ${chips}</div>
     <div class="section">
       <div class="section-title">🎾 Partidos recientes <span class="badge">${Math.min(40,_matches.length)}</span><span class="src-tag fs">Firestore</span></div>
       <div class="table-wrap"><table><thead><tr><th>#</th><th>Partido</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table></div>
-    </div>`;
+    </div>`+clipsHtml;
 }
 
 // ── Ligas y grupos (groups/) ──
