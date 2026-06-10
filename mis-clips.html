@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
+<script src="/assets/util.js"></script>
 <script src="/assets/auth.js"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/clubs-catalog.js"></script>
@@ -232,6 +233,14 @@
     <div class="pz-clips-pageheader">
       <h1>Mis clips</h1>
       <p id="pageSubtitle">Todos los clips de tus partidos, agrupados por partido.</p>
+    </div>
+
+    <!-- (2026-06-10) Puntazos pedidos con el botón (pending_pulses del user).
+         Los del botón aún no entran a la lista de partidos (eso es F136 lado
+         NUC); aquí al menos se ven su estado y dónde encontrarlos. -->
+    <div id="pulsesSection" style="display:none">
+      <div style="font-size:.9rem;font-weight:800;color:rgba(234,242,255,.85);margin:2px 0 10px;text-transform:uppercase;letter-spacing:.5px">🎯 Tus puntazos de botón</div>
+      <div id="pulsesList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:26px"></div>
     </div>
 
     <div id="loading" class="pz-clips-state">
@@ -516,10 +525,52 @@
     }
   }
 
+  // (2026-06-10) Puntazos de botón del user (últimas 72 h). Estado simple:
+  // listo (consumed sin error) → link a su cancha; error → mensaje; resto →
+  // procesando. La integración durable al grupo-por-partido es F136 (NUC).
+  async function loadMyPulses(user) {
+    const $sec = document.getElementById('pulsesSection');
+    const $pl = document.getElementById('pulsesList');
+    const db = (window.PuntazoFirebase && window.PuntazoFirebase.db) ? window.PuntazoFirebase.db() : null;
+    if (!db || !$sec) return;
+    try {
+      const snap = await db.collection('pending_pulses')
+        .where('uid_creator', '==', user.uid)
+        .orderBy('created_at', 'desc')
+        .limit(15)
+        .get();
+      const cutoff = Date.now() - 72 * 3600 * 1000;
+      const rows = [];
+      snap.forEach(function (d) {
+        const p = d.data() || {};
+        const ms = (window.PZ && PZ.tsToMillis) ? PZ.tsToMillis(p.created_at) : 0;
+        if (!ms || ms < cutoff) return;
+        if (p.source === 'upload_resumen' || p.source === 'match_full') return; // no son puntazos de botón
+        const canFull = /^Cancha/i.test(p.cancha || '') ? p.cancha : ('Cancha' + String(p.cancha || '').replace(/^\D+/, ''));
+        const ladoUrl = '/lado.html?loc=' + encodeURIComponent(p.club || '') + '&can=' + encodeURIComponent(canFull) + '&lado=LadoA&pg=0';
+        let emoji, label, extra = '';
+        if (p.error_reason) { emoji = '⚠️'; label = 'No se pudo procesar'; }
+        else if (p.consumed_at) { emoji = '✅'; label = 'Listo'; extra = ' · <a href="' + ladoUrl + '" style="color:#6fb2ff;font-weight:800;text-decoration:none">ver en su cancha →</a>'; }
+        else { emoji = '⏳'; label = 'Procesando'; }
+        const hhmm = ms ? new Date(ms).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : '';
+        rows.push('<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:12px;font-size:.86rem;color:#eaf2ff">' +
+          '<span style="font-size:1.1rem">' + emoji + '</span>' +
+          '<span style="flex:1;min-width:0"><b>' + label + '</b> · ' + (window.PZ ? PZ.escapeHtml(p.club || '') : '') + ' ' + (window.PZ ? PZ.escapeHtml(p.cancha || '') : '') + (hhmm ? (' · ' + hhmm) : '') + extra + '</span>' +
+          '</div>');
+      });
+      if (!rows.length) { $sec.style.display = 'none'; return; }
+      $pl.innerHTML = rows.join('');
+      $sec.style.display = '';
+    } catch (e) {
+      console.warn('[mis-clips] pulses', e);
+    }
+  }
+
   function onAuthReady() {
     const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     if (!user) { showState('login'); return; }
     loadAll(user);
+    loadMyPulses(user);
   }
 
   window.addEventListener('puntazo:auth-ready', onAuthReady);
