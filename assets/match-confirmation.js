@@ -138,7 +138,7 @@
     return { ok: true };
   }
 
-  function computeDispute(match, uid, reason) {
+  function computeDispute(match, uid, reason, nowMs) {
     var can = canDispute(match, uid);
     if (!can.ok) return can;
     return {
@@ -147,7 +147,9 @@
         status: STATUS.DISPUTED,
         "confirmation.disputedByUid": uid,
         "confirmation.disputeReason": (typeof reason === "string" ? reason.slice(0, 280) : null),
-        ratingProcessed: false, // si estaba confirmed, el recompute lo revierte
+        // E-A: el scheduler server-side void-ea disputas estancadas por este ms.
+        "confirmation.disputedAtMs": (typeof nowMs === "number" ? nowMs : Date.now()),
+        ratingProcessed: false,
       },
     };
   }

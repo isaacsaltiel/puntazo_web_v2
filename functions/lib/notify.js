@@ -91,6 +91,35 @@ function matchConfirmPayload(matchId, regName) {
     href: "/confirmar.html?id=" + matchId,
   };
 }
+// E-A (2026-06-09) — cierre del loop de confirmación hacia el REGISTRANTE.
+// Antes solo el rival recibía notif (match_confirm); el registrante nunca se
+// enteraba del desenlace de su propio registro.
+function matchConfirmedPayload(matchId, confirmerName) {
+  return {
+    type: "match_confirmed",
+    refId: matchId,
+    icon: "✅",
+    title: "Tu partido quedó confirmado",
+    subtitle: (confirmerName || "Tu rival") + " confirmó el marcador. Ya cuenta para tu nivel",
+    href: "/confirmar.html?id=" + matchId,
+  };
+}
+function matchDisputedPayload(matchId, disputerName) {
+  return {
+    type: "match_disputed",
+    refId: matchId,
+    icon: "⚠️",
+    title: "Disputaron tu partido",
+    subtitle: (disputerName || "Un rival") + " no está de acuerdo con el marcador",
+    href: "/confirmar.html?id=" + matchId,
+  };
+}
+// Primer nombre del jugador con ese uid dentro del match (null si no figura).
+function playerName(match, uid) {
+  const js = Array.isArray(match && match.jugadores) ? match.jugadores : [];
+  const j = js.find(function (x) { return x && x.uid === uid; });
+  return j ? firstName(j.nombre) : null;
+}
 function clipReadyPayload(pulseId) {
   return {
     type: "clip_ready",
@@ -237,6 +266,9 @@ module.exports = {
   computeMatchTargets: computeMatchTargets,
   friendRequestPayload: friendRequestPayload,
   matchConfirmPayload: matchConfirmPayload,
+  matchConfirmedPayload: matchConfirmedPayload,
+  matchDisputedPayload: matchDisputedPayload,
+  playerName: playerName,
   clipReadyPayload: clipReadyPayload,
   // E7 · EL LOOP
   leagueRankSubtitle: leagueRankSubtitle,

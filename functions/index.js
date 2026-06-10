@@ -21,6 +21,7 @@ const { FieldValue } = require("firebase-admin/firestore");
 
 const { planRatingUpdate, realPlayerUids } = require("./lib/rating.js");
 const leaguesLib = require("./lib/leagues.js");
+const dispute = require("./lib/dispute.js");
 // Motor de standings (PURO, compartido con el navegador). Vendorizado a
 // functions/vendor/ por scripts/vendor-ranking.js (pretest/predeploy), igual que
 // el motor de ranking — `firebase deploy` solo sube functions/.
@@ -148,35 +149,87 @@ exports.onMatchConfirmed = onDocumentWritten(
 );
 
 // ── Expiración de partidos sin confirmar (spec §6.3) ─────────────────────────
+// E-A (2026-06-09): también void-ea disputas sin resolución > DISPUTE_MAX_AGE_DAYS
+// (antes `disputed` era un estado terminal sin salida).
 exports.expireUnconfirmedMatches = onSchedule(
   { region: REGION, schedule: "every 15 minutes" },
   async function () {
     const nowMs = Date.now();
+    const batch = db.batch();
+    let pending = 0, stale = 0;
+
     const snap = await db.collection("matches")
       .where("status", "==", "pending_confirmation")
       .where("confirmation.expiresAtMs", "<", nowMs)
       .limit(200)
       .get();
-    if (snap.empty) return null;
-    const batch = db.batch();
     snap.forEach(function (d) {
       batch.update(d.ref, { status: "void", updatedAt: FieldValue.serverTimestamp() });
+      pending++;
     });
+
+    // Disputas estancadas (query plana por status — son pocas; sin índice compuesto).
+    const dsnap = await db.collection("matches")
+      .where("status", "==", "disputed")
+      .limit(200)
+      .get();
+    dsnap.forEach(function (d) {
+      const m = d.data();
+      const updMs = (m.updatedAt && typeof m.updatedAt.toMillis === "function") ? m.updatedAt.toMillis() : null;
+      if (dispute.disputeIsStale(m, nowMs, updMs)) {
+        batch.update(d.ref, {
+          status: "void",
+          "confirmation.resolution": "void",
+          "confirmation.resolvedAtMs": nowMs,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        stale++;
+      }
+    });
+
+    if (pending + stale === 0) return null;
     await batch.commit();
-    logger.info("[expireUnconfirmed] vencidos -> void", { count: snap.size });
+    logger.info("[expireUnconfirmed] -> void", { pending: pending, staleDisputes: stale });
     return null;
   }
 );
 
-// ── Recompute admin (cambio de algoritmo) — callable ─────────────────────────
-exports.recomputeAllRatings = onCall({ region: REGION }, async function (req) {
-  const uid = req.auth && req.auth.uid;
+// Gate admin compartido por los callables sensibles. `flags` es server-only en
+// las reglas (SEC-P0), así que este campo ya no es auto-otorgable desde cliente.
+async function requireAdmin(uid) {
   if (!uid) throw new HttpsError("unauthenticated", "Login requerido.");
   const adminSnap = await db.collection("users").doc(uid).get();
   if (!adminSnap.exists || !(adminSnap.data().flags && adminSnap.data().flags.isAdmin)) {
     throw new HttpsError("permission-denied", "Solo admin.");
   }
+}
+
+// ── Recompute admin (cambio de algoritmo) — callable ─────────────────────────
+exports.recomputeAllRatings = onCall({ region: REGION }, async function (req) {
+  await requireAdmin(req.auth && req.auth.uid);
   return recomputeCore();
+});
+
+// ── E-A (2026-06-09) — Resolver disputa (callable admin) ────────────────────
+// `disputed` solo nace de un pending (las reglas niegan disputar un confirmed),
+// así que outcome=confirmed nunca re-procesa un ranking ya aplicado: marca
+// ratingProcessed=false y el trigger onMatchConfirmed lo toma normal.
+exports.resolveDispute = onCall({ region: REGION }, async function (req) {
+  const uid = req.auth && req.auth.uid;
+  await requireAdmin(uid);
+  const matchId = req.data && req.data.matchId;
+  const outcome = req.data && req.data.outcome;
+  if (!matchId) throw new HttpsError("invalid-argument", "Falta matchId.");
+  const ref = db.collection("matches").doc(matchId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError("not-found", "Partido no existe.");
+  const res = dispute.resolveDisputePatch(snap.data(), outcome, Date.now());
+  if (!res.ok) throw new HttpsError("failed-precondition", res.error);
+  res.patch["confirmation.resolvedByUid"] = uid;
+  res.patch.updatedAt = FieldValue.serverTimestamp();
+  await ref.update(res.patch);
+  logger.info("[resolveDispute]", { matchId: matchId, outcome: outcome, by: uid });
+  return { ok: true, matchId: matchId, outcome: outcome };
 });
 
 // Núcleo del recompute (sin auth): resetea ratings/ + processedMatches/ y reprocesa
@@ -185,12 +238,23 @@ async function recomputeCore() {
   await deleteCollection("ratings");
   await deleteCollectionGroup("entries"); // leaderboards/{ctx}/entries/{uid}
   await deleteCollection("processedMatches");
+  // OJO: orderBy("endedAt") EXCLUYE silenciosamente los docs SIN ese campo
+  // (un confirmed sin endedAt quedaba fuera del recompute para siempre).
+  // Query plana + sort en memoria con fallback confirmedAtMs → createdAt.
   const confirmed = await db.collection("matches")
     .where("status", "==", "confirmed")
-    .orderBy("endedAt", "asc")
     .get();
+  function endMsOf(doc) {
+    const m = doc.data();
+    if (m.endedAt && typeof m.endedAt.toMillis === "function") return m.endedAt.toMillis();
+    const c = m.confirmation || {};
+    if (Number.isFinite(c.confirmedAtMs)) return c.confirmedAtMs;
+    if (m.createdAt && typeof m.createdAt.toMillis === "function") return m.createdAt.toMillis();
+    return 0;
+  }
+  const ordered = confirmed.docs.slice().sort(function (a, b) { return endMsOf(a) - endMsOf(b); });
   let applied = 0;
-  for (const doc of confirmed.docs) {
+  for (const doc of ordered) {
     await doc.ref.update({ ratingProcessed: false });
     const res = await applyRankingTx(doc.id);
     if (res.outcome === "applied") applied++;
@@ -244,17 +308,22 @@ function notifItemRef(ownerUid, id) {
   return db.collection("notifications").doc(ownerUid).collection("items").doc(id);
 }
 
-// Crear-si-ausente: si ya existe, NO lo reescribe (preserva createdAt/read/readAt).
+// Crear-si-ausente ATÓMICO vía create(): el get-then-set anterior tenía una
+// ventana de carrera (dos triggers simultáneos pisaban createdAt/read).
+// ALREADY_EXISTS (gRPC 6) = ya estaba → no-op que preserva createdAt/read/readAt.
 async function ensureNotif(ownerUid, payload) {
   if (!ownerUid) return;
   const ref = notifItemRef(ownerUid, notify.notifId(payload.type, payload.refId));
-  const snap = await ref.get();
-  if (snap.exists) return;
-  await ref.set(Object.assign({}, payload, {
-    createdAt: FieldValue.serverTimestamp(),
-    read: false,
-    readAt: null,
-  }));
+  try {
+    await ref.create(Object.assign({}, payload, {
+      createdAt: FieldValue.serverTimestamp(),
+      read: false,
+      readAt: null,
+    }));
+  } catch (e) {
+    if (e && (e.code === 6 || e.code === "already-exists")) return;
+    throw e;
+  }
 }
 
 // Borrar-si-existe (delete de un doc inexistente es un no-op exitoso).
@@ -336,9 +405,37 @@ exports.onMatchNotify = onDocumentWritten(
         try {
           await db.collection("users").doc(c.ownerUid).collection("guests").doc(c.guestId)
             .set({ claimedByUid: c.claimerUid, claimedAt: FieldValue.serverTimestamp() }, { merge: true });
-        } catch (_) {}
+        } catch (e) {
+          logger.warn("[onMatchNotify] guest claimedByUid no se pudo escribir", {
+            matchId: matchId, guestId: c.guestId, err: e.message,
+          });
+        }
         return ensureNotif(c.ownerUid, notify.guestClaimedPayload(c.guestId, c.claimerName));
       }));
+
+      // E-A (2026-06-09) — desenlace al REGISTRANTE: su rival confirmó o disputó.
+      // (El fan-out match_confirm de arriba solo avisa a los rivales; el dueño
+      // del registro no se enteraba de nada.)
+      const ownerUid = match.userId || null;
+      if (ownerUid && after && before) {
+        const becameConfirmed = before.status !== "confirmed" && after.status === "confirmed";
+        const becameDisputed = before.status !== "disputed" && after.status === "disputed";
+        if (becameConfirmed) {
+          const confirmer = after.confirmation && after.confirmation.confirmedByUid;
+          if (confirmer && confirmer !== ownerUid) {
+            await ensureNotif(ownerUid, notify.matchConfirmedPayload(matchId, notify.playerName(after, confirmer)));
+          }
+        } else if (becameDisputed) {
+          const disputer = after.confirmation && after.confirmation.disputedByUid;
+          await ensureNotif(ownerUid, notify.matchDisputedPayload(matchId, notify.playerName(after, disputer)));
+        }
+      } else if (ownerUid && !after) {
+        // match borrado → limpiar también los notifs de desenlace del dueño.
+        await Promise.all([
+          removeNotif(ownerUid, "match_confirmed", matchId),
+          removeNotif(ownerUid, "match_disputed", matchId),
+        ]);
+      }
     } catch (e) {
       logger.error("[onMatchNotify] error", { matchId: matchId, err: e.message });
       throw e;
@@ -429,7 +526,9 @@ async function memberName(groupId, uid) {
   try {
     const m = await db.collection("groups").doc(groupId).collection("members").doc(uid).get();
     if (m.exists && m.data().displayName) return notify.firstName(m.data().displayName);
-  } catch (e) {}
+  } catch (e) {
+    logger.warn("[memberName] fallo no-fatal, cae a users/", { groupId: groupId, uid: uid, err: e.message });
+  }
   return notify.firstName(await userDisplayName(uid));
 }
 
@@ -451,7 +550,9 @@ async function fireLeagueRankNotifs(league, match) {
       const s = await db.collection("groups").doc(groupId).collection("seasons").doc(block.activeSeasonId).get();
       if (s.exists) { seasonStartMs = s.data().startMs; seasonEndMs = s.data().endMs; }
     }
-  } catch (e) {}
+  } catch (e) {
+    logger.warn("[fireLeagueRankNotifs] season no legible, uso rango abierto", { groupId: groupId, err: e.message });
+  }
   const table = standings.computeStandings(matches, {
     mode: block.mode, pairs: block.pairs,
     pointsWin: block.pointsWin, pointsLoss: block.pointsLoss,
@@ -572,7 +673,9 @@ exports.leagueWeeklyDigest = onSchedule(
         try {
           const s = await db.collection("groups").doc(league.groupId).collection("seasons").doc(block.activeSeasonId).get();
           if (s.exists) { seasonStartMs = s.data().startMs; seasonEndMs = s.data().endMs; }
-        } catch (e) {}
+        } catch (e) {
+          logger.warn("[leagueWeeklyDigest] season no legible, uso rango abierto", { groupId: league.groupId, err: e.message });
+        }
       }
       const table = standings.computeStandings(matches, {
         mode: block.mode, pairs: block.pairs,
