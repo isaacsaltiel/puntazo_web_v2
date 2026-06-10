@@ -365,9 +365,42 @@ exports.onFriendshipNotify = onDocumentWritten(
         // accepted / blocked / borrado (reject) → ya no es solicitud pendiente.
         await removeNotif(receptor, "friend_request", fid);
       }
+      // (2026-06-10) Cierre del loop hacia el SOLICITANTE: pending → accepted
+      // le avisa que ya son amigos. Si la amistad se borra, se limpia.
+      if (before && before.status === "pending" && after && after.status === "accepted") {
+        const accepterName = await userDisplayName(receptor);
+        await ensureNotif(data.requesterUid, notify.friendAcceptedPayload(fid, accepterName));
+      } else if (!after) {
+        await removeNotif(data.requesterUid, "friend_accepted", fid);
+      }
     } catch (e) {
       logger.error("[onFriendshipNotify] error", { fid: fid, err: e.message });
       throw e; // reintento del runtime; ensure/remove son idempotentes.
+    }
+    return null;
+  }
+);
+
+// 1b) Grupo/Liga → group_joined a cada miembro nuevo (self-join o agregado).
+exports.onGroupNotify = onDocumentWritten(
+  { region: REGION, document: "groups/{groupId}" },
+  async function (event) {
+    const groupId = event.params.groupId;
+    const before = (event.data.before && event.data.before.exists) ? event.data.before.data() : null;
+    const after = (event.data.after && event.data.after.exists) ? event.data.after.data() : null;
+    const joined = notify.newGroupMembers(before, after);
+    if (!joined.length) return null;
+    const info = {
+      groupName: (after && after.name) || null,
+      isLiga: !!(after && after.type === "liga"),
+    };
+    try {
+      await Promise.all(joined.map(function (uid) {
+        return ensureNotif(uid, notify.groupJoinedPayload(groupId, info));
+      }));
+    } catch (e) {
+      logger.error("[onGroupNotify] error", { groupId: groupId, err: e.message });
+      throw e;
     }
     return null;
   }

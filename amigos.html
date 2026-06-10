@@ -115,6 +115,11 @@
       <div id="amPending" class="am-list"></div>
     </div>
 
+    <div id="amSentSection" style="display:none">
+      <div class="am-section-title">Solicitudes enviadas (<span id="amSentCount">0</span>)</div>
+      <div id="amSent" class="am-list"></div>
+    </div>
+
     <div class="am-section-title">Mis amigos (<span id="amFriendsCount">0</span>)</div>
     <div id="amFriends" class="am-list"></div>
     <div id="amFriendsEmpty" class="am-empty" style="display:none">
@@ -145,6 +150,9 @@
   const $pendingSec = document.getElementById('amPendingSection');
   const $pending = document.getElementById('amPending');
   const $pendingCount = document.getElementById('amPendingCount');
+  const $sentSec = document.getElementById('amSentSection');
+  const $sent = document.getElementById('amSent');
+  const $sentCount = document.getElementById('amSentCount');
   const $friends = document.getElementById('amFriends');
   const $friendsEmpty = document.getElementById('amFriendsEmpty');
   const $friendsCount = document.getElementById('amFriendsCount');
@@ -272,11 +280,32 @@
     if (!u) { show('login'); return; }
     show('loading');
     try {
-      const [friends, pending] = await Promise.all([
+      const [friends, pending, sent] = await Promise.all([
         window.PuntazoFriends.listMyFriends(),
         window.PuntazoFriends.listPendingRequests(),
+        window.PuntazoFriends.listSentRequests(),
       ]);
       refreshGuests();
+
+      // Solicitudes ENVIADAS (antes invisibles: mandabas y no sabías nada más).
+      if (sent.length) {
+        $sentSec.style.display = '';
+        $sentCount.textContent = sent.length;
+        $sent.innerHTML = sent.map(function (r) {
+          return '<div class="am-item">' +
+            '<div class="am-item-avatar">' + avatarHtml(r.profile) + '</div>' +
+            '<div class="am-item-info">' +
+              '<div class="am-item-name">' + nameHtml(r.profile, r.toUid) + '</div>' +
+              '<div class="am-item-handle">⏳ esperando su respuesta</div>' +
+            '</div>' +
+            '<div class="am-item-actions">' +
+              '<button class="am-btn-mini am-btn-remove" data-action="cancel-sent" data-fid="' + escapeHtml(r.friendshipId) + '">Cancelar</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      } else {
+        $sentSec.style.display = 'none';
+      }
 
       if (pending.length) {
         $pendingSec.style.display = '';
@@ -335,6 +364,9 @@
         await window.PuntazoFriends.acceptFriendRequest(btn.dataset.fid);
       } else if (action === 'reject') {
         await window.PuntazoFriends.rejectFriendRequest(btn.dataset.fid);
+      } else if (action === 'cancel-sent') {
+        if (!(await PZ.confirm('Puedes volver a mandarla cuando quieras.', { title: '¿Cancelar tu solicitud?', okLabel: 'Cancelar solicitud', cancelLabel: 'Dejarla', danger: true }))) { btn.disabled = false; return; }
+        await window.PuntazoFriends.cancelSentRequest(btn.dataset.fid);
       } else if (action === 'remove') {
         if (!(await PZ.confirm('Dejarán de verse en sus listas de amigos.', { title: '¿Quitar este amigo?', okLabel: 'Quitar', danger: true }))) { btn.disabled = false; return; }
         await window.PuntazoFriends.removeFriend(btn.dataset.uid);

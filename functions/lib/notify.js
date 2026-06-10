@@ -91,6 +91,19 @@ function matchConfirmPayload(matchId, regName) {
     href: "/confirmar.html?id=" + matchId,
   };
 }
+// (2026-06-10) — cierre del loop de amistad: el que MANDÓ la solicitud nunca
+// se enteraba de que se la aceptaron.
+function friendAcceptedPayload(friendshipId, accepterName) {
+  return {
+    type: "friend_accepted",
+    refId: friendshipId,
+    icon: "🎉",
+    title: "Aceptó tu solicitud de amistad",
+    subtitle: (accepterName || "Alguien") + " y tú ya son amigos en Puntazo",
+    href: "/amigos.html",
+  };
+}
+
 // E-A (2026-06-09) — cierre del loop de confirmación hacia el REGISTRANTE.
 // Antes solo el rival recibía notif (match_confirm); el registrante nunca se
 // enteraba del desenlace de su propio registro.
@@ -223,6 +236,38 @@ function seasonChampionPayload(groupId, seasonId, info) {
   };
 }
 
+// (2026-06-10) — bienvenida al entrar a un grupo/liga (self-join por link o
+// agregado por admin — antes nadie se enteraba de nada en ningún caso).
+function groupJoinedPayload(groupId, info) {
+  info = info || {};
+  const isLiga = !!info.isLiga;
+  const name = info.groupName || (isLiga ? "tu liga" : "tu grupo");
+  return {
+    type: "group_joined",
+    refId: groupId,
+    icon: isLiga ? "🏆" : "👥",
+    title: "Ya estás en " + name,
+    subtitle: isLiga
+      ? "Cada partido confirmado entre miembros suma a la tabla. ¡A jugar!"
+      : "Ya apareces en el grupo. Tus partidos con miembros cuentan ahí",
+    href: (isLiga ? "/liga.html?id=" : "/grupo.html?id=") + groupId,
+  };
+}
+
+// Nuevos memberUids (diff before→after). PURA. En el CREATE del grupo no
+// notifica al creador (él lo armó).
+function newGroupMembers(before, after) {
+  if (!after) return [];
+  const prev = {};
+  (Array.isArray(before && before.memberUids) ? before.memberUids : []).forEach(function (u) { prev[u] = true; });
+  const creator = after.creatorUid || null;
+  return (Array.isArray(after.memberUids) ? after.memberUids : []).filter(function (u) {
+    if (prev[u]) return false;
+    if (!before && u === creator) return false; // create: el creador no se auto-notifica
+    return true;
+  });
+}
+
 // ── G1-B · cerrar el loop del invitado ───────────────────────────────────────
 // Detecta slots que pasaron de INVITADO (guestId, sin uid) a RECLAMADO (con uid),
 // comparando before/after por índice (el claim agrega uid in-place conservando el
@@ -265,6 +310,9 @@ module.exports = {
   pulseIsReady: pulseIsReady,
   computeMatchTargets: computeMatchTargets,
   friendRequestPayload: friendRequestPayload,
+  friendAcceptedPayload: friendAcceptedPayload,
+  groupJoinedPayload: groupJoinedPayload,
+  newGroupMembers: newGroupMembers,
   matchConfirmPayload: matchConfirmPayload,
   matchConfirmedPayload: matchConfirmedPayload,
   matchDisputedPayload: matchDisputedPayload,

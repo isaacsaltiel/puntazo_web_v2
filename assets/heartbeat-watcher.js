@@ -30,6 +30,18 @@
   const STALE_THRESHOLD_MS = 5 * 60 * 1000;
   const POLL_INTERVAL_MS = 60 * 1000;
 
+  // FIX (2026-06-10): un contenedor = UNA instancia viva. Antes, si una página
+  // llamaba watch()/statusPill() de nuevo sobre el mismo host (ej. recuperar
+  // al cambiar de cancha), los listeners se APILABAN: banners duplicados y el
+  // estado del club anterior contaminando al nuevo (BP "bleed" sobre WS/IP).
+  const LIVE_WATCHERS = new WeakMap();
+  const LIVE_PILLS = new WeakMap();
+  function replaceLive(map, container, handle) {
+    const prev = map.get(container);
+    if (prev && typeof prev.destroy === "function") { try { prev.destroy(); } catch (_) {} }
+    map.set(container, handle);
+  }
+
   function ensureStyles() {
     if (document.getElementById("pz-hb-styles")) return;
     const s = document.createElement("style");
@@ -214,7 +226,9 @@
     // la NUC dejó de escribir).
     timer = setInterval(evaluate, POLL_INTERVAL_MS);
 
-    return { destroy: destroy, evaluate: evaluate };
+    const handle = { destroy: destroy, evaluate: evaluate };
+    replaceLive(LIVE_WATCHERS, container, handle);
+    return handle;
   }
 
   // ── Status pill (positivo) ───────────────────────────────────────
@@ -272,13 +286,15 @@
     subscribe();
     timer = setInterval(render, POLL_INTERVAL_MS); // refresca online→offline aunque no llegue snapshot
 
-    return {
+    const handle = {
       destroy: function () {
         if (timer) { clearInterval(timer); timer = null; }
         if (typeof unsub === "function") { try { unsub(); } catch (_) {} unsub = null; }
         try { pill.remove(); } catch (_) {}
       },
     };
+    replaceLive(LIVE_PILLS, container, handle);
+    return handle;
   }
 
   window.PuntazoHeartbeatWatcher = {

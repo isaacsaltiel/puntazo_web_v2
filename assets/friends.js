@@ -204,6 +204,52 @@
     }
   }
 
+  // Solicitudes pendientes ENVIADAS por mí (esperando respuesta del otro).
+  // Espejo de listPendingRequests — antes el que mandaba la solicitud no tenía
+  // NINGUNA visibilidad de sus pendientes ni forma de cancelarlas.
+  async function listSentRequests() {
+    const u = me();
+    const D = db();
+    if (!u || !D) return [];
+    try {
+      const [qa, qb] = await Promise.all([
+        D.collection("friendships").where("uidA", "==", u.uid).where("status", "==", "pending").get(),
+        D.collection("friendships").where("uidB", "==", u.uid).where("status", "==", "pending").get(),
+      ]);
+      const reqs = [];
+      function pushIfOutgoing(d) {
+        const data = d.data();
+        if (data.requesterUid === u.uid) {
+          reqs.push({
+            friendshipId: d.id,
+            toUid: (data.uidA === u.uid) ? data.uidB : data.uidA,
+            createdAt: data.createdAt,
+          });
+        }
+      }
+      qa.forEach(pushIfOutgoing);
+      qb.forEach(pushIfOutgoing);
+      if (window.PuntazoIdentity) {
+        return Promise.all(reqs.map(async function (r) {
+          const p = await window.PuntazoIdentity.getProfile(r.toUid);
+          return Object.assign({}, r, { profile: p });
+        }));
+      }
+      return reqs;
+    } catch (e) {
+      console.warn("[friends] listSentRequests error", e);
+      return [];
+    }
+  }
+
+  // Cancelar una solicitud enviada (borra el doc; las reglas permiten delete
+  // a cualquier participante).
+  async function cancelSentRequest(friendshipId) {
+    const D = db();
+    if (!D) throw new Error("Sin conexión");
+    await D.collection("friendships").doc(friendshipId).delete();
+  }
+
   async function getFriendshipStatus(otherUid) {
     const u = me();
     const D = db();
@@ -236,6 +282,8 @@
     removeFriend: removeFriend,
     listMyFriends: listMyFriends,
     listPendingRequests: listPendingRequests,
+    listSentRequests: listSentRequests,
+    cancelSentRequest: cancelSentRequest,
     getFriendshipStatus: getFriendshipStatus,
     _makeFriendshipId: makeFriendshipId,
   };

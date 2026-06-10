@@ -73,9 +73,10 @@
       .pz-clips-cta{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:.6rem 1rem;border-radius:999px;text-decoration:none;font-weight:800;font-size:.82rem;line-height:1;color:#fff;white-space:nowrap;background:linear-gradient(135deg,#0B7CFF,#004FC8);border:1px solid rgba(11,124,255,.55);box-shadow:0 0 20px rgba(0,79,200,.25),0 6px 18px rgba(0,0,0,.18);transition:all .18s ease;}
       .pz-clips-cta:hover{transform:translateY(-1px);box-shadow:0 0 28px rgba(11,124,255,.35),0 8px 22px rgba(0,0,0,.22);}
 
-      /* ── Phone CTA ── */
-      .pz-phone-cta{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:.62rem 1rem;border-radius:999px;text-decoration:none;font-weight:800;font-size:.82rem;line-height:1;color:#fff;white-space:nowrap;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 24px rgba(0,0,0,.16);transition:transform .18s ease,background .18s ease,border-color .18s ease;}
-      .pz-phone-cta:hover{transform:translateY(-1px);background:rgba(0,79,200,.14);border-color:rgba(11,124,255,.40);}
+      /* ── Phone CTA — "USAR BOTÓN" con identidad del botón Puntazo (verde pelota) ── */
+      .pz-phone-cta{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:.6rem 1rem;border-radius:999px;text-decoration:none;font-weight:900;font-size:.8rem;letter-spacing:.4px;line-height:1;color:#0b1018;white-space:nowrap;background:linear-gradient(135deg,#d9f25a,#c8e835);border:1px solid rgba(200,232,53,.65);box-shadow:0 0 18px rgba(200,232,53,.25),0 6px 18px rgba(0,0,0,.18);transition:transform .18s ease,box-shadow .18s ease;}
+      .pz-phone-cta:hover{transform:translateY(-1px);box-shadow:0 0 26px rgba(200,232,53,.4),0 8px 22px rgba(0,0,0,.22);}
+      .pz-phone-cta .pz-pcta-ico{width:18px;height:18px;border-radius:50%;background:#0b1018;color:#c8e835;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:.72rem;flex-shrink:0;}
 
       .pz-nav-right{display:flex;align-items:center;gap:.6rem;}
       .site-header{position:relative;}
@@ -130,7 +131,7 @@
       <a href="/entrada.html?modo=boton" target="_blank" rel="noopener"
          class="pz-phone-cta"
          onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'header_phone_button'});}catch(e){}">
-        📲 Solo registrar puntazos
+        <span class="pz-pcta-ico">P</span> USAR BOTÓN
       </a>`;
   }
 
