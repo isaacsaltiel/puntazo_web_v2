@@ -164,9 +164,14 @@ service cloud.firestore {
           && request.resource.data.ratingProcessed == false;
       }
 
-      // Delete: el dueño puede CANCELAR un registro propio AÚN sin confirmar.
-      // Los partidos legacy (active/ended) NO se borran.
-      allow delete: if isOwner() && resource.data.status == 'pending_confirmation';
+      // Delete: el dueño puede DESCARTAR su propio partido (pending_confirmation,
+      // active o cancelled) — esto respalda "Cancelar partido" = borrarlo del
+      // todo (F147). Los partidos 'ended' NO se borran (protegen historial/ranking).
+      allow delete: if isOwner() && (
+                         resource.data.status == 'pending_confirmation'
+                         || resource.data.status == 'active'
+                         || resource.data.status == 'cancelled'
+                       );
 
       // Claims de slot
       match /claims/{claimUid} {

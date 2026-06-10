@@ -1106,12 +1106,22 @@
     }
   }
 
+  // F147: "Cancelar partido" = descartarlo por completo ("como si nunca
+  // ocurrió"). Antes solo marcaba status:"cancelled" y el doc quedaba guardado
+  // (seguía saliendo en perfil). Ahora se BORRA: primero los claims
+  // (subcolección) — la rule de delete de claims hace get() del match, así que
+  // deben irse ANTES que el doc — y luego el match. La rule de matches permite
+  // al dueño borrar su match en estado active/pending_confirmation/cancelled
+  // (los ended NO se borran: protegen historial/ranking).
   async function cancel(matchId) {
     const id = nonEmptyString(matchId, "matchId");
-    await db().collection(COL).doc(id).update({
-      status: "cancelled",
-      updatedAt: FV().serverTimestamp(),
-    });
+    try {
+      const claimsSnap = await db().collection(COL).doc(id).collection(CLAIMS_SUB).get();
+      await Promise.all(claimsSnap.docs.map(function (d) {
+        return d.ref.delete().catch(function () {});
+      }));
+    } catch (_) { /* best-effort: si falla, igual intentamos borrar el match */ }
+    await db().collection(COL).doc(id).delete();
   }
 
   async function listByUser(userId, opts) {

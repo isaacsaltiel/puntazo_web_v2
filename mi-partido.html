@@ -5879,7 +5879,7 @@
 
   $btnCancel.addEventListener("click", async function () {
     if (!currentMatch || !currentMatch.id) return;
-    if (!window.confirm("¿Cancelar este partido?")) return;
+    if (!window.confirm("¿Cancelar este partido? No se guardará — es como si nunca hubiera ocurrido.")) return;
     $btnCancel.disabled = true;
     $btnCancel.textContent = "Cancelando…";
     try {

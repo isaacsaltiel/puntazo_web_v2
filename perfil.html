@@ -1432,6 +1432,11 @@
             let renderedInPerfil = 0;
             for (let i = 0; i < allMatches.length; i++) {
               const item = allMatches[i];
+              // F147: cancelados/anulados nunca salen en "Mis partidos" (ni en
+              // el conteo). Espeja el filtro de mis-partidos.html. Cubre los
+              // partidos cancelled legados (los nuevos ya se borran al cancelar).
+              const _st = (item.match && item.match.status) || 'active';
+              if (_st === 'cancelled' || _st === 'void') continue;
               renderedTotal++;
               if (renderedInPerfil < MAX_IN_PERFIL) {
                 const card = buildMatchCard(item.match, item.claim, cfg, myUid);
