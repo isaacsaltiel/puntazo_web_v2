@@ -317,6 +317,10 @@
 
     const safeName  = escapeHTML(user.displayName || "Mi perfil");
     const safeEmail = escapeHTML(user.email || "");
+    // (2026-06-10) Dashboard de clubes/métricas, solo para admins (gate real =
+    // reglas Firestore; esto solo expone el link a quien le sirve).
+    const isAdmin = !!(window.PuntazoFirebase && window.PuntazoFirebase.isAdminEmail
+      && window.PuntazoFirebase.isAdminEmail(user.email));
     const avatar    = user.photoURL
       ? `<img class="pz-auth-avatar" src="${user.photoURL}" alt="${safeName}">`
       : `<div class="pz-auth-avatar" style="display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;">${initialsFromUser(user)}</div>`;
@@ -340,6 +344,7 @@
           <a href="grupos.html">🏆 Grupos y ligas</a>
           <a href="registrar-min.html">➕ Registrar partido</a>
           <div class="pz-auth-dropdown-sep" role="separator"></div>
+          ${isAdmin ? '<a href="admin.html">📊 Dashboard admin</a><div class="pz-auth-dropdown-sep" role="separator"></div>' : ""}
           <button type="button" data-auth-logout>Cerrar sesión</button>
         </div>
       </div>`;

@@ -22,6 +22,10 @@
   // `deporte` determina el modelo de scoring (pádel/tenis = sets; pickleball =
   // juegos a 11). El club es la fuente de verdad del deporte → al crear un
   // partido se infiere con sportForLoc(loc), no se deja al azar.
+  // `geo` (opcional): geofence del botón digital — { lat, lng, radiusM }.
+  // Si un club NO tiene geo, el botón funciona desde cualquier lado (fail-open).
+  // Para activar: pegar aquí las coordenadas del club (Google Maps → click
+  // derecho → copiar lat,lng) y un radio razonable (350-500 m).
   const CLUB_DISPLAY = {
     "Interpadel":            { emoji: "🎾", logoUrl: "/assets/logos/interpadel.webp", status: "active", nombre: "Interpadel", deporte: "padel" },
     "BreakPoint":            { emoji: "⚡", logoUrl: "/assets/logos/breakpoint.webp", status: "active", nombre: "BreakPoint", deporte: "padel" },
@@ -114,6 +118,14 @@
     return cat.clubs.find(c => c.id === id) || null;
   }
 
+  // Geofence del botón digital (síncrono: lee CLUB_DISPLAY, no el catálogo).
+  // null = club sin geofence configurado → sin restricción.
+  function geoForLoc(locId) {
+    const d = CLUB_DISPLAY[locId];
+    if (!d || !d.geo || !Number.isFinite(d.geo.lat) || !Number.isFinite(d.geo.lng)) return null;
+    return { lat: d.geo.lat, lng: d.geo.lng, radiusM: Number.isFinite(d.geo.radiusM) ? d.geo.radiusM : 400 };
+  }
+
   function clearCache() {
     _configCache = null;
     _catalogCache = null;
@@ -166,6 +178,7 @@
     resolveQrCode: resolveQrCode,
     getClubByLocId: getClubByLocId,
     clearCache: clearCache,
+    geoForLoc: geoForLoc,
     sportForLoc: sportForLoc,
     courtIconUrls: courtIconUrls,
     applyCourtIcon: applyCourtIcon

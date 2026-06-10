@@ -24,6 +24,7 @@
      currentUser al enviar, así que el pulso queda ligado a tu cuenta. -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
+<script src="/assets/util.js"></script>
 <script src="/assets/auth.js"></script>
 <script src="/assets/clubs-catalog.js"></script>
 <script src="/assets/pulses.js"></script>
@@ -622,6 +623,45 @@ html, body {
     ).join('');
   }
 
+  // ── Geofence (2026-06-10): el botón solo funciona cerca del club ──
+  // Soft-gate FAIL-OPEN: solo bloquea si tenemos coords del club (clubs-catalog
+  // geo), el browser dio posición Y estás claramente lejos. Sin permiso de
+  // ubicación / sin geo configurada / error → se permite (no castigamos al que
+  // está en la cancha con GPS apagado). Bypass de prueba: ?nogeo=1
+  let _geoCache = null; // { pos, ts }
+  function haversineM(lat1, lng1, lat2, lng2) {
+    const R = 6371000, rad = Math.PI / 180;
+    const dLat = (lat2 - lat1) * rad, dLng = (lng2 - lng1) * rad;
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+  function getPositionOnce() {
+    return new Promise(function (resolve) {
+      if (!navigator.geolocation) return resolve(null);
+      if (_geoCache && (Date.now() - _geoCache.ts) < 5 * 60 * 1000) return resolve(_geoCache.pos);
+      navigator.geolocation.getCurrentPosition(
+        function (p) {
+          _geoCache = { pos: { lat: p.coords.latitude, lng: p.coords.longitude }, ts: Date.now() };
+          resolve(_geoCache.pos);
+        },
+        function () { resolve(null); },
+        { enableHighAccuracy: false, timeout: 6000, maximumAge: 120000 }
+      );
+    });
+  }
+  async function checkGeofence() {
+    try {
+      if (new URLSearchParams(location.search).get('nogeo') === '1') return { ok: true };
+      const geo = window.PuntazoClubs && PuntazoClubs.geoForLoc && PuntazoClubs.geoForLoc(LOC);
+      if (!geo) return { ok: true };
+      const pos = await getPositionOnce();
+      if (!pos) return { ok: true };
+      const d = haversineM(pos.lat, pos.lng, geo.lat, geo.lng);
+      return (d <= geo.radiusM) ? { ok: true } : { ok: false, distM: Math.round(d) };
+    } catch (_) { return { ok: true }; }
+  }
+
   // ── Click principal ──
   $bigBtn.addEventListener('click', async function (evt) {
     if (busy) return;
@@ -637,6 +677,15 @@ html, body {
     $bigBtn.disabled = true;
 
     try {
+      const fence = await checkGeofence();
+      if (!fence.ok) {
+        const km = fence.distM >= 1500 ? (fence.distM / 1000).toFixed(1) + ' km' : fence.distM + ' m';
+        if (window.PZ && PZ.toast) PZ.toast('📍 Estás a ' + km + ' del club. El botón solo funciona en la cancha.', { type: 'err', duration: 4000 });
+        setState('idle');
+        $bigBtn.disabled = false;
+        busy = false;
+        return;
+      }
       if (!window.PuntazoPulses || typeof PuntazoPulses.requestPulse !== 'function') {
         throw new Error('PuntazoPulses no disponible');
       }
