@@ -265,9 +265,9 @@ tr:hover td{background:rgba(255,255,255,.025);}
     <div class="kpi src-gh"><div class="kpi-value" id="kpiDias">—</div><div class="kpi-label">Días con videos</div></div>
     <div class="kpi src-gh"><div class="kpi-value" id="kpiClubs">—</div><div class="kpi-label">Clubs activos</div></div>
     <div class="kpi src-gh"><div class="kpi-value" id="kpiActivos">—</div><div class="kpi-label">Videos ahora (24h)</div></div>
-    <div class="kpi src-fs"><div class="kpi-value" id="kpiViews">—</div><div class="kpi-label">Reproducciones</div></div>
-    <div class="kpi src-green"><div class="kpi-value" id="kpiSaves">—</div><div class="kpi-label">Guardados</div></div>
-    <div class="kpi src-green"><div class="kpi-value" id="kpiUsers">—</div><div class="kpi-label">Usuarios Firestore</div></div>
+    <div class="kpi src-fs"><div class="kpi-value" id="kpiViews">—</div><div class="kpi-label">Confirmados (últ. 400)</div></div>
+    <div class="kpi src-green"><div class="kpi-value" id="kpiSaves">—</div><div class="kpi-label">Grupos · Ligas</div></div>
+    <div class="kpi src-green"><div class="kpi-value" id="kpiUsers">—</div><div class="kpi-label">Usuarios</div></div>
   </div>
   <p style="color:var(--muted);font-size:.71rem;margin-top:-14px;margin-bottom:24px">
     🔵 Azul = videos_log.csv en GitHub (datos de grabación). 🟡 Amarillo/verde = Firestore (engagement).
@@ -275,8 +275,8 @@ tr:hover td{background:rgba(255,255,255,.025);}
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="clubs">🏢 Clubs</button>
-    <button class="tab-btn" data-tab="views">▶ Reproducciones</button>
-    <button class="tab-btn" data-tab="saves">💾 Guardados</button>
+    <button class="tab-btn" data-tab="views">🎾 Partidos</button>
+    <button class="tab-btn" data-tab="saves">🏆 Ligas y grupos</button>
     <button class="tab-btn" data-tab="players">🥷 Jugadores</button>
     <button class="tab-btn" data-tab="users">👤 Usuarios</button>
     <button class="tab-btn" data-tab="recent">🕐 Reciente</button>
@@ -976,8 +976,8 @@ async function refreshAll(){
       :'🔥 Firestore: error');
   renderKPIs();
   renderClubs();
-  renderTopFS('tab-views','views','▶ Top por reproducciones','');
-  renderTopFS('tab-saves','saves','💾 Top por guardados','green');
+  renderMatchesTab();
+  renderGroupsTab();
   renderPlayers();
   renderUsers();
   renderRecent();
@@ -994,25 +994,34 @@ async function fetchGH(){
   if(!_historial.length) throw new Error('historial vacío');
 }
 
+// (2026-06-10) Recableado al modelo ACTUAL: reactions/participants/usuarios
+// son del modelo viejo (reglas removidas en Etapa 14 → permission-denied, el
+// badge marcaba "Firestore: error"). Hoy la verdad social vive en matches/
+// (read público), users/ (read público) y groups/ (signedIn).
+let _matches=[],_groups=[];
 async function fetchFS(){
   const db=window.PuntazoFirebase.db();
-  const snap=await db.collection('reactions').limit(600).get();
-  _fsDocs=[];snap.forEach(doc=>_fsDocs.push(doc.data()));
-  try{
-    const uSnap=await db.collection('usuarios').limit(500).get();
-    _users=[];uSnap.forEach(doc=>_users.push({uid:doc.id}));
-  }catch{_users=[];}
-  try{
-    const pSnap=await db.collectionGroup('participants').limit(500).get();
-    const pMap=new Map();
-    pSnap.forEach(doc=>{
-      const d=doc.data();if(!d.uid)return;
-      const p=pMap.get(d.uid)||{uid:d.uid,displayName:d.displayName||'',photoURL:d.photoURL||'',claims:0};
-      p.claims++;if(d.displayName&&!p.displayName)p.displayName=d.displayName;
-      pMap.set(d.uid,p);
-    });
-    _players=Array.from(pMap.values()).sort((a,b)=>b.claims-a.claims);
-  }catch{_players=[];}
+  const[mSnap,uSnap,gSnap]=await Promise.all([
+    db.collection('matches').orderBy('createdAt','desc').limit(400).get(),
+    db.collection('users').limit(1000).get(),
+    db.collection('groups').limit(200).get(),
+  ]);
+  _matches=[];mSnap.forEach(d=>_matches.push(Object.assign({id:d.id},d.data())));
+  _users=[];uSnap.forEach(d=>{const x=d.data()||{};_users.push({uid:d.id,displayName:x.displayName||'',handle:x.handle||'',photoURL:x.photoURL||'',createdAt:x.createdAt||null});});
+  _groups=[];gSnap.forEach(d=>_groups.push(Object.assign({id:d.id},d.data())));
+  _fsDocs=_matches;
+  // Jugadores = apariciones en los partidos recientes (uid o invitado).
+  const pMap=new Map();
+  _matches.forEach(m=>(Array.isArray(m.jugadores)?m.jugadores:[]).forEach(j=>{
+    if(!j)return;
+    const key=j.uid||('guest:'+(j.guestId||j.nombre||'?'));
+    const p=pMap.get(key)||{uid:j.uid||null,displayName:j.nombre||'',photoURL:'',claims:0,isGuest:!j.uid};
+    p.claims++;if(j.nombre&&!p.displayName)p.displayName=j.nombre;
+    pMap.set(key,p);
+  }));
+  const uByUid=new Map(_users.map(u=>[u.uid,u]));
+  pMap.forEach(p=>{const u=p.uid&&uByUid.get(p.uid);if(u){if(u.photoURL)p.photoURL=u.photoURL;if(u.displayName)p.displayName=u.displayName;}});
+  _players=Array.from(pMap.values()).sort((a,b)=>b.claims-a.claims);
 }
 
 function renderKPIs(){
@@ -1021,12 +1030,8 @@ function renderKPIs(){
   s('kpiDias',          fmt(t.dias_con_videos));
   s('kpiClubs',         fmt(t.clubs_activos));
   s('kpiActivos',       fmt(t.videos_activos));
-  const fs=_fsDocs.reduce((a,d)=>({
-    views: a.views +(d.views||0),
-    saves: a.saves +(d.saves||0),
-  }),{views:0,saves:0});
-  s('kpiViews', fmt(fs.views));
-  s('kpiSaves', fmt(fs.saves));
+  s('kpiViews', fmt(_matches.filter(m=>m.status==='confirmed').length));
+  s('kpiSaves', fmt(_groups.length));
   s('kpiUsers', fmt(_users.length));
 }
 
@@ -1098,29 +1103,60 @@ function renderClubs(){
 }
 function tgClub(id){document.getElementById(id)?.classList.toggle('open');}
 
-// ── Top Firestore ──
-function renderTopFS(tabId,field,title,color){
-  const $pane=document.getElementById(tabId);
-  const docs=filteredFS().filter(d=>(d[field]||0)>0).sort((a,b)=>(b[field]||0)-(a[field]||0)).slice(0,25);
-  const{label}=getDateRange();
-  const maxVal=docs[0]?.[field]||1;
-  let html=buildTimeBar(tabId);
-  if(!docs.length){$pane.innerHTML=html+`<div class="empty-note">Sin datos Firestore para este período.</div>`;return;}
-  const rows=docs.map((d,i)=>{
-    const pct=Math.round(((d[field]||0)/maxVal)*100);
-    const link=d.videoId?`/clip.html?videoId=${encodeURIComponent(d.videoId)}`:'#';
+// ── Partidos (modelo 2026: matches/) ──
+const ST_PILL={confirmed:'<span class="pill pill-green">confirmado</span>',
+  pending_confirmation:'<span class="pill pill-blue">pendiente</span>',
+  disputed:'<span class="pill" style="background:rgba(255,170,60,.18);color:#ffd497">disputado</span>',
+  active:'<span class="pill pill-green">en juego</span>',
+  ended:'<span class="pill pill-muted">terminado</span>',
+  void:'<span class="pill pill-muted">anulado</span>',
+  cancelled:'<span class="pill pill-muted">cancelado</span>'};
+function matchPlayersLabel(m){
+  const js=Array.isArray(m.jugadores)?m.jugadores:[];
+  return js.map(j=>j&&j.nombre?j.nombre.split(/\s+/)[0]:'?').join(' · ')||'—';
+}
+function matchTsMs(m){const c=m.createdAt;return(c&&typeof c.toMillis==='function')?c.toMillis():(c&&c.seconds?c.seconds*1000:0);}
+function renderMatchesTab(){
+  const $pane=document.getElementById('tab-views');
+  if(!_matches.length){$pane.innerHTML=`<div class="empty-note">Sin partidos todavía.</div>`;return;}
+  const counts={};_matches.forEach(m=>{counts[m.status]=(counts[m.status]||0)+1;});
+  const chips=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])
+    .map(st=>`${ST_PILL[st]||esc(st)} <strong>${counts[st]}</strong>`).join(' &nbsp; ');
+  const rows=_matches.slice(0,40).map((m,i)=>{
+    const ts=matchTsMs(m);const when=ts?new Date(ts).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
     return`<tr>
-      <td class="td-rank">${rankEmoji(i)}</td>
-      <td class="td-name"><a href="${link}" target="_blank" style="color:#eaf2ff;text-decoration:none">${videoLabel(d)}<small>${esc(d.club||'')} ${d.cancha?'· '+esc(d.cancha):''} ${d.fecha?'· '+d.fecha:''}</small></a></td>
-      <td class="td-bar"><div class="bar"><div class="bar-fill ${color}" style="width:${pct}%"></div></div></td>
-      <td class="td-num">${fmt(d[field]||0)}</td>
+      <td class="td-rank" style="font-size:.82rem">${i+1}</td>
+      <td class="td-name"><a href="/confirmar.html?id=${encodeURIComponent(m.id)}" target="_blank" style="color:#eaf2ff;text-decoration:none">${esc(matchPlayersLabel(m))}<small>${esc(m.loc||'')} · ${when}${m.leagueGroupId?' · 🏆 liga':''}</small></a></td>
+      <td>${ST_PILL[m.status]||esc(m.status||'—')}</td>
     </tr>`;
   }).join('');
-  $pane.innerHTML=html+`
+  $pane.innerHTML=`
+    <div class="info-box" style="font-size:.78rem">Últimos <strong>${_matches.length}</strong> partidos · ${chips}</div>
     <div class="section">
-      <div class="section-title">${title} — ${esc(label)} <span class="badge">${docs.length}</span><span class="src-tag fs">Firestore</span></div>
-      <div class="table-wrap"><table><thead><tr><th>#</th><th>Video</th><th style="min-width:80px"></th><th>Total</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="section-title">🎾 Partidos recientes <span class="badge">${Math.min(40,_matches.length)}</span><span class="src-tag fs">Firestore</span></div>
+      <div class="table-wrap"><table><thead><tr><th>#</th><th>Partido</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table></div>
     </div>`;
+}
+
+// ── Ligas y grupos (groups/) ──
+function renderGroupsTab(){
+  const $pane=document.getElementById('tab-saves');
+  if(!_groups.length){$pane.innerHTML=`<div class="empty-note">Sin grupos ni ligas todavía.</div>`;return;}
+  const sorted=[..._groups].sort((a,b)=>(b.memberUids?.length||b.memberCount||0)-(a.memberUids?.length||a.memberCount||0));
+  const rows=sorted.slice(0,40).map((g,i)=>{
+    const isLiga=g.type==='liga';
+    const n=g.memberUids?.length||g.memberCount||0;
+    const href=(isLiga?'/liga.html?id=':'/grupo.html?id=')+encodeURIComponent(g.id);
+    return`<tr>
+      <td class="td-rank" style="font-size:.82rem">${i+1}</td>
+      <td class="td-name"><a href="${href}" target="_blank" style="color:#eaf2ff;text-decoration:none">${isLiga?'🏆':'👥'} ${esc(g.name||g.id)}<small>${esc(g.type||'grupo')}${isLiga&&g.league?.mode?' · '+esc(g.league.mode):''}</small></a></td>
+      <td class="td-num"><span class="pill pill-blue">${n} miembro${n!==1?'s':''}</span></td>
+    </tr>`;
+  }).join('');
+  $pane.innerHTML=`<div class="section">
+    <div class="section-title">🏆 Ligas y grupos <span class="badge">${_groups.length}</span><span class="src-tag fs">Firestore</span></div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>Nombre</th><th>Miembros</th></tr></thead><tbody>${rows}</tbody></table></div>
+  </div>`;
 }
 
 function renderPlayers(){
@@ -1134,49 +1170,49 @@ function renderPlayers(){
       <td class="td-rank">${rankEmoji(i)}</td>
       <td class="td-name"><span style="color:#eaf2ff;display:flex;align-items:center">${av}${esc(p.displayName||'Anónimo')}</span></td>
       <td class="td-bar"><div class="bar"><div class="bar-fill green" style="width:${pct}%"></div></div></td>
-      <td class="td-num">${p.claims} clip${p.claims!==1?'s':''}</td>
+      <td class="td-num">${p.claims} partido${p.claims!==1?'s':''}${p.isGuest?' <span class="pill pill-muted">invitado</span>':''}</td>
     </tr>`;
   }).join('');
-  $pane.innerHTML=`<div class="section"><div class="section-title">🥷 Jugadores <span class="badge">${_players.length}</span><span class="src-tag fs">Firestore</span></div>
-  <div class="table-wrap"><table><thead><tr><th>#</th><th>Jugador</th><th></th><th>Clips reclamados</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  $pane.innerHTML=`<div class="section"><div class="section-title">🥷 Jugadores más activos (últ. ${_matches.length} partidos) <span class="badge">${_players.length}</span><span class="src-tag fs">Firestore</span></div>
+  <div class="table-wrap"><table><thead><tr><th>#</th><th>Jugador</th><th></th><th>Partidos</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
 function renderUsers(){
   const $pane=document.getElementById('tab-users');
-  const pByUid=new Map(_players.map(p=>[p.uid,p]));
-  const allUids=new Set([..._players.map(p=>p.uid),..._users.map(u=>u.uid)]);
-  if(!allUids.size){$pane.innerHTML=`<div class="empty-note">Sin usuarios todavía.</div>`;return;}
-  const rows=Array.from(allUids).map(uid=>{const p=pByUid.get(uid)||{};return{uid,displayName:p.displayName||'',photoURL:p.photoURL||'',claims:p.claims||0};}).sort((a,b)=>b.claims-a.claims).slice(0,30).map((u,i)=>{
+  if(!_users.length){$pane.innerHTML=`<div class="empty-note">Sin usuarios todavía.</div>`;return;}
+  const pByUid=new Map(_players.filter(p=>p.uid).map(p=>[p.uid,p]));
+  const uTs=u=>(u.createdAt&&typeof u.createdAt.toMillis==='function')?u.createdAt.toMillis():(u.createdAt?.seconds?u.createdAt.seconds*1000:0);
+  const rows=[..._users].sort((a,b)=>uTs(b)-uTs(a)).slice(0,40).map((u,i)=>{
+    const p=pByUid.get(u.uid)||{claims:0};
     const av=u.photoURL?`<img src="${esc(u.photoURL)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:8px">`:`<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(0,79,200,.35);font-weight:900;font-size:11px;margin-right:8px">${(u.displayName||'?')[0].toUpperCase()}</span>`;
+    const ts=uTs(u);const when=ts?new Date(ts).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}):'—';
     return`<tr>
       <td class="td-rank" style="font-size:.82rem">${i+1}</td>
-      <td class="td-name"><span style="color:#eaf2ff;display:flex;align-items:center">${av}${esc(u.displayName||'Usuario')}</span><small style="color:var(--muted);font-size:.67rem">${esc(u.uid.slice(0,14))}…</small></td>
-      <td class="td-num"><span class="pill pill-green">${u.claims} reclamados</span></td>
+      <td class="td-name"><a href="/jugador.html?uid=${encodeURIComponent(u.uid)}" target="_blank" style="color:#eaf2ff;text-decoration:none;display:flex;align-items:center">${av}${esc(u.displayName||'Usuario')}</a><small style="color:var(--muted);font-size:.67rem">${u.handle?'@'+esc(u.handle)+' · ':''}alta ${when}</small></td>
+      <td class="td-num"><span class="pill pill-green">${p.claims} partido${p.claims!==1?'s':''}</span></td>
     </tr>`;
   }).join('');
-  $pane.innerHTML=`<div class="info-box"><strong>${_users.length} usuarios</strong> con docs en Firestore.<br>Auth completo: <a href="https://console.firebase.google.com/project/_/authentication/users" target="_blank">Firebase Console ↗</a></div>
-  <div class="section"><div class="section-title">👤 Usuarios <span class="badge">${allUids.size}</span></div>
+  $pane.innerHTML=`<div class="info-box"><strong>${_users.length} usuarios</strong> registrados (users/). Auth completo: <a href="https://console.firebase.google.com/project/_/authentication/users" target="_blank">Firebase Console ↗</a></div>
+  <div class="section"><div class="section-title">👤 Usuarios (recientes primero) <span class="badge">${_users.length}</span></div>
   <div class="table-wrap"><table><thead><tr><th>#</th><th>Usuario</th><th>Actividad</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
 function renderRecent(){
   const $pane=document.getElementById('tab-recent');
-  const recent=[..._fsDocs].filter(d=>d.lastInteractionAt?.seconds).sort((a,b)=>(b.lastInteractionAt?.seconds||0)-(a.lastInteractionAt?.seconds||0)).slice(0,20);
+  const mts=m=>{const u=m.updatedAt;const ums=(u&&typeof u.toMillis==='function')?u.toMillis():(u?.seconds?u.seconds*1000:0);return ums||matchTsMs(m);};
+  const recent=[..._matches].sort((a,b)=>mts(b)-mts(a)).slice(0,20);
   if(!recent.length){$pane.innerHTML=`<div class="empty-note">Sin actividad reciente.</div>`;return;}
-  const emojis=['🔥','😂','😡','🎉','😮'];
-  const rows=recent.map((d,i)=>{
-    const ts=new Date(d.lastInteractionAt.seconds*1000).toLocaleString('es-MX');
-    const link=d.videoId?`/clip.html?videoId=${encodeURIComponent(d.videoId)}`:'#';
-    const rxn=['fuego','risa','enojo','diversion','sorpresa'].map((k,j)=>(d[k]||0)>0?`${emojis[j]}${d[k]}`:'').filter(Boolean).join(' ');
+  const rows=recent.map((m,i)=>{
+    const ts=mts(m)?new Date(mts(m)).toLocaleString('es-MX'):'—';
     return`<tr>
       <td class="td-rank" style="font-size:.82rem">${i+1}</td>
-      <td class="td-name"><a href="${link}" target="_blank" style="color:#eaf2ff;text-decoration:none">${videoLabel(d)}<small>${esc(d.club||'')} ${d.cancha?'· '+esc(d.cancha):''}</small></a></td>
+      <td class="td-name"><a href="/confirmar.html?id=${encodeURIComponent(m.id)}" target="_blank" style="color:#eaf2ff;text-decoration:none">${esc(matchPlayersLabel(m))}<small>${esc(m.loc||'')}</small></a></td>
       <td><span style="color:var(--muted);font-size:.76rem">${ts}</span></td>
-      <td class="td-num" style="font-size:.86rem">${rxn||'—'}</td>
+      <td class="td-num">${ST_PILL[m.status]||esc(m.status||'—')}</td>
     </tr>`;
   }).join('');
-  $pane.innerHTML=`<div class="section"><div class="section-title">🕐 Reciente <span class="badge">${recent.length}</span></div>
-  <div class="table-wrap"><table><thead><tr><th>#</th><th>Video</th><th>Última actividad</th><th>Reacciones</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  $pane.innerHTML=`<div class="section"><div class="section-title">🕐 Actividad reciente (partidos) <span class="badge">${recent.length}</span></div>
+  <div class="table-wrap"><table><thead><tr><th>#</th><th>Partido</th><th>Última actividad</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
 function exportCSV(){
