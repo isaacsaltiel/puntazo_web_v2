@@ -7,318 +7,532 @@
 <title>Marcador libre · Puntazo</title>
 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<meta name="theme-color" content="#050914" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap" rel="stylesheet" />
+<!-- Solo el motor de marcador (PuntazoMatches.live es puro — no toca
+     Firebase). Esta herramienta es 100% local: sin login, sin red. -->
+<script src="/assets/matches.js"></script>
 
 <style>
-  :root{
-    --bg:#050914; --text:#eaf2ff; --muted:rgba(234,242,255,.55);
-    --t1:#0b7cff; --t1d:#004FC8;
-    --t2:#c8e835; --t2d:#9ec628;
-    --gray:rgba(120,130,145,.30); --gray-h:rgba(120,130,145,.45);
-    --undo:#f06845;
-    --line:rgba(255,255,255,.10);
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{height:100%;background:var(--bg);color:var(--text);
-    font-family:'Montserrat',system-ui,sans-serif;
-    -webkit-tap-highlight-color:transparent;touch-action:manipulation;}
-  .wrap{max-width:520px;margin:0 auto;padding:20px 14px 80px;}
-  .back{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;
-    background:rgba(11,124,255,.10);border:1px solid rgba(11,124,255,.30);
-    border-radius:999px;color:#6fb2ff;text-decoration:none;
-    font-size:.78rem;font-weight:700;margin-bottom:14px;}
-  h1{font-size:1.3rem;font-weight:900;margin:0 0 4px;color:#fff;letter-spacing:-.3px;}
-  .sub{font-size:.84rem;color:var(--muted);margin-bottom:18px;}
+/* ════════════════════════════════════════════════════════════════
+   Marcador libre — copia adaptada del marcador fullscreen del partido
+   de club (mi-partido.html, Etapa 16.4), SIN botón de puntazos.
+   Mismo lenguaje: fondo de cancha blureado, números team1 azul /
+   team2 verde pelota, filas SETS·GAMES·PUNTOS, pads por equipo y undo.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+  --team1-color: #0b7cff;
+  --team1-color-bg: rgba(11, 124, 255, 0.10);
+  --team1-color-border: rgba(11, 124, 255, 0.55);
+  --team2-color: #c8e835;
+  --team2-color-bg: rgba(200, 232, 53, 0.10);
+  --team2-color-border: rgba(200, 232, 53, 0.55);
+  --undo-color: #f06845;
+  --undo-color-rgb: 240, 104, 69;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: #050914; color: #fff;
+  font-family: 'Montserrat', sans-serif;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  height: 100dvh; overflow: hidden;
+}
+.mk-bg {
+  position: fixed; inset: 0; z-index: 0;
+  background: url('/assets/court-icons/B-extern.webp') center/cover no-repeat;
+  filter: blur(8px) saturate(1.05);
+  transform: scale(1.06);
+  opacity: 0.92;
+}
+.mk-bg::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, rgba(2,6,16,0.55) 0%, rgba(2,6,16,0.25) 30%, rgba(2,6,16,0.25) 70%, rgba(2,6,16,0.65) 100%),
+    radial-gradient(ellipse at center, rgba(2,6,16,0.10) 0%, rgba(2,6,16,0.45) 80%);
+}
+.mk-shell {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column;
+  width: 100%; height: 100dvh;
+  max-width: 760px; margin: 0 auto;
+  padding: 10px 10px 14px; gap: 6px;
+  overflow: hidden;
+}
 
-  .names{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
-  .name-input{padding:10px 12px;border-radius:10px;border:1px solid var(--line);
-    background:rgba(255,255,255,.04);color:#fff;font-family:inherit;
-    font-size:.92rem;font-weight:800;text-align:center;
-    transition:border-color .15s;}
-  .name-input:focus{outline:none;border-color:rgba(11,124,255,.55);}
-  .name-input[data-team="1"]{border-left:3px solid var(--t1d);}
-  .name-input[data-team="2"]{border-left:3px solid var(--t2d);}
+/* ── Header (idéntico al FS del partido: logo + título/timer + ✕) ── */
+.mk-header {
+  display: grid; grid-template-columns: auto 1fr auto;
+  align-items: center; gap: 14px; flex-shrink: 0;
+  padding: 4px 0 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.mk-brand { display: inline-flex; align-items: center; text-decoration: none; flex-shrink: 0; }
+.mk-logo { height: 32px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); }
+.mk-header-center { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; text-align: center; }
+.mk-venue { font-size: 0.82rem; font-weight: 800; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.mk-timer { font-size: 0.92rem; font-weight: 700; color: rgba(207,226,255,0.85); font-variant-numeric: tabular-nums; letter-spacing: 0.3px; line-height: 1; }
+.mk-close {
+  appearance: none; border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(2,6,16,0.78); backdrop-filter: blur(8px);
+  color: #fff; width: 44px; height: 44px; border-radius: 50%;
+  font-size: 1.30rem; font-weight: 700; cursor: pointer; line-height: 1;
+  transition: background 0.14s ease, transform 0.10s ease;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+}
+.mk-close:hover { background: rgba(2,6,16,0.92); }
+.mk-close:active { transform: scale(0.94); }
 
-  .scoreboard{
-    display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;
-    border:1px solid var(--line);border-radius:14px;overflow:hidden;
-    background:rgba(255,255,255,.02);margin-bottom:18px;
-  }
-  .scoreboard .h, .scoreboard .c{
-    padding:12px 8px;text-align:center;border-bottom:1px solid var(--line);
-    font-size:.78rem;font-weight:700;color:var(--muted);
-    text-transform:uppercase;letter-spacing:.5px;
-  }
-  .scoreboard .h{background:rgba(0,0,0,.18);}
-  .scoreboard .team-cell{
-    text-align:left;font-size:.92rem;font-weight:900;color:#fff;
-    padding-left:14px;border-right:1px solid var(--line);
-    text-transform:none;letter-spacing:0;
-  }
-  .scoreboard .team-cell[data-team="1"]{border-left:4px solid var(--t1d);}
-  .scoreboard .team-cell[data-team="2"]{border-left:4px solid var(--t2d);}
-  .scoreboard .c{font-size:1.1rem;font-weight:900;color:#fff;
-    font-variant-numeric:tabular-nums;}
-  .scoreboard .c.points{font-size:1.4rem;color:#ffe27a;}
-  .scoreboard .row-last .h, .scoreboard .row-last .c{border-bottom:none;}
+/* ── Score (SETS / GAMES / PUNTOS) ── */
+.mk-score {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
+  align-items: center; gap: 8px;
+  padding: 8px 4px 4px; flex-shrink: 0;
+}
+.mk-team { min-width: 0; }
+.mk-team--left  { text-align: left;  padding-left: 4px; }
+.mk-team--right { text-align: right; padding-right: 4px; }
+.mk-team-name {
+  font-size: clamp(0.78rem, 4vw, 1.40rem);
+  font-weight: 900; text-transform: uppercase; letter-spacing: 0.3px;
+  line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+}
+.mk-team[data-team="team1"] .mk-team-name { color: #d4e8ff; text-shadow: 0 0 14px rgba(11,124,255,0.55), 0 2px 6px rgba(0,0,0,0.5); }
+.mk-team[data-team="team2"] .mk-team-name { color: #ecf5a8; text-shadow: 0 0 14px rgba(200,232,53,0.55), 0 2px 6px rgba(0,0,0,0.5); }
+.mk-numbers { display: flex; flex-direction: column; gap: 6px; text-align: center; min-width: 0; }
+.mk-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; column-gap: 14px; }
+.mk-num { font-size: 1.7rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.mk-num--xl { font-size: 2.6rem; }
+.mk-num--team1 { color: #0b7cff; text-shadow: 0 0 14px rgba(11,124,255,0.55); }
+.mk-num--team2 { color: #c8e835; text-shadow: 0 0 14px rgba(200,232,53,0.55); }
+.mk-row-label { font-size: 0.66rem; font-weight: 800; color: rgba(234,242,255,0.55); text-transform: uppercase; letter-spacing: 1.2px; }
+.mk-row--big .mk-row-label { font-size: 0.78rem; color: rgba(234,242,255,0.75); }
+.mk-hint { font-size: 0.78rem; color: rgba(234,242,255,0.65); margin-top: 4px; }
+.mk-setline { font-size: 0.74rem; color: rgba(234,242,255,0.5); font-variant-numeric: tabular-nums; margin-top: 2px; min-height: 1em; }
 
-  .controls{display:grid;gap:14px;}
-  .team-block{
-    border:1px solid var(--line);border-radius:14px;overflow:hidden;
-    background:rgba(255,255,255,.02);
-  }
-  .team-block[data-team="1"]{border-left:4px solid var(--t1d);}
-  .team-block[data-team="2"]{border-left:4px solid var(--t2d);}
-  .team-block h3{
-    padding:10px 14px;font-size:.88rem;font-weight:900;color:#fff;
-    background:rgba(0,0,0,.18);border-bottom:1px solid var(--line);
-    letter-spacing:-.2px;
-  }
-  .team-grid{display:grid;grid-template-columns:7fr 3fr;gap:6px;padding:10px;}
-  .btn{padding:14px 10px;border-radius:10px;border:none;cursor:pointer;
-    font-family:inherit;font-weight:900;font-size:.92rem;
-    color:#fff;letter-spacing:.3px;transition:transform .08s,filter .15s;
-    text-align:center;}
-  .btn:active{transform:scale(.96);filter:brightness(1.15);}
-  .btn.punto{background:var(--gray);}
-  .btn.punto:hover{background:var(--gray-h);}
-  .btn.game-1{background:linear-gradient(180deg,var(--t1),var(--t1d));}
-  .btn.game-2{background:linear-gradient(180deg,var(--t2),var(--t2d));color:#0a1428;}
-  .btn.set-1{background:rgba(11,124,255,.50);}
-  .btn.set-2{background:rgba(200,232,53,.50);color:#0a1428;}
-  .btn.undo{background:transparent;border:1px solid var(--undo);color:var(--undo);
-    font-size:1.1rem;font-weight:900;}
-  .btn.undo:hover{background:rgba(240,104,69,.12);}
+/* ── Pads por equipo (+PUNTO / +GAME / +SET) ── */
+.mk-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; flex-shrink: 0; }
+.mk-team-pad {
+  padding: 8px 8px 10px; border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.10);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.mk-team-pad[data-team="team1"] { background: var(--team1-color-bg); border-color: rgba(11,124,255,0.32); }
+.mk-team-pad[data-team="team2"] { background: var(--team2-color-bg); border-color: rgba(200,232,53,0.32); }
+.mk-team-pad-label {
+  font-size: 0.66rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.6px; text-align: center; line-height: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mk-team-pad[data-team="team1"] .mk-team-pad-label { color: #cfe2ff; }
+.mk-team-pad[data-team="team2"] .mk-team-pad-label { color: #e9f5a8; }
+.mk-team-pad-grid {
+  display: grid; grid-template-columns: 1fr;
+  grid-template-rows: minmax(42px,auto) minmax(56px,auto) minmax(42px,auto);
+  gap: 5px;
+}
+.mk-pad-btn {
+  min-height: 42px; border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  font-family: inherit; font-weight: 900; font-size: 0.92rem; color: #fff;
+  cursor: pointer; line-height: 1; padding: 0 10px;
+  transition: transform .10s ease, filter .12s ease, background .15s ease;
+  letter-spacing: 0.3px; width: 100%; height: 100%;
+}
+.mk-pad-btn:active:not([disabled]) { transform: scale(0.96); }
+.mk-pad-btn[disabled] { opacity: .35; cursor: not-allowed; }
+.mk-pad-btn.pad-game { font-size: 1.08rem; min-height: 56px; }
+.mk-pad-btn.pad-set  { font-size: 0.88rem; opacity: 0.92; }
+.mk-team-pad[data-team="team1"] .mk-pad-btn.pad-pt,
+.mk-team-pad[data-team="team2"] .mk-pad-btn.pad-pt {
+  background: rgba(120,130,145,.30); border-color: rgba(160,170,185,.50); color: #fff;
+}
+.mk-team-pad[data-team="team1"] .mk-pad-btn.pad-game {
+  background: linear-gradient(135deg, var(--team1-color), #004FC8);
+  border-color: var(--team1-color-border);
+  box-shadow: 0 0 18px rgba(11,124,255,.35); color: #fff;
+}
+.mk-team-pad[data-team="team1"] .mk-pad-btn.pad-set {
+  background: rgba(11,124,255,.30); border-color: var(--team1-color-border); color: #cfe2ff;
+}
+.mk-team-pad[data-team="team2"] .mk-pad-btn.pad-game {
+  background: linear-gradient(135deg, var(--team2-color), #9ec628);
+  border-color: var(--team2-color-border);
+  box-shadow: 0 0 18px rgba(200,232,53,.35); color: #0a1428;
+}
+.mk-team-pad[data-team="team2"] .mk-pad-btn.pad-set {
+  background: rgba(200,232,53,.30); border-color: var(--team2-color-border); color: #e9f5a8;
+}
 
-  .bar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
-  .bar button{flex:1;min-width:120px;padding:11px 12px;border-radius:10px;
-    border:1px solid var(--line);background:rgba(255,255,255,.04);
-    color:var(--text);font-family:inherit;font-weight:700;font-size:.86rem;
-    cursor:pointer;transition:background .15s;}
-  .bar button:hover{background:rgba(255,255,255,.08);}
-  .bar button.danger{border-color:rgba(240,104,69,.45);
-    background:rgba(240,104,69,.10);color:#ffb09a;}
-  .bar button.danger:hover{background:rgba(240,104,69,.20);}
+/* ── Undo + nuevo partido ── */
+.mk-undo-row { margin-top: 6px; text-align: center; flex-shrink: 0; display: flex; gap: 8px; justify-content: center; }
+.mk-undo-btn {
+  appearance: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 36px; padding: 6px 14px; border-radius: 999px;
+  background: rgba(var(--undo-color-rgb), .14);
+  border: 1px solid rgba(var(--undo-color-rgb), .45);
+  color: var(--undo-color);
+  font-family: inherit; font-weight: 800; font-size: 0.78rem; cursor: pointer;
+  transition: all 0.14s ease;
+}
+.mk-undo-btn:hover:not([disabled]) { background: rgba(var(--undo-color-rgb), .26); color: #fff; transform: translateY(-1px); }
+.mk-undo-btn:active:not([disabled]) { transform: scale(0.96); }
+.mk-undo-btn[disabled] { opacity: 0.35; cursor: not-allowed; }
+.mk-new-btn {
+  appearance: none; display: none; align-items: center; justify-content: center; gap: 6px;
+  min-height: 36px; padding: 6px 16px; border-radius: 999px;
+  background: rgba(200,232,53,.16); border: 1px solid rgba(200,232,53,.5);
+  color: #e9f5a8; font-family: inherit; font-weight: 800; font-size: 0.78rem; cursor: pointer;
+  transition: all 0.14s ease;
+}
+.mk-new-btn.is-visible { display: inline-flex; }
+.mk-new-btn:hover { background: rgba(200,232,53,.28); color: #fff; }
+
+/* ── Setup (pantalla inicial) ── */
+.mk-setup {
+  position: relative; z-index: 2;
+  max-width: 480px; margin: 0 auto; width: 100%;
+  height: 100dvh; overflow-y: auto;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 24px 18px; gap: 14px;
+}
+.mk-setup h1 { font-size: 1.45rem; font-weight: 900; margin: 0; letter-spacing: -0.3px; text-align: center; }
+.mk-setup .sub { font-size: 0.88rem; color: rgba(234,242,255,.6); margin: 0 0 6px; text-align: center; line-height: 1.4; }
+.mk-field label { display: block; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: rgba(234,242,255,.55); margin-bottom: 5px; }
+.mk-field input {
+  width: 100%; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.05);
+  color: #fff; font-family: inherit; font-weight: 700; font-size: 1rem; outline: none;
+}
+.mk-field--t1 input:focus { border-color: var(--team1-color-border); }
+.mk-field--t2 input:focus { border-color: var(--team2-color-border); }
+.mk-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.mk-chip {
+  appearance: none; padding: 9px 14px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05);
+  color: rgba(234,242,255,.75); font-family: inherit; font-weight: 800; font-size: 0.82rem; cursor: pointer;
+  transition: all .14s ease; text-align: left;
+}
+.mk-chip.is-on { background: rgba(11,124,255,.22); border-color: rgba(11,124,255,.6); color: #fff; }
+.mk-start {
+  appearance: none; margin-top: 8px; padding: 15px 18px; border-radius: 999px; border: none;
+  background: linear-gradient(135deg, #0b7cff, #004FC8);
+  color: #fff; font-family: inherit; font-weight: 900; font-size: 1.02rem; letter-spacing: .3px; cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0,79,200,.35);
+  transition: transform .12s ease, filter .15s ease;
+}
+.mk-start:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.mk-start:active { transform: scale(0.98); }
+.mk-back-link { text-align: center; font-size: 0.82rem; }
+.mk-back-link a { color: #6fb2ff; text-decoration: none; font-weight: 700; }
+
+.is-hidden { display: none !important; }
+
+@media (max-width: 380px) {
+  .mk-num { font-size: 1.70rem; }
+  .mk-num--xl { font-size: 2.90rem; }
+  .mk-pad-btn { min-height: 48px; }
+}
+/* Landscape "cabina de control" (mismo layout que el FS del partido,
+   sin la celda del botón P: pads a los lados, score al centro). */
+@media (orientation: landscape) and (max-height: 600px) {
+  .mk-shell {
+    display: grid;
+    grid-template-columns: 1fr 1.05fr 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      "header header header"
+      "padl   score   padr"
+      "padl   undo    padr";
+    gap: 6px 8px; padding: 6px 10px 8px;
+  }
+  .mk-header { grid-area: header; padding: 2px 0 4px; gap: 8px; }
+  .mk-logo { height: 22px; }
+  .mk-venue { font-size: 0.74rem; }
+  .mk-timer { font-size: 0.78rem; }
+  .mk-score { grid-area: score; grid-template-columns: 1fr; padding: 2px 0; gap: 4px; align-self: center; justify-self: center; width: 100%; min-width: 0; }
+  .mk-score > .mk-team { display: none; }
+  .mk-num { font-size: 1.55rem; }
+  .mk-num--xl { font-size: 2.20rem; }
+  .mk-row { gap: 10px; justify-content: center; }
+  .mk-row-label { font-size: 0.56rem; }
+  .mk-teams { display: contents; }
+  .mk-team-pad[data-team="team1"] { grid-area: padl; }
+  .mk-team-pad[data-team="team2"] { grid-area: padr; }
+  .mk-team-pad { height: 100%; max-height: 100%; overflow: hidden; padding: 6px; gap: 6px; }
+  .mk-team-pad-grid { flex: 1 1 auto; grid-template-rows: 1fr 1.2fr 1fr; min-height: 0; }
+  .mk-pad-btn { min-height: 38px; font-size: 0.86rem; }
+  .mk-pad-btn.pad-game { font-size: 1.02rem; min-height: 44px; }
+  .mk-pad-btn.pad-set  { font-size: 0.82rem; min-height: 36px; }
+  .mk-undo-row { grid-area: undo; align-self: end; margin: 0; }
+}
 </style>
 </head>
 <body>
 
-<div class="wrap">
-  <a href="/herramientas.html" class="back">← Volver</a>
-  <h1>Marcador libre</h1>
-  <p class="sub">Lleva el marcador en cualquier cancha. Se guarda local (sigue ahí si cierras la pestaña).</p>
+<div class="mk-bg" aria-hidden="true"></div>
 
-  <div class="names">
-    <input id="n1" class="name-input" data-team="1" type="text" placeholder="Equipo 1" maxlength="22" />
-    <input id="n2" class="name-input" data-team="2" type="text" placeholder="Equipo 2" maxlength="22" />
+<!-- ── Pantalla 1: setup ── -->
+<div id="mkSetup" class="mk-setup">
+  <h1>🎯 Marcador libre</h1>
+  <p class="sub">El mismo marcador de los partidos Puntazo, para cualquier cancha. Sin cuenta — todo se guarda en tu teléfono.</p>
+  <div class="mk-field mk-field--t1">
+    <label for="mkN1">Equipo 1</label>
+    <input id="mkN1" type="text" maxlength="26" placeholder="Equipo 1" autocomplete="off" />
   </div>
-
-  <div class="scoreboard">
-    <div class="h"></div>
-    <div class="h">Sets</div>
-    <div class="h">Games</div>
-    <div class="h">Puntos</div>
-
-    <div class="c team-cell" data-team="1" id="lbl1">Equipo 1</div>
-    <div class="c" id="s1">0</div>
-    <div class="c" id="g1">0</div>
-    <div class="c points" id="p1">0</div>
-
-    <div class="c team-cell row-last" data-team="2" id="lbl2">Equipo 2</div>
-    <div class="c row-last" id="s2">0</div>
-    <div class="c row-last" id="g2">0</div>
-    <div class="c row-last points" id="p2">0</div>
+  <div class="mk-field mk-field--t2">
+    <label for="mkN2">Equipo 2</label>
+    <input id="mkN2" type="text" maxlength="26" placeholder="Equipo 2" autocomplete="off" />
   </div>
-
-  <div class="controls">
-    <div class="team-block" data-team="1">
-      <h3 id="h1">Equipo 1</h3>
-      <div class="team-grid">
-        <button class="btn punto" data-act="punto" data-team="1">+ PUNTO</button>
-        <button class="btn undo" data-act="undo" data-team="1">−</button>
-        <button class="btn game-1" data-act="game" data-team="1">+ GAME</button>
-        <button class="btn undo" data-act="undoGame" data-team="1">−</button>
-        <button class="btn set-1" data-act="set" data-team="1">+ SET</button>
-        <button class="btn undo" data-act="undoSet" data-team="1">−</button>
-      </div>
-    </div>
-
-    <div class="team-block" data-team="2">
-      <h3 id="h2">Equipo 2</h3>
-      <div class="team-grid">
-        <button class="btn punto" data-act="punto" data-team="2">+ PUNTO</button>
-        <button class="btn undo" data-act="undo" data-team="2">−</button>
-        <button class="btn game-2" data-act="game" data-team="2">+ GAME</button>
-        <button class="btn undo" data-act="undoGame" data-team="2">−</button>
-        <button class="btn set-2" data-act="set" data-team="2">+ SET</button>
-        <button class="btn undo" data-act="undoSet" data-team="2">−</button>
-      </div>
+  <div class="mk-field">
+    <label>Partido a</label>
+    <div class="mk-chips" id="mkModoChips">
+      <button type="button" class="mk-chip is-on" data-modo="partido_3">2 de 3 sets</button>
+      <button type="button" class="mk-chip" data-modo="partido_5">3 de 5 sets</button>
+      <button type="button" class="mk-chip" data-modo="">Libre</button>
     </div>
   </div>
+  <div class="mk-field">
+    <label>Punto de oro</label>
+    <div class="mk-chips">
+      <button type="button" id="mkGolden" class="mk-chip">🥇 En deuce, el siguiente punto gana el game</button>
+    </div>
+  </div>
+  <button type="button" id="mkStart" class="mk-start">Empezar partido →</button>
+  <div class="mk-back-link"><a href="/herramientas.html">← Más herramientas</a></div>
+</div>
 
-  <div class="bar">
-    <button id="btnReset" class="danger">↺ Reiniciar partido</button>
+<!-- ── Pantalla 2: marcador (copia del FS del partido, sin botón P) ── -->
+<div id="mkBoard" class="mk-shell is-hidden">
+  <header class="mk-header">
+    <a href="/" class="mk-brand" aria-label="Puntazo">
+      <img class="mk-logo" src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
+    </a>
+    <div class="mk-header-center">
+      <div class="mk-venue">Marcador libre</div>
+      <div class="mk-timer" id="mkTimer">⏱ 00:00:00</div>
+    </div>
+    <button id="mkClose" class="mk-close" type="button" aria-label="Volver a configuración">✕</button>
+  </header>
+
+  <section class="mk-score">
+    <div class="mk-team mk-team--left" data-team="team1">
+      <div class="mk-team-name" id="mkT1Name">Equipo 1</div>
+    </div>
+    <div class="mk-numbers">
+      <div class="mk-row">
+        <div class="mk-num mk-num--team1" id="mkT1Sets">0</div>
+        <div class="mk-row-label">SETS</div>
+        <div class="mk-num mk-num--team2" id="mkT2Sets">0</div>
+      </div>
+      <div class="mk-row">
+        <div class="mk-num mk-num--team1" id="mkT1Games">0</div>
+        <div class="mk-row-label">GAMES</div>
+        <div class="mk-num mk-num--team2" id="mkT2Games">0</div>
+      </div>
+      <div class="mk-row mk-row--big">
+        <div class="mk-num mk-num--team1 mk-num--xl" id="mkT1Points">0</div>
+        <div class="mk-row-label">PUNTOS</div>
+        <div class="mk-num mk-num--team2 mk-num--xl" id="mkT2Points">0</div>
+      </div>
+      <div class="mk-hint" id="mkHint"></div>
+      <div class="mk-setline" id="mkSetline"></div>
+    </div>
+    <div class="mk-team mk-team--right" data-team="team2">
+      <div class="mk-team-name" id="mkT2Name">Equipo 2</div>
+    </div>
+  </section>
+
+  <section class="mk-teams" id="mkTeams">
+    <div class="mk-team-pad" data-team="team1">
+      <div class="mk-team-pad-label" id="mkPadL1">Equipo 1</div>
+      <div class="mk-team-pad-grid">
+        <button type="button" class="mk-pad-btn pad-pt"   data-live="addPoint"  data-team="team1">+ PUNTO</button>
+        <button type="button" class="mk-pad-btn pad-game" data-live="forceGame" data-team="team1">+ GAME</button>
+        <button type="button" class="mk-pad-btn pad-set"  data-live="forceSet"  data-team="team1">+ SET</button>
+      </div>
+    </div>
+    <div class="mk-team-pad" data-team="team2">
+      <div class="mk-team-pad-label" id="mkPadL2">Equipo 2</div>
+      <div class="mk-team-pad-grid">
+        <button type="button" class="mk-pad-btn pad-pt"   data-live="addPoint"  data-team="team2">+ PUNTO</button>
+        <button type="button" class="mk-pad-btn pad-game" data-live="forceGame" data-team="team2">+ GAME</button>
+        <button type="button" class="mk-pad-btn pad-set"  data-live="forceSet"  data-team="team2">+ SET</button>
+      </div>
+    </div>
+  </section>
+  <div class="mk-undo-row">
+    <button id="mkUndo" type="button" class="mk-undo-btn" aria-label="Deshacer último cambio">↶ Deshacer último</button>
+    <button id="mkNew" type="button" class="mk-new-btn">🔄 Nuevo partido</button>
   </div>
 </div>
 
 <script>
 (function () {
-  'use strict';
+  "use strict";
+  var LIVE = window.PuntazoMatches && window.PuntazoMatches.live;
+  if (!LIVE) { document.body.innerHTML = "<p style='padding:40px;text-align:center'>Error cargando el marcador. Recarga la página.</p>"; return; }
 
-  const KEY = 'pz.marcador.libre.v1';
-  const POINTS_LADDER = ['0', '15', '30', '40'];
+  var LS_KEY = "pz.marcador.v2";
+  var state = null; // { names:{team1,team2}, modo, goldenPoint, marcador, startedAtMs }
 
-  // State: sets array of [g1, g2] for closed sets; current = { g:[0,0], p:[0,0] }
-  let S = load() || {
-    n1: '', n2: '',
-    sets: [],            // [[g1,g2], ...]
-    current: { g:[0,0], p:[0,0] },
-    history: [],         // stack of actions for undo
-  };
-
-  function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (_) {}
-  }
   function load() {
     try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return null;
-      const o = JSON.parse(raw);
-      if (!o || !Array.isArray(o.sets) || !o.current) return null;
-      o.history = o.history || [];
-      return o;
-    } catch (_) { return null; }
+      var raw = localStorage.getItem(LS_KEY);
+      if (raw) state = JSON.parse(raw);
+    } catch (_) { state = null; }
+  }
+  function save() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (_) {}
   }
 
-  // ── Scoring (padel sencillo, sin tiebreak: ganas 6 con dif 2, o 7-5/7-6) ──
-  function pointsLabel(team) {
-    const me = S.current.p[team];
-    const you = S.current.p[1 - team];
-    // Ventaja / iguales después de 3-3
-    if (me >= 3 && you >= 3) {
-      if (me === you) return 'Iguales';
-      if (me === you + 1) return 'Ventaja';
-      if (me === you - 1) return '—';
-    }
-    return POINTS_LADDER[Math.min(me, 3)] || '0';
-  }
+  var $ = function (id) { return document.getElementById(id); };
+  var $setup = $("mkSetup"), $board = $("mkBoard");
 
-  function addPoint(team) {
-    pushHist({ type:'punto', team:team, snap: snap() });
-    S.current.p[team]++;
-    // Checa cierre de game
-    const me = S.current.p[team];
-    const you = S.current.p[1 - team];
-    let gameClosed = false;
-    if (me >= 4 && me - you >= 2) gameClosed = true;
-    if (gameClosed) {
-      S.current.g[team]++;
-      S.current.p = [0, 0];
-      maybeCloseSet();
-    }
-    save(); render();
-  }
-
-  function maybeCloseSet() {
-    const g1 = S.current.g[0], g2 = S.current.g[1];
-    let winner = -1;
-    if (g1 >= 6 && g1 - g2 >= 2) winner = 0;
-    else if (g2 >= 6 && g2 - g1 >= 2) winner = 1;
-    else if (g1 === 7 && (g2 === 5 || g2 === 6)) winner = 0;
-    else if (g2 === 7 && (g1 === 5 || g1 === 6)) winner = 1;
-    if (winner >= 0) {
-      S.sets.push([g1, g2]);
-      S.current.g = [0, 0];
-      S.current.p = [0, 0];
-    }
-  }
-
-  function addGame(team) {
-    pushHist({ type:'game', team:team, snap: snap() });
-    S.current.g[team]++;
-    S.current.p = [0, 0];
-    maybeCloseSet();
-    save(); render();
-  }
-
-  function addSet(team) {
-    pushHist({ type:'set', team:team, snap: snap() });
-    // Cierra set con marcador típico ganador (6 o el actual si ya hay)
-    const myG = S.current.g[team];
-    const youG = S.current.g[1 - team];
-    let scoreMe = Math.max(6, myG);
-    let scoreYou = Math.min(youG, scoreMe - 2);
-    if (scoreYou < 0) scoreYou = 0;
-    const pair = team === 0 ? [scoreMe, scoreYou] : [scoreYou, scoreMe];
-    S.sets.push(pair);
-    S.current = { g:[0,0], p:[0,0] };
-    save(); render();
-  }
-
-  function snap() { return JSON.parse(JSON.stringify({ sets:S.sets, current:S.current })); }
-  function pushHist(entry) { S.history.push(entry); if (S.history.length > 200) S.history.shift(); }
-
-  function undoLast() {
-    if (!S.history.length) return;
-    const last = S.history.pop();
-    if (last && last.snap) {
-      S.sets = last.snap.sets;
-      S.current = last.snap.current;
-    }
-    save(); render();
-  }
-
-  function reset() {
-    if (!confirm('¿Reiniciar el partido? Se pierden todos los sets y games.')) return;
-    S = { n1: S.n1, n2: S.n2, sets:[], current:{g:[0,0],p:[0,0]}, history:[] };
-    save(); render();
-  }
-
-  // ── Render ──
-  function setsWon(team) {
-    return S.sets.filter(p => p[team] > p[1 - team]).length;
-  }
-  function render() {
-    const n1 = S.n1 || 'Equipo 1';
-    const n2 = S.n2 || 'Equipo 2';
-    document.getElementById('lbl1').textContent = n1;
-    document.getElementById('lbl2').textContent = n2;
-    document.getElementById('h1').textContent = n1;
-    document.getElementById('h2').textContent = n2;
-    document.getElementById('s1').textContent = setsWon(0);
-    document.getElementById('s2').textContent = setsWon(1);
-    document.getElementById('g1').textContent = S.current.g[0];
-    document.getElementById('g2').textContent = S.current.g[1];
-    document.getElementById('p1').textContent = pointsLabel(0);
-    document.getElementById('p2').textContent = pointsLabel(1);
-  }
-
-  // ── Wiring ──
-  const $n1 = document.getElementById('n1');
-  const $n2 = document.getElementById('n2');
-  $n1.value = S.n1 || '';
-  $n2.value = S.n2 || '';
-  $n1.addEventListener('input', e => { S.n1 = e.target.value; save(); render(); });
-  $n2.addEventListener('input', e => { S.n2 = e.target.value; save(); render(); });
-
-  document.querySelectorAll('button[data-act]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const act = btn.getAttribute('data-act');
-      const team = parseInt(btn.getAttribute('data-team'), 10) - 1;
-      if (act === 'punto') addPoint(team);
-      else if (act === 'undo') undoLast();
-      else if (act === 'game') addGame(team);
-      else if (act === 'undoGame') undoLast();
-      else if (act === 'set') addSet(team);
-      else if (act === 'undoSet') undoLast();
-    });
+  // ── Setup ──
+  var modoSel = "partido_3", goldenSel = false;
+  $("mkModoChips").addEventListener("click", function (e) {
+    var b = e.target.closest(".mk-chip"); if (!b) return;
+    modoSel = b.dataset.modo || "";
+    this.querySelectorAll(".mk-chip").forEach(function (c) { c.classList.toggle("is-on", c === b); });
+  });
+  $("mkGolden").addEventListener("click", function () {
+    goldenSel = !goldenSel;
+    this.classList.toggle("is-on", goldenSel);
+  });
+  $("mkStart").addEventListener("click", function () {
+    var n1 = ($("mkN1").value || "").trim() || "Equipo 1";
+    var n2 = ($("mkN2").value || "").trim() || "Equipo 2";
+    state = {
+      names: { team1: n1, team2: n2 },
+      modo: modoSel || null,
+      goldenPoint: goldenSel,
+      marcador: LIVE.initMarcador({ goldenPoint: goldenSel, modo: modoSel || undefined }),
+      startedAtMs: Date.now(),
+    };
+    save();
+    showBoard();
   });
 
-  document.getElementById('btnReset').addEventListener('click', reset);
+  // ── Board ──
+  function showSetup() {
+    $board.classList.add("is-hidden");
+    $setup.classList.remove("is-hidden");
+    if (state && state.names) {
+      $("mkN1").value = state.names.team1 === "Equipo 1" ? "" : state.names.team1;
+      $("mkN2").value = state.names.team2 === "Equipo 2" ? "" : state.names.team2;
+    }
+  }
+  function showBoard() {
+    $setup.classList.add("is-hidden");
+    $board.classList.remove("is-hidden");
+    render();
+  }
 
-  render();
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function render() {
+    if (!state || !state.marcador) return;
+    var board = LIVE.formatScoreboard(state.marcador);
+    $("mkT1Name").textContent = state.names.team1;
+    $("mkT2Name").textContent = state.names.team2;
+    $("mkPadL1").textContent = state.names.team1;
+    $("mkPadL2").textContent = state.names.team2;
+    var sw = board.setsWon || { t1: 0, t2: 0 };
+    var cur = board.current || {};
+    $("mkT1Sets").textContent = sw.t1;
+    $("mkT2Sets").textContent = sw.t2;
+    $("mkT1Games").textContent = cur.team1Games != null ? cur.team1Games : 0;
+    $("mkT2Games").textContent = cur.team2Games != null ? cur.team2Games : 0;
+    $("mkT1Points").textContent = cur.tiebreak ? "TB " + (cur.tiebreak.team1 || 0) : board.pointsLabelT1;
+    $("mkT2Points").textContent = cur.tiebreak ? "TB " + (cur.tiebreak.team2 || 0) : board.pointsLabelT2;
+
+    var $hint = $("mkHint");
+    if (board.ganador) {
+      $hint.innerHTML = "🏆 Ganador: <strong>" + esc(state.names[board.ganador] || board.ganador) + "</strong>";
+    } else if (cur.servingTeam === "team1" || cur.servingTeam === "team2") {
+      $hint.innerHTML = "🟢 Saca <strong>" + esc(state.names[cur.servingTeam]) + "</strong>" + (state.goldenPoint ? " · Punto de oro" : "");
+    } else {
+      $hint.textContent = "";
+    }
+    // Línea de sets terminados (6-3 · 7-5)
+    var sets = Array.isArray(board.sets) ? board.sets : [];
+    $("mkSetline").textContent = sets.length
+      ? "Sets: " + sets.map(function (s) { return s.team1 + "-" + s.team2; }).join(" · ")
+      : "";
+
+    var done = !!board.ganador;
+    document.querySelectorAll(".mk-pad-btn").forEach(function (b) { b.disabled = done; });
+    $("mkUndo").disabled = !(state.marcador.history && state.marcador.history.length);
+    $("mkNew").classList.toggle("is-visible", done);
+  }
+
+  $("mkTeams").addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-live]");
+    if (!btn || btn.disabled || !state) return;
+    var action = btn.dataset.live, team = btn.dataset.team;
+    var m = state.marcador, next = null;
+    try {
+      if (action === "addPoint") {
+        next = LIVE.nextPointWinner(m, team, { goldenPoint: !!state.goldenPoint, modo: state.modo || undefined });
+      } else if (action === "forceGame") {
+        next = LIVE.forceGameWin(m, team);
+      } else if (action === "forceSet") {
+        // Mismo atajo que el FS del partido: 6 a favor, rival capado a 4.
+        var cur = (m && m.current) || {};
+        var t1g = Number(cur.team1Games) || 0, t2g = Number(cur.team2Games) || 0;
+        var score = team === "team1"
+          ? { team1: 6, team2: Math.min(t2g, 4) }
+          : { team1: Math.min(t1g, 4), team2: 6 };
+        next = LIVE.forceSetWin(m, team, score);
+      }
+    } catch (err) { return; }
+    if (!next) return;
+    state.marcador = next;
+    save();
+    render();
+    try { if (navigator.vibrate) navigator.vibrate(20); } catch (_) {}
+  });
+
+  $("mkUndo").addEventListener("click", function () {
+    if (!state) return;
+    state.marcador = LIVE.undoLastPoint(state.marcador);
+    save();
+    render();
+  });
+
+  $("mkNew").addEventListener("click", function () { showSetup(); });
+  $("mkClose").addEventListener("click", function () { showSetup(); });
+
+  // ── Timer ──
+  setInterval(function () {
+    if (!state || !state.startedAtMs || $board.classList.contains("is-hidden")) return;
+    var s = Math.max(0, Math.floor((Date.now() - state.startedAtMs) / 1000));
+    var hh = String(Math.floor(s / 3600)).padStart(2, "0");
+    var mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+    var ss = String(s % 60).padStart(2, "0");
+    $("mkTimer").textContent = "⏱ " + hh + ":" + mm + ":" + ss;
+  }, 1000);
+
+  // ── Arranque: si hay partido en curso, directo al marcador ──
+  load();
+  if (state && state.marcador && !state.marcador.ganador) {
+    goldenSel = !!state.goldenPoint;
+    modoSel = state.modo || "";
+    showBoard();
+  } else {
+    showSetup();
+  }
 })();
 </script>
+
 </body>
 </html>
