@@ -3877,6 +3877,18 @@
       "count": 2
     },
     {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "date": "2026-06-10",
+      "count": 2
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha4",
+      "date": "2026-06-10",
+      "count": 2
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-09-10",
@@ -5354,19 +5366,13 @@
     },
     {
       "loc": "wellstreet-pickleball",
-      "can": "cancha2",
-      "date": "2026-06-10",
-      "count": 1
-    },
-    {
-      "loc": "wellstreet-pickleball",
       "can": "cancha3",
       "date": "2026-06-10",
       "count": 1
     },
     {
       "loc": "wellstreet-pickleball",
-      "can": "cancha4",
+      "can": "cancha1",
       "date": "2026-06-10",
       "count": 1
     }
@@ -6359,6 +6365,12 @@
     {
       "loc": "wellstreet-pickleball",
       "can": "cancha1",
+      "hour": "14",
+      "count": 7
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
       "hour": "02",
       "count": 7
     },
@@ -6420,12 +6432,6 @@
       "loc": "wellstreet-pickleball",
       "can": "cancha2",
       "hour": "00",
-      "count": 6
-    },
-    {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha1",
-      "hour": "14",
       "count": 6
     },
     {
@@ -7416,6 +7422,18 @@
       "loc": "wellstreet-padel",
       "can": "cancha3",
       "hour": "11",
+      "count": 1
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha4",
+      "hour": "13",
+      "count": 1
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "hour": "14",
       "count": 1
     }
   ],
@@ -15554,7 +15572,7 @@
       "can": "cancha2",
       "date": "2026-06-10",
       "counts_por_lado": {
-        "ladoa": 1
+        "ladoa": 2
       },
       "diff": 0
     },
@@ -15572,10 +15590,19 @@
       "can": "cancha4",
       "date": "2026-06-10",
       "counts_por_lado": {
+        "ladoa": 2
+      },
+      "diff": 0
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "date": "2026-06-10",
+      "counts_por_lado": {
         "ladoa": 1
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-06-10T16:58:55.843054+00:00"
+  "generated_at_utc": "2026-06-11T00:28:58.105094+00:00"
 }
