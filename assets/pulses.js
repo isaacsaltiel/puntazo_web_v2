@@ -30,7 +30,7 @@
 
   // R4 rollout: clubs cuya NUC ya tiene el listener pending_pulses.
   // Agregar más conforme cada NUC implemente R4.
-  const FIRESTORE_CLUBS = ["BreakPoint", "WellStreet-Pickleball", "WellStreet-Padel"];
+  const FIRESTORE_CLUBS = ["BreakPoint", "WellStreet-Pickleball", "WellStreet-Padel", "Interpadel"];
 
   // R7 — "Partido completo": clubs cuya NUC sabe procesar source="match_full"
   // (cortar el NVR del inicio al fin del partido). Hoy: pickleball de WellStreet,
