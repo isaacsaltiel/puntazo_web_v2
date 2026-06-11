@@ -66,6 +66,53 @@
     return db.collection("notifications").doc(uid).collection("items");
   }
 
+  // ── Deep-link de clip_ready → lado.html (cliente puro) ───────
+  // El servidor solo conoce el pulseId; el clip se resuelve en el cliente
+  // cruzando consumed_at con los timestamps de los videos. Por eso leemos el
+  // pulso (las reglas lo permiten al dueño), mapeamos cancha→id de config y
+  // mandamos a lado.html con pt=<consumed_at ms> para aterrizar justo en el clip.
+  var _cfgLocPromise = null;
+  function loadConfigLocations() {
+    if (_cfgLocPromise) return _cfgLocPromise;
+    _cfgLocPromise = fetch("/data/config_locations.json?cb=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+    return _cfgLocPromise;
+  }
+  function _digitOf(s) {
+    var m = String(s == null ? "" : s).match(/(\d+)/);
+    return m ? m[1] : String(s == null ? "" : s);
+  }
+  function resolveLadoUrlFromPulse(pulse) {
+    pulse = pulse || {};
+    var loc = pulse.club, canTok = pulse.cancha, lado = pulse.lado;
+    if (!loc || !canTok || !lado) return Promise.resolve(null);
+    return loadConfigLocations().then(function (cfg) {
+      // El pulso guarda cancha como dígito ("4"); config usa id ("Cancha4").
+      var canId = canTok;
+      try {
+        var L = cfg && (cfg.locaciones || []).find(function (x) { return x.id === loc; });
+        var C = L && (L.cancha || []).find(function (x) {
+          return x.id === canTok || _digitOf(x.id) === _digitOf(canTok);
+        });
+        if (C) canId = C.id;
+      } catch (_) {}
+      var qs = "loc=" + encodeURIComponent(loc) +
+               "&can=" + encodeURIComponent(canId) +
+               "&lado=" + encodeURIComponent(lado);
+      // Preferir el nombre EXACTO que la NUC escribió (resolved_video): deep-link
+      // preciso y durable. Si aún no está, caer al match por tiempo (pt=consumed_at).
+      if (pulse.resolved_video) {
+        qs += "&video=" + encodeURIComponent(pulse.resolved_video);
+      } else {
+        var ms = 0;
+        try { var d = tsToDate(pulse.consumed_at); if (d) ms = d.getTime(); } catch (_) {}
+        if (ms) qs += "&pt=" + ms;
+      }
+      return "/lado.html?" + qs;
+    });
+  }
+
   // ── No leído = read !== true (server-side, sin localStorage) ──
   function unseenCount() {
     return state.items.filter(function (it) { return it.read !== true; }).length;
@@ -98,16 +145,28 @@
   }
 
   // Marca UN item como leído (al tocarlo) — solo read/readAt (lo permite la regla).
+  // Devuelve la promesa de la escritura para poder esperar a que persista antes de
+  // navegar (no hay persistencia offline → si navegas antes de que salga, se pierde).
   function markOneRead(id) {
     var db = getDb();
     var user = currentUser();
-    if (!db || !user || !id) return;
+    if (!db || !user || !id) return Promise.resolve();
     var it = state.items.find(function (x) { return x.id === id; });
-    if (!it || it.read === true) return;
+    if (!it || it.read === true) return Promise.resolve();
     it.read = true;
     renderBadge();
-    try { itemsRef(db, user.uid).doc(id).update({ read: true, readAt: serverTs() }).catch(function () {}); }
-    catch (_) {}
+    try { return itemsRef(db, user.uid).doc(id).update({ read: true, readAt: serverTs() }).catch(function () {}); }
+    catch (_) { return Promise.resolve(); }
+  }
+
+  // Navega a href cuando la escritura `promise` se resuelve, con tope de 500ms para
+  // no colgarse si la red tarda. Garantiza que el "leído" se guarde antes de salir.
+  function navigateAfter(promise, href) {
+    if (!href) return;
+    var done = false;
+    function go() { if (done) return; done = true; try { window.location.href = href; } catch (_) {} }
+    try { Promise.resolve(promise).then(go, go); } catch (_) { go(); }
+    setTimeout(go, 500);
   }
 
   // ── Carga perezosa de dependencias (best-effort, solo "Aceptar") ─
@@ -308,7 +367,9 @@
           : "";
         var when = fmtRel(it.createdAt);
         var unreadCls = (it.read !== true) ? " is-unread" : "";
-        return '<a class="pz-notif-item' + unreadCls + '" href="' + esc(it.href) + '" data-read-id="' + esc(it.id) + '">' +
+        // clip_ready lleva el pulseId para resolver el deep-link al video exacto.
+        var clipAttr = (it.type === "clip_ready" && it.refId) ? ' data-clip-pulse="' + esc(it.refId) + '"' : "";
+        return '<a class="pz-notif-item' + unreadCls + '" href="' + esc(it.href) + '" data-read-id="' + esc(it.id) + '"' + clipAttr + '>' +
             '<span class="pz-notif-ico">' + esc(it.icon) + '</span>' +
             '<span class="pz-notif-body">' +
               '<span class="pz-notif-toprow">' +
@@ -339,8 +400,37 @@
 
     // Tocar un ítem lo marca leído (read = "interactuado", patrón estándar) y
     // deja que la navegación del <a> proceda. No preventDefault.
+    // Tocar un ítem lo marca leído y navega DESPUÉS de que persista (clip_ready
+    // tiene su propio handler abajo, así que aquí lo saltamos).
     panel.querySelectorAll("[data-read-id]").forEach(function (a) {
-      a.addEventListener("click", function () { markOneRead(a.getAttribute("data-read-id")); });
+      if (a.hasAttribute("data-clip-pulse")) return;
+      a.addEventListener("click", function (e) {
+        var p = markOneRead(a.getAttribute("data-read-id"));
+        var href = a.getAttribute("href");
+        if (!href || href === "#") return; // sin destino: solo marcar
+        e.preventDefault();
+        navigateAfter(p, href);
+      });
+    });
+
+    // clip_ready: en vez de ir a perfil, resolvemos el video EXACTO y vamos al
+    // gallery (lado.html) aterrizando justo en ese clip. Si algo falla, caemos al
+    // href original (perfil) sin romper nada.
+    panel.querySelectorAll("[data-clip-pulse]").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        var pid = a.getAttribute("data-clip-pulse");
+        var fallback = a.getAttribute("href") || "/perfil.html";
+        var pRead = markOneRead(a.getAttribute("data-read-id"));
+        var db = getDb(), user = currentUser();
+        if (!db || !user || !pid) { navigateAfter(pRead, fallback); return; }
+        db.collection("pending_pulses").doc(pid).get().then(function (snap) {
+          if (!snap || !snap.exists) { navigateAfter(pRead, fallback); return; }
+          resolveLadoUrlFromPulse(snap.data()).then(function (url) {
+            navigateAfter(pRead, url || fallback);
+          });
+        }).catch(function () { navigateAfter(pRead, fallback); });
+      });
     });
 
     // Botón "Aceptar" inline (best-effort). Marca leído y, tras aceptar, el

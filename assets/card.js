@@ -283,7 +283,13 @@ window.PuntazoCard = (function () {
     video.controls = true;
     video.playsInline = true;
     video.preload = 'metadata';
-    if (entry.url) video.src = entry.url;
+    if (entry.url) {
+      video.src = entry.url;
+      // Pinta un frame REAL del inicio como portada (sin imagen extra) para que nunca
+      // se vea el rectángulo negro de preload='metadata'. El seek a 0.2s fuerza al
+      // navegador a decodificar ese frame; lo perdido en la reproducción es imperceptible.
+      video.addEventListener('loadedmetadata', function () { try { video.currentTime = 0.2; } catch (e) {} }, { once: true });
+    }
     // (2026-06-10) Métrica de reproducciones: 1 view por video por sesión.
     video.addEventListener('play', function () {
       if (window.PZ && PZ.trackVideoView) {

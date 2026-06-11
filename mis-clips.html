@@ -430,7 +430,8 @@
     const featuredHtml = featured
       ? '<div class="pz-clip-featured">' +
           '<div class="pz-clip-featured-title">🏆 Video del partido completo</div>' +
-          '<video src="' + escapeHTML(featured.videoUrl) + '" controls preload="metadata" playsinline></video>' +
+          // #t=0.2 fuerza al navegador a pintar un frame real del inicio como portada (evita pantalla negra).
+          '<video src="' + escapeHTML(featured.videoUrl) + (featured.videoUrl.indexOf('#') === -1 ? '#t=0.2' : '') + '" controls preload="metadata" playsinline></video>' +
         '</div>'
       : '';
 

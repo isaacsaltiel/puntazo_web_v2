@@ -31,7 +31,14 @@ function scrollToTop() { window.scrollTo({ top: 0, behavior: "smooth" }); }
 
 function scrollToVideoById(id) {
   const target = document.getElementById(id);
-  if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "center" });
+  // Resalta el clip un par de segundos (deep-link desde notificación / "otro ángulo")
+  // para que ubiques de inmediato cuál es.
+  try {
+    target.classList.add("pz-clip-highlight");
+    setTimeout(() => { try { target.classList.remove("pz-clip-highlight"); } catch {} }, 2600);
+  } catch {}
 }
 
 // ----------------------- analytics -----------------------
@@ -477,12 +484,24 @@ function createHourFilterUI(videos) {
 // ----------------------- preview overlay -----------------------
 function createPreviewOverlay(videoSrc, duration, parentCard) {
   const preview = document.createElement("video");
-  preview.muted = true; preview.playsInline = true; preview.preload = "none"; preview.src = videoSrc; preview.className = "video-preview";
+  preview.muted = true; preview.playsInline = true; preview.preload = "none";
+  // #t=0.2 → el navegador pinta un frame REAL del INICIO del clip como portada.
+  // Es barato (solo lee los primeros bytes del archivo) y SIEMPRE se ve algo, aunque
+  // el autoplay esté bloqueado o el seek a la acción falle. Antes el único frame era
+  // un seek profundo a duration-15 (final del archivo) que en móvil/Dropbox no llegaba
+  // → rectángulo negro permanente.
+  preview.src = videoSrc.indexOf("#") === -1 ? videoSrc + "#t=0.2" : videoSrc;
+  preview.className = "video-preview";
   let start = duration > 15 ? duration - 15 : 0, end = start + 5;
-  const onLoadedMeta = () => { try { preview.currentTime = start; } catch {} };
-  const onTimeUpdate = () => { try { if (preview.currentTime >= end) preview.currentTime = start; } catch {} };
+  let jumpedToAction = false;
+  // Portada: frame barato del inicio (NO el seek profundo que fallaba).
+  const onLoadedMeta = () => { try { preview.currentTime = 0.2; } catch {} };
+  const onTimeUpdate = () => { try { if (jumpedToAction && preview.currentTime >= end) preview.currentTime = start; } catch {} };
+  // Recién al reproducir (scroll) saltamos a la acción (últimos 15s) y ahí loopea.
+  const onPlay = () => { if (!jumpedToAction) { jumpedToAction = true; try { preview.currentTime = start; } catch {} } };
   preview.addEventListener("loadedmetadata", onLoadedMeta);
   preview.addEventListener("timeupdate", onTimeUpdate);
+  preview.addEventListener("play", onPlay);
   const io = new IntersectionObserver(entries => {
     entries.forEach(e => {
       visibilityMap.set(preview, e.intersectionRatio);
@@ -874,16 +893,35 @@ async function populateVideos() {
 
     ensureBottomControlsContainer();
 
+    // Deep-link desde la notificación "tu puntazo ya está listo": ?pt=<ms de
+    // consumed_at> resuelve el clip EXACTO por cercanía temporal (±90s), igual que
+    // perfil. Así la notificación aterriza justo en ese video (cuya preview ya
+    // muestra los primeros segundos por el frame de portada).
+    let targetIdResolved = targetId;
+    if (!targetIdResolved && params.pt) {
+      const ptMs = parseInt(params.pt, 10);
+      if (!Number.isNaN(ptMs)) {
+        let best = null, bestDelta = Infinity;
+        for (const v of list) {
+          const dms = (v._meta && v._meta.date) ? v._meta.date.getTime() : null;
+          if (dms == null) continue;
+          const delta = Math.abs(dms - ptMs);
+          if (delta <= 90000 && delta < bestDelta) { best = v; bestDelta = delta; }
+        }
+        if (best) targetIdResolved = best.nombre;
+      }
+    }
+
     const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
     let desiredPg = parseInt(params.pg || "0", 10);
     if (Number.isNaN(desiredPg)) desiredPg = 0;
-    if (targetId) { const idx = list.findIndex(v => v.nombre === targetId); if (idx >= 0) desiredPg = Math.floor(idx / PAGE_SIZE); }
+    if (targetIdResolved) { const idx = list.findIndex(v => v.nombre === targetIdResolved); if (idx >= 0) desiredPg = Math.floor(idx / PAGE_SIZE); }
     paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
     setQueryParams({ pg: paginaActual }, !("pg" in params));
 
     await renderPaginaActual({ fueCambioDePagina: false });
     if (loading) loading.style.display = "none";
-    if (targetId) scrollToVideoById(targetId);
+    if (targetIdResolved) scrollToVideoById(targetIdResolved);
 
   } catch(err) {
     console.error("populateVideos:", err);

@@ -557,6 +557,14 @@ video.real{
 }
 video.real{display:none;}
 
+/* Resalta el clip al que aterrizas desde una notificación / deep-link (?video / ?pt) */
+.video-card.pz-clip-highlight{ animation:pzClipHighlight 2.4s ease-out 1; }
+@keyframes pzClipHighlight{
+  0%{   box-shadow:0 0 0 3px rgba(11,124,255,0); }
+  15%{  box-shadow:0 0 0 3px rgba(11,124,255,.85), 0 0 22px rgba(11,124,255,.55); }
+  100%{ box-shadow:0 0 0 3px rgba(11,124,255,0); }
+}
+
 /* ── Botones de acción por video ── */
 .botones-container{
   display:flex;

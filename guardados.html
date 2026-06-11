@@ -292,9 +292,19 @@
         if (t) parsed.push({ url: v.url, nombre: v.nombre, ts: t, fecha: v.fecha || '' });
       });
       grp.docs.forEach(function (o) {
-        let anchor = tsToMillis(o.consumed_at) || tsToMillis(o.created_at);
-        if (!anchor) return;
-        const hit = parsed.find(function (x) { return Math.abs(x.ts - anchor) <= 90000; });
+        // Preferir el nombre EXACTO que la NUC escribió (resolved_video): sin adivinar
+        // por tiempo, sin depender del reloj, sin ambigüedad de doble-botón.
+        let hit = null;
+        if (o.resolved_video) {
+          hit = parsed.find(function (x) { return x.nombre === o.resolved_video; }) || null;
+        }
+        // Fallback: join por ventana de ±90s (método previo, para pulsos sin
+        // resolved_video todavía: NUC vieja o clip aún no estampado).
+        if (!hit) {
+          const anchor = tsToMillis(o.consumed_at) || tsToMillis(o.created_at);
+          if (!anchor) return;
+          hit = parsed.find(function (x) { return Math.abs(x.ts - anchor) <= 90000; }) || null;
+        }
         if (hit) {
           out.push({
             nombre: hit.nombre, url: hit.url, club: grp.loc, cancha: grp.can, lado: grp.lado,
