@@ -479,7 +479,10 @@ service cloud.firestore {
       allow update: if isMe(ownerUid)
                     && request.resource.data.diff(resource.data).affectedKeys()
                        .hasOnly(['read', 'readAt']);
-      allow create, delete: if false;
+      // create: solo la Cloud Function (Admin SDK). delete: el dueño puede borrar
+      // sus propias notifs (botón "Limpiar todas" en la campana, 2026-06-12).
+      allow create: if false;
+      allow delete: if isMe(ownerUid);
     }
 
     // ════════════════════════════════════════════════════

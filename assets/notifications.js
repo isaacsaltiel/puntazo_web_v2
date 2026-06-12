@@ -35,8 +35,10 @@
 
   var unsub = null;          // función para desuscribir el onSnapshot activo
   var panelOpen = false;
+  var panelExpanded = false; // "ver más": mostró todas estando colapsado a 3
   var state = { items: [] };
   var outsideHandlersBound = false;
+  var COLLAPSE_TO = 3;       // cuántas mostrar cuando está colapsado
 
   // ── Utilidades ───────────────────────────────────────────────
   function esc(s) {
@@ -255,6 +257,26 @@
     });
   }
 
+  // ── Limpiar TODAS: borra los items del dueño (regla allow delete: isMe). ──
+  // Optimista: vacía el estado ya; el onSnapshot confirma. Nota: si una notif
+  // tiene su evento-fuente aún activo (ej. partido por confirmar), el trigger
+  // server puede recrearla en el próximo cambio — comportamiento correcto.
+  function deleteAll() {
+    var db = getDb();
+    var user = currentUser();
+    if (!db || !user) return;
+    var items = state.items.slice();
+    if (!items.length) return;
+    var ref = itemsRef(db, user.uid);
+    state.items = [];
+    panelExpanded = false;
+    renderBadge();
+    renderPanel();
+    items.forEach(function (it) {
+      try { ref.doc(it.id).delete().catch(function () {}); } catch (_) {}
+    });
+  }
+
   // ── Estilos ──────────────────────────────────────────────────
   function ensureStyles() {
     if (document.getElementById("pz-notif-styles")) return;
@@ -281,9 +303,15 @@
       ".pz-notif-panel.is-open{display:block;}" +
       ".pz-notif-head{display:flex;align-items:center;justify-content:space-between;gap:10px;" +
       "padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);color:#fff;font-size:.9rem;font-weight:800;}" +
+      ".pz-notif-actions{display:flex;align-items:center;gap:12px;flex-shrink:0;}" +
       ".pz-notif-markall{appearance:none;border:none;background:transparent;color:#6fb2ff;font:inherit;" +
-      "font-size:.74rem;font-weight:800;cursor:pointer;padding:0;}" +
+      "font-size:.74rem;font-weight:800;cursor:pointer;padding:0;white-space:nowrap;}" +
       ".pz-notif-markall:hover{text-decoration:underline;}" +
+      ".pz-notif-clear{color:#ff9a9a;}" +
+      ".pz-notif-more{display:block;width:100%;appearance:none;border:none;cursor:pointer;" +
+      "background:rgba(255,255,255,.03);color:#6fb2ff;font:inherit;font-size:.78rem;font-weight:800;" +
+      "padding:11px 14px;border-top:1px solid rgba(255,255,255,.06);}" +
+      ".pz-notif-more:hover{background:rgba(11,124,255,.10);}" +
       ".pz-notif-empty{padding:22px 16px;color:rgba(234,242,255,.58);font-size:.85rem;text-align:center;}" +
       ".pz-notif-err{padding:20px 16px;color:#ffb1a3;font-size:.84rem;text-align:center;}" +
       ".pz-notif-err button{display:block;margin:10px auto 0;border:1px solid rgba(255,255,255,.18);" +
@@ -349,9 +377,14 @@
     var panel = document.getElementById("pz-notif-panel");
     if (!panel) return;
     var unread = unseenCount();
+    var actions = "";
+    if (state.items.length) {
+      if (unread > 0) actions += '<button type="button" class="pz-notif-markall" data-markall>Marcar leídas</button>';
+      actions += '<button type="button" class="pz-notif-markall pz-notif-clear" data-clearall>Limpiar</button>';
+    }
     var head =
       '<div class="pz-notif-head"><span>Notificaciones</span>' +
-        (unread > 0 ? '<button type="button" class="pz-notif-markall" data-markall>Marcar todas como leídas</button>' : "") +
+        (actions ? ('<span class="pz-notif-actions">' + actions + '</span>') : "") +
       '</div>';
 
     var body;
@@ -361,7 +394,13 @@
     } else if (!state.items.length) {
       body = '<div class="pz-notif-empty">Estás al día — no tienes notificaciones.</div>';
     } else {
-      body = state.items.map(function (it) {
+      // Colapso: si hay MÁS de 3 SIN leer, muéstralas TODAS (no escondas
+      // pendientes). Si ya están todas leídas (o hay ≤3 sin leer), colapsa a 3
+      // con un "Ver más". `panelExpanded` lo abre manualmente.
+      var forceAll = unread > COLLAPSE_TO;
+      var showAll = forceAll || panelExpanded;
+      var visibleItems = showAll ? state.items : state.items.slice(0, COLLAPSE_TO);
+      body = visibleItems.map(function (it) {
         var acceptBtn = (it.type === "friend_request" && it.refId)
           ? '<button type="button" class="pz-notif-accept" data-accept="' + esc(it.refId) + '">Aceptar</button>'
           : "";
@@ -381,14 +420,38 @@
             '</span>' +
           '</a>';
       }).join("");
+      // Footer "Ver más / Ver menos": solo cuando NO se forzó mostrar todas y
+      // hay más de las que caben colapsadas.
+      if (!forceAll && state.items.length > COLLAPSE_TO) {
+        body += panelExpanded
+          ? '<button type="button" class="pz-notif-more" data-collapse>Ver menos</button>'
+          : '<button type="button" class="pz-notif-more" data-expand>Ver más (' + (state.items.length - COLLAPSE_TO) + ')</button>';
+      }
     }
     panel.innerHTML = head + body;
 
-    // "Marcar todas como leídas" — control explícito para bajar el badge sin
-    // tener que abrir cada notificación (el abrir ya NO marca todo leído).
+    // "Marcar leídas" — control explícito para bajar el badge sin tener que abrir
+    // cada notificación (el abrir ya NO marca todo leído).
     var markAllBtn = panel.querySelector("[data-markall]");
     if (markAllBtn) markAllBtn.addEventListener("click", function (e) {
       e.preventDefault(); e.stopPropagation(); markAllRead(); renderPanel();
+    });
+
+    // "Limpiar" — borra TODAS las notificaciones del dueño (con confirmación).
+    var clearAllBtn = panel.querySelector("[data-clearall]");
+    if (clearAllBtn) clearAllBtn.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      if (window.confirm("¿Limpiar todas las notificaciones?")) deleteAll();
+    });
+
+    // "Ver más / Ver menos" — expande/colapsa la lista a COLLAPSE_TO.
+    var expandBtn = panel.querySelector("[data-expand]");
+    if (expandBtn) expandBtn.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation(); panelExpanded = true; renderPanel();
+    });
+    var collapseBtn = panel.querySelector("[data-collapse]");
+    if (collapseBtn) collapseBtn.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation(); panelExpanded = false; renderPanel();
     });
 
     // Reintentar tras error de red/permiso.
@@ -459,6 +522,7 @@
     var panel = document.getElementById("pz-notif-panel");
     if (!panel) return;
     panelOpen = true;
+    panelExpanded = false; // cada apertura arranca colapsada (si aplica el colapso)
     renderPanel();
     panel.classList.add("is-open");
     // NO marcamos todo leído al abrir: el badge persiste hasta que tocas una
