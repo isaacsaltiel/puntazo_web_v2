@@ -88,6 +88,39 @@ async function requireCanchaPassword(locId, canId) {
   return false;
 }
 
+// ----------------------- GATE POR CLUB -----------------------
+// (2026-06-12) Gate a nivel CLUB: una sola contraseña para TODO el club, antes
+// de poder ver cualquier cancha/lado/clip de ese club (ej. Scorpion). Config en
+// passwords.json → clubs:[{loc,enabled,sha256,remember_hours}]. Reusa sha256Hex/
+// loadPasswords. Llave de localStorage independiente de la de cancha.
+function findClubRule(pwCfg, locId) {
+  if (!pwCfg?.clubs?.length) return null;
+  return pwCfg.clubs.find(x => x.loc === locId) || null;
+}
+function getClubAuthKey(locId) { return `gate:club:${locId}`; }
+function isClubAuthorized(rule) {
+  if (!rule || !rule.enabled) return true;
+  try { const obj = JSON.parse(localStorage.getItem(getClubAuthKey(rule.loc)) || "null"); return !!(obj?.ok && typeof obj.exp === "number" && Date.now() < obj.exp); } catch { return false; }
+}
+function setClubAuthorized(rule) {
+  const remember = (Number(rule.remember_hours) > 0 ? Number(rule.remember_hours) : 24) * 3600000;
+  localStorage.setItem(getClubAuthKey(rule.loc), JSON.stringify({ ok: true, exp: Date.now() + remember }));
+}
+async function requireClubPassword(locId) {
+  const pwCfg = await loadPasswords();
+  const rule = findClubRule(pwCfg, locId);
+  if (!rule || !rule.enabled) return true;
+  if (isClubAuthorized(rule)) return true;
+  for (let i = 0; i < 3; i++) {
+    const input = window.prompt("Este club requiere contraseña para ver sus puntazos.");
+    if (input === null) return false;
+    if (await sha256Hex(input) === rule.sha256) { setClubAuthorized(rule); trackEvent("gate_unlock", gaCtx({ result: "ok", scope: "club" })); return true; }
+    alert("Contraseña incorrecta. Inténtalo de nuevo.");
+  }
+  trackEvent("gate_unlock", gaCtx({ result: "fail", scope: "club" }));
+  return false;
+}
+
 // ----------------------- parseFromName -----------------------
 // F123-D: ahora reconoce sufijo opcional _TAG_TAGID entre lado y fecha
 // (espejo de F123-A en assets/matches.js). El grupo lado se ancla a
@@ -953,8 +986,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const path = window.location.pathname, p = getQueryParams();
   (async () => {
     if (path.endsWith("index.html") || path.endsWith("explorar.html") || path === "/") { populateLocaciones(); return; }
-    if (path.endsWith("locacion.html")) { populateCanchas(); return; }
+    if (path.endsWith("locacion.html")) {
+      // Gate de club: no ver ni la lista de canchas de un club protegido sin pass.
+      if (!(await requireClubPassword(p.loc))) { window.location.href = "index.html"; return; }
+      populateCanchas(); return;
+    }
     if (path.endsWith("cancha.html")) {
+      if (!(await requireClubPassword(p.loc))) { window.location.href = "index.html"; return; }
       const ok = await requireCanchaPassword(p.loc, p.can);
       if (!ok) { window.location.href = `locacion.html?loc=${p.loc}`; return; }
       try {
@@ -966,6 +1004,7 @@ document.addEventListener("DOMContentLoaded", () => {
       populateLados(); return;
     }
     if (path.endsWith("lado.html")) {
+      if (!(await requireClubPassword(p.loc))) { window.location.href = "index.html"; return; }
       const ok = await requireCanchaPassword(p.loc, p.can);
       if (!ok) { window.location.href = `cancha.html?loc=${p.loc}&can=${p.can}`; return; }
       // F126: expone el loader como global para que el refresh-bar pueda

@@ -859,7 +859,9 @@
         }
         card.innerHTML = inner.join("");
         if (club.status !== "soon") {
-          card.addEventListener("click", function () {
+          card.addEventListener("click", async function () {
+            // Gate de club (ej. Scorpion): pide contraseña antes de entrar.
+            if (!(await pzClubGate(club.id))) return;
             selectorState.selectedClub = club;
             selectorState.step = "canchas";
             setSelMsg("");
@@ -1274,17 +1276,52 @@
     renderSelector();
   }
 
-  // ---------- ENTRYPOINT ----------
-  if (hasFullParams) {
-    startReadyFlow();
-  } else if (modoCanchas && loc) {
-    // F135 (Fix 4): "cambiar cancha" → directo al paso de canchas del club.
-    startSelectorFlow({ directLoc: loc });
-  } else if (qrCode) {
-    startSelectorFlow({ qrCode: qrCode });
-  } else {
-    startSelectorFlow({});
+  // (2026-06-12) Gate de club (ej. Scorpion): una contraseña para TODO el club.
+  // Soft-gate, fail-open si passwords.json no carga (igual que el gate por-cancha
+  // de script.js). Comparte la llave de localStorage 'gate:club:<loc>' con
+  // script.js → si ya la metiste aquí, las galerías no la vuelven a pedir.
+  async function pzClubGate(clubId) {
+    if (!clubId) return true;
+    try {
+      const r = await fetch('/data/passwords.json?cb=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return true;
+      const cfg = await r.json();
+      const rule = (cfg.clubs || []).find(function (x) { return x.loc === clubId && x.enabled; });
+      if (!rule) return true;
+      const k = 'gate:club:' + clubId;
+      try { const o = JSON.parse(localStorage.getItem(k) || 'null'); if (o && o.ok && typeof o.exp === 'number' && Date.now() < o.exp) return true; } catch (e) {}
+      const sha = async function (t) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(function (x) { return x.toString(16).padStart(2, '0'); }).join(''); };
+      for (let i = 0; i < 3; i++) {
+        const inp = window.prompt('Este club requiere contraseña para ver sus puntazos.');
+        if (inp === null) return false;
+        if (await sha(inp) === rule.sha256) {
+          const rem = (Number(rule.remember_hours) > 0 ? Number(rule.remember_hours) : 24) * 3600000;
+          localStorage.setItem(k, JSON.stringify({ ok: true, exp: Date.now() + rem }));
+          return true;
+        }
+        alert('Contraseña incorrecta. Inténtalo de nuevo.');
+      }
+      return false;
+    } catch (e) { return true; } // fail-open
   }
+
+  // ---------- ENTRYPOINT ----------
+  (async function () {
+    // Si la URL trae un club protegido (loc=Scorpion en cualquier modo: ready,
+    // canchas, qr), pídelo ANTES de cualquier flujo. El flujo manual (sin loc)
+    // se gatea en el click del club.
+    if (loc && !(await pzClubGate(loc))) { window.location.href = "/index.html"; return; }
+    if (hasFullParams) {
+      startReadyFlow();
+    } else if (modoCanchas && loc) {
+      // F135 (Fix 4): "cambiar cancha" → directo al paso de canchas del club.
+      startSelectorFlow({ directLoc: loc });
+    } else if (qrCode) {
+      startSelectorFlow({ qrCode: qrCode });
+    } else {
+      startSelectorFlow({});
+    }
+  })();
 })();
 </script>
 
