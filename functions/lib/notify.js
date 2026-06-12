@@ -133,13 +133,30 @@ function playerName(match, uid) {
   const j = js.find(function (x) { return x && x.uid === uid; });
   return j ? firstName(j.nombre) : null;
 }
-function clipReadyPayload(pulseId) {
+// Club id legible: "WellStreet-Padel" → "WellStreet Padel".
+function clubDisplay(club) {
+  const s = String(club == null ? "" : club).trim();
+  return s ? s.replace(/-/g, " ") : "";
+}
+// Cancha: el pulso la guarda como dígito ("4") → "Cancha 4"; si ya viene con
+// texto la deja tal cual.
+function canchaDisplay(cancha) {
+  const s = String(cancha == null ? "" : cancha).trim();
+  if (!s) return "";
+  return /^\d+$/.test(s) ? ("Cancha " + s) : s;
+}
+// (2026-06-11) clip_ready informativo: club en el título y cancha en el subtítulo
+// (antes era genérico "El clip que pediste ya se procesó"). Degrada con gracia si
+// el pulso no trae club/cancha. Datos vienen de pending_pulses (after) en onPulseNotify.
+function clipReadyPayload(pulseId, club, cancha) {
+  const cd = clubDisplay(club);
+  const cc = canchaDisplay(cancha);
   return {
     type: "clip_ready",
     refId: pulseId,
     icon: "🎬",
-    title: "Tu puntazo ya está listo",
-    subtitle: "El clip que pediste ya se procesó",
+    title: cd ? ("Tu puntazo en " + cd + " ya está listo") : "Tu puntazo ya está listo",
+    subtitle: cc ? (cc + " — tócalo para verlo") : "El clip que pediste ya se procesó",
     href: "/perfil.html?pulse=" + pulseId + "#mis-puntazos",
   };
 }

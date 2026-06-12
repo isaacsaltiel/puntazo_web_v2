@@ -490,7 +490,7 @@ exports.onPulseNotify = onDocumentWritten(
     if (!owner) return null; // pulsos in-club sin creador → no hay a quién avisar.
     try {
       if (after && notify.pulseIsReady(after)) {
-        await ensureNotif(owner, notify.clipReadyPayload(pulseId));
+        await ensureNotif(owner, notify.clipReadyPayload(pulseId, after.club, after.cancha));
       } else {
         // error_reason, aún no consumido, o borrado → quitar el clip_ready.
         await removeNotif(owner, "clip_ready", pulseId);
