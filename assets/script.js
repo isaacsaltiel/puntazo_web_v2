@@ -1018,10 +1018,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnVolver) {
     (async () => {
       const p2 = getQueryParams();
-      // F139: "← Regresar" desde lado.html va al selector de CANCHAS del club
-      // actual (antes, en canchas de 1 lado, caía en locacion.html → selección
-      // de clubs). Reusa el deep-link modo=canchas de entrada.html (F135 Fix 4).
-      if (path.endsWith("lado.html"))    { const mono = await isSingleLado(p2.loc, p2.can); btnVolver.href = mono ? `entrada.html?modo=canchas&loc=${encodeURIComponent(p2.loc)}` : `cancha.html?loc=${p2.loc}&can=${p2.can}`; }
+      // (2026-06-13) "← Regresar" desde lado.html (cancha de 1 lado) va DIRECTO
+      // a la pantalla de opciones de entrada (Ir al botón / Ver clips /
+      // Configurar) de la MISMA cancha. Antes iba a modo=canchas y reabría el
+      // selector, que terminaba devolviéndote a clips (nunca a las opciones).
+      // Multi-lado (Scorpion) sigue yendo a cancha.html para elegir el otro lado.
+      if (path.endsWith("lado.html"))    { const mono = await isSingleLado(p2.loc, p2.can); btnVolver.href = mono ? `entrada.html?loc=${encodeURIComponent(p2.loc)}&can=${encodeURIComponent(p2.can)}&lado=${encodeURIComponent(p2.lado)}` : `cancha.html?loc=${p2.loc}&can=${p2.can}`; }
       else if (path.endsWith("cancha.html")) { btnVolver.href = `locacion.html?loc=${p2.loc}`; }
       else if (path.endsWith("locacion.html")) { btnVolver.href = "explorar.html"; }
     })();

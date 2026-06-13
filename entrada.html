@@ -614,15 +614,17 @@
     </div>
 
     <div id="actionsAuthed" class="entrada-actions" style="display:none">
-      <button id="btnIniciar" class="btn-primary" type="button">🎾 Configurar partido →</button>
-      <a id="lnkSoloClips" class="btn-secondary" href="#">Solo quiero ver los clips</a>
-      <!-- F135 (Fix 6): "Solo registrar puntazos" movido aquí desde la 1ª
-           pantalla. Solo aparece cuando ya elegiste club+cancha (estás en la
-           cancha), no en el selector de clubs. -->
-      <a id="lnkRegistrarAuthed" class="btn-secondary" href="#" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
-        <img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" style="width:26px;height:26px;flex-shrink:0;border-radius:50%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(11,124,255,.45));">
-        Solo registrar puntazos
+      <!-- (2026-06-13) Nueva jerarquía pedida por Isaac:
+           1º Ir al botón (principal) · 2º Ver clips · 3º Configurar partido. -->
+      <!-- 1º — PRINCIPAL: ir al botón (registrar puntazos). -->
+      <a id="lnkRegistrarAuthed" class="btn-primary" href="#" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
+        <img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" style="width:30px;height:30px;flex-shrink:0;border-radius:50%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(255,255,255,.45));">
+        Ir al botón
       </a>
+      <!-- 2º — Ver clips. -->
+      <a id="lnkSoloClips" class="btn-secondary" href="#">🎬 Ver clips</a>
+      <!-- 3º — Configurar partido (la menos prioritaria ahora). -->
+      <button id="btnIniciar" class="btn-secondary" type="button">🎾 Configurar partido →</button>
       <!-- F119: link sutil a herramientas (sortear, marcador, torneo 5, etc).
            Pasa loc+can para que herramientas propague el contexto a los
            modos que lo entienden (Torneo 5 muestra botón Puntazo round). -->
@@ -633,13 +635,15 @@
     </div>
 
     <div id="actionsGuest" class="entrada-actions" style="display:none">
-      <a id="lnkInvitado" class="btn-primary" href="#">Continuar como invitado</a>
-      <!-- F135 (Fix 6): registrar puntazos también para invitado ya estando
-           en la cancha (mismo destino /boton.html). -->
-      <a id="lnkRegistrarGuest" class="btn-secondary" href="#" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
-        <img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" style="width:26px;height:26px;flex-shrink:0;border-radius:50%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(11,124,255,.45));">
-        Solo registrar puntazos
+      <!-- (2026-06-13) Misma jerarquía que el bloque authed:
+           1º Ir al botón · 2º Ver clips · 3º Iniciar sesión. -->
+      <!-- 1º — PRINCIPAL: ir al botón (registrar puntazos, mismo destino /boton.html). -->
+      <a id="lnkRegistrarGuest" class="btn-primary" href="#" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
+        <img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" style="width:30px;height:30px;flex-shrink:0;border-radius:50%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(255,255,255,.45));">
+        Ir al botón
       </a>
+      <!-- 2º — Ver clips (como invitado). -->
+      <a id="lnkInvitado" class="btn-secondary" href="#">🎬 Ver clips</a>
       <button id="btnLogin" class="btn-google" type="button">
         <svg viewBox="0 0 48 48" aria-hidden="true">
           <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.239 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
@@ -1001,11 +1005,22 @@
       window.location.href = "/boton.html" + qs;
       return;
     }
-    // F111-B: modoClips → directo a /lado.html (ver clips ya capturados).
-    // El primer lado de la cancha es el que servimos por default (entrada
-    // viejo no pide elegir lado por UX — internamente todas las canchas
-    // tienen 1 lado salvo Scorpion).
-    if (modoClips || modoCanchas) {
+    // (2026-06-13) modoCanchas = "cambiar cancha" (← Regresar / breadcrumbs de
+    // lado.html, "Cambiar cancha" de boton.html). ANTES caía directo a
+    // /lado.html (clips) y el usuario quedaba atrapado: nunca volvía a la
+    // pantalla con las 3 opciones. Ahora aterriza en la vista READY de entrada
+    // (Ir al botón / Ver clips / Configurar partido) para la cancha elegida.
+    if (modoCanchas) {
+      const qs = "?loc=" + encodeURIComponent(club.id) +
+                 "&can=" + encodeURIComponent(cancha.id) +
+                 "&lado=" + encodeURIComponent(ld.id);
+      window.location.href = "/entrada.html" + qs;
+      return;
+    }
+    // F111-B: modoClips → directo a /lado.html (atajo "solo ver clips" / QR /
+    // redirects legacy de cancha/explorar/locacion). El primer lado de la
+    // cancha es el default (internamente todas tienen 1 lado salvo Scorpion).
+    if (modoClips) {
       const qs = "?loc=" + encodeURIComponent(club.id) +
                  "&can=" + encodeURIComponent(cancha.id) +
                  "&lado=" + encodeURIComponent(ld.id) +

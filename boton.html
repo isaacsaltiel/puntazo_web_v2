@@ -403,6 +403,12 @@ html, body {
     return;
   }
 
+  // (2026-06-13) "← Cambiar cancha" lleva al selector de canchas del club y, al
+  // elegir, aterriza en la pantalla de opciones (Ir al botón / Ver clips /
+  // Configurar) en vez de volver directo al botón. Reusa modo=canchas (igual
+  // que el "← Regresar" de lado.html) para no quedar atrapado en modo botón.
+  $btnEdit.href = '/entrada.html?modo=canchas&loc=' + encodeURIComponent(LOC);
+
   // F111-C: número de cancha (1..N) → icono B{n}.png como fondo. Mapeo 1..8
   // con módulo para canchas >8 (mismo criterio que entrada.html).
   const _canMatch = CAN.match(/(\d+)/);
