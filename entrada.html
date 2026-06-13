@@ -236,6 +236,29 @@
     letter-spacing: 0.3px;
   }
 
+  /* (2026-06-13) Link sutil "Cambiar cancha" en la pantalla de opciones. */
+  .entrada-change-court {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: rgba(234, 242, 255, 0.80);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .entrada-change-court:hover {
+    background: rgba(11, 124, 255, 0.16);
+    border-color: rgba(11, 124, 255, 0.45);
+    color: #fff;
+  }
+
   .entrada-actions {
     display: flex;
     flex-direction: column;
@@ -611,6 +634,10 @@
       <div class="entrada-title">📍 Estás en</div>
       <div id="locName" class="entrada-loc-name">…</div>
       <div id="locSub" class="entrada-sub"></div>
+      <!-- (2026-06-13) Link para cambiar de cancha desde la pantalla de
+           opciones. Va a modo=canchas → al elegir cancha vuelve aquí mismo
+           (a las 3 opciones) con la nueva cancha. -->
+      <a id="lnkCambiarCancha" class="entrada-change-court" href="#">↺ Cambiar cancha</a>
     </div>
 
     <div id="actionsAuthed" class="entrada-actions" style="display:none">
@@ -1191,6 +1218,13 @@
     if ($lnkHerramientas) {
       $lnkHerramientas.href = "/herramientas.html?loc=" + encodeURIComponent(loc) +
                               "&can=" + encodeURIComponent(can);
+    }
+
+    // (2026-06-13) "Cambiar cancha" → selector de canchas del club actual.
+    // modo=canchas regresa a ESTA pantalla de opciones con la nueva cancha.
+    const $lnkCambiarCancha = document.getElementById("lnkCambiarCancha");
+    if ($lnkCambiarCancha) {
+      $lnkCambiarCancha.href = "/entrada.html?modo=canchas&loc=" + encodeURIComponent(loc);
     }
 
     // Etapa 16.4 F44: mostrar el contenedor INMEDIATAMENTE (header + bg cancha)
