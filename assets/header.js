@@ -66,8 +66,13 @@
       .pz-auth-dropdown-sep{height:1px;background:rgba(255,255,255,.08);margin:4px 0;}
       .pz-auth-slot--landing{margin-left:6px;}
 
+      /* ── Grupo izquierdo: ☰ + logo juntos (☰ a la izquierda, convencional) ── */
+      .pz-hdr-left{display:flex;align-items:center;gap:8px;}
+
       /* ── Nav derecho (internal) ── */
-      .pz-nav-right--internal{position:absolute;right:56px;top:50%;transform:translateY(-50%);z-index:20;display:flex;align-items:center;gap:.6rem;}
+      /* right:14px ahora que el ☰ vive a la IZQUIERDA (antes 56px reservaba
+         espacio para el ☰ a la derecha). */
+      .pz-nav-right--internal{position:absolute;right:14px;top:50%;transform:translateY(-50%);z-index:20;display:flex;align-items:center;gap:.6rem;}
 
       /* ── CTA: Encuentra tus clips (azul) ── */
       .pz-clips-cta{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:.6rem 1rem;border-radius:999px;text-decoration:none;font-weight:800;font-size:.82rem;line-height:1;color:#fff;white-space:nowrap;background:linear-gradient(135deg,#0B7CFF,#004FC8);border:1px solid rgba(11,124,255,.55);box-shadow:0 0 20px rgba(0,79,200,.25),0 6px 18px rgba(0,0,0,.18);transition:all .18s ease;}
@@ -105,7 +110,7 @@
       .pz-nav-right--embedded{display:flex;align-items:center;gap:.6rem;}
 
       @media(max-width:860px){
-        .pz-nav-right--internal{right:52px;}
+        .pz-nav-right--internal{right:12px;}
         .pz-auth-login-btn{padding:0.55rem 0.85rem;font-size:0.76rem;}
         .pz-auth-avatar{width:34px;height:34px;}
         .pz-auth-dropdown{right:-8px;min-width:210px;}
@@ -113,12 +118,47 @@
         .site-header--embedded{padding:0.62rem 12px;}
         .pz-back-btn{width:36px;height:36px;}
       }
+      /* (2026-06-13) La accion nuclear NUNCA se oculta en mobile (antes
+         display:none <640px). Colapsa a icono-only manteniendo tap >=44px. */
       @media(max-width:640px){
-        .pz-phone-cta{display:none;}
+        .pz-phone-cta .pz-pcta-label{display:none;}
+        .pz-phone-cta{padding:0;min-width:44px;min-height:44px;gap:0;}
       }
       @media(max-width:480px){
         .pz-clips-cta .cta-label{display:none;}
       }
+
+      /* ── (2026-06-13) Burger = navegacion de app. En paginas internas el
+         burger es un DROPDOWN consistente en TODOS los tamanos (no inline en
+         desktop) para no saturar la barra. Scoped a .site-header => no afecta
+         la landing (que usa <nav> con .nav-links inline). ── */
+      .site-header .menu-toggle{display:block !important;}
+      .site-header #nav-menu.navbar{
+        display:none !important; position:fixed !important;
+        top:58px; left:0; right:0; flex-direction:column !important;
+        align-items:stretch !important; gap:0 !important;
+        background:rgba(5,9,20,0.97);
+        border-bottom:1px solid rgba(255,255,255,0.08);
+        box-shadow:0 18px 40px rgba(0,0,0,0.45);
+        padding:6px 0 !important; z-index:120;
+        max-height:80vh; overflow:auto;
+      }
+      .site-header #nav-menu.navbar.show{display:flex !important;}
+      .site-header #nav-menu.navbar a{
+        padding:0.85rem 1.25rem !important;
+        border-bottom:1px solid rgba(255,255,255,0.05) !important;
+        font-size:1rem !important; font-weight:700 !important;
+        white-space:nowrap; color:#eaf2ff !important;
+      }
+      .site-header #nav-menu.navbar a:hover{background:rgba(255,255,255,0.06);}
+      /* Items de marketing (Inicio / Para clubs): atenuados, al fondo. */
+      .site-header #nav-menu.navbar a.pz-nav-mkt{
+        color:rgba(234,242,255,0.55) !important; font-weight:600 !important;
+        border-top:1px solid rgba(255,255,255,0.06);
+      }
+      .site-header #nav-menu.navbar a.pz-nav-mkt + a.pz-nav-mkt{border-top:none;}
+      /* Accion (Registrar partido): acento verde-pelota para distinguir de nav. */
+      .site-header #nav-menu.navbar a.pz-nav-action{color:#c8e835 !important;}
     `;
     document.head.appendChild(style);
   }
@@ -131,7 +171,7 @@
       <a href="/entrada.html?modo=boton" target="_blank" rel="noopener"
          class="pz-phone-cta"
          onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'header_phone_button'});}catch(e){}">
-        <span class="pz-pcta-ico">P</span> USAR BOTÓN
+        <span class="pz-pcta-ico">P</span> <span class="pz-pcta-label">USAR BOTÓN</span>
       </a>`;
   }
 
@@ -223,21 +263,52 @@
     // Internal
     root.innerHTML = `
       <header class="site-header">
-        <a href="/" class="logo-link">
-          <img src="/assets/img/P_blanca_transparente.png" alt="Puntazo" onerror="this.style.display='none'">
-        </a>
-        <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Abrir menú" onclick="window.toggleNavMenu(event)">☰</button>
-        <nav class="navbar" id="nav-menu">
-          <a href="/">Inicio</a>
-          <a href="/#clubs">Para clubs</a>
-        </nav>
+        <div class="pz-hdr-left">
+          <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Abrir menú" onclick="window.toggleNavMenu(event)">☰</button>
+          <a href="/" class="logo-link">
+            <img src="/assets/img/P_blanca_transparente.png" alt="Puntazo" onerror="this.style.display='none'">
+          </a>
+        </div>
+        <nav class="navbar" id="nav-menu"></nav>
         <div class="pz-nav-right pz-nav-right--internal">
           ${getPhoneButtonCTA()}
-          ${getClipsCTA()}
           <div class="pz-auth-slot" data-auth-slot></div>
         </div>
       </header>`;
+    // (2026-06-13) El burger (#nav-menu) ahora aloja la NAVEGACION DE APP,
+    // poblada por estado de auth. Render inicial con la version anonima; al
+    // resolver auth, updateNavUI() la repuebla con la version logueada.
+    renderNavMenu(null);
     try { window.dispatchEvent(new CustomEvent("puntazo:header-rendered")); } catch {}
+  }
+
+  // ── Burger = navegacion de app (separada de cuenta y de marketing) ──
+  // Determinacion 2026-06-13 (analisis multi-agente IA/UX): la barra lleva 1
+  // accion (Usar boton); el burger lleva los DESTINOS de app; el avatar solo
+  // cuenta. Anonimo vs logueado cambia el set. Items "Mis X" van juntos aqui.
+  function navItemsFor(user) {
+    if (!user) {
+      return [
+        '<a href="/entrada.html" onclick="closeMenu()">▶ Ver mis clips</a>',
+        '<a class="pz-nav-mkt" href="/" onclick="closeMenu()">🏠 Inicio</a>',
+        '<a class="pz-nav-mkt" href="/#clubs" onclick="closeMenu()">🏢 Para clubs</a>',
+      ].join("");
+    }
+    return [
+      '<a href="/entrada.html" onclick="closeMenu()">▶ Jugar / ver mis clips</a>',
+      '<a href="mis-clips.html" onclick="closeMenu()">🎬 Mis clips</a>',
+      '<a href="mis-partidos.html" onclick="closeMenu()">🎾 Mis partidos</a>',
+      '<a href="mi-nivel.html" onclick="closeMenu()">📊 Mi nivel</a>',
+      '<a href="amigos.html" onclick="closeMenu()">🤝 Amigos</a>',
+      '<a href="grupos.html" onclick="closeMenu()">🏆 Grupos y ligas</a>',
+      '<a class="pz-nav-action" href="registrar-min.html" onclick="closeMenu()">➕ Registrar partido</a>',
+      '<a class="pz-nav-mkt" href="/" onclick="closeMenu()">🏠 Inicio</a>',
+      '<a class="pz-nav-mkt" href="/#clubs" onclick="closeMenu()">🏢 Para clubs</a>',
+    ].join("");
+  }
+  function renderNavMenu(user) {
+    const nav = document.getElementById("nav-menu");
+    if (nav) nav.innerHTML = navItemsFor(user);
   }
 
   function setupCloseMenuHelper() {
@@ -312,6 +383,7 @@
       if (btn) btn.addEventListener("click", function () {
         if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === "function") window.PuntazoAuth.signIn();
       });
+      renderNavMenu(null); // burger anonimo (ver clips / inicio / para clubs)
       return;
     }
 
@@ -327,7 +399,7 @@
 
     slot.innerHTML = `
       <div class="pz-auth-menu-wrap">
-        <button type="button" class="pz-auth-avatar-btn" data-auth-avatar aria-label="Abrir menú de perfil">
+        <button type="button" class="pz-auth-avatar-btn" data-auth-avatar aria-label="Abrir menú de cuenta">
           ${avatar}
         </button>
         <div class="pz-auth-dropdown" data-auth-dropdown>
@@ -335,16 +407,12 @@
             <div class="pz-auth-dropdown-name">${safeName}</div>
             <div class="pz-auth-dropdown-email">${safeEmail}</div>
           </div>
+          <!-- (2026-06-13) Menu del avatar = CUENTA PURA. La navegacion de app
+               (Mis clips/partidos/nivel, Amigos, Grupos, Registrar) se movio al
+               burger ☰. Aqui solo vive lo que es "mi cuenta/sesion/rol". -->
           <a href="perfil.html">👤 Mi perfil</a>
-          <a href="mis-partidos.html">🎾 Mis partidos</a>
-          <a href="mis-clips.html">🎬 Mis clips</a>
-          <a href="mi-nivel.html">📊 Mi nivel</a>
+          ${isAdmin ? '<a href="admin.html">📊 Dashboard admin</a>' : ""}
           <div class="pz-auth-dropdown-sep" role="separator"></div>
-          <a href="amigos.html">🤝 Amigos</a>
-          <a href="grupos.html">🏆 Grupos y ligas</a>
-          <a href="registrar-min.html">➕ Registrar partido</a>
-          <div class="pz-auth-dropdown-sep" role="separator"></div>
-          ${isAdmin ? '<a href="admin.html">📊 Dashboard admin</a><div class="pz-auth-dropdown-sep" role="separator"></div>' : ""}
           <button type="button" data-auth-logout>Cerrar sesión</button>
         </div>
       </div>`;
@@ -367,6 +435,8 @@
         if (window.PuntazoAuth && typeof window.PuntazoAuth.signOut === "function") await window.PuntazoAuth.signOut();
       });
     }
+
+    renderNavMenu(user); // burger logueado (destinos de app)
   };
 
   // ── Auth bootstrap ──────────────────────────────────────────
