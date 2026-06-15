@@ -280,6 +280,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
     <button class="tab-btn" data-tab="players">🥷 Jugadores</button>
     <button class="tab-btn" data-tab="users">👤 Usuarios</button>
     <button class="tab-btn" data-tab="recent">🕐 Reciente</button>
+    <button class="tab-btn" data-tab="stream">📡 Streaming</button>
     <button class="tab-btn" data-tab="config">⚙️ Configuración</button>
   </div>
 
@@ -289,6 +290,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
   <div id="tab-players"   class="tab-pane"></div>
   <div id="tab-users"     class="tab-pane"></div>
   <div id="tab-recent"    class="tab-pane"></div>
+  <div id="tab-stream"    class="tab-pane"></div>
   <div id="tab-config"    class="tab-pane"></div>
 
 </div>
@@ -401,6 +403,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
     if(btn.dataset.tab==='config') renderConfigTab();
+    if(btn.dataset.tab==='stream') startStreamTab(); else stopStreamWatch();
   });
 });
 
@@ -1244,6 +1247,178 @@ function exportCSV(){
     download:`puntazo_historico_${new Date().toISOString().slice(0,10)}.csv`,
   });
   document.body.appendChild(a);a.click();a.remove();
+}
+
+// ════════════════════════════════════════════════════════════
+//  TAB STREAMING — control de YouTube en vivo vía stream_commands
+//  (handoff NUC Interpadel, 2026-06-15). La web escribe el estado
+//  DESEADO (action/titulo); el NUC reconcilia y escribe el estado
+//  REAL (status/youtube_url/...). Listener realtime + writeback.
+// ════════════════════════════════════════════════════════════
+const STREAM_COL='stream_commands';
+let _streamUnsub=null;          // detacher de onSnapshot
+let _streamDocs={};             // docId -> data (estado real del NUC)
+let _streamCanchas=null;        // [{club,clubName,canchaId,canchaName}]
+let _streamShellBuilt=false;
+const _streamTitleEdits={};     // docId -> título en edición (no pisar al teclear)
+
+const STREAM_STATUS={
+  LIVE:        {pill:'pill-green', label:'🔴 EN VIVO'},
+  STARTING:    {pill:'pill-blue',  label:'⏳ Iniciando'},
+  RECONNECTING:{pill:'pill-gold',  label:'↻ Reconectando'},
+  STOPPING:    {pill:'pill-gold',  label:'⏹ Deteniendo'},
+  OFFLINE:     {pill:'pill-muted', label:'○ Offline'},
+  ERROR:       {pill:'pill-red',   label:'⚠️ Error'},
+};
+
+function streamDocId(club,canchaId){ return club+'_'+canchaId; }
+
+async function loadStreamCanchas(){
+  if(_streamCanchas) return _streamCanchas;
+  const res=await fetch('/data/config_locations.json?cb='+Date.now(),{cache:'no-store'});
+  if(!res.ok) throw new Error('config_locations HTTP '+res.status);
+  const j=await res.json();
+  const out=[];
+  (j.locaciones||[]).forEach(loc=>(loc.cancha||[]).forEach(can=>{
+    out.push({club:loc.id,clubName:loc.nombre||loc.id,canchaId:can.id,canchaName:can.nombre||can.id});
+  }));
+  _streamCanchas=out;
+  return out;
+}
+
+async function startStreamTab(){
+  const $pane=document.getElementById('tab-stream');
+  if(!$pane) return;
+  if(!_streamShellBuilt){
+    $pane.innerHTML=`<div class="empty-note">⏳ Cargando canchas…</div>`;
+    try{ await loadStreamCanchas(); renderStreamShell(); }
+    catch(e){ $pane.innerHTML=`<div class="info-box">⚠️ No se pudo cargar config_locations.json: ${esc(e.message)}</div>`; return; }
+  }
+  stopStreamWatch();
+  if(!await waitFB(20)){ return; }
+  const db=window.PuntazoFirebase.db();
+  _streamUnsub=db.collection(STREAM_COL).onSnapshot(snap=>{
+    _streamDocs={};
+    snap.forEach(d=>_streamDocs[d.id]=d.data()||{});
+    applyStreamState();
+  },err=>{
+    console.error('[stream] onSnapshot',err);
+    const $p=document.getElementById('tab-stream');
+    if($p) $p.insertAdjacentHTML('afterbegin',
+      `<div class="info-box">⚠️ Error leyendo stream_commands: ${esc(err.message)}.<br>¿Reglas desplegadas y <code>flags.isAdmin</code> activo en tu cuenta?</div>`);
+  });
+}
+
+function stopStreamWatch(){ if(_streamUnsub){ try{_streamUnsub();}catch(e){} _streamUnsub=null; } }
+
+function renderStreamShell(){
+  const $pane=document.getElementById('tab-stream');
+  if(!$pane||!_streamCanchas) return;
+  const byClub={};
+  _streamCanchas.forEach(c=>{(byClub[c.club]=byClub[c.club]||{name:c.clubName,canchas:[]}).canchas.push(c);});
+  let html=`
+    <div class="info-box">
+      📡 <strong>Streaming en vivo a YouTube.</strong> Cada cancha se controla por
+      Firestore (<code>stream_commands</code>); el NUC del club reacciona en &lt;1s y
+      reporta aquí su estado real. Para transmitir, el NUC debe tener
+      <code>streaming.enabled</code> y la stream key de esa cancha cargada.
+      <div style="margin-top:10px"><button class="btn sm danger" onclick="streamStopAll()">⏹ Detener TODAS</button></div>
+    </div>`;
+  Object.keys(byClub).sort().forEach(club=>{
+    const grp=byClub[club];
+    html+=`<div class="section"><div class="section-title">🏢 ${esc(grp.name)}</div>`;
+    grp.canchas.forEach(c=>{
+      const id=streamDocId(c.club,c.canchaId);
+      const def=`${grp.name} · ${c.canchaName}`;
+      html+=`
+        <div class="cfg-card open" style="margin-bottom:10px">
+          <div class="cfg-card-header" style="cursor:default">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-weight:900">${esc(c.canchaName)}</span>
+              <span class="pill pill-muted" id="sStatus_${id}">○ Offline</span>
+              <span class="pill pill-muted" id="sDesired_${id}">deseado: —</span>
+            </div>
+            <span id="sLink_${id}"></span>
+          </div>
+          <div class="cfg-card-body">
+            <div class="cfg-field-row">
+              <div class="cfg-field" style="flex:3">
+                <label>Título del video (YouTube)</label>
+                <input class="cfg-input" id="streamTitle_${id}" placeholder="${esc(def)}"
+                       value="${esc(def)}" oninput="_streamTitleEdits['${id}']=this.value" />
+              </div>
+              <button class="btn success" onclick="streamStart('${c.club}','${c.canchaId}')">▶ START</button>
+              <button class="btn danger" onclick="streamStop('${c.club}','${c.canchaId}')">⏹ STOP</button>
+            </div>
+            <div id="sMeta_${id}" style="font-size:.72rem;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap"></div>
+          </div>
+        </div>`;
+    });
+    html+=`</div>`;
+  });
+  $pane.innerHTML=html;
+  _streamShellBuilt=true;
+}
+
+function applyStreamState(){
+  if(!_streamShellBuilt||!_streamCanchas) return;
+  _streamCanchas.forEach(c=>{
+    const id=streamDocId(c.club,c.canchaId);
+    const d=_streamDocs[id]||{};
+    const st=STREAM_STATUS[d.status]||STREAM_STATUS.OFFLINE;
+    const $st=document.getElementById('sStatus_'+id);
+    if($st){ $st.className='pill '+st.pill; $st.textContent=st.label; }
+    const $des=document.getElementById('sDesired_'+id);
+    if($des){ const on=d.action==='START'; $des.className='pill '+(on?'pill-blue':'pill-muted'); $des.textContent='deseado: '+(d.action||'—'); }
+    const $lnk=document.getElementById('sLink_'+id);
+    if($lnk) $lnk.innerHTML=d.youtube_url?`<a class="btn sm success" href="${esc(d.youtube_url)}" target="_blank">▶ Ver en vivo</a>`:'';
+    const $meta=document.getElementById('sMeta_'+id);
+    if($meta){
+      const bits=[];
+      if(d.updated_at) bits.push(`Estado: ${esc(fmtStreamTs(d.updated_at))}`);
+      if(d.started_at) bits.push(`Inició: ${esc(d.started_at)}`);
+      if(d.last_error)  bits.push(`<span style="color:#fca5a5">⚠️ ${esc(d.last_error)}</span>`);
+      $meta.innerHTML=bits.map(b=>`<span>${b}</span>`).join('');
+    }
+    // Título: poblar desde el server solo si el admin NO lo está editando.
+    const $t=document.getElementById('streamTitle_'+id);
+    if($t && d.titulo && _streamTitleEdits[id]===undefined && document.activeElement!==$t) $t.value=d.titulo;
+  });
+}
+
+function fmtStreamTs(ts){
+  try{
+    const ms=ts&&ts.seconds?ts.seconds*1000:(ts&&ts.toMillis?ts.toMillis():null);
+    return ms?new Date(ms).toLocaleTimeString('es-MX'):'';
+  }catch(e){ return ''; }
+}
+
+async function streamWrite(club,canchaId,action){
+  if(!await waitFB(20)){ showToast('Firebase no disponible'); return; }
+  const db=window.PuntazoFirebase.db();
+  const id=streamDocId(club,canchaId);
+  const titleEl=document.getElementById('streamTitle_'+id);
+  const titulo=(titleEl&&titleEl.value.trim())||'';
+  const payload={
+    club, cancha:canchaId, action,
+    requested_at:firebase.firestore.FieldValue.serverTimestamp(),
+    requested_by:(window.PuntazoAuth&&window.PuntazoAuth.currentUser&&window.PuntazoAuth.currentUser.email)||'panel_web',
+  };
+  if(titulo) payload.titulo=titulo;
+  try{
+    await db.collection(STREAM_COL).doc(id).set(payload,{merge:true});
+    showToast(action==='START'?`▶ START enviado · ${canchaId}`:`⏹ STOP enviado · ${canchaId}`);
+  }catch(e){ showToast('❌ '+e.message,4500); }
+}
+function streamStart(club,canchaId){ streamWrite(club,canchaId,'START'); }
+function streamStop(club,canchaId){ streamWrite(club,canchaId,'STOP'); }
+
+async function streamStopAll(){
+  if(!confirm('¿Detener TODAS las transmisiones activas?')) return;
+  for(const c of (_streamCanchas||[])){
+    const d=_streamDocs[streamDocId(c.club,c.canchaId)];
+    if(d&&d.action==='START') await streamWrite(c.club,c.canchaId,'STOP');
+  }
 }
 
 // ── Helpers ──

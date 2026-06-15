@@ -503,6 +503,47 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════
+    // (2026-06-15) Streaming en vivo a YouTube — handoff NUC Interpadel
+    // La web admin (flags.isAdmin) escribe el ESTADO DESEADO por cancha
+    // (action/titulo/requested_*). El NUC (Admin SDK, omite reglas) reconcilia
+    // y escribe el ESTADO REAL (status/youtube_url/broadcast_id/updated_*/etc).
+    // Por eso aquí SOLO restringimos la escritura desde la WEB: que solo un
+    // admin pueda mandar START/STOP y que solo toque los campos de comando
+    // (jamás status/youtube_url/updated_*, que son del NUC). Doc por cancha,
+    // id sugerido `<Club>_<CanchaId>` (p.ej. Interpadel_Cancha6).
+    // ════════════════════════════════════════════════════
+    match /stream_commands/{cmdId} {
+      // flags.isAdmin es SERVER-ONLY (ver users/{uid}); lo setea el SA, no el
+      // cliente. .get(k,default) evita error si el user no tiene el map `flags`.
+      function isAdminUser() {
+        return signedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid))
+               .data.get('flags', {}).get('isAdmin', false) == true;
+      }
+      // Solo los campos que la web tiene permitido escribir.
+      function onlyCommandFields() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['club','cancha','action','titulo','requested_at','requested_by']);
+      }
+
+      allow read: if signedIn();
+
+      allow create: if isAdminUser()
+                    && request.resource.data.keys()
+                         .hasOnly(['club','cancha','action','titulo','requested_at','requested_by'])
+                    && request.resource.data.club is string
+                    && request.resource.data.cancha is string
+                    && request.resource.data.action in ['START','STOP'];
+
+      allow update: if isAdminUser()
+                    && onlyCommandFields()
+                    && request.resource.data.action in ['START','STOP'];
+
+      allow delete: if false;
+    }
+
+    // ════════════════════════════════════════════════════
     // Catch-all denegado
     // ════════════════════════════════════════════════════
     match /{document=**} {
