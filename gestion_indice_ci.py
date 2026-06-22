@@ -73,6 +73,20 @@ def generate_public_url(dbx, path):
     return to_direct_dropbox_url(link.url, mode="raw")
 
 
+def find_sibling_poster_url(dbx, mp4_name: str, jpg_by_name: dict):
+    """poster_url para un clip: busca la miniatura hermana <base>.jpg en la MISMA
+    carpeta de Dropbox (convención: la NUC sube CLIP.jpg junto a CLIP.mp4) y le
+    genera su propio link público directo. No se puede derivar de la URL del .mp4
+    porque cada archivo de Dropbox tiene su propio token de share.
+    Aditivo: si no hay jpg hermana, devuelve None y el item no lleva poster_url."""
+    if not mp4_name.endswith(VALID_SUFFIX):
+        return None
+    jpg = jpg_by_name.get((mp4_name[: -len(VALID_SUFFIX)] + ".jpg").lower())
+    if not jpg:
+        return None
+    return generate_public_url(dbx, jpg.path_lower)
+
+
 # ──────────────────────────────────────────
 # GitHub helpers
 # ──────────────────────────────────────────
@@ -154,6 +168,14 @@ def main():
         print(f"[ERROR] No se pudo acceder a {folder_path}: {e}")
         return
 
+    # Índice de miniaturas hermanas (.jpg) por nombre, para emitir poster_url.
+    jpg_by_name = {
+        e.name.lower(): e
+        for e in entries
+        if isinstance(e, dropbox.files.FileMetadata) and e.name.lower().endswith(".jpg")
+    }
+    print(f"[DEBUG] Miniaturas .jpg encontradas: {len(jpg_by_name)}")
+
     cutoff_recientes = now_utc - timedelta(hours=RETENTION_HOURS)
     cutoff_vitrina   = now_utc - timedelta(days=VITRINA_LOOKBACK_DAYS)
 
@@ -197,11 +219,15 @@ def main():
     for entry in recientes_entries:
         url = generate_public_url(dbx, entry.path_lower)
         if url:
-            videos_recientes.append({
+            item = {
                 "nombre": entry.name,
                 "url":    url,
                 "fecha":  parse_fecha_from_nombre(entry.name),
-            })
+            }
+            poster = find_sibling_poster_url(dbx, entry.name, jpg_by_name)
+            if poster:
+                item["poster_url"] = poster
+            videos_recientes.append(item)
         else:
             print(f"[WARN] Sin URL para {entry.name}")
 
@@ -241,11 +267,15 @@ def main():
                 break
             url = generate_public_url(dbx, entry.path_lower)
             if url:
-                videos_vitrina.append({
+                item = {
                     "nombre": entry.name,
                     "url":    url,
                     "fecha":  parse_fecha_from_nombre(entry.name),
-                })
+                }
+                poster = find_sibling_poster_url(dbx, entry.name, jpg_by_name)
+                if poster:
+                    item["poster_url"] = poster
+                videos_vitrina.append(item)
             else:
                 print(f"[WARN] Sin URL vitrina para {entry.name}")
         print(f"[DEBUG] Videos vitrina obtenidos: {len(videos_vitrina)}")
