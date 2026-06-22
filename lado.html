@@ -606,11 +606,12 @@ video.video-preview {
   }
   .pz-mb.continuar:hover { transform: translateY(-1px); border-color: rgba(11,124,255,0.60); }
   .pz-mb.iniciar {
-    background: linear-gradient(135deg, rgba(3,18,48,0.94), rgba(0,79,200,0.60));
-    border-color: rgba(11,124,255,0.45);
+    /* Fully opaque — no hover dependency, legible on phone over any court art. */
+    background: linear-gradient(135deg, #082046, #0b4aa0);
+    border-color: rgba(11,124,255,0.55);
     box-shadow: 0 8px 28px rgba(0,0,0,0.34);
   }
-  .pz-mb.iniciar:hover { transform: translateY(-1px); border-color: rgba(11,124,255,0.62); }
+  .pz-mb.iniciar:hover { transform: translateY(-1px); border-color: rgba(11,124,255,0.75); }
   .pz-mb[disabled], .pz-mb.is-busy { opacity: .65; pointer-events: none; }
   @media (max-width: 480px) {
     #pz-match-banner { margin-top: 60px; margin-left: 12px; margin-right: 12px; }
