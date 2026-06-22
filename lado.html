@@ -606,12 +606,45 @@ video.video-preview {
   }
   .pz-mb.continuar:hover { transform: translateY(-1px); border-color: rgba(11,124,255,0.60); }
   .pz-mb.iniciar {
-    /* Fully opaque — no hover dependency, legible on phone over any court art. */
-    background: linear-gradient(135deg, #082046, #0b4aa0);
-    border-color: rgba(11,124,255,0.55);
-    box-shadow: 0 8px 28px rgba(0,0,0,0.34);
+    /* "Vivo": azul de marca vibrante + glow latente + destello que recorre.
+       Legible sin depender de hover (la página es para teléfono). */
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(120deg, #004FC8 0%, #0B7CFF 62%, #2A93FF 100%);
+    border-color: rgba(140,200,255,0.65);
+    box-shadow: 0 10px 32px rgba(11,124,255,0.42), inset 0 1px 0 rgba(255,255,255,0.20);
+    animation: pzIniciarGlow 3.6s ease-in-out infinite;
   }
-  .pz-mb.iniciar:hover { transform: translateY(-1px); border-color: rgba(11,124,255,0.75); }
+  .pz-mb.iniciar::before {
+    content: "";
+    position: absolute; top: 0; bottom: 0; left: -40%;
+    width: 35%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.30), transparent);
+    transform: skewX(-18deg);
+    z-index: 0;
+    pointer-events: none;
+    animation: pzIniciarShine 4.8s ease-in-out infinite;
+  }
+  .pz-mb.iniciar .pz-mb-text,
+  .pz-mb.iniciar .pz-mb-cta { position: relative; z-index: 1; }
+  .pz-mb.iniciar .pz-mb-cta {
+    background: #fff;
+    border-color: rgba(255,255,255,0.9);
+    color: #004FC8;
+  }
+  .pz-mb.iniciar:hover { transform: translateY(-1px); filter: brightness(1.06); }
+  @keyframes pzIniciarShine {
+    0%        { left: -40%; }
+    55%, 100% { left: 130%; }
+  }
+  @keyframes pzIniciarGlow {
+    0%, 100% { box-shadow: 0 10px 32px rgba(11,124,255,0.38), inset 0 1px 0 rgba(255,255,255,0.20); }
+    50%      { box-shadow: 0 12px 40px rgba(11,124,255,0.60), inset 0 1px 0 rgba(255,255,255,0.24); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pz-mb.iniciar { animation: none; }
+    .pz-mb.iniciar::before { display: none; }
+  }
   .pz-mb[disabled], .pz-mb.is-busy { opacity: .65; pointer-events: none; }
   @media (max-width: 480px) {
     #pz-match-banner { margin-top: 60px; margin-left: 12px; margin-right: 12px; }
