@@ -515,9 +515,13 @@ function createHourFilterUI(videos) {
 }
 
 // ----------------------- preview overlay -----------------------
-function createPreviewOverlay(videoSrc, duration, parentCard) {
+function createPreviewOverlay(videoSrc, duration, parentCard, posterUrl) {
   const preview = document.createElement("video");
   preview.muted = true; preview.playsInline = true; preview.preload = "none";
+  // Portada-imagen ligera (poster): si la NUC ya generó la miniatura, se ve AL INSTANTE
+  // en cualquier dispositivo, sin bajar ni decodificar el video. Cubre el "rectángulo
+  // negro" en redes lentas / ahorro de datos / modo bajo consumo.
+  if (posterUrl) preview.poster = toDropboxDirectFetchUrl(posterUrl);
   // #t=0.2 → el navegador pinta un frame REAL del INICIO del clip como portada.
   // Es barato (solo lee los primeros bytes del archivo) y SIEMPRE se ve algo, aunque
   // el autoplay esté bloqueado o el seek a la acción falle. Antes el único frame era
@@ -559,6 +563,9 @@ function createPreviewOverlay(videoSrc, duration, parentCard) {
 function setupMutualExclusion(list) { list.forEach(v => v.addEventListener("play", () => { list.forEach(o => { if (o !== v) o.pause(); }); })); }
 async function loadPreviewsSequentially(previews) {
   for (const v of previews) {
+    // Con poster-imagen ya hay portada visible: NO bajamos bytes del video para pintar
+    // el frame; el loop de acción se carga solo al hacer scroll (play()). Ahorro real.
+    if (v.poster) continue;
     v.preload = "metadata";
     await new Promise(res => { v.addEventListener("loadedmetadata", res, { once: true }); v.load(); });
   }
@@ -771,13 +778,14 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     const wrap = document.createElement("div"); wrap.className = "video-wrap";
     const real = document.createElement("video");
     real.className = "real"; real.controls = true; real.playsInline = true; real.preload = "metadata"; real.src = entry.url;
+    if (entry.poster_url) real.poster = toDropboxDirectFetchUrl(entry.poster_url);
     real.style.display = "none"; real.style.width = "100%"; real.style.borderRadius = "8px";
     real.addEventListener("play", () => { trackEvent("play_video", gaCtx({ video_name: entry.nombre })); }, { once: true });
     // (2026-06-10) Métrica de reproducciones server-side (video_stats).
     real.addEventListener("play", () => {
       if (window.PZ && PZ.trackVideoView) PZ.trackVideoView(entry.nombre, { club: entry.loc || null, cancha: entry.can || null, lado: entry.lado || null });
     });
-    const preview = createPreviewOverlay(entry.url, entry.duracion || 60, card);
+    const preview = createPreviewOverlay(entry.url, entry.duracion || 60, card, entry.poster_url);
     preview.style.width = "100%"; preview.style.borderRadius = "8px";
     wrap.appendChild(real); wrap.appendChild(preview); card.appendChild(wrap);
 
