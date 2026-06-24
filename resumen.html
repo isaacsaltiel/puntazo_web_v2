@@ -2116,16 +2116,29 @@
         detail.textContent = "Sube el video completo de tu partido (~" + Math.max(1, durMin) + " min).";
       }
 
+      // R7 — Fuente de verdad: match.recordRequested (lo setea el cierre de
+      // mi-partido al encolar la grabación decidida AL INICIO). localStorage
+      // queda como respaldo legacy. Así NO se reofrece el botón si ya se pidió.
       const lsKey = "puntazo_matchfull_" + match.id;
       function alreadyRequested() {
+        if (match && match.recordRequested === true) return true;
         try { return localStorage.getItem(lsKey) === "1"; } catch (_) { return false; }
       }
       function markRequested() {
         try { localStorage.setItem(lsKey, "1"); } catch (_) {}
       }
+
+      // Tag que deja mi-partido al terminar (ok | clamped) para el primer render.
+      let mfTag = null;
+      try { mfTag = sessionStorage.getItem("puntazo_mf_toast_" + match.id); } catch (_) {}
+
       if (alreadyRequested()) {
         label.textContent = "✅ Partido completo solicitado";
         btn.disabled = true;
+        msg.style.display = "block";
+        msg.textContent = "Tu partido completo está en cola. Aparecerá en los clips de la cancha en unos minutos"
+          + (mfTag === "clamped" ? " (últimos " + maxMin + " min)." : ".");
+        try { sessionStorage.removeItem("puntazo_mf_toast_" + match.id); } catch (_) {}
       }
 
       btn.onclick = async function () {
@@ -2139,6 +2152,8 @@
             matchId: match.id, startAt: match.startedAt, endAt: match.endedAt,
           });
           markRequested();
+          // Persistir la intención también en el doc (fuente de verdad única).
+          try { await window.PuntazoMatches.update(match.id, { recordRequested: true }); } catch (_) {}
           label.textContent = "✅ Partido completo solicitado";
           msg.style.display = "block";
           msg.textContent = "Tu partido se está procesando. Aparecerá en los clips de la cancha en unos minutos"

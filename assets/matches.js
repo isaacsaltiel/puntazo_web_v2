@@ -48,6 +48,16 @@
     return v.trim();
   }
 
+  // ¿El club soporta grabar el partido completo (source=match_full)? Se delega
+  // en PuntazoPulses (pulses.js) para tener UNA sola lista de clubs. matches.js
+  // NO depende duro de pulses.js: si no está cargado, retorna false.
+  function canRecordMatchSafe(loc) {
+    try {
+      return !!(window.PuntazoPulses && typeof window.PuntazoPulses.canRecordMatch === "function"
+        && window.PuntazoPulses.canRecordMatch(loc));
+    } catch (_) { return false; }
+  }
+
   // -------- schema helpers (Etapa 15) ----------------------------------
   // Mapeo legacy: array plano de 4 slots → posiciones 0-1 son Equipo 1,
   // posiciones 2-3 son Equipo 2 (invariante de Etapa 6.5, ahora soft).
@@ -126,6 +136,8 @@
     out.modo = MODOS_VALIDOS.includes(data.modo) ? data.modo : "partido_3";
     out.deporte = DEPORTES_VALIDOS.includes(data.deporte) ? data.deporte : "padel";
     out.notas = sanitizeNotas(data.notas);
+    out.recordFull = !!data.recordFull;
+    out.recordRequested = !!data.recordRequested;
     return out;
   }
 
@@ -407,8 +419,16 @@
           ? { team1: Number(m.current.tiebreak.team1) || 0, team2: Number(m.current.tiebreak.team2) || 0 }
           : null,
       };
+      // PICKLEBALL (modo pickle_*): los puntos del juego en curso son ENTEROS
+      // crudos (0,1,2,…,11+). NO pasan por _normalizePoint (que colapsaría
+      // cualquier valor ≠ 15/30/40/AD a 0). Campos propios para no chocar con
+      // la ruta pádel. Solo se copian si existen (partidos pádel no los llevan).
+      if (m.current.team1PicklePoints != null) out.current.team1PicklePoints = Number(m.current.team1PicklePoints) || 0;
+      if (m.current.team2PicklePoints != null) out.current.team2PicklePoints = Number(m.current.team2PicklePoints) || 0;
     }
     if (typeof m.goldenPoint === "boolean") out.goldenPoint = m.goldenPoint;
+    // PICKLEBALL: puntos para ganar un juego (default 11; torneos 15/21).
+    if (typeof m.target === "number") out.target = m.target;
     if (m.ganador === "team1" || m.ganador === "team2") out.ganador = m.ganador;
     if (typeof m.modo === "string") out.modo = m.modo;
     if (Array.isArray(m.history)) {
@@ -450,6 +470,12 @@
       goldenPoint: !!o.goldenPoint,
     };
     if (typeof o.modo === "string" && MODOS_VALIDOS.includes(o.modo)) m.modo = o.modo;
+    // PICKLEBALL: inicializa puntos crudos del juego en curso + target (a 11).
+    if (PICKLE_MODOS.indexOf(m.modo) >= 0) {
+      m.current.team1PicklePoints = 0;
+      m.current.team2PicklePoints = 0;
+      m.target = Number(o.target) || PICKLE_TARGET_DEFAULT;
+    }
     return m;
   }
 
@@ -475,6 +501,20 @@
     if (modo === "partido_5") return 3;
     if (modo === "partido_3") return 2;
     return null; // reta/libre/otros: el caller decide
+  }
+
+  // ── Pickleball (live) ──────────────────────────────────────────────────
+  // El marcador en vivo de pickleball reusa el shape `marcador`, pero el
+  // juego en curso se trackea con enteros crudos en current.team{1,2}PicklePoints
+  // y cada `sets[]` cerrado es un JUEGO a 11 (gana por 2). NO hay 15/30/40,
+  // games, ni tiebreak. Scoring "rally-friendly": cada +PUNTO suma 1 al equipo
+  // que ganó el rally (el marcador NO arbitra side-out ni el n° de servidor).
+  function _isPickle(m) {
+    return PICKLE_MODOS.indexOf(m && m.modo) >= 0;
+  }
+  // Juegos ganados que cierran el partido: pickle_3 → 2, pickle_1 → 1.
+  function _pickleGamesTarget(modo) {
+    return modo === "pickle_1" ? 1 : 2;
   }
 
   // F115: duración máxima esperada por modo. Después de esto el partido
@@ -717,6 +757,79 @@
     return { matchClosed: matchClosed };
   }
 
+  // _applyPicklePoint: suma 1 punto al `winner` en un partido de pickleball.
+  // Cierra el juego al llegar a `target` (default 11) con diferencia ≥ 2, y
+  // cierra el partido al alcanzar los juegos necesarios (pickle_3 → 2, pickle_1
+  // → 1). La forma del `op` es idéntica a la de _applyPoint para que el undo
+  // (undoLastPoint/undoLastGame) funcione SIN cambios. Mutates m.
+  function _applyPicklePoint(m, winner) {
+    if (!m.current) m.current = { team1PicklePoints: 0, team2PicklePoints: 0, servingTeam: "team1" };
+    const target = Number(m.target) || PICKLE_TARGET_DEFAULT;
+    const op = {
+      type: "point",
+      winner: winner,
+      before: {
+        current: Object.assign({}, m.current),
+        setsBefore: m.sets ? m.sets.length : 0,
+        ganadorBefore: m.ganador || null,
+      },
+    };
+    m.current[winner + "PicklePoints"] = Number(m.current[winner + "PicklePoints"] || 0) + 1;
+    const a = Number(m.current.team1PicklePoints) || 0;
+    const b = Number(m.current.team2PicklePoints) || 0;
+    const max = Math.max(a, b), diff = Math.abs(a - b);
+    // Guard de seguridad (alineado con cellMax del modal): nunca pasa de 30.
+    if ((max >= target && diff >= 2) || max >= 30) {
+      _closePickleGame(m, a, b, op);
+    }
+    _pushHistory(m, op);
+    return op;
+  }
+
+  // _closePickleGame: empuja {a,b} como juego cerrado a sets[], reinicia el
+  // juego, alterna el saque, y marca ganador del partido si corresponde.
+  function _closePickleGame(m, a, b, op) {
+    if (!Array.isArray(m.sets)) m.sets = [];
+    m.sets.push({ team1: Number(a) || 0, team2: Number(b) || 0 });
+    op.setClosed = true;
+    const prevServe = (m.current && m.current.servingTeam) || "team1";
+    m.current = {
+      team1PicklePoints: 0,
+      team2PicklePoints: 0,
+      servingTeam: _otherTeam(prevServe),
+    };
+    // _countSetsWon cuenta por a>b; con juegos {11,7} cuenta JUEGOS ganados.
+    const counted = _countSetsWon(m.sets);
+    const need = _pickleGamesTarget(m.modo);
+    if (counted.t1 >= need) { m.ganador = "team1"; op.matchClosed = true; }
+    else if (counted.t2 >= need) { m.ganador = "team2"; op.matchClosed = true; }
+  }
+
+  // _applyPickleGameWin: atajo "+JUEGO" en pickleball. Cierra el juego en curso
+  // a favor de `team` con un score VÁLIDO (≥target, diff≥2) — nunca {6,N} que
+  // validatePickleGame marcaría incompleto y nunca contaría. Mutates m.
+  function _applyPickleGameWin(m, team) {
+    if (!m.current) m.current = { team1PicklePoints: 0, team2PicklePoints: 0, servingTeam: "team1" };
+    const target = Number(m.target) || PICKLE_TARGET_DEFAULT;
+    let a = Number(m.current.team1PicklePoints) || 0;
+    let b = Number(m.current.team2PicklePoints) || 0;
+    if (team === "team1") { a = Math.max(a, target); if (a - b < 2) b = a - 2; }
+    else                  { b = Math.max(b, target); if (b - a < 2) a = b - 2; }
+    if (a < 0) a = 0; if (b < 0) b = 0;
+    const op = {
+      type: "forceGame",
+      winner: team,
+      before: {
+        current: Object.assign({}, m.current),
+        setsBefore: m.sets ? m.sets.length : 0,
+        ganadorBefore: m.ganador || null,
+      },
+    };
+    _closePickleGame(m, a, b, op);
+    _pushHistory(m, op);
+    return op;
+  }
+
   // nextPointWinner: API pública. Devuelve nuevo marcador (clon) tras
   // aplicar +1 punto al equipo ganador. NO muta el input.
   function nextPointWinner(marcador, winnerTeam, opts) {
@@ -727,7 +840,9 @@
     const m = ensureLiveCurrent(marcador);
     if (typeof o.modo === "string" && MODOS_VALIDOS.includes(o.modo)) m.modo = o.modo;
     if (typeof o.goldenPoint === "boolean") m.goldenPoint = o.goldenPoint;
+    if (o.target != null) m.target = Number(o.target) || PICKLE_TARGET_DEFAULT;
     if (m.ganador) return m; // partido terminado: no-op
+    if (_isPickle(m)) { _applyPicklePoint(m, winnerTeam); return m; }
     _applyPoint(m, winnerTeam, !!m.goldenPoint);
     return m;
   }
@@ -770,6 +885,9 @@
     }
     const m = ensureLiveCurrent(marcador);
     if (m.ganador) return m;
+    // Pickleball: "+JUEGO" cierra el juego en curso (no aplica la lógica de
+    // games 6/7 del pádel, que nunca cerraría un juego a 11).
+    if (_isPickle(m)) { _applyPickleGameWin(m, team); return m; }
     const op = {
       type: "forceGame",
       winner: team,
@@ -893,6 +1011,7 @@
       m.current.team1Points !== 0 || m.current.team2Points !== 0 ||
       m.current.tiebreak
     );
+    const pickle = _isPickle(m);
     return {
       modo: m.modo || null,
       goldenPoint: !!m.goldenPoint,
@@ -904,6 +1023,16 @@
       inProgress: !!inProgress,
       pointsLabelT1: pointsLabel(m.current.team1Points),
       pointsLabelT2: pointsLabel(m.current.team2Points),
+      // PICKLEBALL: el render usa estos campos en lugar de games/sets/15-30-40.
+      // gamesWon = juegos a 11 ganados (= setsWon, los sets[] cerrados);
+      // picklePoints = puntos crudos del juego en curso; target = 11 por default.
+      isPickle: pickle,
+      gamesWon: counted,
+      picklePoints: {
+        t1: Number(m.current && m.current.team1PicklePoints) || 0,
+        t2: Number(m.current && m.current.team2PicklePoints) || 0,
+      },
+      target: Number(m.target) || PICKLE_TARGET_DEFAULT,
     };
   }
 
@@ -1028,6 +1157,11 @@
       marcador: validateMarcador(o.marcadorInicial),
       jugadores: sanitizeJugadores(o.jugadores),
       clipCount: 0,
+      // R7 — "Grabar partido completo": intención decidida AL INICIO. Solo se
+      // honra si el club soporta match_full (canRecordMatchSafe). recordRequested
+      // se setea cuando el cierre del partido encola la grabación (idempotencia).
+      recordFull: canRecordMatchSafe(loc) ? !!o.recordFull : false,
+      recordRequested: false,
       createdAt: FV().serverTimestamp(),
       updatedAt: FV().serverTimestamp(),
     };
@@ -1061,6 +1195,10 @@
     if (o.notas !== undefined) {
       upd.notas = sanitizeNotas(o.notas);
     }
+    // R7: recordFull (apagar/encender a mitad) y recordRequested (lo setea el
+    // cierre tras encolar la grabación, para no duplicar).
+    if (o.recordFull !== undefined) upd.recordFull = !!o.recordFull;
+    if (o.recordRequested !== undefined) upd.recordRequested = !!o.recordRequested;
     await ref.update(upd);
   }
 

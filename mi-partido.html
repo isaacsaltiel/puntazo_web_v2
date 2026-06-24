@@ -613,6 +613,61 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
+  /* ── R7 — "Grabar partido completo": checkbox de setup + badge en curso ── */
+  .mp-recordfull {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(11, 124, 255, .10);
+    border: 1px solid rgba(11, 124, 255, .40);
+    cursor: pointer;
+  }
+  .mp-recordfull input[type="checkbox"] {
+    width: 20px; height: 20px;
+    margin: 1px 0 0;
+    accent-color: #0b7cff;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .mp-recordfull-txt { display: flex; flex-direction: column; gap: 2px; }
+  .mp-recordfull-title { font-size: 0.92rem; font-weight: 800; color: #d4e8ff; line-height: 1.2; }
+  .mp-recordfull-desc { font-size: 0.78rem; font-weight: 600; color: rgba(207, 226, 255, .72); line-height: 1.3; }
+
+  .mp-recordfull-badge {
+    margin: 0 0 12px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(240,104,69,.18), rgba(240,104,69,.06));
+    border: 1px solid rgba(240,104,69,.50);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+  }
+  .mp-rfb-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #f0463c; flex-shrink: 0;
+    box-shadow: 0 0 0 0 rgba(240,70,60,.6);
+    animation: mpRfbPulse 1.4s ease-out infinite;
+  }
+  .mp-rfb-txt { flex: 1; min-width: 140px; font-size: 0.84rem; font-weight: 800; color: rgba(255,235,220,.95); }
+  .mp-rfb-stop {
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.30);
+    color: #fff; font-family: inherit; font-size: 0.76rem; font-weight: 700;
+    padding: 6px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap;
+    transition: background .15s;
+  }
+  .mp-rfb-stop:hover { background: rgba(255,255,255,.20); }
+  @keyframes mpRfbPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(240,70,60,.55); }
+    70%  { box-shadow: 0 0 0 7px rgba(240,70,60,0); }
+    100% { box-shadow: 0 0 0 0 rgba(240,70,60,0); }
+  }
+
   /* ── Banner de éxito post-terminar ── */
   .mp-success-banner {
     display: none;
@@ -3280,6 +3335,16 @@
       <button type="button" class="mp-modo-btn" data-modo="reta">Reta<span class="desc">Sin sets, solo ganador</span></button>
       <button type="button" class="mp-modo-btn" data-modo="libre">Libre<span class="desc">Cuenta de games</span></button>
     </div>
+
+    <!-- R7 — Grabar partido completo: intención decidida AL INICIO. Solo
+         visible si el club soporta match_full (lo muestra el JS de nueva). -->
+    <label id="nuevaRecordFullWrap" class="mp-recordfull" style="display:none">
+      <input type="checkbox" id="nuevaRecordFull" checked />
+      <span class="mp-recordfull-txt">
+        <span class="mp-recordfull-title">🎥 Grabar el partido completo</span>
+        <span class="mp-recordfull-desc">Lo guardamos solo y lo verás al terminar — no tienes que hacer nada más.</span>
+      </span>
+    </label>
   </div>
 
   <div id="mpContent" style="display:none">
@@ -3317,6 +3382,14 @@
     <!-- Etapa 16.4 F9: bloque mpCard de ubicación (loc/cancha/lado) eliminado.
          El nombre del lugar se infiere internamente para asignar el fondo
          de la cancha (F12), pero ya no se muestra al usuario. -->
+
+    <!-- R7 — Badge "grabando partido completo". Visible solo si el partido tiene
+         recordFull y el usuario es el dueño. Tocar "Dejar de grabar" lo apaga. -->
+    <div id="mpRecordFullBadge" class="mp-recordfull-badge" style="display:none">
+      <span class="mp-rfb-dot" aria-hidden="true"></span>
+      <span class="mp-rfb-txt">🎥 Grabando partido completo</span>
+      <button id="mpRecordFullStop" type="button" class="mp-rfb-stop">Dejar de grabar</button>
+    </div>
 
     <!-- Etapa 16.4 F2/F72/F75: botón "Pedir Puntazo" — imagen rectangular
          boton_P_rect.jpg (texto + P integrados, fondo arreglado). -->
@@ -5011,6 +5084,36 @@
       teardownLive();
     }
 
+    // R7 — Badge "grabando partido completo": solo dueño, partido activo y con
+    // recordFull. Se apaga al terminar o si el dueño toca "Dejar de grabar".
+    try {
+      const $rfBadge = document.getElementById("mpRecordFullBadge");
+      if ($rfBadge) {
+        const showBadge = isActive && currentViewMode === "owner" && !!currentMatch.recordFull;
+        $rfBadge.style.display = showBadge ? "flex" : "none";
+        const $rfStop = document.getElementById("mpRecordFullStop");
+        if ($rfStop && !$rfStop.dataset.wired) {
+          $rfStop.dataset.wired = "1";
+          $rfStop.addEventListener("click", async function () {
+            if (!currentMatch || !currentMatch.id) return;
+            if (!window.confirm("¿Dejar de grabar el partido completo? Seguirás capturando puntazos sueltos.")) return;
+            $rfStop.disabled = true;
+            try {
+              await window.PuntazoMatches.update(currentMatch.id, { recordFull: false });
+              currentMatch.recordFull = false;
+              $rfBadge.style.display = "none";
+              showToast("🎥 Grabación de partido completo desactivada.", "ok", 2400);
+            } catch (e) {
+              console.error("[mi-partido R7] stop recordFull failed", e);
+              showToast("No se pudo desactivar la grabación.", "bad", 2600);
+            } finally {
+              $rfStop.disabled = false;
+            }
+          });
+        }
+      }
+    } catch (_) {}
+
     // Etapa 15.5 — cancha principal SIEMPRE visible + claims sub
     renderMainCourt();
     startClaims();
@@ -5833,6 +5936,10 @@
         await window.PuntazoMatches.end(matchId, opts);
       }
 
+      // R7: si se decidió grabar el partido completo, encólalo ahora (con la
+      // ventana real startedAt..endedAt del doc fresco). Best-effort.
+      await maybeRequestMatchFull(matchId);
+
       closeModal();
       $modalSave.disabled = false;
       $modalSave.textContent = "Guardar y terminar";
@@ -6058,6 +6165,14 @@
           opts.deporte = PuntazoClubs.sportForLoc(newLoc);
         }
       } catch (_) {}
+      // R7: intención "grabar partido completo" (solo si la casilla es visible).
+      try {
+        const $rfWrap = document.getElementById("nuevaRecordFullWrap");
+        const $rf = document.getElementById("nuevaRecordFull");
+        if ($rfWrap && $rfWrap.style.display !== "none" && $rf) {
+          opts.recordFull = !!$rf.checked;
+        }
+      } catch (_) {}
       if (Array.isArray(jugadores) && jugadores.length > 0) opts.jugadores = jugadores;
       const newId = await window.PuntazoMatches.create(opts);
       // Reemplaza la URL para que F5 no recree
@@ -6205,6 +6320,12 @@
         const sport = (window.PuntazoClubs && PuntazoClubs.sportForLoc)
           ? PuntazoClubs.sportForLoc(newLoc) : "padel";
         applyModoButtonsForSport("nueva", sport);
+      } catch (_) {}
+      // R7: ofrecer "Grabar partido completo" solo si el club soporta match_full.
+      try {
+        const $rf = document.getElementById("nuevaRecordFullWrap");
+        const canRec = !!(window.PuntazoPulses && PuntazoPulses.canRecordMatch && PuntazoPulses.canRecordMatch(newLoc));
+        if ($rf) $rf.style.display = canRec ? "flex" : "none";
       } catch (_) {}
       // Etapa 16.4 F32: bg de cancha también en esta pantalla intermedia
       applyCourtBackgroundFromCanParam();
@@ -6893,6 +7014,37 @@
     }, ms);
   }
 
+  // -------- R7 · grabación de partido completo --------
+  // maybeRequestMatchFull(matchId): si el partido tiene recordFull, encola la
+  // grabación del partido completo (source=match_full) al cerrar. Lee el doc
+  // FRESCO porque startedAt/endedAt son serverTimestamp (evita ventana nula y
+  // skew de reloj cliente/NVR). Idempotente: el client_pulse_id ya es
+  // determinístico (PLS_M_<matchId>) y marcamos recordRequested para que
+  // resumen.html no reofrezca el botón manual. Best-effort: NUNCA rompe el
+  // cierre del partido. Devuelve "ok" | "clamped" | null.
+  async function maybeRequestMatchFull(matchId) {
+    try {
+      if (!matchId || !window.PuntazoPulses || typeof PuntazoPulses.canRecordMatch !== "function"
+          || typeof PuntazoPulses.requestMatchRecording !== "function") return null;
+      const fresh = await window.PuntazoMatches.get(matchId);
+      if (!fresh || !fresh.recordFull || fresh.recordRequested) return null;
+      if (!PuntazoPulses.canRecordMatch(fresh.loc)) return null;
+      if (!fresh.startedAt || !fresh.endedAt) return null;
+      const r = await PuntazoPulses.requestMatchRecording({
+        loc: fresh.loc, can: fresh.can, lado: fresh.lado, matchId: matchId,
+        startAt: fresh.startedAt, endAt: fresh.endedAt,
+      });
+      try { await window.PuntazoMatches.update(matchId, { recordRequested: true }); } catch (_) {}
+      const tag = (r && r.clamped) ? "clamped" : "ok";
+      try { sessionStorage.setItem("puntazo_mf_toast_" + matchId, tag); } catch (_) {}
+      return tag;
+    } catch (e) {
+      if (e && e.code === "match_too_short") return null;
+      console.warn("[mi-partido R7] solicitud de partido completo falló (no bloqueante):", e);
+      return null;
+    }
+  }
+
   // -------- save dot (Feature F) --------
   function jugadoresSignature(arr) {
     if (!Array.isArray(arr)) return "[]";
@@ -7516,13 +7668,17 @@
     });
   }
 
-  // liveSupportsBoard: el marcador en vivo solo aplica a partidos con sets
-  // (partido_3 / partido_5). Para reta/libre, el modal final clásico sigue
-  // siendo la mejor opción.
+  // _isPickleModo: helper local. SIEMPRE usar currentMatch.modo / board.isPickle,
+  // nunca modoState.end (ese es del modal de cierre).
+  function _isPickleModo(modo) { return modo === "pickle_1" || modo === "pickle_3"; }
+
+  // liveSupportsBoard: el marcador en vivo aplica a partidos con sets
+  // (partido_3 / partido_5) y a pickleball (pickle_1 / pickle_3). Para
+  // reta/libre, el modal final clásico sigue siendo la mejor opción.
   function liveSupportsBoard(match) {
     if (!match) return false;
     const m = match.modo || "partido_3";
-    return m === "partido_3" || m === "partido_5";
+    return m === "partido_3" || m === "partido_5" || m === "pickle_1" || m === "pickle_3";
   }
 
   function liveBuildSafeMarcador(match) {
@@ -7534,6 +7690,8 @@
     const m = window.PuntazoMatches.live.ensureCurrent(base);
     m.modo = match && match.modo ? match.modo : (m.modo || "partido_3");
     if (typeof m.goldenPoint !== "boolean") m.goldenPoint = false;
+    // PICKLEBALL: garantiza target (a 11) para que el motor cierre los juegos.
+    if (_isPickleModo(m.modo) && m.target == null) m.target = 11;
     return m;
   }
 
@@ -7553,12 +7711,17 @@
     const m = liveBuildSafeMarcador(currentMatch);
     const board = window.PuntazoMatches.live.formatScoreboard(m);
     const isOwner = liveCanEdit(currentMatch);
+    const isPickle = !!board.isPickle;
+    const isPickle1 = (m.modo === "pickle_1");
 
-    // Golden point toggle
+    // Golden point toggle (concepto de pádel; oculto en pickleball).
     if ($liveGoldenInp) $liveGoldenInp.checked = !!m.goldenPoint;
     if ($liveGoldenLbl) $liveGoldenLbl.classList.toggle("is-on", !!m.goldenPoint);
     if ($liveGoldenInp) $liveGoldenInp.disabled = !isOwner;
-    if ($liveGoldenLbl) $liveGoldenLbl.style.opacity = isOwner ? "1" : "0.6";
+    if ($liveGoldenLbl) {
+      $liveGoldenLbl.style.opacity = isOwner ? "1" : "0.6";
+      $liveGoldenLbl.style.display = isPickle ? "none" : "";
+    }
 
     // Read-only note + acciones
     if ($liveReadNote) $liveReadNote.style.display = isOwner ? "none" : "block";
@@ -7569,8 +7732,19 @@
     if ($liveTbody) {
       $liveTbody.innerHTML = "";
       const sets = Array.isArray(m.sets) ? m.sets : [];
-      const maxSetsShow = (m.modo === "partido_5") ? 5 : 3;
-      const currentSetIdx = sets.length; // índice del set en curso (0-based)
+      // PICKLEBALL: cada "set" es un JUEGO a 11; mostramos por-juego (pickle_3
+      // → hasta 3 columnas, pickle_1 → 1) y el juego en curso usa los puntos
+      // crudos. Relabelar el header de la tabla a Juegos/Por juego/Puntos.
+      const maxSetsShow = isPickle ? (isPickle1 ? 1 : 3) : ((m.modo === "partido_5") ? 5 : 3);
+      const currentSetIdx = sets.length; // índice del juego/set en curso (0-based)
+      try {
+        const ths = document.querySelectorAll("#mpLiveDetailSheet .mp-live-table thead th");
+        if (ths && ths.length >= 4) {
+          ths[1].textContent = isPickle ? "Juegos" : "Sets";
+          ths[2].textContent = isPickle ? "Por juego" : "Games";
+          ths[3].textContent = isPickle ? "Puntos" : "Punto";
+        }
+      } catch (_) {}
 
       ["team1", "team2"].forEach(function (teamKey) {
         const tr = document.createElement("tr");
@@ -7591,14 +7765,14 @@
         }
         tr.appendChild(tdTeam);
 
-        // Sets ganados
+        // Sets / Juegos ganados
         const tdSets = document.createElement("td");
         tdSets.className = "mp-live-sets-won";
         const setsWon = teamKey === "team1" ? board.setsWon.t1 : board.setsWon.t2;
         tdSets.textContent = String(setsWon);
         tr.appendChild(tdSets);
 
-        // Games por set (hasta 3 o 5 columnas, mostramos set 1, 2, 3 o set 1..5)
+        // Games por set (pádel) / puntos por juego (pickleball)
         const tdGames = document.createElement("td");
         tdGames.className = "mp-live-games-cell";
         const gmParts = [];
@@ -7607,9 +7781,11 @@
           if (setObj) {
             const val = teamKey === "team1" ? setObj.team1 : setObj.team2;
             gmParts.push('<span class="gm">' + Number(val || 0) + '</span>');
-          } else if (i === currentSetIdx) {
-            // Set en curso: muestra games actuales subrayados
-            const curG = teamKey === "team1" ? m.current.team1Games : m.current.team2Games;
+          } else if (i === currentSetIdx && !board.ganador) {
+            // Juego/set en curso: games actuales (pádel) o puntos crudos (pickle).
+            const curG = isPickle
+              ? (teamKey === "team1" ? m.current.team1PicklePoints : m.current.team2PicklePoints)
+              : (teamKey === "team1" ? m.current.team1Games : m.current.team2Games);
             gmParts.push('<span class="gm is-current">' + Number(curG || 0) + '</span>');
           } else if (i === currentSetIdx + 1 || (i > currentSetIdx + 1 && i < maxSetsShow)) {
             gmParts.push('<span class="gm" style="opacity:.35">–</span>');
@@ -7618,18 +7794,23 @@
         tdGames.innerHTML = gmParts.join("");
         tr.appendChild(tdGames);
 
-        // Punto actual
+        // Punto actual (pádel: 15/30/40/AD/TB · pickle: entero crudo)
         const tdPts = document.createElement("td");
-        const pointsVal = teamKey === "team1" ? m.current.team1Points : m.current.team2Points;
-        const tbActive = !!m.current.tiebreak;
-        if (tbActive) {
-          tdPts.className = "mp-live-points-cell is-tb";
-          const tbVal = teamKey === "team1" ? m.current.tiebreak.team1 : m.current.tiebreak.team2;
-          tdPts.textContent = "TB " + Number(tbVal || 0);
+        if (isPickle) {
+          tdPts.className = "mp-live-points-cell";
+          tdPts.textContent = String(Number(teamKey === "team1" ? m.current.team1PicklePoints : m.current.team2PicklePoints) || 0);
         } else {
-          const label = window.PuntazoMatches.live.pointsLabel(pointsVal);
-          tdPts.className = "mp-live-points-cell" + (label === "AD" ? " is-ad" : "");
-          tdPts.textContent = label;
+          const pointsVal = teamKey === "team1" ? m.current.team1Points : m.current.team2Points;
+          const tbActive = !!m.current.tiebreak;
+          if (tbActive) {
+            tdPts.className = "mp-live-points-cell is-tb";
+            const tbVal = teamKey === "team1" ? m.current.tiebreak.team1 : m.current.tiebreak.team2;
+            tdPts.textContent = "TB " + Number(tbVal || 0);
+          } else {
+            const label = window.PuntazoMatches.live.pointsLabel(pointsVal);
+            tdPts.className = "mp-live-points-cell" + (label === "AD" ? " is-ad" : "");
+            tdPts.textContent = label;
+          }
         }
         tr.appendChild(tdPts);
 
@@ -7645,6 +7826,14 @@
       const servingTeamLabel = liveTeamLabel(currentMatch, m.current.servingTeam || "team1");
       if (board.ganador) {
         $liveHint.innerHTML = "🏆 Ganador: <strong>" + escHtml(liveTeamLabel(currentMatch, board.ganador)) + "</strong>";
+      } else if (isPickle) {
+        const pp = board.picklePoints || { t1: 0, t2: 0 };
+        const tgt = board.target || 11;
+        if (pp.t1 >= tgt - 1 && pp.t2 >= tgt - 1) {
+          $liveHint.innerHTML = "🟠 Hay que ganar por 2";
+        } else {
+          $liveHint.innerHTML = "🟢 Saca <strong>" + escHtml(servingTeamLabel) + "</strong>";
+        }
       } else if (m.current.tiebreak) {
         $liveHint.innerHTML = "🟠 Tiebreak en curso · Saca <strong>" + escHtml(servingTeamLabel) + "</strong>";
       } else {
@@ -7665,19 +7854,35 @@
       if (_padT1) _padT1.textContent = t1Label;
       if (_padT2) _padT2.textContent = t2Label;
 
+      // PICKLEBALL: la fila SETS pasa a "JUEGOS" (a 11 ganados), la fila GAMES
+      // se oculta, y PUNTOS muestra los enteros crudos (sin 15/30/40/AD/TB).
+      const _lcSetsRow  = $lcSets  ? $lcSets.closest(".mp-live-compact-row")  : null;
+      const _lcGamesRow = $lcGames ? $lcGames.closest(".mp-live-compact-row") : null;
+      const _lcSetsLbl  = _lcSetsRow ? _lcSetsRow.querySelector(".mp-live-compact-label") : null;
+      if (_lcSetsLbl) _lcSetsLbl.textContent = isPickle ? "JUEGOS" : "SETS";
+      if (_lcSetsRow)  _lcSetsRow.style.display  = (isPickle && isPickle1) ? "none" : "";
+      if (_lcGamesRow) _lcGamesRow.style.display = isPickle ? "none" : "";
+
       const t1Sets = board.setsWon.t1;
       const t2Sets = board.setsWon.t2;
       if ($lcSets) $lcSets.textContent = t1Sets + "  –  " + t2Sets;
 
-      // Games del set actual
+      // Games del set actual (pádel)
       const curG1 = (m.current && Number.isFinite(m.current.team1Games)) ? m.current.team1Games : 0;
       const curG2 = (m.current && Number.isFinite(m.current.team2Games)) ? m.current.team2Games : 0;
       if ($lcGames) $lcGames.textContent = curG1 + "  –  " + curG2;
 
-      // Puntos del juego actual (o tiebreak)
+      // Puntos del juego actual (pickle: enteros · pádel: 15/30/40/AD o tiebreak)
       if ($lcPoints) {
         $lcPoints.classList.remove("is-tb", "is-deuce");
-        if (m.current && m.current.tiebreak) {
+        if (isPickle) {
+          let pp = board.picklePoints || { t1: 0, t2: 0 };
+          if (board.ganador && Array.isArray(board.sets) && board.sets.length) {
+            const last = board.sets[board.sets.length - 1];
+            pp = { t1: last.team1, t2: last.team2 };
+          }
+          $lcPoints.textContent = pp.t1 + "  –  " + pp.t2;
+        } else if (m.current && m.current.tiebreak) {
           $lcPoints.classList.add("is-tb");
           $lcPoints.textContent = "TB " + (m.current.tiebreak.team1 || 0) + " – " + (m.current.tiebreak.team2 || 0);
         } else {
@@ -7694,6 +7899,19 @@
       const serving = m.current && m.current.servingTeam;
       if ($lcT1Serve) $lcT1Serve.classList.toggle("is-active", serving === "team1");
       if ($lcT2Serve) $lcT2Serve.classList.toggle("is-active", serving === "team2");
+
+      // En pickleball: ocultar +SET, relabelar +GAME → +JUEGO (oculto en
+      // pickle_1), en ambos panel compacto y overlay FS. Reset a pádel si no.
+      [$liveTeams, $fsTeams].forEach(function (cont) {
+        if (!cont) return;
+        cont.querySelectorAll('button[data-live="forceSet"]').forEach(function (bt) {
+          bt.style.display = isPickle ? "none" : "";
+        });
+        cont.querySelectorAll('button[data-live="forceGame"]').forEach(function (bt) {
+          if (isPickle) { bt.textContent = "+ JUEGO"; bt.style.display = isPickle1 ? "none" : ""; }
+          else { bt.textContent = "+ GAME"; bt.style.display = ""; }
+        });
+      });
 
       // Habilitar/deshabilitar team pads + marcar atributo owner
       if ($liveTeams) {
@@ -7965,19 +8183,58 @@
 
     // Etapa 16.4 F22 fix: las keys correctas de formatScoreboard son
     // board.setsWon.{t1,t2}, board.current.team{1,2}Games, board.pointsLabelT{1,2}.
-    // Antes usaba t1Sets/t2Sets etc. que no existen — los números no salían.
+    // PICKLEBALL: el render se ramifica — JUEGOS (a 11) + PUNTOS (enteros),
+    // sin la fila GAMES ni 15/30/40/AD/TB.
+    const isPickle = !!board.isPickle;
+    const isPickle1 = (m.modo === "pickle_1");
     const sw = board.setsWon || { t1: 0, t2: 0 };
     const cur = board.current || {};
-    if ($fsT1Sets)   $fsT1Sets.textContent   = sw.t1;
-    if ($fsT2Sets)   $fsT2Sets.textContent   = sw.t2;
-    if ($fsT1Games)  $fsT1Games.textContent  = (cur.team1Games != null ? cur.team1Games : 0);
-    if ($fsT2Games)  $fsT2Games.textContent  = (cur.team2Games != null ? cur.team2Games : 0);
-    if ($fsT1Points) $fsT1Points.textContent = (cur.tiebreak ? "TB " + (cur.tiebreak.team1 || 0) : (board.pointsLabelT1 != null ? board.pointsLabelT1 : 0));
-    if ($fsT2Points) $fsT2Points.textContent = (cur.tiebreak ? "TB " + (cur.tiebreak.team2 || 0) : (board.pointsLabelT2 != null ? board.pointsLabelT2 : 0));
+    const setsRow  = $fsT1Sets  ? $fsT1Sets.closest(".mp-fs-row")  : null;
+    const gamesRow = $fsT1Games ? $fsT1Games.closest(".mp-fs-row") : null;
+    const setsLabel = setsRow ? setsRow.querySelector(".mp-fs-row-label") : null;
+
+    if (isPickle) {
+      const gw = board.gamesWon || { t1: 0, t2: 0 };
+      // Puntos a mostrar: el juego en curso, o el ÚLTIMO juego cerrado si el
+      // partido ya terminó (tras ganar, los puntos se resetean a 0-0).
+      let pp = board.picklePoints || { t1: 0, t2: 0 };
+      if (board.ganador && Array.isArray(board.sets) && board.sets.length) {
+        const last = board.sets[board.sets.length - 1];
+        pp = { t1: last.team1, t2: last.team2 };
+      }
+      if (setsLabel) setsLabel.textContent = "JUEGOS";
+      // pickle_1: un solo juego = el partido → la fila JUEGOS no aporta.
+      if (setsRow) setsRow.style.display = isPickle1 ? "none" : "";
+      if (gamesRow) gamesRow.style.display = "none";
+      if ($fsT1Sets)   $fsT1Sets.textContent   = gw.t1;
+      if ($fsT2Sets)   $fsT2Sets.textContent   = gw.t2;
+      if ($fsT1Points) $fsT1Points.textContent = pp.t1;
+      if ($fsT2Points) $fsT2Points.textContent = pp.t2;
+    } else {
+      if (setsLabel) setsLabel.textContent = "SETS";
+      if (setsRow) setsRow.style.display = "";
+      if (gamesRow) gamesRow.style.display = "";
+      if ($fsT1Sets)   $fsT1Sets.textContent   = sw.t1;
+      if ($fsT2Sets)   $fsT2Sets.textContent   = sw.t2;
+      if ($fsT1Games)  $fsT1Games.textContent  = (cur.team1Games != null ? cur.team1Games : 0);
+      if ($fsT2Games)  $fsT2Games.textContent  = (cur.team2Games != null ? cur.team2Games : 0);
+      if ($fsT1Points) $fsT1Points.textContent = (cur.tiebreak ? "TB " + (cur.tiebreak.team1 || 0) : (board.pointsLabelT1 != null ? board.pointsLabelT1 : 0));
+      if ($fsT2Points) $fsT2Points.textContent = (cur.tiebreak ? "TB " + (cur.tiebreak.team2 || 0) : (board.pointsLabelT2 != null ? board.pointsLabelT2 : 0));
+    }
 
     if ($fsHint) {
       if (board.ganador) {
         $fsHint.innerHTML = "🏆 Ganador: <strong>" + escHtml(liveTeamLabel(currentMatch, board.ganador)) + "</strong>";
+      } else if (isPickle) {
+        const pp = board.picklePoints || { t1: 0, t2: 0 };
+        const tgt = board.target || 11;
+        if (pp.t1 >= tgt - 1 && pp.t2 >= tgt - 1) {
+          $fsHint.innerHTML = "🟠 Hay que ganar por 2";
+        } else if (m.current && (m.current.servingTeam === "team1" || m.current.servingTeam === "team2")) {
+          $fsHint.innerHTML = "🟢 Saca <strong>" + escHtml(liveTeamLabel(currentMatch, m.current.servingTeam)) + "</strong>";
+        } else {
+          $fsHint.textContent = "";
+        }
       } else if (m.current && (m.current.servingTeam === "team1" || m.current.servingTeam === "team2")) {
         $fsHint.innerHTML = "🟢 Saca <strong>" + escHtml(liveTeamLabel(currentMatch, m.current.servingTeam)) + "</strong>";
       } else {
@@ -7985,8 +8242,17 @@
       }
     }
 
-    // Actualizar labels de pads dentro del overlay
+    // Pads: en pickleball ocultar +SET y relabelar +GAME → +JUEGO (oculto en
+    // pickle_1, donde el único juego cierra el partido). Reset a pádel si no.
     if ($fsTeams) {
+      $fsTeams.querySelectorAll('button[data-live="forceSet"]').forEach(function (bt) {
+        bt.style.display = isPickle ? "none" : "";
+      });
+      $fsTeams.querySelectorAll('button[data-live="forceGame"]').forEach(function (bt) {
+        if (isPickle) { bt.textContent = "+ JUEGO"; bt.style.display = isPickle1 ? "none" : ""; }
+        else { bt.textContent = "+ GAME"; bt.style.display = ""; }
+      });
+      // Actualizar labels de pads dentro del overlay
       const padT1Label = $fsTeams.querySelector('[data-team="team1"] .mp-fs-team-pad-label');
       const padT2Label = $fsTeams.querySelector('[data-team="team2"] .mp-fs-team-pad-label');
       if (padT1Label) padT1Label.textContent = t1Label;
@@ -8275,6 +8541,8 @@
           marcador: finalMarcador,
           modo: currentMatch.modo,
         });
+        // R7: encolar grabación del partido completo si se decidió al inicio.
+        await maybeRequestMatchFull(matchIdAtClose);
         // F90 Item 1+11: cerrar TODOS los overlays (finished + FS marcador)
         // y redirigir directo a resumen. No dejar al user atorado en FS.
         liveCloseFinishedOverlay();
