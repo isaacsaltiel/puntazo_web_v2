@@ -668,6 +668,51 @@
     100% { box-shadow: 0 0 0 0 rgba(240,70,60,0); }
   }
 
+  /* ── R7b — Pickleball: "GRABAR PARTIDO COMPLETO" como acción principal ── */
+  .mp-rec-hero { text-align: center; margin: 2px 0 10px; }
+  .mp-rec-hero-btn {
+    width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    min-height: 80px; padding: 18px 16px;
+    border: none; border-radius: 18px;
+    background: linear-gradient(180deg, #ff3b30, #cf1b12);
+    color: #fff;
+    font-family: inherit; font-weight: 900; font-size: clamp(1.15rem, 5.5vw, 1.5rem);
+    letter-spacing: 0.5px; text-transform: uppercase; line-height: 1.1;
+    cursor: pointer;
+    box-shadow: 0 14px 34px rgba(240,40,40,.42), inset 0 1px 0 rgba(255,255,255,.28);
+    transition: transform .12s ease, filter .15s ease;
+    animation: mpRecHeroPulse 2.1s ease-in-out infinite;
+  }
+  .mp-rec-hero-btn:hover { filter: brightness(1.07); }
+  .mp-rec-hero-btn:active { transform: scale(0.98); }
+  .mp-rec-hero-btn:disabled { opacity: .6; cursor: wait; animation: none; }
+  .mp-rec-hero-dot {
+    width: 16px; height: 16px; border-radius: 50%; background: #fff; flex-shrink: 0;
+    box-shadow: 0 0 0 0 rgba(255,255,255,.75);
+    animation: mpRecDotPulse 1.4s ease-out infinite;
+  }
+  .mp-rec-hero-sub {
+    margin: 10px 4px 0; font-size: 0.84rem; font-weight: 600;
+    color: rgba(234,242,255,.68); line-height: 1.32;
+  }
+  .mp-rec-hero-more {
+    margin: 12px auto 2px; display: inline-block;
+    background: none; border: none; cursor: pointer;
+    color: #7fb2ff; font-family: inherit; font-size: 0.86rem; font-weight: 700;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .mp-rec-hero-more:hover { color: #a9caff; }
+  @keyframes mpRecHeroPulse {
+    0%,100% { box-shadow: 0 14px 34px rgba(240,40,40,.42), inset 0 1px 0 rgba(255,255,255,.28); }
+    50%     { box-shadow: 0 14px 46px rgba(240,40,40,.66), inset 0 1px 0 rgba(255,255,255,.28); }
+  }
+  @keyframes mpRecDotPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255,255,255,.7); }
+    70%  { box-shadow: 0 0 0 9px rgba(255,255,255,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  }
+
   /* ── Banner de éxito post-terminar ── */
   .mp-success-banner {
     display: none;
@@ -3296,6 +3341,19 @@
 
   <!-- Etapa 16.4 F10+F11: jerarquía Iniciar > Jugadores > Modo; cancha chica; sin "sugerencia" -->
   <div id="mpNuevaForm" class="mp-card mp-nueva-form" style="display:none">
+
+    <!-- R7b — Pickleball: GRABAR PARTIDO COMPLETO como acción PRINCIPAL (botón
+         rojo, letra blanca gruesa). Solo visible si el club soporta match_full
+         Y el deporte es pickleball (lo controla el JS de nueva). -->
+    <div id="nuevaRecordFullHero" class="mp-rec-hero" style="display:none">
+      <button id="nuevaRecordFullGo" type="button" class="mp-rec-hero-btn">
+        <span class="mp-rec-hero-dot" aria-hidden="true"></span>GRABAR PARTIDO COMPLETO
+      </button>
+      <p class="mp-rec-hero-sub">Empieza ya — lo grabamos completo y lo verás al terminar.</p>
+      <button id="nuevaConfigToggle" type="button" class="mp-rec-hero-more">o configurar jugadores y marcador ▾</button>
+    </div>
+
+    <div id="nuevaSecondary">
     <h3 class="mp-jug-title">Configura tu partido</h3>
 
     <!-- 1. PRIMARIO: confirmación final — verbo distinto al de entrada.html
@@ -3345,6 +3403,7 @@
         <span class="mp-recordfull-desc">Lo guardamos solo y lo verás al terminar — no tienes que hacer nada más.</span>
       </span>
     </label>
+    </div><!-- /nuevaSecondary -->
   </div>
 
   <div id="mpContent" style="display:none">
@@ -3356,6 +3415,14 @@
          Click abre el overlay reusable PuntazoResumenOverlay. -->
     <div id="mpResumenPhotoWrap" style="display:none; text-align:center; margin-bottom:14px;">
       <!-- el button concreto se inyecta desde JS via buildButton -->
+    </div>
+
+    <!-- R7 — Banner "grabando partido completo" ARRIBA durante el partido.
+         Visible solo si recordFull y el usuario es el dueño; "Dejar de grabar" lo apaga. -->
+    <div id="mpRecordFullBadge" class="mp-recordfull-badge" style="display:none">
+      <span class="mp-rfb-dot" aria-hidden="true"></span>
+      <span class="mp-rfb-txt">🔴 Grabando partido completo</span>
+      <button id="mpRecordFullStop" type="button" class="mp-rfb-stop">Dejar de grabar</button>
     </div>
 
     <div id="mpTimerBox" class="mp-timer-box">
@@ -3382,14 +3449,6 @@
     <!-- Etapa 16.4 F9: bloque mpCard de ubicación (loc/cancha/lado) eliminado.
          El nombre del lugar se infiere internamente para asignar el fondo
          de la cancha (F12), pero ya no se muestra al usuario. -->
-
-    <!-- R7 — Badge "grabando partido completo". Visible solo si el partido tiene
-         recordFull y el usuario es el dueño. Tocar "Dejar de grabar" lo apaga. -->
-    <div id="mpRecordFullBadge" class="mp-recordfull-badge" style="display:none">
-      <span class="mp-rfb-dot" aria-hidden="true"></span>
-      <span class="mp-rfb-txt">🎥 Grabando partido completo</span>
-      <button id="mpRecordFullStop" type="button" class="mp-rfb-stop">Dejar de grabar</button>
-    </div>
 
     <!-- Etapa 16.4 F2/F72/F75: botón "Pedir Puntazo" — imagen rectangular
          boton_P_rect.jpg (texto + P integrados, fondo arreglado). -->
@@ -6150,11 +6209,13 @@
   // ---------- formulario "nueva" (creación inline con cancha visual) ----------
   let nuevaBusy = false;
 
-  async function createNueva(jugadores, modo) {
+  async function createNueva(jugadores, modo, forceRecord) {
     if (nuevaBusy) return;                 // guard anti doble-click
     nuevaBusy = true;
     if ($nuevaStart) $nuevaStart.disabled = true;
     if ($nuevaSkip) $nuevaSkip.disabled = true;
+    const $heroGo = document.getElementById("nuevaRecordFullGo");
+    if ($heroGo) $heroGo.disabled = true;
     const prevText = $nuevaStart ? $nuevaStart.textContent : "";
     if ($nuevaStart) $nuevaStart.textContent = "Creando…";
     try {
@@ -6165,12 +6226,17 @@
           opts.deporte = PuntazoClubs.sportForLoc(newLoc);
         }
       } catch (_) {}
-      // R7: intención "grabar partido completo" (solo si la casilla es visible).
+      // R7: intención "grabar partido completo". forceRecord = botón rojo (hero);
+      // si no, respeta la casilla del formulario secundario (default marcada).
       try {
-        const $rfWrap = document.getElementById("nuevaRecordFullWrap");
-        const $rf = document.getElementById("nuevaRecordFull");
-        if ($rfWrap && $rfWrap.style.display !== "none" && $rf) {
-          opts.recordFull = !!$rf.checked;
+        if (forceRecord) {
+          opts.recordFull = true;
+        } else {
+          const $rfWrap = document.getElementById("nuevaRecordFullWrap");
+          const $rf = document.getElementById("nuevaRecordFull");
+          if ($rfWrap && $rfWrap.style.display !== "none" && $rf) {
+            opts.recordFull = !!$rf.checked;
+          }
         }
       } catch (_) {}
       if (Array.isArray(jugadores) && jugadores.length > 0) opts.jugadores = jugadores;
@@ -6186,10 +6252,11 @@
       nuevaBusy = false;
       if ($nuevaStart) { $nuevaStart.disabled = false; $nuevaStart.textContent = prevText; }
       if ($nuevaSkip) $nuevaSkip.disabled = false;
-      if ($nuevaMsg) {
-        $nuevaMsg.className = "mp-msg is-visible error";
-        $nuevaMsg.textContent = "No se pudo crear el partido: " + (e && e.message ? e.message : "error desconocido");
-      }
+      if ($heroGo) $heroGo.disabled = false;
+      const emsg = "No se pudo crear el partido: " + (e && e.message ? e.message : "error desconocido");
+      // El form puede estar oculto (modo grabar-principal): mostramos también toast.
+      if ($nuevaMsg) { $nuevaMsg.className = "mp-msg is-visible error"; $nuevaMsg.textContent = emsg; }
+      try { showToast(emsg, "bad", 3200); } catch (_) {}
     }
   }
 
@@ -6284,6 +6351,25 @@
     });
   }
 
+  // R7b — Pickleball: botón rojo "GRABAR PARTIDO COMPLETO" (acción principal).
+  // Crea el partido SIN configurar jugadores y con grabación forzada; entra de una.
+  const $nuevaRecGo = document.getElementById("nuevaRecordFullGo");
+  if ($nuevaRecGo) {
+    $nuevaRecGo.addEventListener("click", function () {
+      if ($nuevaMsg) { $nuevaMsg.className = "mp-msg"; $nuevaMsg.textContent = ""; }
+      createNueva([], modoState.nueva || "pickle_3", true);
+    });
+  }
+  // "o configurar jugadores y marcador" → revela el formulario secundario.
+  const $nuevaCfgToggle = document.getElementById("nuevaConfigToggle");
+  if ($nuevaCfgToggle) {
+    $nuevaCfgToggle.addEventListener("click", function () {
+      const sec = document.getElementById("nuevaSecondary");
+      if (sec) sec.style.display = "";
+      $nuevaCfgToggle.style.display = "none";
+    });
+  }
+
   // ---------- login button ----------
   document.getElementById("mpLoginBtn").addEventListener("click", async function () {
     if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === "function") {
@@ -6316,16 +6402,32 @@
       }
       show("mpNuevaForm");
       // Modos según el deporte del club (pickleball = juegos a 11).
+      let _nuevaSport = "padel";
       try {
-        const sport = (window.PuntazoClubs && PuntazoClubs.sportForLoc)
+        _nuevaSport = (window.PuntazoClubs && PuntazoClubs.sportForLoc)
           ? PuntazoClubs.sportForLoc(newLoc) : "padel";
-        applyModoButtonsForSport("nueva", sport);
+        applyModoButtonsForSport("nueva", _nuevaSport);
       } catch (_) {}
-      // R7: ofrecer "Grabar partido completo" solo si el club soporta match_full.
+      // R7/R7b: grabación de partido completo. En pickleball (club que la
+      // soporta) GRABAR es la acción principal (botón rojo) y configurar
+      // jugadores/marcador queda secundario (oculto hasta tocar "configurar").
       try {
-        const $rf = document.getElementById("nuevaRecordFullWrap");
         const canRec = !!(window.PuntazoPulses && PuntazoPulses.canRecordMatch && PuntazoPulses.canRecordMatch(newLoc));
-        if ($rf) $rf.style.display = canRec ? "flex" : "none";
+        const recPrimary = canRec && _nuevaSport === "pickleball";
+        const $hero = document.getElementById("nuevaRecordFullHero");
+        const $sec  = document.getElementById("nuevaSecondary");
+        const $cfgT = document.getElementById("nuevaConfigToggle");
+        const $rf   = document.getElementById("nuevaRecordFullWrap");
+        if (recPrimary) {
+          if ($hero) $hero.style.display = "block";
+          if ($sec)  $sec.style.display = "none";   // secundario, hasta "configurar"
+          if ($cfgT) $cfgT.style.display = "";
+          if ($rf)   $rf.style.display = "flex";     // visible al expandir config
+        } else {
+          if ($hero) $hero.style.display = "none";
+          if ($sec)  $sec.style.display = "";        // flujo normal (pádel)
+          if ($rf)   $rf.style.display = canRec ? "flex" : "none";
+        }
       } catch (_) {}
       // Etapa 16.4 F32: bg de cancha también en esta pantalla intermedia
       applyCourtBackgroundFromCanParam();
