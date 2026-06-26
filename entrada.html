@@ -290,6 +290,48 @@
   .btn-primary:active { transform: scale(0.98); }
   .btn-primary[disabled] { opacity: .65; cursor: wait; transform: none; }
 
+  /* R7c — Pickleball: "GRABAR PARTIDO COMPLETO" como acción PRINCIPAL en la
+     pantalla de la cancha. Rojo + letra blanca gruesa + punto pulsante. Mismo
+     lenguaje visual que el hero de mi-partido.html (acceso directo al flujo
+     que ya muestra ahí el botón rojo). Solo se muestra en canchas de pickleball. */
+  .btn-rec-full {
+    width: 100%;
+    min-height: 64px;
+    border: 1px solid rgba(255, 90, 80, 0.6);
+    border-radius: 18px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 900;
+    font-size: 1.12rem;
+    letter-spacing: 0.4px;
+    color: #fff;
+    background: linear-gradient(135deg, #ff3b30, #cf1b12);
+    box-shadow: 0 0 26px rgba(255, 59, 48, 0.34), 0 10px 26px rgba(0, 0, 0, 0.32);
+    transition: all .18s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-decoration: none;
+    text-align: center;
+    text-transform: uppercase;
+  }
+  .btn-rec-full:hover { transform: translateY(-1px); box-shadow: 0 0 34px rgba(255,59,48,.46), 0 12px 30px rgba(0,0,0,.36); }
+  .btn-rec-full:active { transform: scale(0.98); }
+  .btn-rec-full[disabled] { opacity: .65; cursor: wait; transform: none; }
+  .btn-rec-full .rec-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    flex-shrink: 0;
+    animation: recPulse 1.4s infinite;
+  }
+  @keyframes recPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0.65); }
+    70%  { box-shadow: 0 0 0 10px rgba(255,255,255,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  }
+
   .btn-google {
     width: 100%;
     min-height: 52px;
@@ -641,9 +683,16 @@
     </div>
 
     <div id="actionsAuthed" class="entrada-actions" style="display:none">
-      <!-- (2026-06-13) Nueva jerarquía pedida por Isaac:
+      <!-- R7c — Pickleball: GRABAR PARTIDO COMPLETO como acción PRINCIPAL (rojo,
+           1º). Solo visible en canchas de pickleball (lo controla el JS). Va al
+           flujo de partido nuevo, que ya muestra el botón rojo del hero. -->
+      <a id="lnkRecFullAuthed" class="btn-rec-full" href="#" style="display:none">
+        <span class="rec-dot" aria-hidden="true"></span>
+        Grabar partido completo
+      </a>
+      <!-- (2026-06-13) Jerarquía base (clubs no-pickle):
            1º Ir al botón (principal) · 2º Ver clips · 3º Configurar partido. -->
-      <!-- 1º — PRINCIPAL: ir al botón (registrar puntazos). -->
+      <!-- PRINCIPAL en no-pickle / 2º en pickleball: ir al botón. -->
       <a id="lnkRegistrarAuthed" class="btn-primary" href="#" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
         <img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" style="width:30px;height:30px;flex-shrink:0;border-radius:50%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(255,255,255,.45));">
         Ir al botón
@@ -662,9 +711,15 @@
     </div>
 
     <div id="actionsGuest" class="entrada-actions" style="display:none">
+      <!-- R7c — Pickleball: GRABAR PARTIDO COMPLETO también para invitados (1º).
+           Al tocarlo pide login (popup Google) y continúa al flujo de partido. -->
+      <a id="lnkRecFullGuest" class="btn-rec-full" href="#" style="display:none">
+        <span class="rec-dot" aria-hidden="true"></span>
+        Grabar partido completo
+      </a>
       <!-- (2026-06-13) Misma jerarquía que el bloque authed:
            1º Ir al botón · 2º Ver clips · 3º Iniciar sesión. -->
-      <!-- 1º — PRINCIPAL: ir al botón (registrar puntazos, mismo destino /boton.html). -->
+      <!-- PRINCIPAL en no-pickle / 2º en pickleball: ir al botón. -->
       <a id="lnkRegistrarGuest" class="btn-primary" href="#" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
         <img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" style="width:30px;height:30px;flex-shrink:0;border-radius:50%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(255,255,255,.45));">
         Ir al botón
@@ -1125,6 +1180,69 @@
   }
 
   // ---------- handlers de la vista ready ----------
+
+  // R7c — Botón rojo "GRABAR PARTIDO COMPLETO" (pickleball). Maneja también el
+  // caso INVITADO: si no hay sesión, pide login (popup Google, no recarga) y
+  // continúa. Reusa el guard de "ya tienes un partido activo" (F105 Issue 8).
+  // El botón rojo va a mi-partido.html?nueva=1, que ya detecta pickleball y
+  // muestra el hero rojo + la grabación marcada por defecto.
+  const $recAuthed = document.getElementById("lnkRecFullAuthed");
+  const $recGuest = document.getElementById("lnkRecFullGuest");
+
+  async function handleStartMatchClick(btn) {
+    let user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
+    if (!user) {
+      if (!window.PuntazoAuth || typeof window.PuntazoAuth.signIn !== "function") {
+        showMsg("Módulo de auth no disponible.", "error");
+        return;
+      }
+      if (btn) btn.disabled = true;
+      showMsg("Iniciando sesión…", "info");
+      try {
+        const res = await window.PuntazoAuth.signIn();
+        user = (res && res.user) || (window.PuntazoAuth && window.PuntazoAuth.currentUser);
+      } catch (e) {
+        console.warn("[entrada] signIn falló:", e && e.code ? e.code : e);
+      }
+      if (btn) btn.disabled = false;
+      if (!user) { showMsg("Necesitas iniciar sesión para crear el partido.", "error"); return; }
+      showMsg("", "info");
+    }
+
+    if (btn) btn.disabled = true;
+    // F105 Issue 8: bloquear 2do partido activo del mismo usuario.
+    try {
+      const D = window.PuntazoFirebase && window.PuntazoFirebase.db && window.PuntazoFirebase.db();
+      if (D) {
+        const snap = await D.collection("matches")
+          .where("userId", "==", user.uid)
+          .where("status", "==", "active")
+          .orderBy("startedAt", "desc")
+          .limit(1).get();
+        if (!snap.empty) {
+          const activeDoc = snap.docs[0];
+          const ok = window.confirm(
+            "Ya tienes un partido activo. ¿Qué quieres hacer?\n\n" +
+            "OK = Volver a tu partido activo\n" +
+            "Cancelar = Quedarme aquí (termina el otro antes de crear uno nuevo)"
+          );
+          if (btn) btn.disabled = false;
+          if (ok) window.location.href = "/mi-partido.html?matchId=" + encodeURIComponent(activeDoc.id);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("[entrada] check active falló (no bloqueo):", e && e.code ? e.code : e);
+    }
+    const qs = "?nueva=1&loc=" + encodeURIComponent(loc) +
+               "&can=" + encodeURIComponent(can) +
+               "&lado=" + encodeURIComponent(lado);
+    window.location.href = "/mi-partido.html" + qs;
+  }
+
+  if ($recAuthed) $recAuthed.addEventListener("click", function (e) { e.preventDefault(); handleStartMatchClick($recAuthed); });
+  if ($recGuest) $recGuest.addEventListener("click", function (e) { e.preventDefault(); handleStartMatchClick($recGuest); });
+
   $btnIniciar.addEventListener("click", async function () {
     const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     if (!user) {
@@ -1225,6 +1343,18 @@
     const $lnkCambiarCancha = document.getElementById("lnkCambiarCancha");
     if ($lnkCambiarCancha) {
       $lnkCambiarCancha.href = "/entrada.html?modo=canchas&loc=" + encodeURIComponent(loc);
+    }
+
+    // R7c — Canchas de pickleball: surge el botón rojo "GRABAR PARTIDO COMPLETO"
+    // como acción PRINCIPAL (arriba) y se oculta el "🎾 Configurar partido →"
+    // (redundante: el botón rojo lleva al mismo flujo nueva, que ya muestra el
+    // hero). El deporte sale del catálogo (fuente de verdad), no se hardcodea.
+    const _isPickle = !!(window.PuntazoClubs && PuntazoClubs.sportForLoc &&
+                         PuntazoClubs.sportForLoc(loc) === "pickleball");
+    if (_isPickle) {
+      if ($recAuthed) $recAuthed.style.display = "inline-flex";
+      if ($recGuest) $recGuest.style.display = "inline-flex";
+      if ($btnIniciar) $btnIniciar.style.display = "none";
     }
 
     // Etapa 16.4 F44: mostrar el contenedor INMEDIATAMENTE (header + bg cancha)
