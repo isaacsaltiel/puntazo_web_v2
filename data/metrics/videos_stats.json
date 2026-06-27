@@ -5591,6 +5591,12 @@
       "can": "cancha1",
       "date": "2026-06-24",
       "count": 1
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha2",
+      "date": "2026-06-26",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -7390,6 +7396,12 @@
     },
     {
       "loc": "wellstreet-padel",
+      "can": "cancha2",
+      "hour": "13",
+      "count": 2
+    },
+    {
+      "loc": "wellstreet-padel",
       "can": "cancha1",
       "hour": "20",
       "count": 2
@@ -7648,12 +7660,6 @@
     },
     {
       "loc": "wellstreet-pickleball",
-      "can": "cancha2",
-      "hour": "13",
-      "count": 1
-    },
-    {
-      "loc": "wellstreet-padel",
       "can": "cancha2",
       "hour": "13",
       "count": 1
@@ -16244,7 +16250,16 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha2",
+      "date": "2026-06-26",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-06-26T16:35:36.595261+00:00"
+  "generated_at_utc": "2026-06-27T00:24:04.094353+00:00"
 }
