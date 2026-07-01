@@ -769,6 +769,12 @@
       "count": 11
     },
     {
+      "loc": "wellstreet-padel",
+      "can": "cancha1",
+      "date": "2026-07-01",
+      "count": 11
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-09-05",
@@ -1936,6 +1942,12 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "date": "2026-05-23",
+      "count": 5
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha1",
+      "date": "2026-06-30",
       "count": 5
     },
     {
@@ -6843,6 +6855,12 @@
       "count": 5
     },
     {
+      "loc": "wellstreet-padel",
+      "can": "cancha1",
+      "hour": "00",
+      "count": 5
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "18",
@@ -6996,6 +7014,18 @@
       "loc": "wellstreet-padel",
       "can": "cancha1",
       "hour": "15",
+      "count": 4
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha1",
+      "hour": "23",
+      "count": 4
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha1",
+      "hour": "02",
       "count": 4
     },
     {
@@ -7176,6 +7206,12 @@
       "loc": "wellstreet-padel",
       "can": "cancha1",
       "hour": "16",
+      "count": 3
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha1",
+      "hour": "01",
       "count": 3
     },
     {
@@ -7811,7 +7847,7 @@
     {
       "loc": "wellstreet-padel",
       "can": "cancha1",
-      "hour": "00",
+      "hour": "22",
       "count": 1
     }
   ],
@@ -16331,7 +16367,25 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha1",
+      "date": "2026-06-30",
+      "counts_por_lado": {
+        "ladoa": 5
+      },
+      "diff": 0
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha1",
+      "date": "2026-07-01",
+      "counts_por_lado": {
+        "ladoa": 11
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-07-01T00:25:07.727987+00:00"
+  "generated_at_utc": "2026-07-01T09:01:26.975033+00:00"
 }
