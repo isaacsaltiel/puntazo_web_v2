@@ -1963,6 +1963,12 @@
       "count": 5
     },
     {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "date": "2026-07-08",
+      "count": 5
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-08-31",
@@ -5639,6 +5645,12 @@
       "can": "cancha5",
       "date": "2026-06-30",
       "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2026-07-08",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -6315,6 +6327,12 @@
       "count": 14
     },
     {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "22",
+      "count": 13
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "07",
@@ -6325,12 +6343,6 @@
       "can": "cancha6",
       "hour": "20",
       "count": 13
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha3",
-      "hour": "22",
-      "count": 12
     },
     {
       "loc": "interpadel",
@@ -6576,6 +6588,12 @@
       "loc": "wellstreet-pickleball",
       "can": "cancha1",
       "hour": "17",
+      "count": 9
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "hour": "20",
       "count": 9
     },
     {
@@ -7020,12 +7038,6 @@
       "loc": "wellstreet-pickleball",
       "can": "cancha1",
       "hour": "10",
-      "count": 4
-    },
-    {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha2",
-      "hour": "20",
       "count": 4
     },
     {
@@ -16454,7 +16466,25 @@
         "ladoa": 2
       },
       "diff": 0
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "date": "2026-07-08",
+      "counts_por_lado": {
+        "ladoa": 5
+      },
+      "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2026-07-08",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-07-09T01:30:02.326419+00:00"
+  "generated_at_utc": "2026-07-09T10:50:53.803302+00:00"
 }
