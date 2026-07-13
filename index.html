@@ -814,13 +814,14 @@
   <h1>Tu partido. Tus puntazos. <span class="blue">Tu resumen.</span></h1>
   <h2 class="hero-sub">Inicia tu partido, captura cada puntazo con el botón, y comparte el resumen visual al terminar.</h2>
 
+  <!-- (2026-07-13) Reprioridad del hero: encontrar clips es AHORA la acción
+       principal; "usar teléfono como botón" queda de secundario. Se quitó
+       "Iniciar partido" (el flujo de partido está en pausa). -->
   <div class="hero-primary">
-    <a href="entrada.html" class="btn-primary" onclick="try{gtag('event','hero_cta_iniciar_partido',{event_category:'CTA',event_label:'hero'});}catch(e){}" aria-label="Iniciar partido">Iniciar partido →</a>
+    <a href="/entrada.html?modo=clips" class="btn-primary" onclick="try{gtag('event','hero_cta_clips',{event_category:'CTA',event_label:'hero_primary'});}catch(e){}" aria-label="Encuentra tus clips">🎬 Encuentra tus clips →</a>
   </div>
 
   <div class="hero-secondaries">
-    <a href="explorar.html" class="hero-link" onclick="try{gtag('event','hero_cta_clips',{event_category:'CTA',event_label:'hero'});}catch(e){}" aria-label="Encuentra tus clips">🎬 Encuentra tus clips</a>
-    <span class="hero-sep" aria-hidden="true"></span>
     <a href="/entrada.html?modo=boton" target="_blank" rel="noopener" class="hero-link" onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'hero'});}catch(e){}" aria-label="Usar teléfono como botón">📲 Usar teléfono como botón</a>
   </div>
 

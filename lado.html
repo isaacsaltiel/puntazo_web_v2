@@ -177,6 +177,19 @@
   margin-bottom: 14px;
 }
 
+/* (2026-07-13) Header en un solo renglón: [← Regresar] [Club › Cancha] a la
+   misma altura. En pantallas angostas hace wrap (Regresar arriba, título
+   abajo) como fallback. */
+.lado-head-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+}
+.lado-head-row .page-title { margin: 0; }
+.lado-head-row .btn-volver-container { margin: 0; flex-shrink: 0; }
+
 /* ═══════════════════════════════════════════════════
    CARD DE VIDEO — Layout nuevo
 ═══════════════════════════════════════════════════ */
@@ -453,24 +466,27 @@ video.video-preview {
 <!-- ── CONTENIDO ── -->
 <main class="site-content fade-in">
 
-  <!-- Título dominante: Club › Cancha -->
-  <div class="page-title">
-    <a id="link-club" href="#">Club</a>
-    <span class="breadcrumb-sep">›</span>
-    <a id="link-cancha" href="#" class="breadcrumb-link">Cancha</a>
-    <span id="breadcrumb-sep2"></span>
-    <span id="nombre-lado"></span>
+  <!-- (2026-07-13) Regresar + título (Club › Cancha) en el MISMO renglón
+       (misma altura) en lugar de apilados. -->
+  <div class="lado-head-row">
+    <!-- Botón volver -->
+    <div class="btn-volver-container">
+      <a href="#" id="btn-volver" class="btn-volver">← Regresar</a>
+    </div>
+    <!-- Título dominante: Club › Cancha -->
+    <div class="page-title">
+      <a id="link-club" href="#">Club</a>
+      <span class="breadcrumb-sep">›</span>
+      <a id="link-cancha" href="#" class="breadcrumb-link">Cancha</a>
+      <span id="breadcrumb-sep2"></span>
+      <span id="nombre-lado"></span>
+    </div>
   </div>
 
-  <!-- Botón volver -->
-  <div class="btn-volver-container">
-    <a href="#" id="btn-volver" class="btn-volver">← Regresar</a>
-  </div>
-
-  <!-- F145: pill de estado positivo del club (verde "en línea" si el sistema
-       latió hace <5 min, ámbar si no). A diferencia del banner de avería,
-       este SÍ se ve cuando todo está bien. -->
-  <div id="pz-hb-pill-host" style="margin: 0 0 12px;"></div>
+  <!-- (2026-07-13) F145: la pill de estado del club ("Cámaras del club en
+       línea" / "fuera de línea") ya NO vive aquí en su propio renglón: ahora
+       se monta DENTRO de la barra "Actualizado hace X" (#pz-rb-host), junto al
+       botón Actualizar / pendientes, para no ocupar espacio propio. -->
 
   <!-- Filtros de día (generados por script.js en #filtro-dia) -->
   <!-- Filtros de hora (generados por script.js en #filtro-horario) -->
@@ -683,38 +699,10 @@ video.video-preview {
     } catch (e) { console.warn("[pz-banner] renderContinuar", e); }
   }
 
-  function renderIniciar(loc, can, lado) {
-    try {
-      var host = document.getElementById("pz-match-banner");
-      if (!host) return;
-      host.innerHTML = "";
-      var a = document.createElement("a");
-      a.className = "pz-mb iniciar";
-      a.href = "#";
-      a.innerHTML = '<span class="pz-mb-text">🎾 Inicia un partido para guardar tus puntazos aquí</span><span class="pz-mb-cta">Iniciar partido</span>';
-      a.addEventListener("click", function (ev) {
-        ev.preventDefault();
-        try {
-          if (a.classList.contains("is-busy")) return;
-          var user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
-          if (!user) return;
-          a.classList.add("is-busy");
-          a.querySelector(".pz-mb-cta").textContent = "Abriendo…";
-          // La creación del match pasa a mi-partido.html (modo ?nueva=1),
-          // donde primero se captura el formulario opcional de jugadores.
-          var qs = "?nueva=1&loc=" + encodeURIComponent(loc) +
-                   "&can=" + encodeURIComponent(can) +
-                   "&lado=" + encodeURIComponent(lado);
-          window.location.href = "/mi-partido.html" + qs;
-        } catch (err) {
-          console.warn("[pz-banner] iniciar redirect failed", err);
-          a.classList.remove("is-busy");
-          a.querySelector(".pz-mb-cta").textContent = "Iniciar partido";
-        }
-      });
-      host.appendChild(a);
-    } catch (e) { console.warn("[pz-banner] renderIniciar", e); }
-  }
+  // (2026-07-13) El banner "Inicia un partido para guardar tus puntazos aquí"
+  // se retiró: el flujo de iniciar partido está en pausa. Solo se conserva el
+  // banner "Tienes un partido en curso aquí → Continuar" (renderContinuar),
+  // que únicamente aparece cuando el usuario YA tiene un partido activo.
 
   function clearBanner() {
     try {
@@ -751,7 +739,9 @@ video.video-preview {
       if (active && active.loc === loc && active.can === can && active.lado === lado) {
         renderContinuar(active.id);
       } else {
-        renderIniciar(loc, can, lado);
+        // (2026-07-13) Antes: renderIniciar(...). El banner de iniciar partido
+        // está en pausa; no mostramos nada si no hay un partido activo aquí.
+        clearBanner();
       }
     } catch (e) {
       console.warn("[pz-banner] evaluate failed (no banner):", e);
@@ -1105,11 +1095,6 @@ video.video-preview {
       if (hbHost && window.PuntazoHeartbeatWatcher) {
         window.PuntazoHeartbeatWatcher.watch(p.loc, hbHost);
       }
-      // F145: pill de estado positivo (verde "en línea" / ámbar).
-      var hbPillHost = document.getElementById("pz-hb-pill-host");
-      if (hbPillHost && window.PuntazoHeartbeatWatcher && window.PuntazoHeartbeatWatcher.statusPill) {
-        window.PuntazoHeartbeatWatcher.statusPill(p.loc, hbPillHost);
-      }
     } catch (_) {}
 
     window.__pzLadoBar = window.PuntazoRefreshBar.attach(host, {
@@ -1125,6 +1110,22 @@ video.video-preview {
         }
       },
     });
+
+    // (2026-07-13) F145: la pill de estado del club ("Cámaras del club en
+    // línea" / "fuera de línea") ahora se monta DENTRO de la barra
+    // "Actualizado hace X", en el mismo renglón que el botón Actualizar /
+    // pendientes (como una chip más), para no ocupar su propio espacio.
+    try {
+      var rbEl = host.querySelector(".pz-rb");
+      if (rbEl && window.PuntazoHeartbeatWatcher && window.PuntazoHeartbeatWatcher.statusPill) {
+        window.PuntazoHeartbeatWatcher.statusPill(p.loc, rbEl);
+        var pillEl = rbEl.querySelector(".pz-hb-pill");
+        var rbRefreshBtn = rbEl.querySelector("[data-refresh]");
+        // La ponemos justo antes del botón Actualizar (queda pegada a la
+        // derecha del texto "Actualizado hace X").
+        if (pillEl && rbRefreshBtn) rbEl.insertBefore(pillEl, rbRefreshBtn);
+      }
+    } catch (_) {}
   }
 
   if (document.readyState === "loading") {

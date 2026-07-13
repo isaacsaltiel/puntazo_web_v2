@@ -690,17 +690,17 @@
         <span class="rec-dot" aria-hidden="true"></span>
         Grabar partido completo
       </a>
-      <!-- (2026-06-13) Jerarquía base (clubs no-pickle):
-           1º Ir al botón (principal) · 2º Ver clips · 3º Configurar partido. -->
-      <!-- PRINCIPAL en no-pickle / 2º en pickleball: ir al botón. -->
+      <!-- (2026-07-13) "Ver clips" e "Ir al botón" quedan IGUAL de prioritarios
+           (ambos btn-primary); clips va primero. Se quitó "Configurar partido"
+           (el flujo de partido está en pausa). El botón rojo de pickleball
+           sigue arriba en canchas de pickleball. -->
+      <!-- 1º — Ver clips (prioridad). -->
+      <a id="lnkSoloClips" class="btn-primary" href="#">🎬 Ver clips</a>
+      <!-- 1º (igual) — Ir al botón. -->
       <a id="lnkRegistrarAuthed" class="btn-primary" href="#" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
         <img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" style="width:30px;height:30px;flex-shrink:0;border-radius:50%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(255,255,255,.45));">
         Ir al botón
       </a>
-      <!-- 2º — Ver clips. -->
-      <a id="lnkSoloClips" class="btn-secondary" href="#">🎬 Ver clips</a>
-      <!-- 3º — Configurar partido (la menos prioritaria ahora). -->
-      <button id="btnIniciar" class="btn-secondary" type="button">🎾 Configurar partido →</button>
       <!-- F119: link sutil a herramientas (sortear, marcador, torneo 5, etc).
            Pasa loc+can para que herramientas propague el contexto a los
            modos que lo entienden (Torneo 5 muestra botón Puntazo round). -->
@@ -717,15 +717,16 @@
         <span class="rec-dot" aria-hidden="true"></span>
         Grabar partido completo
       </a>
-      <!-- (2026-06-13) Misma jerarquía que el bloque authed:
-           1º Ir al botón · 2º Ver clips · 3º Iniciar sesión. -->
-      <!-- PRINCIPAL en no-pickle / 2º en pickleball: ir al botón. -->
+      <!-- (2026-07-13) Misma jerarquía que el bloque authed: "Ver clips" e
+           "Ir al botón" igual de prioritarios (ambos btn-primary), clips
+           primero, luego iniciar sesión. -->
+      <!-- 1º — Ver clips (como invitado, prioridad). -->
+      <a id="lnkInvitado" class="btn-primary" href="#">🎬 Ver clips</a>
+      <!-- 1º (igual) — Ir al botón. -->
       <a id="lnkRegistrarGuest" class="btn-primary" href="#" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
         <img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" style="width:30px;height:30px;flex-shrink:0;border-radius:50%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(255,255,255,.45));">
         Ir al botón
       </a>
-      <!-- 2º — Ver clips (como invitado). -->
-      <a id="lnkInvitado" class="btn-secondary" href="#">🎬 Ver clips</a>
       <button id="btnLogin" class="btn-google" type="button">
         <svg viewBox="0 0 48 48" aria-hidden="true">
           <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.239 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
@@ -1243,7 +1244,10 @@
   if ($recAuthed) $recAuthed.addEventListener("click", function (e) { e.preventDefault(); handleStartMatchClick($recAuthed); });
   if ($recGuest) $recGuest.addEventListener("click", function (e) { e.preventDefault(); handleStartMatchClick($recGuest); });
 
-  $btnIniciar.addEventListener("click", async function () {
+  // (2026-07-13) "Configurar partido" se quitó de la UI; el elemento puede no
+  // existir. Guardamos el listener para no romper el flujo cuando $btnIniciar
+  // es null (el botón rojo de pickleball tiene su propio handler más arriba).
+  if ($btnIniciar) $btnIniciar.addEventListener("click", async function () {
     const user = window.PuntazoAuth && window.PuntazoAuth.currentUser;
     if (!user) {
       showMsg("Necesitas iniciar sesión primero.", "error");
@@ -1511,6 +1515,13 @@
 <script src="/assets/puntazo-intro.js?v=F74clip"></script>
 <script>
   (function () {
+    // (2026-07-13) En el flujo "usar teléfono como botón" (?modo=boton) NO
+    // queremos la intro animada: el usuario solo quiere elegir cancha e ir al
+    // botón, sin animación de por medio.
+    try {
+      var _m = (new URLSearchParams(window.location.search).get("modo") || "").toLowerCase();
+      if (_m === "boton") return;
+    } catch (_) {}
     try {
       if (sessionStorage.getItem("pz_intro_seen") === "1") return;
     } catch (_) {}
