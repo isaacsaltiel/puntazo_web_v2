@@ -4,6 +4,19 @@
   if (window.__PZ_HEADER_LOADED__) return;
   window.__PZ_HEADER_LOADED__ = true;
 
+  // Punto único de carga de analítica (GA4+Clarity) y PWA para todas las
+  // páginas con header. Las páginas sin header (boton, marcador, king,
+  // americano, sortear, tablero) llevan estos <script> en su HTML.
+  try {
+    ["/assets/analytics.js", "/assets/pwa.js"].forEach(function (src) {
+      if (document.querySelector('script[src="' + src + '"]')) return;
+      var s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      (document.head || document.documentElement).appendChild(s);
+    });
+  } catch (e) {}
+
   // F101: si header.js se carga en <head> antes de que exista #nav-root
   // en el body, diferimos hasta DOMContentLoaded. Sin esto, las páginas
   // nuevas (grupos, amigos, mi-nivel, detalle, etc) cargaban sin header.
