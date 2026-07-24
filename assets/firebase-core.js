@@ -42,12 +42,35 @@
     return ensureApp();
   }
 
+  // Por default Firestore habla por WebChannel (streaming sobre HTTP). Hay
+  // muchísimas redes reales donde eso simplemente no pasa: proxies de oficina,
+  // filtrado del ISP, antivirus que inspecciona TLS, WiFi de hotel/club con
+  // portal cautivo, algunos operadores móviles. Cuando falla no da error: la
+  // consulta se queda colgada para siempre y el usuario ve la pantalla en
+  // blanco — de ahí el "con VPN sí me deja entrar".
+  //
+  // experimentalAutoDetectLongPolling detecta ese caso en el primer intento y
+  // se cae a long-polling HTTP normal, que atraviesa cualquier red. Se aplica
+  // una sola vez y ANTES de la primera operación (por eso vive aquí y no en
+  // cada página): settings() truena si Firestore ya arrancó.
+  let firestoreConfigured = false;
+
   function db() {
     ensureApp();
     if (typeof firebase.firestore !== "function") {
       throw new Error("Firebase Firestore SDK no está cargado.");
     }
-    return firebase.firestore();
+    const store = firebase.firestore();
+    if (!firestoreConfigured) {
+      firestoreConfigured = true;
+      try {
+        store.settings({ experimentalAutoDetectLongPolling: true });
+      } catch (err) {
+        // Firestore ya estaba corriendo: se queda con el transporte default.
+        console.warn("[Puntazo Firebase] transporte no ajustado:", err);
+      }
+    }
+    return store;
   }
 
   function auth() {

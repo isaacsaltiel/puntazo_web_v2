@@ -455,9 +455,11 @@
   // ── Auth bootstrap ──────────────────────────────────────────
   async function bootstrapAuth() {
     try {
-      await ensureScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js",       () => !!window.firebase);
-      await ensureScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js", () => !!(window.firebase && typeof firebase.firestore === "function"));
-      await ensureScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js",      () => !!(window.firebase && typeof firebase.auth === "function"));
+      // SDK auto-hospedado: si esto apuntara a gstatic.com, el header (y con él
+      // la sesión) dependería de un host de terceros que hay redes que bloquean.
+      await ensureScript("/assets/lib/firebase-9.23.0/firebase-app-compat.js",       () => !!window.firebase);
+      await ensureScript("/assets/lib/firebase-9.23.0/firebase-firestore-compat.js", () => !!(window.firebase && typeof firebase.firestore === "function"));
+      await ensureScript("/assets/lib/firebase-9.23.0/firebase-auth-compat.js",      () => !!(window.firebase && typeof firebase.auth === "function"));
       await ensureScript("/assets/firebase-core.js", () => !!(window.PuntazoFirebase && typeof window.PuntazoFirebase.ensureApp === "function"));
       await ensureScript("/assets/auth.js",          () => !!window.PuntazoAuth);
       if (window.PuntazoAuth && typeof window.PuntazoAuth.init === "function") await window.PuntazoAuth.init();

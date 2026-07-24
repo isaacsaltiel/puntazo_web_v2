@@ -3,6 +3,53 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+<!-- Guardia de arranque: si la pagina no termina de cargar (red lenta, red
+     que filtra, proxy roto), en vez de dejar la pantalla en blanco muestra
+     un aviso con boton de reintento. Va inline y antes que todo lo demas. -->
+<script id="pz-boot-guard">
+(function () {
+  var TIMEOUT_MS = 12000;
+  var shown = false;
+  function box() {
+    if (shown || window.__pzBooted) return;
+    shown = true;
+    var root = document.body || document.documentElement;
+    if (!root) return;
+    var d = document.createElement("div");
+    d.id = "pz-boot-guard-box";
+    d.setAttribute("style", [
+      "position:fixed", "inset:0", "z-index:2147483647",
+      "background:#050914", "color:#fff",
+      "font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif",
+      "display:flex", "flex-direction:column",
+      "align-items:center", "justify-content:center",
+      "text-align:center", "padding:24px", "gap:14px"
+    ].join(";"));
+    d.innerHTML =
+      '<div style="font-size:44px;line-height:1">\uD83C\uDFBE</div>' +
+      '<div style="font-size:19px;font-weight:800">La conexi\u00F3n est\u00E1 tardando</div>' +
+      '<div style="font-size:14px;opacity:.75;max-width:22em;line-height:1.5">' +
+      'No pudimos cargar Puntazo con esta red. Prueba con datos m\u00F3viles ' +
+      'o con otra red Wi-Fi.</div>' +
+      '<button type="button" id="pz-boot-guard-retry" style="margin-top:6px;' +
+      'background:#0B7CFF;color:#fff;border:0;border-radius:999px;' +
+      'padding:13px 30px;font-size:15px;font-weight:800;cursor:pointer">' +
+      'Reintentar</button>';
+    root.appendChild(d);
+    var b = document.getElementById("pz-boot-guard-retry");
+    if (b) b.addEventListener("click", function () { location.reload(); });
+  }
+  function booted() {
+    window.__pzBooted = true;
+    var d = document.getElementById("pz-boot-guard-box");
+    if (d && d.parentNode) d.parentNode.removeChild(d);
+  }
+  setTimeout(box, TIMEOUT_MS);
+  document.addEventListener("DOMContentLoaded", booted);
+  window.addEventListener("load", booted);
+})();
+</script>
 <base href="/" />
 <title>Resumen del partido · Puntazo</title>
 <meta name="description" content="Tu resumen del partido en Puntazo — descárgalo y compártelo." />
@@ -12,16 +59,14 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
 <meta name="theme-color" content="#050914" />
 
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
+<link rel="stylesheet" href="/assets/fonts.css" />
 <link rel="stylesheet" href="/assets/estilo.css" />
 
 <!-- Firebase compat SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-app-compat.js"></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js"></script>
 
 <!-- Módulos Puntazo. auth.js se carga para que matches.js no truene por
      dependencia faltante; resumen.html NO exige login (matches ended son
