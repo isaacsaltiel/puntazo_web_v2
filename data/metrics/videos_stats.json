@@ -1789,6 +1789,12 @@
       "count": 6
     },
     {
+      "loc": "wellstreet-padel",
+      "can": "cancha2",
+      "date": "2026-07-31",
+      "count": 6
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-10-13",
@@ -2410,6 +2416,12 @@
       "loc": "wellstreet-pickleball",
       "can": "cancha3",
       "date": "2026-07-23",
+      "count": 4
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "date": "2026-07-31",
       "count": 4
     },
     {
@@ -6759,6 +6771,12 @@
       "count": 9
     },
     {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "hour": "02",
+      "count": 9
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "20",
@@ -6846,6 +6864,12 @@
       "loc": "wellstreet-pickleball",
       "can": "cancha1",
       "hour": "23",
+      "count": 8
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha2",
+      "hour": "03",
       "count": 8
     },
     {
@@ -7041,6 +7065,12 @@
       "count": 6
     },
     {
+      "loc": "wellstreet-padel",
+      "can": "cancha2",
+      "hour": "04",
+      "count": 6
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "hour": "19",
@@ -7128,12 +7158,6 @@
       "loc": "wellstreet-pickleball",
       "can": "cancha5",
       "hour": "11",
-      "count": 5
-    },
-    {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha2",
-      "hour": "02",
       "count": 5
     },
     {
@@ -7326,18 +7350,6 @@
       "loc": "wellstreet-padel",
       "can": "cancha2",
       "hour": "02",
-      "count": 4
-    },
-    {
-      "loc": "wellstreet-padel",
-      "can": "cancha2",
-      "hour": "03",
-      "count": 4
-    },
-    {
-      "loc": "wellstreet-padel",
-      "can": "cancha2",
-      "hour": "04",
       "count": 4
     },
     {
@@ -16880,7 +16892,25 @@
         "ladoa": 12
       },
       "diff": 0
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "date": "2026-07-31",
+      "counts_por_lado": {
+        "ladoa": 4
+      },
+      "diff": 0
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha2",
+      "date": "2026-07-31",
+      "counts_por_lado": {
+        "ladoa": 6
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-07-31T01:26:52.930235+00:00"
+  "generated_at_utc": "2026-07-31T10:25:13.440101+00:00"
 }
