@@ -16,7 +16,8 @@
   // Lista de emails con acceso de administrador (admin.html, vista admin de reacciones).
   // Para agregar admin: añadir email en minúsculas a este array y hacer push a master.
   const ADMIN_EMAILS = [
-    "isaacsaltiel@gmail.com"
+    "isaacsaltiel@gmail.com",
+    "gabrielzon@gmail.com"
   ];
 
   function isAdminEmail(email) {

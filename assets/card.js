@@ -251,6 +251,7 @@ window.PuntazoCard = (function () {
       if (!entry.url) { toast('Video no disponible'); return; }
 
       trackEvent('click_share_download', { video_name: entry.nombre });
+      if (window.PZ && PZ.trackDownload) PZ.trackDownload(entry.nombre, { club: entry.loc || entry.club || null, cancha: entry.can || entry.cancha || null, lado: entry.lado || null, mode: 'click' });
       if (opts.video) { try { opts.video.pause(); } catch {} }
 
       state = 'downloading';

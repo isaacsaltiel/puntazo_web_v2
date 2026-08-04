@@ -725,6 +725,7 @@ function crearSharePill(entry, video) {
     if (!entry.url) { toast("Video no disponible"); return; }
 
     trackEvent("click_share_download", gaCtx({ video_name: entry.nombre }));
+    if (window.PZ && PZ.trackDownload) PZ.trackDownload(entry.nombre, { club: entry.loc || null, cancha: entry.can || null, lado: entry.lado || null, mode: "click" });
     if (video) { try { video.pause(); } catch {} }
 
     state = "downloading";

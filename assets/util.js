@@ -228,9 +228,36 @@
     } catch (_) {}
   }
 
+  // ── Descargas (2026-08-04): contador en download_stats/{id} + registro
+  // individual en download_events. A diferencia de las views, CADA click
+  // cuenta (sin dedupe por sesión) — es "cuántas veces se presionó el botón".
+  // Fail-silent: medir nunca debe romper la descarga/compartir real.
+  function trackDownload(videoId, meta) {
+    try {
+      if (!videoId) return;
+      var db = (window.PuntazoFirebase && window.PuntazoFirebase.db) ? window.PuntazoFirebase.db() : null;
+      if (!db || !window.firebase || !firebase.firestore) return;
+      meta = meta || {};
+      var statsDoc = {
+        downloads: firebase.firestore.FieldValue.increment(1),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+      var eventDoc = { videoId: String(videoId), ts: firebase.firestore.FieldValue.serverTimestamp() };
+      if (meta.club)   { statsDoc.club   = meta.club;   eventDoc.club   = meta.club; }
+      if (meta.cancha) { statsDoc.cancha = meta.cancha; eventDoc.cancha = meta.cancha; }
+      if (meta.lado)   { statsDoc.lado   = meta.lado;   eventDoc.lado   = meta.lado; }
+      if (meta.mode)   { eventDoc.mode   = meta.mode; }
+      db.collection("download_stats").doc(String(videoId)).set(statsDoc, { merge: true })
+        .catch(function (e) { console.warn("[PZ.trackDownload:stats]", e && e.code); });
+      db.collection("download_events").add(eventDoc)
+        .catch(function (e) { console.warn("[PZ.trackDownload:event]", e && e.code); });
+    } catch (_) {}
+  }
+
   window.PZ = {
     escapeHtml: escapeHtml,
     trackVideoView: trackVideoView,
+    trackDownload: trackDownload,
     tsToDate: tsToDate,
     tsToMillis: tsToMillis,
     toast: toast,

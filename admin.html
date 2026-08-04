@@ -312,6 +312,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
     <div class="kpi src-gh"><div class="kpi-value" id="kpiClubs">—</div><div class="kpi-label">Clubs activos</div></div>
     <div class="kpi src-gh"><div class="kpi-value" id="kpiActivos">—</div><div class="kpi-label">Videos ahora (24h)</div></div>
     <div class="kpi src-fs"><div class="kpi-value" id="kpiViews">—</div><div class="kpi-label">Reproducciones</div></div>
+    <div class="kpi src-fs"><div class="kpi-value" id="kpiDownloads">—</div><div class="kpi-label">Descargas</div></div>
     <div class="kpi src-green"><div class="kpi-value" id="kpiSaves">—</div><div class="kpi-label">Grupos · Ligas</div></div>
     <div class="kpi src-green"><div class="kpi-value" id="kpiUsers">—</div><div class="kpi-label">Usuarios</div></div>
   </div>
@@ -322,6 +323,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
   <div class="tabs">
     <button class="tab-btn active" data-tab="clubs">🏢 Clubs</button>
     <button class="tab-btn" data-tab="views">🎾 Partidos</button>
+    <button class="tab-btn" data-tab="downloads">⬇️ Descargas</button>
     <button class="tab-btn" data-tab="saves">🏆 Ligas y grupos</button>
     <button class="tab-btn" data-tab="players">🥷 Jugadores</button>
     <button class="tab-btn" data-tab="users">👤 Usuarios</button>
@@ -332,6 +334,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
 
   <div id="tab-clubs"     class="tab-pane active"></div>
   <div id="tab-views"     class="tab-pane"></div>
+  <div id="tab-downloads" class="tab-pane"></div>
   <div id="tab-saves"     class="tab-pane"></div>
   <div id="tab-players"   class="tab-pane"></div>
   <div id="tab-users"     class="tab-pane"></div>
@@ -1026,6 +1029,7 @@ async function refreshAll(){
   renderKPIs();
   renderClubs();
   renderMatchesTab();
+  renderDownloadsTab();
   renderGroupsTab();
   renderPlayers();
   renderUsers();
@@ -1047,17 +1051,24 @@ async function fetchGH(){
 // son del modelo viejo (reglas removidas en Etapa 14 → permission-denied, el
 // badge marcaba "Firestore: error"). Hoy la verdad social vive en matches/
 // (read público), users/ (read público) y groups/ (signedIn).
-let _matches=[],_groups=[],_videoStats=[];
+let _matches=[],_groups=[],_videoStats=[],_downloadStats=[],_downloadEvents=[];
 async function fetchFS(){
   const db=window.PuntazoFirebase.db();
-  const[mSnap,uSnap,gSnap,vSnap]=await Promise.all([
+  const[mSnap,uSnap,gSnap,vSnap,dsSnap,deSnap]=await Promise.all([
     db.collection('matches').orderBy('createdAt','desc').limit(400).get(),
     db.collection('users').limit(1000).get(),
     db.collection('groups').limit(200).get(),
     // (2026-06-10) reproducciones reales: video_stats (incrementa el cliente)
     db.collection('video_stats').orderBy('views','desc').limit(200).get().catch(()=>({forEach(){}})),
+    // (2026-08-04) descargas: download_stats (contador por video) + download_events
+    // (registro individual, para "actividad reciente"). Solo admin puede leer
+    // estas dos (reglas), por eso van con .catch por si el flag isAdmin aún no propaga.
+    db.collection('download_stats').orderBy('downloads','desc').limit(200).get().catch(()=>({forEach(){}})),
+    db.collection('download_events').orderBy('ts','desc').limit(60).get().catch(()=>({forEach(){}})),
   ]);
   _videoStats=[];vSnap.forEach(d=>_videoStats.push(Object.assign({videoId:d.id},d.data())));
+  _downloadStats=[];dsSnap.forEach(d=>_downloadStats.push(Object.assign({videoId:d.id},d.data())));
+  _downloadEvents=[];deSnap.forEach(d=>_downloadEvents.push(Object.assign({id:d.id},d.data())));
   _matches=[];mSnap.forEach(d=>_matches.push(Object.assign({id:d.id},d.data())));
   _users=[];uSnap.forEach(d=>{const x=d.data()||{};_users.push({uid:d.id,displayName:x.displayName||'',handle:x.handle||'',photoURL:x.photoURL||'',createdAt:x.createdAt||null});});
   _groups=[];gSnap.forEach(d=>_groups.push(Object.assign({id:d.id},d.data())));
@@ -1083,6 +1094,7 @@ function renderKPIs(){
   s('kpiClubs',         fmt(t.clubs_activos));
   s('kpiActivos',       fmt(t.videos_activos));
   s('kpiViews', fmt(_videoStats.reduce((a,v)=>a+(v.views||0),0)));
+  s('kpiDownloads', fmt(_downloadStats.reduce((a,v)=>a+(v.downloads||0),0)));
   s('kpiSaves', fmt(_groups.length));
   s('kpiUsers', fmt(_users.length));
 }
@@ -1205,6 +1217,57 @@ function renderMatchesTab(){
       <div class="section-title">🎾 Partidos recientes <span class="badge">${Math.min(40,_matches.length)}</span><span class="src-tag fs">Firestore</span></div>
       <div class="table-wrap"><table><thead><tr><th>#</th><th>Partido</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table></div>
     </div>`+clipsHtml;
+}
+
+// ── Descargas (download_stats + download_events, 2026-08-04) ──
+// El botón 📤 (compartir/descargar el MP4 real) escribe en dos colecciones:
+// download_stats/{videoId} (contador acumulado, para el ranking) y
+// download_events (un doc por cada click, para el log de actividad reciente).
+// Solo lee un admin autenticado (flags.isAdmin), por eso puede venir vacío
+// si tu cuenta todavía no tiene el flag propagado.
+function evTsMs(ts){return(ts&&typeof ts.toMillis==='function')?ts.toMillis():(ts&&ts.seconds?ts.seconds*1000:0);}
+function renderDownloadsTab(){
+  const $pane=document.getElementById('tab-downloads');
+  if(!_downloadStats.length && !_downloadEvents.length){
+    $pane.innerHTML=`<div class="info-box" style="font-size:.78rem">⬇️ Descargas: el contador (download_stats/download_events) arrancó el 4-ago-2026 — se llena conforme la gente use el botón 📤 compartir/descargar. Si ya hay descargas y esto sigue vacío, revisa que tu cuenta tenga <code>flags.isAdmin=true</code> en Firestore.</div>`;
+    return;
+  }
+  const totalDescargas=_downloadStats.reduce((a,v)=>a+(v.downloads||0),0);
+
+  let topHtml='';
+  if(_downloadStats.length){
+    const maxD=_downloadStats[0]?.downloads||1;
+    const rows=_downloadStats.slice(0,15).map((v,i)=>`<tr>
+      <td class="td-rank">${rankEmoji(i)}</td>
+      <td class="td-name"><a href="/clip.html?videoId=${encodeURIComponent(v.videoId)}" target="_blank" style="color:#eaf2ff;text-decoration:none">${videoLabel(v)}<small>${esc(v.club||'')} ${v.cancha?'· '+esc(v.cancha):''}</small></a></td>
+      <td class="td-bar"><div class="bar"><div class="bar-fill" style="width:${Math.round((v.downloads||0)/maxD*100)}%"></div></div></td>
+      <td class="td-num">${fmt(v.downloads||0)}</td>
+    </tr>`).join('');
+    topHtml=`<div class="section">
+      <div class="section-title">⬇️ Top clips por descargas <span class="badge">${_downloadStats.length}</span><span class="src-tag fs">Firestore</span></div>
+      <div class="table-wrap"><table><thead><tr><th>#</th><th>Clip</th><th style="min-width:80px"></th><th>Descargas</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </div>`;
+  }
+
+  let recentHtml='';
+  if(_downloadEvents.length){
+    const rows=_downloadEvents.slice(0,40).map((e,i)=>{
+      const when=evTsMs(e.ts)?new Date(evTsMs(e.ts)).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+      return`<tr>
+        <td class="td-rank" style="font-size:.82rem">${i+1}</td>
+        <td class="td-name"><a href="/clip.html?videoId=${encodeURIComponent(e.videoId||'')}" target="_blank" style="color:#eaf2ff;text-decoration:none">${esc(e.videoId||'—')}<small>${esc(e.club||'')} ${e.cancha?'· '+esc(e.cancha):''}</small></a></td>
+        <td><span style="color:var(--muted);font-size:.76rem">${when}</span></td>
+      </tr>`;
+    }).join('');
+    recentHtml=`<div class="section">
+      <div class="section-title">🕐 Descargas recientes <span class="badge">${_downloadEvents.length}</span><span class="src-tag fs">Firestore</span></div>
+      <div class="table-wrap"><table><thead><tr><th>#</th><th>Video</th><th>Cuándo</th></tr></thead><tbody>${rows}</tbody></table></div>
+    </div>`;
+  }
+
+  $pane.innerHTML=`
+    <div class="info-box" style="font-size:.78rem"><strong>${fmt(totalDescargas)}</strong> descargas totales · <strong>${_downloadStats.length}</strong> videos descargados al menos una vez.</div>
+    ${topHtml}${recentHtml}`;
 }
 
 // ── Ligas y grupos (groups/) ──

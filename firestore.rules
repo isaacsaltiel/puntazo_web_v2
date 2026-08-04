@@ -503,6 +503,51 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════
+    // (2026-08-04) download_stats/{videoId} — contador de descargas del
+    // botón compartir/descargar (mismo patrón que video_stats de arriba).
+    // A diferencia de views, esto es métrica interna: solo admin lee.
+    // ════════════════════════════════════════════════════
+    match /download_stats/{videoId} {
+      function isAdminUser() {
+        return signedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid))
+               .data.get('flags', {}).get('isAdmin', false) == true;
+      }
+      allow read: if isAdminUser();
+      allow create: if request.resource.data.downloads == 1
+                    && request.resource.data.keys()
+                         .hasOnly(['downloads', 'updatedAt', 'club', 'cancha', 'lado']);
+      allow update: if request.resource.data.downloads == resource.data.downloads + 1
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['downloads', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // (2026-08-04) download_events/{eventId} — registro individual de cada
+    // descarga (video + club/cancha/lado + momento), append-only, para que
+    // el panel admin pueda mostrar actividad reciente (no solo el total).
+    // Cualquiera puede crear su propio evento (el botón es público, sin
+    // login); nadie puede editar/borrar; solo admin puede leer el log.
+    match /download_events/{eventId} {
+      function isAdminUser() {
+        return signedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid))
+               .data.get('flags', {}).get('isAdmin', false) == true;
+      }
+      allow read: if isAdminUser();
+      allow create: if request.resource.data.keys()
+                         .hasOnly(['videoId', 'club', 'cancha', 'lado', 'mode', 'ts'])
+                    && request.resource.data.videoId is string
+                    && request.resource.data.videoId.size() > 0
+                    && request.resource.data.videoId.size() < 300
+                    && request.resource.data.ts == request.time;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ════════════════════════════════════════════════════
     // (2026-06-15) Streaming en vivo a YouTube — handoff NUC Interpadel
     // La web admin (flags.isAdmin) escribe el ESTADO DESEADO por cancha
     // (action/titulo/requested_*). El NUC (Admin SDK, omite reglas) reconcilia
