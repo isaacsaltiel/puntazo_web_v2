@@ -379,6 +379,40 @@ video.video-preview {
   color: #fff;
 }
 
+/* 📤 Compartir: descarga con progreso antes de abrir el share sheet */
+.action-pill.is-progress {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(11, 124, 255, 0.40);
+  background: rgba(11, 124, 255, 0.10);
+  color: #fff;
+}
+.action-pill .pill-fill {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 124, 255, 0.40);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .18s ease;
+  border-radius: inherit;
+}
+.action-pill .pill-fill.is-indeterminate {
+  animation: pz-pill-indeterminate 1.1s ease-in-out infinite;
+}
+@keyframes pz-pill-indeterminate {
+  0%     { transform-origin: left;  transform: scaleX(.15); }
+  50%    { transform-origin: left;  transform: scaleX(.85); }
+  50.01% { transform-origin: right; }
+  100%   { transform-origin: right; transform: scaleX(.15); }
+}
+.action-pill .pill-label {
+  position: relative;
+  z-index: 1;
+  font-size: .82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 /* ── Botón "Otro ángulo" (aparece asíncronamente) ── */
 .btn-alt {
   display: inline-flex;

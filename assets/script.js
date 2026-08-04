@@ -613,18 +613,172 @@ async function unsaveVideoForCurrentUser(videoId) {
 }
 
 // ----------------------- Botones pill -----------------------
-function crearSharePill(entry) {
+
+// Compartir el video real (MP4), no el link. Dropbox a veces redirige
+// www.dropbox.com → dl.dropboxusercontent.com al hacer fetch(), y ese salto
+// entre hosts puede romper CORS; vamos directo al host servible.
+function toDirectFetchUrl(url) {
+  try {
+    const u = new URL(url, location.href);
+    if (u.hostname === "www.dropbox.com") u.hostname = "dl.dropboxusercontent.com";
+    u.searchParams.delete("raw"); u.searchParams.delete("dl");
+    return u.toString();
+  } catch { return url; }
+}
+function toForceDownloadUrl(url) {
+  try {
+    const u = new URL(url, location.href);
+    if (u.hostname === "dl.dropboxusercontent.com") u.hostname = "www.dropbox.com";
+    u.searchParams.delete("raw"); u.searchParams.set("dl", "1");
+    return u.toString();
+  } catch { return url; }
+}
+
+async function downloadWithProgress(url, { onProgress, signal } = {}) {
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const total = parseInt(res.headers.get("Content-Length") || "0", 10);
+  const type = url.toLowerCase().includes(".mp4") ? "video/mp4" : (res.headers.get("Content-Type") || "video/mp4");
+  const reader = res.body && res.body.getReader ? res.body.getReader() : null;
+  if (!reader) {
+    const blob = await res.blob();
+    if (onProgress) onProgress({ percent: 100, indeterminate: false });
+    return new Blob([blob], { type: blob.type || type });
+  }
+  const chunks = []; let received = 0;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.byteLength || 0;
+    if (onProgress) {
+      if (total) onProgress({ percent: Math.max(0, Math.min(100, Math.round(received / total * 100))), indeterminate: false });
+      else onProgress({ percent: null, indeterminate: true });
+    }
+  }
+  return new Blob(chunks, { type });
+}
+
+function crearSharePill(entry, video) {
   const btn = document.createElement("button");
-  btn.type = "button"; btn.className = "action-pill"; btn.textContent = "🔗"; btn.title = "Compartir enlace"; btn.setAttribute("aria-label", "Compartir");
+  btn.type = "button"; btn.className = "action-pill"; btn.textContent = "📤"; btn.title = "Compartir video"; btn.setAttribute("aria-label", "Compartir");
+
+  let state = "idle"; // idle | downloading | ready
+  let pendingFile = null;
+  let controller = null;
+  let fillEl = null, labelEl = null;
+
+  const setIdle = () => {
+    state = "idle"; pendingFile = null; controller = null; fillEl = null; labelEl = null;
+    btn.classList.remove("is-progress");
+    btn.disabled = false;
+    btn.innerHTML = "";
+    btn.textContent = "📤";
+    btn.title = "Compartir video";
+  };
+
+  const tryShareFile = async (file) => {
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: "Puntazo", text: "¡Mira este puntazo! 🎾" });
+      return true;
+    }
+    return false;
+  };
+
+  const downloadToDisk = (file) => {
+    const url = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = url; a.download = entry.nombre;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 800);
+    toast("Video descargado");
+  };
+
+  const setProgress = ({ percent, indeterminate }) => {
+    if (!fillEl || !labelEl) return;
+    if (indeterminate) {
+      fillEl.style.transform = "";
+      fillEl.classList.add("is-indeterminate");
+      labelEl.textContent = "";
+    } else {
+      fillEl.classList.remove("is-indeterminate");
+      fillEl.style.transform = `scaleX(${(percent || 0) / 100})`;
+      labelEl.textContent = percent + "%";
+    }
+  };
+
   btn.addEventListener("click", async () => {
-    const link = `${location.origin}/clip.html?videoId=${encodeURIComponent(entry.nombre)}`;
-    trackEvent("click_share", gaCtx({ video_name: entry.nombre }));
+    if (state === "ready" && pendingFile) {
+      let ok = false;
+      try { ok = await tryShareFile(pendingFile); } catch {}
+      if (ok) trackEvent("share_success", gaCtx({ video_name: entry.nombre, mode: "manual_ready" }));
+      else downloadToDisk(pendingFile);
+      setIdle();
+      return;
+    }
+
+    if (state === "downloading") {
+      try { controller && controller.abort(); } catch {}
+      return;
+    }
+
+    if (!entry.url) { toast("Video no disponible"); return; }
+
+    trackEvent("click_share_download", gaCtx({ video_name: entry.nombre }));
+    if (video) { try { video.pause(); } catch {} }
+
+    state = "downloading";
+    btn.classList.add("is-progress");
+    btn.title = "Toca para cancelar";
+    btn.innerHTML = "";
+    fillEl = document.createElement("span"); fillEl.className = "pill-fill";
+    labelEl = document.createElement("span"); labelEl.className = "pill-label"; labelEl.textContent = "0%";
+    btn.appendChild(fillEl); btn.appendChild(labelEl);
+
+    controller = new AbortController();
     try {
-      if (navigator.share) { await navigator.share({ title: "Puntazo", text: "¡Mira este puntazo! 🎾", url: link }); toast("Compartido"); return; }
-    } catch {}
-    try { await navigator.clipboard.writeText(link); btn.textContent = "✓"; setTimeout(() => { btn.textContent = "🔗"; }, 1500); toast("Enlace copiado"); }
-    catch { window.open(link, "_blank"); }
+      const blob = await downloadWithProgress(toDirectFetchUrl(entry.url), {
+        signal: controller.signal,
+        onProgress: setProgress,
+      });
+      const file = new File([blob], entry.nombre, { type: blob.type || "video/mp4" });
+
+      let shared = false;
+      try { shared = await tryShareFile(file); } catch { shared = false; }
+
+      if (shared) {
+        trackEvent("share_success", gaCtx({ video_name: entry.nombre, mode: "auto_share" }));
+        setIdle();
+        return;
+      }
+
+      if (navigator.canShare) {
+        trackEvent("share_ready", gaCtx({ video_name: entry.nombre }));
+        pendingFile = file; state = "ready";
+        btn.classList.remove("is-progress");
+        btn.innerHTML = ""; btn.textContent = "📤 Listo";
+        btn.title = "Toca para compartir";
+      } else {
+        trackEvent("download_fallback", gaCtx({ video_name: entry.nombre, mode: "local_blob" }));
+        downloadToDisk(file);
+        setIdle();
+      }
+    } catch (err) {
+      if (err && err.name === "AbortError") { setIdle(); toast("Descarga cancelada"); return; }
+      console.warn("[crearSharePill]", err);
+      try {
+        const a = document.createElement("a");
+        a.href = toForceDownloadUrl(entry.url);
+        a.download = entry.nombre;
+        document.body.appendChild(a); a.click();
+        setTimeout(() => a.remove(), 500);
+        trackEvent("download_fallback", gaCtx({ video_name: entry.nombre, mode: "force_dl" }));
+      } catch {}
+      setIdle();
+      toast("No se pudo compartir, se intentó descargar");
+    }
   });
+
   return btn;
 }
 
@@ -791,7 +945,7 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
 
     // 3. Botones pill
     const actionPills = document.createElement("div"); actionPills.className = "action-pills";
-    actionPills.appendChild(crearSharePill(entry));
+    actionPills.appendChild(crearSharePill(entry, real));
     actionPills.appendChild(crearSavePill(entry, loc, can, lado));
     actionPills.appendChild(crearFullscreenPill(real, card, entry));
     card.appendChild(actionPills);
