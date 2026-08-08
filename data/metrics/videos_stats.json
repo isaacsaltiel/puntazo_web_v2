@@ -793,6 +793,12 @@
       "count": 12
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-08-07",
+      "count": 12
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-08-24",
@@ -5933,12 +5939,6 @@
       "can": "cancha5",
       "date": "2026-08-05",
       "count": 1
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "date": "2026-08-07",
-      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -6262,21 +6262,27 @@
     },
     {
       "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "13",
+      "count": 31
+    },
+    {
+      "loc": "breakpoint",
       "can": "cancha3",
       "hour": "10",
       "count": 31
     },
     {
       "loc": "breakpoint",
-      "can": "cancha4",
-      "hour": "06",
-      "count": 29
+      "can": "cancha1",
+      "hour": "12",
+      "count": 30
     },
     {
       "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "13",
-      "count": 27
+      "can": "cancha4",
+      "hour": "06",
+      "count": 29
     },
     {
       "loc": "interpadel",
@@ -6294,12 +6300,6 @@
       "loc": "breakpoint",
       "can": "cancha2",
       "hour": "17",
-      "count": 26
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "12",
       "count": 26
     },
     {
@@ -6348,6 +6348,12 @@
       "loc": "breakpoint",
       "can": "cancha2",
       "hour": "22",
+      "count": 23
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "14",
       "count": 23
     },
     {
@@ -6414,12 +6420,6 @@
       "loc": "breakpoint",
       "can": "cancha3",
       "hour": "21",
-      "count": 20
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "14",
       "count": 20
     },
     {
@@ -17258,7 +17258,7 @@
       "can": "cancha1",
       "date": "2026-08-07",
       "counts_por_lado": {
-        "ladoa": 1
+        "ladoa": 12
       },
       "diff": 0
     },
@@ -17290,5 +17290,5 @@
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-08-07T16:38:43.353541+00:00"
+  "generated_at_utc": "2026-08-08T00:41:37.079638+00:00"
 }
