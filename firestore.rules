@@ -548,6 +548,27 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════
+    // (2026-08-11) recording_daily/{loc_can_lado_fecha} — contador diario de
+    // clips grabados por club/cancha/lado, escrito por cada NUC (Admin SDK,
+    // omite estas reglas) EN EL MOMENTO en que termina de generar cada clip
+    // — mismo instante en que hoy ya escribe clip_states/pulsos. Reemplaza a
+    // videos_log.csv como fuente EN VIVO de la pestaña Clubs del admin.
+    // A diferencia de download_stats, aquí NO hay escritor legítimo desde el
+    // navegador (solo la NUC vía service account) → create/update denegados
+    // para cualquier cliente, aunque sea admin.
+    // ════════════════════════════════════════════════════
+    match /recording_daily/{docId} {
+      function isAdminUser() {
+        return signedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid))
+               .data.get('flags', {}).get('isAdmin', false) == true;
+      }
+      allow read: if isAdminUser();
+      allow write: if false;
+    }
+
+    // ════════════════════════════════════════════════════
     // (2026-06-15) Streaming en vivo a YouTube — handoff NUC Interpadel
     // La web admin (flags.isAdmin) escribe el ESTADO DESEADO por cancha
     // (action/titulo/requested_*). El NUC (Admin SDK, omite reglas) reconcilia

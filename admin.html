@@ -317,7 +317,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
     <div class="kpi src-green"><div class="kpi-value" id="kpiUsers">—</div><div class="kpi-label">Usuarios</div></div>
   </div>
   <p style="color:var(--muted);font-size:.71rem;margin-top:-14px;margin-bottom:24px">
-    🔵 Azul = videos_log.csv en GitHub (datos de grabación). 🟡 Amarillo/verde = Firestore (engagement).
+    🔵 Azul = grabación (🔥 Firestore en vivo, con 📁 videos_log.csv como respaldo histórico). 🟡 Amarillo/verde = Firestore (engagement).
   </p>
 
   <div class="tabs">
@@ -354,8 +354,9 @@ const GH_REPO    = 'isaacsaltiel/puntazo_web_v2';
 const GH_BRANCH  = 'master';
 
 // ── Estado ──
-let _ghStats   = null;
-let _historial = [];
+let _ghStats     = null;
+let _historial   = [];   // 📁 respaldo: agregados diarios desde videos_log.csv (batch, vía CI)
+let _historialFS = [];   // 🔥 en vivo: agregados diarios desde recording_daily (Firestore, escrito por la NUC al terminar cada clip)
 let _fsDocs    = [];
 let _players   = [];
 let _users     = [];
@@ -980,7 +981,21 @@ function getDateRange(){
 }
 function fd(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function inRange(f,s,e){return f&&f>=s&&f<=e;}
-function filteredHistorial(){const{start,end}=getDateRange();return _historial.filter(h=>inRange(h.fecha,start,end));}
+// 🔥 Firestore (recording_daily, en vivo) tiene prioridad por (fecha,loc,can,lado);
+// 📁 el CSV (_historial) solo rellena huecos — días/canchas donde la NUC aún no
+// escribe el contador en vivo (p.ej. antes del rollout, o mientras se despliega
+// club por club). Así ninguna cancha se queda en cero mientras se actualiza.
+function mergedHistorial(){
+  const seen=new Set();
+  const out=[];
+  for(const h of _historialFS){ seen.add(`${h.fecha}|${h.loc}|${h.can}|${h.lado}`); out.push({...h,live:true}); }
+  for(const h of _historial){
+    const k=`${h.fecha}|${h.loc}|${h.can}|${h.lado}`;
+    if(!seen.has(k)) out.push({...h,live:false});
+  }
+  return out;
+}
+function filteredHistorial(){const{start,end}=getDateRange();return mergedHistorial().filter(h=>inRange(h.fecha,start,end));}
 function filteredFS(){const{start,end}=getDateRange();return _fsDocs.filter(d=>inRange(d.fecha||'',start,end));}
 
 function buildTimeBar(tabId){
@@ -1054,7 +1069,7 @@ async function fetchGH(){
 let _matches=[],_groups=[],_videoStats=[],_downloadStats=[],_downloadEvents=[];
 async function fetchFS(){
   const db=window.PuntazoFirebase.db();
-  const[mSnap,uSnap,gSnap,vSnap,dsSnap,deSnap]=await Promise.all([
+  const[mSnap,uSnap,gSnap,vSnap,dsSnap,deSnap,rdSnap]=await Promise.all([
     db.collection('matches').orderBy('createdAt','desc').limit(400).get(),
     db.collection('users').limit(1000).get(),
     db.collection('groups').limit(200).get(),
@@ -1065,6 +1080,12 @@ async function fetchFS(){
     // estas dos (reglas), por eso van con .catch por si el flag isAdmin aún no propaga.
     db.collection('download_stats').orderBy('downloads','desc').limit(200).get().catch(()=>({forEach(){}})),
     db.collection('download_events').orderBy('ts','desc').limit(60).get().catch(()=>({forEach(){}})),
+    // (2026-08-11) recording_daily: contador diario por club/cancha/lado que
+    // cada NUC incrementa AL TERMINAR cada clip (mismo instante que hoy ya
+    // escribe clip_states/pulsos). Reemplaza a videos_log.csv como fuente EN
+    // VIVO de la pestaña Clubs; el CSV queda como respaldo mientras cada NUC
+    // se actualiza (ver mergedHistorial()). Solo admin lee (regla dedicada).
+    db.collection('recording_daily').orderBy('fecha','desc').limit(4000).get().catch(()=>({forEach(){}})),
   ]);
   _videoStats=[];vSnap.forEach(d=>_videoStats.push(Object.assign({videoId:d.id},d.data())));
   _downloadStats=[];dsSnap.forEach(d=>_downloadStats.push(Object.assign({videoId:d.id},d.data())));
@@ -1072,6 +1093,10 @@ async function fetchFS(){
   _matches=[];mSnap.forEach(d=>_matches.push(Object.assign({id:d.id},d.data())));
   _users=[];uSnap.forEach(d=>{const x=d.data()||{};_users.push({uid:d.id,displayName:x.displayName||'',handle:x.handle||'',photoURL:x.photoURL||'',createdAt:x.createdAt||null});});
   _groups=[];gSnap.forEach(d=>_groups.push(Object.assign({id:d.id},d.data())));
+  _historialFS=[];rdSnap.forEach(d=>{
+    const x=d.data()||{};
+    if(x.fecha&&x.loc&&x.can&&x.lado) _historialFS.push({fecha:x.fecha,loc:x.loc,can:x.can,lado:x.lado,count:x.count||0});
+  });
   _fsDocs=_matches;
   // Jugadores = apariciones en los partidos recientes (uid o invitado).
   const pMap=new Map();
@@ -1126,6 +1151,12 @@ function renderClubs(){
   const sortedClubs=Array.from(clubMap.values()).sort((a,b)=>b.total-a.total);
   const maxClub=sortedClubs[0]?.total||1;
   let totalPeriodo=sortedClubs.reduce((s,c)=>s+c.total,0);
+  const liveVideos=filtered.filter(h=>h.live).reduce((s,h)=>s+h.count,0);
+  const fuenteLabel=liveVideos===totalPeriodo
+    ?'🔥 Firestore en vivo'
+    :(liveVideos>0
+      ?`🔥 ${fmt(liveVideos)} en vivo + 📁 ${fmt(totalPeriodo-liveVideos)} de <code>videos_log.csv</code>`
+      :'📁 <code>videos_log.csv</code> (respaldo — aún sin datos en vivo en este período)');
   const blocks=sortedClubs.map((club,ci)=>{
     const sortedCanchas=Array.from(club.canchas.values()).sort((a,b)=>b.total-a.total);
     const canchaRows=sortedCanchas.map(cancha=>{
@@ -1156,8 +1187,8 @@ function renderClubs(){
   }).join('');
   $pane.innerHTML=buildTimeBar('clubs')+`
     <div class="info-box" style="font-size:.73rem">
-      <strong>Fuente:</strong> <code>videos_log.csv</code> · <strong>${totalPeriodo.toLocaleString()}</strong> videos en "${label}".
-      Stats: <strong>${_ghStats?.generado_el?.slice(0,16).replace('T',' ')||'—'}</strong>
+      <strong>Fuente:</strong> ${fuenteLabel} · <strong>${totalPeriodo.toLocaleString()}</strong> videos en "${label}".
+      Respaldo CSV generado: <strong>${_ghStats?.generado_el?.slice(0,16).replace('T',' ')||'—'}</strong>
     </div>
     <div class="section">
       <div class="section-title">🏢 Clubs — ${esc(label)} <span class="badge">${sortedClubs.length} clubs · ${totalPeriodo.toLocaleString()} videos</span></div>
