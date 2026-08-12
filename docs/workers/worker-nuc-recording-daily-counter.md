@@ -135,3 +135,22 @@ el conteo correcto, y si el flujo existente siguió intacto.
 | Agregar el write a `recording_daily` (Admin SDK, `Increment(1)`, `merge=True`) | NUC |
 | Verificar que `loc`/`can`/`lado` coincidan con la tabla de arriba | NUC |
 | Probar E2E (§3) y reportar | NUC |
+
+---
+
+## Addenda (post-rollout BreakPoint/WellStreet/Interpadel, 2026-08-11)
+
+Ya aplicado y verificado en BreakPoint, WellStreet (Padel+Pickleball) e
+Interpadel. Si te toca aplicarlo a ti todavía, dos correcciones sobre el §1:
+
+1. **Usa la hora del EVENTO, no `datetime.now()`.** BreakPoint lo hizo bien:
+   usa el mismo timestamp que ya usas para nombrar el archivo/`fecha_tag` del
+   clip (p.ej. `first_press`), no la hora en que tu código de upload termina
+   de correr. Si usas `now()`, un clip de las 23:59 procesado ya pasada la
+   medianoche cae en un día distinto en Firestore que en el CSV (`local_date`)
+   — exactamente la duplicación al mezclar que este contador debía evitar.
+2. **Si tu pipeline mete al mismo índice/CSV tanto "puntazos" (clips cortos)
+   como grabaciones de partido completo ("PARTIDO"), cuenta ambos.** WellStreet
+   lo detectó: si solo cuentas puntazos, el contador en vivo deja de cuadrar
+   1:1 contra el respaldo CSV (que sí incluye ambos). El criterio es: cuenta
+   cualquier cosa que termine apareciendo en `videos_log.csv` / el índice.
