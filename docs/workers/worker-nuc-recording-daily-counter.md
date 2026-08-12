@@ -154,3 +154,15 @@ Interpadel. Si te toca aplicarlo a ti todavía, dos correcciones sobre el §1:
    lo detectó: si solo cuentas puntazos, el contador en vivo deja de cuadrar
    1:1 contra el respaldo CSV (que sí incluye ambos). El criterio es: cuenta
    cualquier cosa que termine apareciendo en `videos_log.csv` / el índice.
+3. **Para limpiar un clip de prueba: NO borres el doc de `recording_daily`,
+   escríbelo con `count: 0`.** `generar_metricas.py` (el que arma
+   `videos_log.csv`) escanea Dropbox cada 8h (`schedule` en
+   `generar_metricas.yml`) y es puramente ADITIVO — si tu clip de prueba ya
+   fue escaneado antes de que lo borraras, queda una fila fantasma
+   PERMANENTE en el CSV (no se autocorrige nunca, ni borrando el archivo de
+   Dropbox después). Si borras el doc de Firestore, el merge de `admin.html`
+   cae al CSV para esa celda y esa fila fantasma sí se cuenta. Si en cambio
+   dejas el doc con `count:0`, el merge la sigue tomando de Firestore (gana
+   por celda) y la fantasma del CSV queda tapada. Borra igual el clip, la
+   miniatura, la copia local y el `clip_states` — eso sí bórralo normal.
+   (Caso real: Interpadel-NUC, 2026-08-11/12 — confirmado por el maestro.)
