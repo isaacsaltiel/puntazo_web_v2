@@ -2143,6 +2143,12 @@
       "count": 5
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-08-12",
+      "count": 5
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-08-31",
@@ -6400,6 +6406,12 @@
     },
     {
       "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "13",
+      "count": 34
+    },
+    {
+      "loc": "breakpoint",
       "can": "cancha4",
       "hour": "12",
       "count": 34
@@ -6432,12 +6444,6 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "12",
-      "count": 31
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "13",
       "count": 31
     },
     {
@@ -6497,6 +6503,12 @@
     {
       "loc": "breakpoint",
       "can": "cancha1",
+      "hour": "11",
+      "count": 24
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
       "hour": "20",
       "count": 24
     },
@@ -6511,12 +6523,6 @@
       "can": "cancha5",
       "hour": "08",
       "count": 24
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "11",
-      "count": 23
     },
     {
       "loc": "breakpoint",
@@ -6723,6 +6729,12 @@
       "count": 16
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "18",
+      "count": 16
+    },
+    {
       "loc": "interpadel",
       "can": "cancha6",
       "hour": "00",
@@ -6762,12 +6774,6 @@
       "loc": "breakpoint",
       "can": "cancha3",
       "hour": "20",
-      "count": 15
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "18",
       "count": 15
     },
     {
@@ -17699,7 +17705,16 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-08-12",
+      "counts_por_lado": {
+        "ladoa": 5
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-08-12T16:43:20.178726+00:00"
+  "generated_at_utc": "2026-08-13T00:54:23.516883+00:00"
 }
