@@ -985,11 +985,41 @@ function inRange(f,s,e){return f&&f>=s&&f<=e;}
 // 📁 el CSV (_historial) solo rellena huecos — días/canchas donde la NUC aún no
 // escribe el contador en vivo (p.ej. antes del rollout, o mientras se despliega
 // club por club). Así ninguna cancha se queda en cero mientras se actualiza.
+// videos_log.csv guarda loc/can/lado en minúsculas ("breakpoint","cancha1","ladoa");
+// recording_daily (Firestore) guarda el id tal cual lo escribe la NUC ("BreakPoint",
+// "Cancha1","LadoA"). Sin normalizar, la misma cancha entra dos veces al merge (una
+// por cada casing) y se ve "duplicada" en la pestaña Clubs. Canonizamos todo a los
+// ids EXACTOS de config_locations.json (case-insensitive) antes de mezclar/agrupar.
+function canonKeys(){
+  const locs={},cans={},lados={};
+  for(const club of (_ghStats?.clubs||[])){
+    locs[club.id.toLowerCase()]=club.id;
+    for(const cancha of (club.canchas||[])){
+      cans[`${club.id.toLowerCase()}|${cancha.id.toLowerCase()}`]=cancha.id;
+      for(const lado of (cancha.lados||[])){
+        lados[`${club.id.toLowerCase()}|${cancha.id.toLowerCase()}|${lado.id.toLowerCase()}`]=lado.id;
+      }
+    }
+  }
+  return{locs,cans,lados};
+}
+function canonRow(h,ck){
+  const loc=ck.locs[String(h.loc||'').toLowerCase()]||h.loc;
+  const can=ck.cans[`${loc.toLowerCase()}|${String(h.can||'').toLowerCase()}`]||h.can;
+  const lado=ck.lados[`${loc.toLowerCase()}|${can.toLowerCase()}|${String(h.lado||'').toLowerCase()}`]||h.lado;
+  return{...h,loc,can,lado};
+}
 function mergedHistorial(){
+  const ck=canonKeys();
   const seen=new Set();
   const out=[];
-  for(const h of _historialFS){ seen.add(`${h.fecha}|${h.loc}|${h.can}|${h.lado}`); out.push({...h,live:true}); }
-  for(const h of _historial){
+  for(const h0 of _historialFS){
+    const h=canonRow(h0,ck);
+    seen.add(`${h.fecha}|${h.loc}|${h.can}|${h.lado}`);
+    out.push({...h,live:true});
+  }
+  for(const h0 of _historial){
+    const h=canonRow(h0,ck);
     const k=`${h.fecha}|${h.loc}|${h.can}|${h.lado}`;
     if(!seen.has(k)) out.push({...h,live:false});
   }
