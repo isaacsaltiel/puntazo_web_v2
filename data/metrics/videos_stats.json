@@ -595,6 +595,12 @@
       "count": 15
     },
     {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "date": "2026-08-14",
+      "count": 15
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-10-06",
@@ -663,12 +669,6 @@
     {
       "loc": "wellstreet-pickleball",
       "can": "cancha1",
-      "date": "2026-08-14",
-      "count": 14
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha5",
       "date": "2026-08-14",
       "count": 14
     },
@@ -4411,6 +4411,12 @@
       "count": 2
     },
     {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "date": "2026-08-14",
+      "count": 2
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-09-10",
@@ -6149,12 +6155,6 @@
       "can": "cancha3",
       "date": "2026-08-12",
       "count": 1
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha4",
-      "date": "2026-08-14",
-      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -6999,6 +6999,12 @@
       "count": 12
     },
     {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "hour": "18",
+      "count": 12
+    },
+    {
       "loc": "breakpoint",
       "can": "cancha4",
       "hour": "19",
@@ -7044,12 +7050,6 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "00",
-      "count": 11
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha4",
-      "hour": "18",
       "count": 11
     },
     {
@@ -7708,6 +7708,12 @@
     },
     {
       "loc": "interpadel",
+      "can": "cancha5",
+      "hour": "18",
+      "count": 4
+    },
+    {
+      "loc": "interpadel",
       "can": "cancha3",
       "hour": "07",
       "count": 4
@@ -7860,12 +7866,6 @@
       "loc": "interpadel",
       "can": "cancha5",
       "hour": "22",
-      "count": 3
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha5",
-      "hour": "18",
       "count": 3
     },
     {
@@ -17822,7 +17822,7 @@
       "can": "cancha5",
       "date": "2026-08-14",
       "counts_por_lado": {
-        "ladoa": 14
+        "ladoa": 15
       },
       "diff": 0
     },
@@ -17831,10 +17831,10 @@
       "can": "cancha4",
       "date": "2026-08-14",
       "counts_por_lado": {
-        "ladoa": 1
+        "ladoa": 2
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-08-15T00:30:27.852457+00:00"
+  "generated_at_utc": "2026-08-15T08:12:56.232971+00:00"
 }
