@@ -3505,6 +3505,12 @@
       "count": 3
     },
     {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "date": "2026-08-15",
+      "count": 3
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -7714,6 +7720,12 @@
     },
     {
       "loc": "interpadel",
+      "can": "cancha5",
+      "hour": "12",
+      "count": 4
+    },
+    {
+      "loc": "interpadel",
       "can": "cancha3",
       "hour": "07",
       "count": 4
@@ -8038,14 +8050,14 @@
     },
     {
       "loc": "interpadel",
-      "can": "cancha6",
+      "can": "cancha5",
       "hour": "13",
       "count": 2
     },
     {
       "loc": "interpadel",
-      "can": "cancha5",
-      "hour": "12",
+      "can": "cancha6",
+      "hour": "13",
       "count": 2
     },
     {
@@ -8286,12 +8298,6 @@
       "loc": "interpadel",
       "can": "cancha6",
       "hour": "12",
-      "count": 1
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha5",
-      "hour": "13",
       "count": 1
     },
     {
@@ -17834,7 +17840,16 @@
         "ladoa": 2
       },
       "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha5",
+      "date": "2026-08-15",
+      "counts_por_lado": {
+        "ladoa": 3
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-08-15T16:09:17.605549+00:00"
+  "generated_at_utc": "2026-08-16T00:31:54.884330+00:00"
 }
