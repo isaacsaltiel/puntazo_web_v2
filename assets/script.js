@@ -338,12 +338,27 @@ async function doCopyAction(action, entry) {
 }
 function doCloseAction() { ensurePromoModalRoot().style.display = "none"; }
 function buildMailto(action, entry) { return `mailto:${action?.to || "contacto@puntazoclips.com"}?subject=${encodeURIComponent(resolvePlaceholders(action?.subject || "", entry))}&body=${encodeURIComponent(resolvePlaceholdersInArray(action?.bodyTemplate || [], entry).join("\n"))}`; }
+// 19-ago-2026: se retiro el correo como canal de contacto (decision de Isaac; ahora
+// todo entra por Instagram o WhatsApp). Este constructor sustituye a buildMailto en
+// las promos: WhatsApp -y no el mensaje directo de Instagram- porque los enlaces de
+// Instagram NO admiten texto prellenado, y aqui el cuerpo carga datos que si hacen
+// falta (URL del clip, nombre del archivo, el consentimiento de uso en redes).
+// El asunto viaja como primera linea, ya que WhatsApp no tiene campo de asunto.
+const WHATSAPP_PUNTAZO = "522206804856";
+function buildWhatsApp(action, entry) {
+  const NL     = String.fromCharCode(10);
+  const cuerpo = resolvePlaceholdersInArray(action?.bodyTemplate || [], entry).join(NL);
+  const asunto = resolvePlaceholders(action?.subject || "", entry);
+  const texto  = asunto ? ("*" + asunto + "*" + NL + NL + cuerpo) : cuerpo;
+  return "https://wa.me/" + (action?.phone || WHATSAPP_PUNTAZO) + "?text=" + encodeURIComponent(texto);
+}
 
 async function handlePromoAction(action, entry) {
   const type = (action?.type || "").toLowerCase();
   trackEvent("promo_action", gaCtx({ action_type: type, video_name: entry?.nombre || "" }));
   if (type === "url")    { try { window.open(action.href || "#", action.target || "_blank"); } catch { location.href = action.href; } return; }
-  if (type === "mailto") { location.href = buildMailto(action, entry); return; }
+  if (type === "whatsapp") { const u = buildWhatsApp(action, entry); try { window.open(u, "_blank"); } catch { location.href = u; } return; }
+  if (type === "mailto") { location.href = buildMailto(action, entry); return; }   // legacy: ninguna promo lo usa ya
   if (type === "copy")   { await doCopyAction(action, entry); return; }
   doCloseAction();
 }
@@ -378,7 +393,7 @@ function legacyConvertIfNeeded(conf) {
     c.action = { type: "modal" }; c.modal = c.modal || {}; c.modal.enabled = true;
     if (!Array.isArray(c.modal.buttons) || !c.modal.buttons.length) {
       c.modal.buttons = [
-        { label: "Nominar mi punto", style: { bg_color: c.border_color || "#004FC8", text_color: "#fff", border_color: c.border_color || "#004FC8" }, action: { type: "mailto", to: c.mailto || "contacto@puntazoclips.com", subject: c.subject || "Nominar punto", bodyTemplate: c.bodyTemplate || [] } },
+        { label: "Nominar mi punto", style: { bg_color: c.border_color || "#004FC8", text_color: "#fff", border_color: c.border_color || "#004FC8" }, action: { type: "whatsapp", phone: c.whatsapp || WHATSAPP_PUNTAZO, subject: c.subject || "Nominar punto", bodyTemplate: c.bodyTemplate || [] } },
         { label: "Cerrar", style: { bg_color: "#f5f5f5", text_color: "#000", border_color: "#ccc" }, action: { type: "close" } }
       ];
     }
