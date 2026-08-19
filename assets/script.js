@@ -431,9 +431,68 @@ async function buildPromoButtonsForClub(loc, entry) {
 let allVideos = [];
 let visibilityMap = new Map();
 let currentPreviewActive = null;
-const PAGE_SIZE = 10;
+// PAGINACIÓN POR DÍAS COMPLETOS (19-ago-2026, decisión de Isaac).
+// Antes: rebanadas fijas de 10, que partían un día a la mitad entre dos páginas
+// ("los del martes: 6 aquí y 4 en la siguiente"), lo cual desorienta al jugador
+// que busca por día. Ahora una página SIEMPRE contiene días enteros.
+//   · Objetivo ~10 videos por página.
+//   · Mínimo 7 para cerrar una página (si va en menos, sigue sumando días).
+//   · SIN máximo: si un solo día trae 28 videos, esa página lleva los 28.
+// La decisión de cerrar página compara qué queda MÁS CERCA de 10: cerrar aquí
+// o sumar el día siguiente. Así 7+3 se junta (=10) pero 7+20 no (7 gana a 27).
+const PAGE_TARGET = 10;   // tamaño ideal de página
+const PAGE_MIN    = 7;    // no se cierra una página con menos, salvo que se acaben los días
+const PAGE_SIZE   = PAGE_TARGET;   // se conserva: lo usan el deep-link y el paginador legacy
+
+// Agrupa la lista (ya ordenada, más reciente primero) en páginas de días completos.
+// Devuelve [[video,...], [video,...]] — nunca parte un día entre dos páginas.
+function construirPaginasPorDia(lista) {
+  if (!Array.isArray(lista) || lista.length === 0) return [[]];
+  // 1) Agrupar por etiqueta de día, respetando el orden ya calculado.
+  const dias = [];
+  let actual = null;
+  for (const v of lista) {
+    const key = v._dateLabel || "—";
+    if (!actual || actual.key !== key) { actual = { key, items: [] }; dias.push(actual); }
+    actual.items.push(v);
+  }
+  // 2) Empaquetar días en páginas.
+  const paginas = [];
+  let pag = [];
+  for (let i = 0; i < dias.length; i++) {
+    pag = pag.concat(dias[i].items);
+    const quedanDias = i < dias.length - 1;
+    if (!quedanDias) break;                      // último día: se cierra al salir
+    if (pag.length < PAGE_MIN) continue;         // muy corta todavía: suma otro día
+    const siSumo = pag.length + dias[i + 1].items.length;
+    // ¿Cerrar aquí queda más cerca del objetivo que sumar el día siguiente?
+    if (Math.abs(pag.length - PAGE_TARGET) <= Math.abs(siSumo - PAGE_TARGET)) {
+      paginas.push(pag); pag = [];
+    }
+  }
+  if (pag.length) paginas.push(pag);
+  return paginas.length ? paginas : [[]];
+}
+
+// Índice de la página que contiene el video nº idx de la lista plana.
+function paginaDeIndice(paginas, idx) {
+  let acc = 0;
+  for (let i = 0; i < paginas.length; i++) {
+    if (idx < acc + paginas[i].length) return i;
+    acc += paginas[i].length;
+  }
+  return 0;
+}
+
+// Cuántos videos hay antes de la página p (para el "N–M de T" del paginador).
+function offsetDePagina(paginas, p) {
+  let acc = 0;
+  for (let i = 0; i < p && i < paginas.length; i++) acc += paginas[i].length;
+  return acc;
+}
 let videosListaCompleta = [];
 let paginaActual = 0;
+let paginasPorDia = [[]];   // páginas de días completos (ver construirPaginasPorDia)
 let cfgGlobal = null;
 let oppInfoCache = null;
 let contenedorVideos = null;
@@ -466,9 +525,15 @@ function ensureBottomControlsContainer() {
   if (!contFiltroAbajo) { contFiltroAbajo = document.createElement("div"); contFiltroAbajo.id = "filtro-horario-bottom"; contFiltroAbajo.style.marginTop = "12px"; contenedorBottomControls.appendChild(contFiltroAbajo); }
 }
 
+// `pageSize` puede ser un NÚMERO (páginas de tamaño fijo, uso legacy) o el ARREGLO
+// de páginas por día — en cuyo caso el conteo y el rango "N–M" salen de él, porque
+// con días completos las páginas ya no miden todas lo mismo.
 function renderPaginator(container, totalItems, pageIndex, pageSize, onChange) {
   if (!container) return; container.innerHTML = "";
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize)); if (totalPages <= 1) return;
+  const porDia     = Array.isArray(pageSize);
+  const totalPages = porDia ? Math.max(1, pageSize.length)
+                            : Math.max(1, Math.ceil(totalItems / pageSize));
+  if (totalPages <= 1) return;
   const wrap = document.createElement("div"); wrap.style.cssText = "display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0;";
   const mkBtn = (label, disabled, handler) => {
     const b = document.createElement("button"); b.textContent = label; b.disabled = !!disabled;
@@ -484,7 +549,9 @@ function renderPaginator(container, totalItems, pageIndex, pageSize, onChange) {
   }
   wrap.appendChild(mkBtn("Siguiente ›", pageIndex >= totalPages - 1, () => onChange(pageIndex + 1)));
   const info = document.createElement("span");
-  const first = totalItems === 0 ? 0 : pageIndex * pageSize + 1, last = Math.min((pageIndex+1)*pageSize, totalItems);
+  const off   = porDia ? offsetDePagina(pageSize, pageIndex) : pageIndex * pageSize;
+  const largo = porDia ? (pageSize[pageIndex]?.length || 0)  : pageSize;
+  const first = totalItems === 0 ? 0 : off + 1, last = Math.min(off + largo, totalItems);
   info.textContent = `${first}–${last} de ${totalItems} · Página ${pageIndex+1}/${totalPages}`; info.style.cssText = "margin-left:auto;font-size:.78rem;opacity:.65;color:#eaf2ff;";
   wrap.appendChild(info); container.appendChild(wrap);
 }
@@ -888,9 +955,13 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
 
   const params = getQueryParams();
   const { loc, can, lado } = params;
-  const start     = paginaActual * PAGE_SIZE;
-  const end       = Math.min(start + PAGE_SIZE, videosListaCompleta.length);
-  const pageSlice = videosListaCompleta.slice(start, end);
+  // La página ya viene armada con días completos (nunca parte un día en dos).
+  if (!Array.isArray(paginasPorDia) || !paginasPorDia.length) paginasPorDia = [[]];
+  if (paginaActual >= paginasPorDia.length) paginaActual = paginasPorDia.length - 1;
+  if (paginaActual < 0) paginaActual = 0;
+  const start     = offsetDePagina(paginasPorDia, paginaActual);
+  const pageSlice = paginasPorDia[paginaActual] || [];
+  const end       = start + pageSlice.length;
 
   // Etiqueta del último video ANTES de esta página (para decidir si
   // el primer elemento de la página necesita separador)
@@ -981,8 +1052,8 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
   loadPreviewsSequentially(Array.from(contenedorVideos.querySelectorAll("video.video-preview")));
 
   const pagBottom = document.getElementById("paginator-bottom");
-  renderPaginator(pagBottom, videosListaCompleta.length, paginaActual, PAGE_SIZE, (newPage) => {
-    const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
+  renderPaginator(pagBottom, videosListaCompleta.length, paginaActual, paginasPorDia, (newPage) => {
+    const totalPages = Math.max(1, paginasPorDia.length);
     newPage = Math.min(Math.max(0, newPage), totalPages - 1);
     trackEvent("paginate", gaCtx({ from: paginaActual, to: newPage }));
     paginaActual = newPage; setQueryParams({ pg: paginaActual });
@@ -1040,9 +1111,13 @@ async function populateVideos() {
     const recientes = Array.isArray(data.videos) ? data.videos : [];
     recientes.forEach(v => { v._meta = parseFromName(v.nombre); v._isVitrina = false; });
 
-    // ── 2. Vitrina: completa a MIN si hace falta ───────────────
+    // ── 2. Vitrina: SIEMPRE se carga (19-ago-2026) ─────────────
+    // Antes solo se pedía si había menos de MIN_VITRINA_VIDEOS recientes, así que
+    // en un día movido el jugador perdía de vista todo lo de días anteriores. Hoy
+    // el indexador publica la ventana completa de 14 días y aquí se consume entera;
+    // la paginación por días completos evita que eso sature una sola pantalla.
     let vitrina = [];
-    if (recientes.length < MIN_VITRINA_VIDEOS) {
+    {
       try {
         const vitrinaUrl = getVitrinaUrl(ladoObj.json_url);
         if (vitrinaUrl) {
@@ -1108,10 +1183,13 @@ async function populateVideos() {
       }
     }
 
-    const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+    // Se arman las páginas por días completos ANTES de resolver la página pedida,
+    // porque el deep-link (?pg=, ?id=, ?pt=) tiene que aterrizar en la página real.
+    paginasPorDia = construirPaginasPorDia(list);
+    const totalPages = Math.max(1, paginasPorDia.length);
     let desiredPg = parseInt(params.pg || "0", 10);
     if (Number.isNaN(desiredPg)) desiredPg = 0;
-    if (targetIdResolved) { const idx = list.findIndex(v => v.nombre === targetIdResolved); if (idx >= 0) desiredPg = Math.floor(idx / PAGE_SIZE); }
+    if (targetIdResolved) { const idx = list.findIndex(v => v.nombre === targetIdResolved); if (idx >= 0) desiredPg = paginaDeIndice(paginasPorDia, idx); }
     paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
     setQueryParams({ pg: paginaActual }, !("pg" in params));
 
@@ -1197,7 +1275,7 @@ window.addEventListener("popstate", () => {
   const p = getQueryParams();
   if ((p.filtro || null) !== ultimoFiltroActivo) { populateVideos(); }
   else {
-    const totalPages = Math.max(1, Math.ceil(videosListaCompleta.length / PAGE_SIZE));
+    const totalPages = Math.max(1, paginasPorDia.length);
     let desiredPg = parseInt(p.pg || "0", 10); if (Number.isNaN(desiredPg)) desiredPg = 0;
     paginaActual = Math.min(Math.max(0, desiredPg), totalPages - 1);
     renderPaginaActual({ fueCambioDePagina: true });

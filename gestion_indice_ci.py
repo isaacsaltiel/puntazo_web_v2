@@ -27,6 +27,14 @@ VALID_SUFFIX         = ".mp4"
 RETENTION_HOURS      = 24          # ventana para videos_recientes.json
 VITRINA_LOOKBACK_DAYS = 14         # hasta cuántos días hacia atrás buscar para vitrina
 MIN_VITRINA          = 5           # mínimo de videos que siempre debe haber
+# 19-ago-2026 (Isaac): la vitrina deja de ser "relleno hasta 5" y pasa a publicar la
+# VENTANA COMPLETA de VITRINA_LOOKBACK_DAYS. Antes, con >=5 videos en 24 h la vitrina
+# salía VACÍA y el jugador perdía de vista todo lo de días anteriores aunque siguiera
+# en Dropbox. Costo real medido en BreakPoint: 30-62 videos por lado en 14 días — nada
+# para el JSON ni para Dropbox (los links compartidos son permanentes y se reutilizan).
+# El tope es solo un seguro contra un club que dispare la producción; si se alcanza,
+# queda avisado en el log en vez de recortar en silencio.
+VITRINA_MAX          = 400         # tope duro de videos por lado en la vitrina
 DROPBOX_BASE         = "/Puntazo/Locaciones"
 GITHUB_REPO          = "isaacsaltiel/puntazo_web_v2"
 
@@ -252,19 +260,20 @@ def main():
 
     print(f"[DEBUG] Videos recientes: {len(videos_recientes)}")
 
-    # ── Generar videos_vitrina.json si se necesita ────────────
+    # ── Generar videos_vitrina.json — VENTANA COMPLETA de 14 días ─────
     #
-    # Solo si recientes < MIN_VITRINA necesitamos videos más viejos.
-    # Los links de Dropbox son permanentes → reutilizamos si ya existen.
+    # Todo lo que esté entre las 24 h y VITRINA_LOOKBACK_DAYS. Ya NO se condiciona
+    # a que falten videos: el jugador que entra el jueves debe poder ver lo del
+    # lunes. Los links de Dropbox son permanentes → reutilizamos si ya existen.
     #
-    needed = max(0, MIN_VITRINA - len(videos_recientes))
     videos_vitrina = []
-
-    if needed > 0:
-        print(f"[DEBUG] Se necesitan {needed} videos más para la vitrina")
-        for entry in vitrina_candidates[:needed * 2]:  # pedir el doble por si fallan URLs
-            if len(videos_vitrina) >= needed:
-                break
+    if vitrina_candidates:
+        recortado = len(vitrina_candidates) > VITRINA_MAX
+        if recortado:
+            print(f"[WARN] {len(vitrina_candidates)} candidatos superan VITRINA_MAX="
+                  f"{VITRINA_MAX}; se publican los {VITRINA_MAX} más recientes y se "
+                  f"DESCARTAN {len(vitrina_candidates) - VITRINA_MAX} más viejos.")
+        for entry in vitrina_candidates[:VITRINA_MAX]:
             url = generate_public_url(dbx, entry.path_lower)
             if url:
                 item = {
@@ -278,9 +287,10 @@ def main():
                 videos_vitrina.append(item)
             else:
                 print(f"[WARN] Sin URL vitrina para {entry.name}")
-        print(f"[DEBUG] Videos vitrina obtenidos: {len(videos_vitrina)}")
+        print(f"[DEBUG] Videos vitrina obtenidos: {len(videos_vitrina)} "
+              f"(ventana de {VITRINA_LOOKBACK_DAYS} días)")
     else:
-        print(f"[DEBUG] Suficientes recientes ({len(videos_recientes)}); vitrina vacía")
+        print(f"[DEBUG] Sin videos entre 24 h y {VITRINA_LOOKBACK_DAYS} días; vitrina vacía")
 
     output_vitrina = {
         "videos":      videos_vitrina,
