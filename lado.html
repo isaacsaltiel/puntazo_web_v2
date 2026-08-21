@@ -567,6 +567,10 @@ video.video-preview {
        se monta DENTRO de la barra "Actualizado hace X" (#pz-rb-host), junto al
        botón Actualizar / pendientes, para no ocupar espacio propio. -->
 
+  <!-- (2026-08-21) Banner EN VIVO del club (torneo CPAM). Aparece solo si
+       stream_public/{club}.live es true; si no, no ocupa nada. -->
+  <div id="pz-live-host"></div>
+
   <!-- Filtros de día (generados por script.js en #filtro-dia) -->
   <!-- Filtros de hora (generados por script.js en #filtro-horario) -->
   <div id="filtro-horario"></div>
@@ -1241,6 +1245,43 @@ video.video-preview {
     box.querySelector("span").textContent   = cfg.texto;
     host.appendChild(box);
   }
+
+  // ── BANNER "EN VIVO" ──────────────────────────────────────────────────────
+  // Mismo contrato que entrada.html: stream_public/{club}. Independiente del
+  // resto de init() a proposito: si algo mas falla, el banner igual sale.
+  function renderLiveBanner(locId) {
+    var host = document.getElementById("pz-live-host");
+    if (!host || !locId) return;
+    var db;
+    try { db = window.PuntazoFirebase.db(); } catch (e) { return; }
+
+    var a = document.createElement("a");
+    a.style.cssText = "display:none;align-items:center;justify-content:center;gap:9px;" +
+      "margin:0 0 14px;padding:13px 18px;border-radius:999px;text-decoration:none;" +
+      "background:linear-gradient(135deg,#ff0033,#c50026);color:#fff;font-weight:900;" +
+      "font-size:.93rem;box-shadow:0 10px 30px rgba(255,0,51,.35)";
+    a.innerHTML = '<span style="width:9px;height:9px;border-radius:50%;background:#fff;' +
+      'animation:pzLiveDot 1.4s ease-in-out infinite"></span><span></span>' +
+      '<span style="opacity:.85">&rarr;</span>';
+    var st = document.createElement("style");
+    st.textContent = "@keyframes pzLiveDot { 0%,100% { opacity:1 } 50% { opacity:.25 } }";
+    host.appendChild(st);
+    host.appendChild(a);
+
+    try {
+      db.collection("stream_public").doc(locId).onSnapshot(function (snap) {
+        var d = snap.exists ? snap.data() : null;
+        var on = !!(d && d.live === true &&
+                    (d.youtube_url || d.youtube_id || d.channel_id));
+        if (!on) { a.style.display = "none"; return; }
+        a.href = "/vivo.html?club=" + encodeURIComponent(locId);
+        a.querySelectorAll("span")[1].textContent = d.titulo || "Transmisión en vivo";
+        a.style.display = "flex";
+      }, function (err) { console.warn("[lado] live banner:", err && err.code); });
+    } catch (e) {}
+  }
+
+  try { renderLiveBanner(paramsFromQuery().loc); } catch (e) {}
 
   function init() {
     if (!window.PuntazoRefreshBar) return;
