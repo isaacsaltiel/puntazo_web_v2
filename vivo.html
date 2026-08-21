@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+<!-- Guardia de arranque: si la pagina no termina de cargar (red lenta, red
+     que filtra, proxy roto), en vez de dejar la pantalla en blanco muestra
+     un aviso con boton de reintento. Va inline y antes que todo lo demas. -->
+<script id="pz-boot-guard">
+(function () {
+  var TIMEOUT_MS = 12000;
+  var shown = false;
+  function box() {
+    if (shown || window.__pzBooted) return;
+    shown = true;
+    var root = document.body || document.documentElement;
+    if (!root) return;
+    var d = document.createElement("div");
+    d.id = "pz-boot-guard-box";
+    d.setAttribute("style", [
+      "position:fixed", "inset:0", "z-index:2147483647",
+      "background:#050914", "color:#fff",
+      "font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif",
+      "display:flex", "flex-direction:column",
+      "align-items:center", "justify-content:center",
+      "text-align:center", "padding:24px", "gap:14px"
+    ].join(";"));
+    d.innerHTML =
+      '<div style="font-size:44px;line-height:1">\uD83C\uDFBE</div>' +
+      '<div style="font-size:19px;font-weight:800">La conexi\u00F3n est\u00E1 tardando</div>' +
+      '<div style="font-size:14px;opacity:.75;max-width:22em;line-height:1.5">' +
+      'No pudimos cargar Puntazo con esta red. Prueba con datos m\u00F3viles ' +
+      'o con otra red Wi-Fi.</div>' +
+      '<button type="button" id="pz-boot-guard-retry" style="margin-top:6px;' +
+      'background:#0B7CFF;color:#fff;border:0;border-radius:999px;' +
+      'padding:13px 30px;font-size:15px;font-weight:800;cursor:pointer">' +
+      'Reintentar</button>';
+    root.appendChild(d);
+    var b = document.getElementById("pz-boot-guard-retry");
+    if (b) b.addEventListener("click", function () { location.reload(); });
+  }
+  function booted() {
+    window.__pzBooted = true;
+    var d = document.getElementById("pz-boot-guard-box");
+    if (d && d.parentNode) d.parentNode.removeChild(d);
+  }
+  setTimeout(box, TIMEOUT_MS);
+  document.addEventListener("DOMContentLoaded", booted);
+  window.addEventListener("load", booted);
+})();
+</script>
+<base href="/" />
+<title>En vivo · Puntazo</title>
+
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
+<meta name="theme-color" content="#050914" />
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Puntazo · Transmisión en vivo" />
+<meta property="og:description" content="Mira el torneo en vivo desde Puntazo." />
+<meta property="og:image" content="https://puntazoclips.com/assets/og-card.jpg" />
+
+<link rel="stylesheet" href="/assets/fonts.css" />
+<link rel="stylesheet" href="/assets/estilo.css" />
+
+<script src="/assets/analytics.js" async></script>
+
+<script src="/assets/lib/firebase-9.23.0/firebase-app-compat.js"></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+
+<style>
+  body {
+    margin: 0; background: #050914; color: #eaf2ff;
+    font-family: 'Montserrat', system-ui, sans-serif; min-height: 100vh;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+
+  .live-wrap { max-width: 1180px; margin: 0 auto; padding: 14px 12px 60px; }
+
+  .live-head {
+    display: flex; align-items: center; justify-content: center;
+    gap: 14px; flex-wrap: wrap; margin: 10px 0 14px;
+  }
+  .live-logos { display: flex; align-items: center; gap: 12px; }
+  .live-logos img { height: 42px; width: auto; max-width: 130px; object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,.4)); }
+  .live-logos .sep { width: 1px; height: 26px; background: rgba(255,255,255,.15); }
+
+  .live-title { text-align: center; }
+  .live-title h1 {
+    font-size: 1.25rem; font-weight: 900; color: #fff; margin: 0;
+    letter-spacing: -.4px; line-height: 1.2;
+  }
+  .live-title .sub { font-size: .82rem; color: rgba(234,242,255,.6); margin-top: 4px; font-weight: 600; }
+
+  .live-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 13px; border-radius: 999px;
+    background: rgba(240,50,50,.14); border: 1px solid rgba(240,60,60,.5);
+    color: #ff8f8f; font-size: .78rem; font-weight: 900; letter-spacing: .4px;
+  }
+  .live-badge .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #ff3b3b;
+    box-shadow: 0 0 10px #ff3b3b; animation: pzpulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pzpulse { 0%,100% { opacity: 1 } 50% { opacity: .25 } }
+
+  .live-player {
+    position: relative; width: 100%; aspect-ratio: 16 / 9;
+    background: #000; border-radius: 18px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 18px 50px rgba(0,0,0,.55);
+  }
+  .live-player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+  .live-actions {
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 16px;
+  }
+  .live-actions a {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 13px 22px; border-radius: 999px; font-size: .93rem; font-weight: 800;
+    text-decoration: none; cursor: pointer; transition: all .18s ease;
+  }
+  .btn-yt { background: #ff0033; color: #fff; box-shadow: 0 8px 26px rgba(255,0,51,.32); }
+  .btn-yt:hover { transform: translateY(-1px); }
+  .btn-ghost {
+    background: rgba(255,255,255,.06); color: #eaf2ff; border: 1px solid rgba(255,255,255,.14);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,.11); }
+
+  .live-off {
+    text-align: center; padding: 46px 20px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.10);
+    border-radius: 18px;
+  }
+  .live-off .emoji { font-size: 2.6rem; margin-bottom: 10px; }
+  .live-off h2 { font-size: 1.1rem; font-weight: 900; color: #fff; margin: 0 0 8px; }
+  .live-off p { font-size: .9rem; color: rgba(234,242,255,.62); margin: 0; line-height: 1.5; }
+
+  .live-note {
+    margin-top: 18px; text-align: center;
+    font-size: .78rem; color: rgba(234,242,255,.45); line-height: 1.5;
+  }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="page-bg"></div>
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="live-wrap">
+
+  <div class="live-head">
+    <div class="live-logos">
+      <img src="/assets/img/P_blanca_transparente.png" alt="Puntazo" style="height:34px" />
+      <div class="sep"></div>
+      <img id="logoOrg" src="/assets/logos/cpam.png" alt="CPAM" />
+      <div class="sep" id="sepClub"></div>
+      <img id="logoClub" src="/assets/logos/breakpoint.webp" alt="Club" />
+    </div>
+    <div class="live-title">
+      <h1 id="liveTitle">Transmisión en vivo</h1>
+      <div class="sub" id="liveSub">Cargando…</div>
+    </div>
+    <div class="live-badge hidden" id="liveBadge"><span class="dot"></span>EN VIVO</div>
+  </div>
+
+  <div id="playerBox" class="live-player hidden"></div>
+
+  <div id="offBox" class="live-off">
+    <div class="emoji">📺</div>
+    <h2 id="offTitle">Cargando la transmisión…</h2>
+    <p id="offMsg">Un momento.</p>
+  </div>
+
+  <div class="live-actions">
+    <a id="btnYT" class="btn-yt hidden" target="_blank" rel="noopener">▶ Abrir en YouTube</a>
+    <a id="btnClips" class="btn-ghost" href="/entrada.html">🎬 Ver mis clips</a>
+  </div>
+
+  <div class="live-note">
+    ¿No se ve el video? Toca <b>Abrir en YouTube</b>.<br />
+    Transmisión operada por Puntazo · <span id="noteOrg">Torneo CPAM</span>
+  </div>
+
+</main>
+
+<script src="/assets/header.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ─────────────────────────────────────────────────────────────
+  // /vivo.html — reproductor publico de la transmision del club.
+  // Lee stream_public/{club} en Firestore (lectura PUBLICA, sin login).
+  // Si Firestore no responde, cae al FALLBACK de abajo para que la
+  // pagina nunca quede muerta durante un torneo.
+  // ─────────────────────────────────────────────────────────────
+
+  var qs = new URLSearchParams(location.search);
+  var CLUB = (qs.get("club") || qs.get("loc") || "BreakPoint").trim();
+
+  // Respaldo por si Firestore falla o el doc no existe todavia.
+  var FALLBACK = {
+    BreakPoint: {
+      live: false,
+      youtube_url: "",
+      titulo: "Torneo CPAM · BreakPoint",
+      organizador: "CPAM"
+    }
+  };
+
+  var LOGOS = {
+    "BreakPoint": "/assets/logos/breakpoint.webp",
+    "Interpadel": "/assets/logos/interpadel.webp",
+    "Scorpion": "",
+    "WellStreet-Pickleball": "/assets/logos/wellstreet.webp",
+    "WellStreet-Padel": "/assets/logos/wellstreet.webp"
+  };
+
+  var el = function (id) { return document.getElementById(id); };
+  var applied = null;   // firma de lo ultimo pintado (evita recargar el iframe)
+  var started = false;
+
+  // Saca el video id de cualquier forma de URL de YouTube.
+  function ytId(url) {
+    if (!url) return "";
+    url = String(url).trim();
+    if (/^[A-Za-z0-9_-]{11}$/.test(url)) return url;           // ya es un id
+    var m;
+    m = url.match(/[?&]v=([A-Za-z0-9_-]{11})/);      if (m) return m[1];
+    m = url.match(/youtu\.be\/([A-Za-z0-9_-]{11})/); if (m) return m[1];
+    m = url.match(/\/live\/([A-Za-z0-9_-]{11})/);    if (m) return m[1];
+    m = url.match(/\/embed\/([A-Za-z0-9_-]{11})/);   if (m) return m[1];
+    m = url.match(/\/shorts\/([A-Za-z0-9_-]{11})/);  if (m) return m[1];
+    return "";
+  }
+
+  function ytChannel(url) {
+    if (!url) return "";
+    var m = String(url).match(/channel\/(UC[A-Za-z0-9_-]{20,})/);
+    return m ? m[1] : "";
+  }
+
+  function render(d) {
+    d = d || {};
+    var url = d.youtube_url || d.url || "";
+    var vid = d.youtube_id || ytId(url);
+    var chan = d.channel_id || ytChannel(url);
+    var live = d.live !== false && (!!vid || !!chan);
+
+    var sig = [live, vid, chan].join("|");
+
+    el("liveTitle").textContent = d.titulo || ("Transmision en vivo · " + CLUB);
+    el("liveSub").textContent = d.subtitulo || (live ? "Transmitiendo ahora" : CLUB);
+    if (d.organizador) el("noteOrg").textContent = "Torneo " + d.organizador;
+
+    var clubLogo = LOGOS[CLUB] || "";
+    if (clubLogo) { el("logoClub").src = clubLogo; }
+    else { el("logoClub").classList.add("hidden"); el("sepClub").classList.add("hidden"); }
+    if (d.organizador_logo) el("logoOrg").src = d.organizador_logo;
+
+    el("btnClips").href = "/entrada.html?loc=" + encodeURIComponent(CLUB);
+
+    if (!live) {
+      el("liveBadge").classList.add("hidden");
+      el("playerBox").classList.add("hidden");
+      el("playerBox").innerHTML = "";
+      el("btnYT").classList.add("hidden");
+      el("offBox").classList.remove("hidden");
+      el("offTitle").textContent = "Ahorita no hay transmision";
+      el("offMsg").textContent = "Cuando el torneo este al aire, aparece aqui solito. Mientras tanto puedes ver los clips del club.";
+      applied = sig;
+      return;
+    }
+
+    el("liveBadge").classList.remove("hidden");
+    el("offBox").classList.add("hidden");
+    el("btnYT").classList.remove("hidden");
+    el("btnYT").href = vid
+      ? ("https://www.youtube.com/watch?v=" + vid)
+      : ("https://www.youtube.com/channel/" + chan + "/live");
+
+    // No recargar el iframe si no cambio nada (cortaria el video al usuario).
+    if (sig === applied) return;
+    applied = sig;
+
+    var src = vid
+      ? ("https://www.youtube.com/embed/" + vid + "?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1")
+      : ("https://www.youtube.com/embed/live_stream?channel=" + chan + "&autoplay=1&mute=1");
+
+    el("playerBox").innerHTML =
+      '<iframe src="' + src + '" title="Transmision en vivo" ' +
+      'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" ' +
+      'allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+    el("playerBox").classList.remove("hidden");
+  }
+
+  var gotData = false;
+
+  function start() {
+    if (started) return;
+    started = true;
+    var db = null;
+    try {
+      db = (window.PuntazoFirebase && window.PuntazoFirebase.db)
+        ? window.PuntazoFirebase.db()
+        : firebase.firestore();
+    } catch (e) { db = null; }
+    if (!db) { render(FALLBACK[CLUB] || {}); return; }
+
+    db.collection("stream_public").doc(CLUB).onSnapshot(
+      function (snap) {
+        gotData = true;
+        render(snap.exists ? snap.data() : (FALLBACK[CLUB] || {}));
+      },
+      function (err) {
+        console.warn("[vivo] Firestore:", err && err.code);
+        if (!gotData) render(FALLBACK[CLUB] || {});
+      }
+    );
+
+    // Si Firestore tarda demasiado (red del club, filtros), pinta el fallback.
+    setTimeout(function () { if (!gotData) render(FALLBACK[CLUB] || {}); }, 5000);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, { once: true });
+  } else {
+    start();
+  }
+})();
+</script>
+</body>
+</html>

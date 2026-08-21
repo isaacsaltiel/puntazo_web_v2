@@ -728,6 +728,20 @@
       <a id="lnkCambiarCancha" class="entrada-change-court" href="#">↺ Cambiar cancha</a>
     </div>
 
+    <!-- (2026-08-21) Banner EN VIVO: aparece solo si stream_public/{club}.live
+         es true (torneo CPAM @ BreakPoint). Lleva a /vivo.html con el stream
+         de YouTube embebido. Invisible cuando no hay transmision. -->
+    <style>@keyframes pzLiveDot { 0%,100% { opacity:1 } 50% { opacity:.25 } }</style>
+    <a id="liveBanner" href="#" style="display:none;align-items:center;justify-content:center;gap:9px;
+       margin:0 0 14px;padding:13px 18px;border-radius:999px;text-decoration:none;
+       background:linear-gradient(135deg,#ff0033,#c50026);color:#fff;font-weight:900;
+       font-size:.93rem;box-shadow:0 10px 30px rgba(255,0,51,.35)">
+      <span style="width:9px;height:9px;border-radius:50%;background:#fff;
+        animation:pzLiveDot 1.4s ease-in-out infinite"></span>
+      <span id="liveBannerTxt">Transmisión en vivo</span>
+      <span style="opacity:.85">→</span>
+    </a>
+
     <div id="actionsAuthed" class="entrada-actions" style="display:none">
       <!-- R7c — Pickleball: GRABAR PARTIDO COMPLETO como acción PRINCIPAL (rojo,
            1º). Solo visible en canchas de pickleball (lo controla el JS). Va al
@@ -1364,8 +1378,31 @@
   });
 
   // ---------- ROUTER ----------
+  // (2026-08-21) Transmision en vivo del club: escucha stream_public/{club}
+  // y prende el banner rojo. Falla en silencio (nunca debe romper la entrada).
+  function setupLiveBanner(clubId) {
+    const box = document.getElementById("liveBanner");
+    if (!box || !clubId) return;
+    let db;
+    try { db = window.PuntazoFirebase.db(); } catch (e) { return; }
+    try {
+      db.collection("stream_public").doc(clubId).onSnapshot(function (snap) {
+        const d = snap.exists ? snap.data() : null;
+        const on = !!(d && d.live === true &&
+                      (d.youtube_url || d.youtube_id || d.channel_id));
+        if (!on) { box.style.display = "none"; return; }
+        box.href = "/vivo.html?club=" + encodeURIComponent(clubId);
+        const t = document.getElementById("liveBannerTxt");
+        if (t) t.textContent = d.titulo || "Transmisión en vivo";
+        box.style.display = "flex";
+      }, function (err) { console.warn("[entrada] live banner:", err && err.code); });
+    } catch (e) { /* sin Firestore: el banner simplemente no aparece */ }
+  }
+
   async function startReadyFlow() {
     // Flujo viejo intacto: loc+can+lado en URL
+    setupLiveBanner(loc);
+
     const ladoQuery = "?loc=" + encodeURIComponent(loc) +
                       "&can=" + encodeURIComponent(can) +
                       "&lado=" + encodeURIComponent(lado);

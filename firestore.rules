@@ -610,6 +610,70 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════
+    // NUEVO (2026-08-21) — Layout del mosaico del stream (torneo CPAM @ BreakPoint)
+    // La web escribe la intencion; la NUC (Admin SDK, se salta reglas) responde
+    // con applied_rev/status/nuc_seen_at. Contrato:
+    //   docs/workers/worker-nuc-BP-stream-layout-cpam.md
+    // ════════════════════════════════════════════════════
+    function isStreamOperator() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && (
+             get(/databases/$(database)/documents/users/$(request.auth.uid))
+               .data.get('flags', {}).get('isAdmin', false) == true
+             ||
+             get(/databases/$(database)/documents/users/$(request.auth.uid))
+               .data.get('flags', {}).get('isStreamOp', false) == true
+           );
+    }
+
+    match /stream_control/{club} {
+      // Campos que la WEB puede tocar. Lo demas (applied_rev, status,
+      // last_error, nuc_seen_at) es territorio de la NUC.
+      function webFields() {
+        return ['club','mode','primary','secondaries','rev','requested_at','requested_by'];
+      }
+      function validPayload() {
+        return request.resource.data.mode in ['solo','pip','multi','grid']
+               && request.resource.data.primary is string
+               && request.resource.data.secondaries is list
+               && request.resource.data.secondaries.size() <= 3
+               && request.resource.data.rev is number;
+      }
+
+      // Lectura publica: el panel y (a futuro) la pagina muestran el estado.
+      allow read: if true;
+
+      allow create: if isStreamOperator()
+                    && request.resource.data.keys().hasOnly(webFields())
+                    && validPayload();
+
+      allow update: if isStreamOperator()
+                    && request.resource.data.diff(resource.data)
+                         .affectedKeys().hasOnly(webFields())
+                    && validPayload();
+
+      allow delete: if false;
+    }
+
+    // Transmision publica del club: la lee CUALQUIERA sin login (/vivo.html).
+    match /stream_public/{club} {
+      function pubFields() {
+        return ['club','live','youtube_url','youtube_id','channel_id','titulo',
+                'subtitulo','organizador','organizador_logo','updated_at','updated_by'];
+      }
+
+      allow read: if true;
+
+      allow create, update: if isStreamOperator()
+                            && request.resource.data.keys().hasOnly(pubFields())
+                            && request.resource.data.live is bool;
+
+      allow delete: if false;
+    }
+
+
+    // ════════════════════════════════════════════════════
     // Catch-all denegado
     // ════════════════════════════════════════════════════
     match /{document=**} {

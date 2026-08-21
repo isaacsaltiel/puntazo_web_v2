@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+<!-- Guardia de arranque: si la pagina no termina de cargar (red lenta, red
+     que filtra, proxy roto), en vez de dejar la pantalla en blanco muestra
+     un aviso con boton de reintento. Va inline y antes que todo lo demas. -->
+<script id="pz-boot-guard">
+(function () {
+  var TIMEOUT_MS = 12000;
+  var shown = false;
+  function box() {
+    if (shown || window.__pzBooted) return;
+    shown = true;
+    var root = document.body || document.documentElement;
+    if (!root) return;
+    var d = document.createElement("div");
+    d.id = "pz-boot-guard-box";
+    d.setAttribute("style", [
+      "position:fixed", "inset:0", "z-index:2147483647",
+      "background:#050914", "color:#fff",
+      "font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif",
+      "display:flex", "flex-direction:column",
+      "align-items:center", "justify-content:center",
+      "text-align:center", "padding:24px", "gap:14px"
+    ].join(";"));
+    d.innerHTML =
+      '<div style="font-size:44px;line-height:1">\uD83C\uDFBE</div>' +
+      '<div style="font-size:19px;font-weight:800">La conexi\u00F3n est\u00E1 tardando</div>' +
+      '<div style="font-size:14px;opacity:.75;max-width:22em;line-height:1.5">' +
+      'No pudimos cargar Puntazo con esta red. Prueba con datos m\u00F3viles ' +
+      'o con otra red Wi-Fi.</div>' +
+      '<button type="button" id="pz-boot-guard-retry" style="margin-top:6px;' +
+      'background:#0B7CFF;color:#fff;border:0;border-radius:999px;' +
+      'padding:13px 30px;font-size:15px;font-weight:800;cursor:pointer">' +
+      'Reintentar</button>';
+    root.appendChild(d);
+    var b = document.getElementById("pz-boot-guard-retry");
+    if (b) b.addEventListener("click", function () { location.reload(); });
+  }
+  function booted() {
+    window.__pzBooted = true;
+    var d = document.getElementById("pz-boot-guard-box");
+    if (d && d.parentNode) d.parentNode.removeChild(d);
+  }
+  setTimeout(box, TIMEOUT_MS);
+  document.addEventListener("DOMContentLoaded", booted);
+  window.addEventListener("load", booted);
+})();
+</script>
+<base href="/" />
+<title>Control de transmisión · Puntazo</title>
+
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
+<meta name="theme-color" content="#050914" />
+<meta name="robots" content="noindex, nofollow" />
+
+<link rel="stylesheet" href="/assets/fonts.css" />
+<link rel="stylesheet" href="/assets/estilo.css" />
+
+<script src="/assets/lib/firebase-9.23.0/firebase-app-compat.js"></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+
+<style>
+  body {
+    margin: 0; background: #050914; color: #eaf2ff;
+    font-family: 'Montserrat', system-ui, sans-serif; min-height: 100vh;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+
+  .ct-wrap { max-width: 720px; margin: 0 auto; padding: 16px 14px 130px; }
+
+  .ct-hero { text-align: center; margin: 8px 0 18px; }
+  .ct-hero .logos { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+  .ct-hero .logos img { height: 30px; width: auto; max-width: 110px; object-fit: contain; }
+  .ct-hero .logos .sep { width: 1px; height: 20px; background: rgba(255,255,255,.15); }
+  .ct-hero h1 { font-size: 1.35rem; font-weight: 900; color: #fff; margin: 0; letter-spacing: -.4px; }
+  .ct-hero p { font-size: .85rem; color: rgba(234,242,255,.6); margin: 6px 0 0; }
+
+  .ct-card {
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.10);
+    border-radius: 18px; padding: 16px 15px; margin-bottom: 14px;
+  }
+  .ct-step {
+    display: flex; align-items: center; gap: 9px; margin-bottom: 12px;
+  }
+  .ct-step .num {
+    width: 24px; height: 24px; border-radius: 50%; flex: 0 0 24px;
+    background: linear-gradient(135deg,#0B7CFF,#004FC8); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .78rem; font-weight: 900;
+  }
+  .ct-step .txt { font-size: 1rem; font-weight: 800; color: #fff; }
+  .ct-step .hint { font-size: .76rem; color: rgba(234,242,255,.52); font-weight: 600; margin-left: auto; }
+
+  /* ── Modos ── */
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mode-card {
+    background: rgba(255,255,255,.03); border: 1.5px solid rgba(255,255,255,.10);
+    border-radius: 15px; padding: 12px 10px; cursor: pointer; text-align: center;
+    color: #fff; font-family: inherit; transition: all .16s ease;
+  }
+  .mode-card:hover { border-color: rgba(11,124,255,.5); background: rgba(0,79,200,.10); }
+  .mode-card.on {
+    border-color: #0B7CFF; background: rgba(11,124,255,.16);
+    box-shadow: 0 0 22px rgba(11,124,255,.25);
+  }
+  .mode-card .nm { font-size: .87rem; font-weight: 800; margin-top: 9px; }
+  .mode-card .ds { font-size: .68rem; color: rgba(234,242,255,.5); margin-top: 2px; font-weight: 600; line-height: 1.3; }
+
+  /* Diagrama del modo, hecho con divs (sin iconos externos) */
+  .dia {
+    position: relative; width: 100%; aspect-ratio: 16/9;
+    background: rgba(255,255,255,.05); border-radius: 8px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.08); display: flex; gap: 3px; padding: 3px;
+  }
+  .dia i { display: block; background: rgba(11,124,255,.55); border-radius: 4px; flex: 1; }
+  .dia i.dim { background: rgba(255,255,255,.22); }
+  .dia .pip {
+    position: absolute; left: 7px; bottom: 7px; width: 30%; height: 34%;
+    background: rgba(255,255,255,.35); border-radius: 4px;
+    border: 1px solid rgba(255,255,255,.25);
+  }
+  .dia .pip.two { width: 24%; height: 27%; }
+  .dia .pip.two.b { left: calc(7px + 26%); }
+  .dia .col { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+
+  /* ── Canchas ── */
+  .court-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .court-chip {
+    padding: 10px 15px; border-radius: 999px; cursor: pointer;
+    background: rgba(255,255,255,.05); border: 1.5px solid rgba(255,255,255,.11);
+    color: #eaf2ff; font-family: inherit; font-size: .88rem; font-weight: 800;
+    transition: all .14s ease; position: relative;
+  }
+  .court-chip:hover { border-color: rgba(11,124,255,.5); }
+  .court-chip.on {
+    background: rgba(11,124,255,.2); border-color: #0B7CFF; color: #fff;
+    box-shadow: 0 0 16px rgba(11,124,255,.28);
+  }
+  .court-chip.on.sec { background: rgba(200,232,53,.14); border-color: #c8e835; }
+  .court-chip.off { opacity: .35; cursor: not-allowed; }
+  .court-chip .ord {
+    position: absolute; top: -6px; right: -4px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #c8e835; color: #061018; font-size: .64rem; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ── Estado ── */
+  .ct-status {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-size: .8rem; font-weight: 700; color: rgba(234,242,255,.7);
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 11px; border-radius: 999px; font-size: .74rem; font-weight: 800;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+  }
+  .pill.ok { background: rgba(60,200,120,.14); border-color: rgba(60,200,120,.45); color: #7fe3a8; }
+  .pill.warn { background: rgba(255,180,40,.13); border-color: rgba(255,180,40,.42); color: #ffcf72; }
+  .pill.bad { background: rgba(255,70,70,.13); border-color: rgba(255,70,70,.42); color: #ff9c9c; }
+  .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  /* ── Barra de aplicar ── */
+  .ct-apply {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    background: linear-gradient(180deg, rgba(5,9,20,0), rgba(5,9,20,.96) 34%);
+    padding: 22px 14px calc(16px + env(safe-area-inset-bottom));
+  }
+  .ct-apply .inner { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+  .btn-apply {
+    width: 100%; padding: 16px 20px; border: 0; border-radius: 999px;
+    background: linear-gradient(135deg,#0B7CFF,#004FC8); color: #fff;
+    font-family: inherit; font-size: 1rem; font-weight: 900; cursor: pointer;
+    box-shadow: 0 10px 34px rgba(0,79,200,.45); transition: all .16s ease;
+  }
+  .btn-apply:hover { transform: translateY(-1px); }
+  .btn-apply:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .ct-apply .sum { text-align: center; font-size: .78rem; color: rgba(234,242,255,.6); font-weight: 700; }
+
+  /* ── Transmisión pública ── */
+  .fld { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .fld label { font-size: .76rem; font-weight: 800; color: rgba(234,242,255,.6); }
+  .fld input {
+    padding: 12px 14px; border-radius: 12px; font-family: inherit; font-size: .9rem;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.13); color: #fff;
+  }
+  .fld input:focus { outline: 0; border-color: rgba(11,124,255,.6); }
+  .row2 { display: flex; gap: 8px; }
+  .row2 button {
+    flex: 1; padding: 12px; border-radius: 999px; font-family: inherit;
+    font-size: .85rem; font-weight: 800; cursor: pointer; border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06); color: #eaf2ff; transition: all .16s ease;
+  }
+  .row2 button:hover { background: rgba(255,255,255,.12); }
+  .row2 button.live-on { background: rgba(255,0,51,.85); border-color: transparent; color: #fff; }
+
+  .ct-msg { font-size: .82rem; font-weight: 700; margin-top: 8px; min-height: 1.2em; }
+  .ct-msg.ok { color: #7fe3a8; }
+  .ct-msg.err { color: #ff9c9c; }
+
+  .gate { text-align: center; padding: 60px 20px; }
+  .gate h2 { font-size: 1.1rem; font-weight: 900; color: #fff; margin: 0 0 10px; }
+  .gate p { font-size: .88rem; color: rgba(234,242,255,.62); margin: 0 0 18px; line-height: 1.5; }
+  .btn-google {
+    padding: 13px 26px; border-radius: 999px; border: 0; cursor: pointer;
+    background: #fff; color: #111; font-family: inherit; font-size: .92rem; font-weight: 800;
+  }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="page-bg"></div>
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<main class="ct-wrap">
+
+  <div class="ct-hero">
+    <div class="logos">
+      <img src="/assets/img/P_blanca_transparente.png" alt="Puntazo" />
+      <div class="sep"></div>
+      <img src="/assets/logos/cpam.png" alt="CPAM" />
+    </div>
+    <h1>Control de transmisión</h1>
+    <p id="ctSub">BreakPoint · Torneo CPAM</p>
+  </div>
+
+  <!-- Puerta de acceso -->
+  <div id="gate" class="gate hidden">
+    <h2>Entra con tu cuenta</h2>
+    <p>Este panel controla lo que se ve en la transmisión en vivo. Necesitas permiso de operador.</p>
+    <button id="btnLogin" class="btn-google" type="button">Entrar con Google</button>
+  </div>
+
+  <div id="panel" class="hidden">
+
+    <!-- Estado -->
+    <div class="ct-card">
+      <div class="ct-status">
+        <span class="pill" id="pillNuc"><span class="dot"></span><span>Buscando la NUC…</span></span>
+        <span class="pill" id="pillApplied"><span>—</span></span>
+      </div>
+      <div class="ct-msg err" id="errBox"></div>
+    </div>
+
+    <!-- Paso 1: modo -->
+    <div class="ct-card">
+      <div class="ct-step">
+        <div class="num">1</div><div class="txt">¿Cómo se ve?</div>
+      </div>
+      <div class="mode-grid" id="modeGrid"></div>
+    </div>
+
+    <!-- Paso 2: principal -->
+    <div class="ct-card">
+      <div class="ct-step">
+        <div class="num">2</div><div class="txt">Cancha principal</div>
+        <div class="hint" id="hintPrim">la grande</div>
+      </div>
+      <div class="court-grid" id="primGrid"></div>
+    </div>
+
+    <!-- Paso 3: secundarias -->
+    <div class="ct-card" id="secCard">
+      <div class="ct-step">
+        <div class="num">3</div><div class="txt" id="secTitle">Canchas secundarias</div>
+        <div class="hint" id="hintSec"></div>
+      </div>
+      <div class="court-grid" id="secGrid"></div>
+    </div>
+
+    <!-- Transmisión pública -->
+    <div class="ct-card">
+      <div class="ct-step">
+        <div class="num">📺</div><div class="txt">Lo que ve el público</div>
+      </div>
+      <div class="fld">
+        <label for="inUrl">Link de YouTube de la transmisión</label>
+        <input id="inUrl" type="url" placeholder="https://www.youtube.com/watch?v=..." />
+      </div>
+      <div class="fld">
+        <label for="inTitulo">Título que aparece en la página</label>
+        <input id="inTitulo" type="text" placeholder="Torneo CPAM · BreakPoint" />
+      </div>
+      <div class="row2">
+        <button type="button" id="btnLive">🔴 Poner EN VIVO</button>
+        <button type="button" id="btnOff">■ Quitar del aire</button>
+      </div>
+      <div class="ct-msg" id="pubMsg"></div>
+      <div style="margin-top:10px;font-size:.76rem;color:rgba(234,242,255,.45);line-height:1.5">
+        Con esto la página <b>puntazoclips.com/vivo.html</b> muestra el video embebido a
+        cualquiera que entre, sin necesidad de cuenta.
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div class="ct-apply hidden" id="applyBar">
+  <div class="inner">
+    <div class="sum" id="applySum">—</div>
+    <button class="btn-apply" id="btnApply" type="button" disabled>APLICAR AL AIRE</button>
+  </div>
+</div>
+
+<script src="/assets/header.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ─────────────────────────────────────────────────────────────────
+  // /control-stream.html — panel del operador del torneo.
+  //
+  // Escribe stream_control/{club} en Firestore:
+  //   mode, primary, secondaries[], rev, requested_at, requested_by
+  // La NUC lo lee, recompone el mosaico y contesta con:
+  //   applied_rev, applied_at, status, last_error, nuc_seen_at
+  //
+  // Contrato completo: docs/workers/worker-nuc-BP-stream-layout-cpam.md
+  // ─────────────────────────────────────────────────────────────────
+
+  var qs = new URLSearchParams(location.search);
+  var CLUB = (qs.get("club") || qs.get("loc") || "BreakPoint").trim();
+
+  var MODES = [
+    { id: "solo",  nm: "Una cancha",     ds: "pantalla completa", min: 0, max: 0 },
+    { id: "pip",   nm: "Grande + 1",     ds: "una chica abajo",   min: 1, max: 1 },
+    { id: "multi", nm: "Grande + varias", ds: "2 o 3 chicas",     min: 2, max: 3 },
+    { id: "grid",  nm: "Mosaico",        ds: "todas del mismo tamaño", min: 1, max: 3 }
+  ];
+
+  function diagram(id) {
+    if (id === "solo")  return '<div class="dia"><i></i></div>';
+    if (id === "pip")   return '<div class="dia"><i></i><div class="pip"></div></div>';
+    if (id === "multi") return '<div class="dia"><i></i><div class="pip two"></div><div class="pip two b"></div></div>';
+    return '<div class="dia"><div class="col"><i></i><i class="dim"></i></div>' +
+           '<div class="col"><i class="dim"></i><i class="dim"></i></div></div>';
+  }
+
+  var el = function (id) { return document.getElementById(id); };
+
+  var S = {
+    courts: [],
+    mode: "solo",
+    primary: "",
+    secondaries: [],
+    rev: 0,
+    applied_rev: -1,
+    status: "",
+    nuc_seen_at: null,
+    dirty: false
+  };
+  var db = null, unsub = null, user = null;
+
+  function modeDef() {
+    for (var i = 0; i < MODES.length; i++) if (MODES[i].id === S.mode) return MODES[i];
+    return MODES[0];
+  }
+
+  // ── Canchas del club (de config_locations.json) ──
+  function loadCourts() {
+    return fetch("/data/config_locations.json", { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (cfg) {
+        var locs = (cfg && cfg.locaciones) || [];
+        for (var i = 0; i < locs.length; i++) {
+          if (locs[i].id === CLUB) {
+            return (locs[i].cancha || []).map(function (c) {
+              return { id: c.id, nombre: c.nombre || c.id };
+            });
+          }
+        }
+        return [];
+      })
+      .catch(function () {
+        // Respaldo: BreakPoint tiene 5 canchas.
+        return [1, 2, 3, 4, 5].map(function (n) {
+          return { id: "Cancha" + n, nombre: "Cancha " + n };
+        });
+      });
+  }
+
+  // ── Pintado ──
+  function renderModes() {
+    el("modeGrid").innerHTML = MODES.map(function (m) {
+      return '<button type="button" class="mode-card' + (m.id === S.mode ? " on" : "") +
+             '" data-mode="' + m.id + '">' + diagram(m.id) +
+             '<div class="nm">' + m.nm + '</div><div class="ds">' + m.ds + '</div></button>';
+    }).join("");
+  }
+
+  function renderCourts() {
+    var d = modeDef();
+
+    el("primGrid").innerHTML = S.courts.map(function (c) {
+      return '<button type="button" class="court-chip' + (c.id === S.primary ? " on" : "") +
+             '" data-prim="' + c.id + '">' + c.nombre + '</button>';
+    }).join("");
+
+    if (d.max === 0) {
+      el("secCard").classList.add("hidden");
+    } else {
+      el("secCard").classList.remove("hidden");
+      el("secTitle").textContent = (S.mode === "grid")
+        ? "Las otras canchas del mosaico"
+        : "Canchas secundarias";
+      el("hintSec").textContent = (d.min === d.max)
+        ? ("elige " + d.max)
+        : ("elige " + d.min + " a " + d.max);
+
+      el("secGrid").innerHTML = S.courts.map(function (c) {
+        if (c.id === S.primary) {
+          return '<button type="button" class="court-chip off" disabled>' + c.nombre + '</button>';
+        }
+        var idx = S.secondaries.indexOf(c.id);
+        var full = S.secondaries.length >= d.max && idx < 0;
+        return '<button type="button" class="court-chip' + (idx >= 0 ? " on sec" : "") +
+               (full ? " off" : "") + '" data-sec="' + c.id + '"' + (full ? " disabled" : "") + '>' +
+               c.nombre + (idx >= 0 ? '<span class="ord">' + (idx + 1) + '</span>' : "") + '</button>';
+      }).join("");
+    }
+    renderApply();
+  }
+
+  function valid() {
+    var d = modeDef();
+    return !!S.primary && S.secondaries.length >= d.min && S.secondaries.length <= d.max;
+  }
+
+  function nameOf(id) {
+    for (var i = 0; i < S.courts.length; i++) if (S.courts[i].id === id) return S.courts[i].nombre;
+    return id;
+  }
+
+  function renderApply() {
+    var d = modeDef();
+    var ok = valid();
+    el("applyBar").classList.remove("hidden");
+    el("btnApply").disabled = !ok;
+
+    if (!ok) {
+      el("applySum").textContent = !S.primary
+        ? "Elige la cancha principal"
+        : ("Faltan canchas: " + (d.min === d.max ? d.max : (d.min + " a " + d.max)));
+      return;
+    }
+    var parts = [nameOf(S.primary)].concat(S.secondaries.map(nameOf));
+    el("applySum").textContent = d.nm + " · " + parts.join(" + ");
+  }
+
+  function renderStatus() {
+    var p = el("pillNuc");
+    var seen = S.nuc_seen_at && S.nuc_seen_at.toDate ? S.nuc_seen_at.toDate() : null;
+    var fresh = seen && (Date.now() - seen.getTime() < 90000);
+    p.className = "pill " + (fresh ? "ok" : "warn");
+    p.innerHTML = '<span class="dot"></span><span>' +
+      (fresh ? "NUC conectada" : "NUC sin responder") + "</span>";
+
+    var a = el("pillApplied");
+    if (S.applied_rev < 0) { a.className = "pill"; a.innerHTML = "<span>sin layout aún</span>"; return; }
+    if (S.status === "error") {
+      a.className = "pill bad";
+      a.innerHTML = "<span>⚠ error</span>";
+    } else if (S.rev > S.applied_rev || S.status === "applying") {
+      a.className = "pill warn";
+      a.innerHTML = "<span>⏳ aplicando…</span>";
+    } else {
+      a.className = "pill ok";
+      a.innerHTML = "<span>✅ al aire</span>";
+    }
+    el("errBox").textContent = S.status === "error" ? (S.last_error || "La NUC reportó un error.") : "";
+  }
+
+  // ── Firestore ──
+  function watch() {
+    if (unsub) unsub();
+    unsub = db.collection("stream_control").doc(CLUB).onSnapshot(function (snap) {
+      var d = snap.exists ? snap.data() : {};
+      S.rev = d.rev || 0;
+      S.applied_rev = (typeof d.applied_rev === "number") ? d.applied_rev : -1;
+      S.status = d.status || "";
+      S.last_error = d.last_error || "";
+      S.nuc_seen_at = d.nuc_seen_at || null;
+      // Solo adoptamos el layout remoto si el operador no está editando.
+      if (!S.dirty && d.mode) {
+        S.mode = d.mode;
+        S.primary = d.primary || "";
+        S.secondaries = Array.isArray(d.secondaries) ? d.secondaries.slice(0, 3) : [];
+        renderModes(); renderCourts();
+      }
+      renderStatus();
+    }, function (err) {
+      el("errBox").textContent = "No se pudo leer el estado: " + (err.code || err.message);
+    });
+
+    db.collection("stream_public").doc(CLUB).onSnapshot(function (snap) {
+      if (!snap.exists) return;
+      var d = snap.data();
+      if (document.activeElement !== el("inUrl")) el("inUrl").value = d.youtube_url || "";
+      if (document.activeElement !== el("inTitulo")) el("inTitulo").value = d.titulo || "";
+      el("btnLive").classList.toggle("live-on", d.live === true);
+      el("btnLive").textContent = d.live === true ? "🔴 EN VIVO (actualizar)" : "🔴 Poner EN VIVO";
+    }, function () {});
+  }
+
+  function apply() {
+    if (!valid()) return;
+    el("btnApply").disabled = true;
+    el("errBox").textContent = "";
+    var ref = db.collection("stream_control").doc(CLUB);
+    ref.set({
+      club: CLUB,
+      mode: S.mode,
+      primary: S.primary,
+      secondaries: S.secondaries.slice(),
+      rev: (S.rev || 0) + 1,
+      requested_at: firebase.firestore.FieldValue.serverTimestamp(),
+      requested_by: (user && user.email) || "?"
+    }, { merge: true }).then(function () {
+      S.dirty = false;
+      el("btnApply").disabled = false;
+    }).catch(function (err) {
+      el("errBox").textContent = (err.code === "permission-denied")
+        ? "Tu cuenta no tiene permiso de operador todavía. Pídeselo a Isaac."
+        : ("No se pudo aplicar: " + (err.code || err.message));
+      el("btnApply").disabled = false;
+    });
+  }
+
+  function savePublic(live) {
+    var msg = el("pubMsg");
+    msg.className = "ct-msg";
+    msg.textContent = "Guardando…";
+    db.collection("stream_public").doc(CLUB).set({
+      club: CLUB,
+      live: !!live,
+      youtube_url: el("inUrl").value.trim(),
+      titulo: el("inTitulo").value.trim() || ("Transmisión · " + CLUB),
+      organizador: "CPAM",
+      updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+      updated_by: (user && user.email) || "?"
+    }, { merge: true }).then(function () {
+      msg.className = "ct-msg ok";
+      msg.textContent = live ? "Listo: ya se ve en /vivo.html" : "Quitado del aire.";
+    }).catch(function (err) {
+      msg.className = "ct-msg err";
+      msg.textContent = (err.code === "permission-denied")
+        ? "Sin permiso de operador."
+        : ("Error: " + (err.code || err.message));
+    });
+  }
+
+  // ── Eventos ──
+  el("modeGrid").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-mode]"); if (!b) return;
+    S.mode = b.getAttribute("data-mode");
+    S.dirty = true;
+    var d = modeDef();
+    if (S.secondaries.length > d.max) S.secondaries = S.secondaries.slice(0, d.max);
+    renderModes(); renderCourts();
+  });
+
+  el("primGrid").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-prim]"); if (!b) return;
+    S.primary = b.getAttribute("data-prim");
+    S.dirty = true;
+    var i = S.secondaries.indexOf(S.primary);
+    if (i >= 0) S.secondaries.splice(i, 1);
+    renderCourts();
+  });
+
+  el("secGrid").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-sec]"); if (!b || b.disabled) return;
+    var id = b.getAttribute("data-sec");
+    var i = S.secondaries.indexOf(id);
+    if (i >= 0) S.secondaries.splice(i, 1);
+    else S.secondaries.push(id);
+    S.dirty = true;
+    renderCourts();
+  });
+
+  el("btnApply").addEventListener("click", apply);
+  el("btnLive").addEventListener("click", function () { savePublic(true); });
+  el("btnOff").addEventListener("click", function () { savePublic(false); });
+  el("btnLogin").addEventListener("click", function () {
+    if (window.PuntazoAuth) window.PuntazoAuth.signIn();
+  });
+
+  // ── Arranque ──
+  function boot(u) {
+    user = u;
+    if (!u) {
+      el("gate").classList.remove("hidden");
+      el("panel").classList.add("hidden");
+      el("applyBar").classList.add("hidden");
+      return;
+    }
+    el("gate").classList.add("hidden");
+    el("panel").classList.remove("hidden");
+    el("ctSub").textContent = CLUB + " · Torneo CPAM";
+
+    try { db = window.PuntazoFirebase.db(); }
+    catch (e) { el("errBox").textContent = "Firebase no cargó."; return; }
+
+    loadCourts().then(function (cs) {
+      S.courts = cs;
+      if (!S.primary && cs.length) S.primary = cs[0].id;
+      renderModes(); renderCourts(); renderStatus();
+      watch();
+    });
+
+    setInterval(renderStatus, 20000);
+  }
+
+  window.addEventListener("puntazo:auth-changed", function (e) {
+    boot(e.detail && e.detail.user);
+  });
+  window.addEventListener("puntazo:auth-ready", function (e) {
+    boot(e.detail && e.detail.user);
+  });
+  if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+    boot(window.PuntazoAuth.currentUser);
+  }
+})();
+</script>
+</body>
+</html>
