@@ -235,8 +235,9 @@
 
   <!-- Puerta de acceso -->
   <div id="gate" class="gate hidden">
-    <h2>Entra con tu cuenta</h2>
-    <p>Este panel controla lo que se ve en la transmisión en vivo. Necesitas permiso de operador.</p>
+    <h2>Este link no es válido</h2>
+    <p>Para controlar la transmisión necesitas el link con la clave que te mandó Puntazo
+       por WhatsApp. Si eres del equipo, entra con tu cuenta.</p>
     <button id="btnLogin" class="btn-google" type="button">Entrar con Google</button>
   </div>
 
@@ -277,8 +278,8 @@
       <div class="court-grid" id="secGrid"></div>
     </div>
 
-    <!-- Transmisión pública -->
-    <div class="ct-card">
+    <!-- Transmisión pública (solo Isaac / admin) -->
+    <div class="ct-card hidden" id="pubCard">
       <div class="ct-step">
         <div class="num">📺</div><div class="txt">Lo que ve el público</div>
       </div>
@@ -317,24 +318,30 @@
   "use strict";
 
   // ─────────────────────────────────────────────────────────────────
-  // /control-stream.html — panel del operador del torneo.
+  // control-stream.html — panel del operador del torneo.
   //
-  // Escribe stream_control/{club} en Firestore:
-  //   mode, primary, secondaries[], rev, requested_at, requested_by
-  // La NUC lo lee, recompone el mosaico y contesta con:
-  //   applied_rev, applied_at, status, last_error, nuc_seen_at
+  // ACCESO POR LINK SECRETO: /control-stream.html?k=<token>
+  // No pide cuenta. Las reglas validan el token contra stream_tokens/{token};
+  // revocar = tools/stream_token.py --revoke (y se manda un link nuevo).
+  // Sin ?k= tambien entra Isaac con su cuenta (flags.isAdmin).
   //
-  // Contrato completo: docs/workers/worker-nuc-BP-stream-layout-cpam.md
+  // Escribe stream_control/{club}: mode, primary, secondaries[], rev, token.
+  // NO lee stream_control (asi el token no queda expuesto): el estado de la
+  // NUC lo lee espejado en stream_public/{club} (layout_rev, layout_status,
+  // nuc_seen_at).
+  //
+  // Contrato: docs/workers/worker-nuc-BP-stream-layout-cpam.md
   // ─────────────────────────────────────────────────────────────────
 
   var qs = new URLSearchParams(location.search);
   var CLUB = (qs.get("club") || qs.get("loc") || "BreakPoint").trim();
+  var TOKEN = (qs.get("k") || "").trim();
 
   var MODES = [
-    { id: "solo",  nm: "Una cancha",     ds: "pantalla completa", min: 0, max: 0 },
-    { id: "pip",   nm: "Grande + 1",     ds: "una chica abajo",   min: 1, max: 1 },
-    { id: "multi", nm: "Grande + varias", ds: "2 o 3 chicas",     min: 2, max: 3 },
-    { id: "grid",  nm: "Mosaico",        ds: "todas del mismo tamaño", min: 1, max: 3 }
+    { id: "solo",  nm: "Una cancha",      ds: "pantalla completa",      min: 0, max: 0 },
+    { id: "pip",   nm: "Grande + 1",      ds: "una chica abajo",        min: 1, max: 1 },
+    { id: "multi", nm: "Grande + varias", ds: "2 o 3 chicas",           min: 2, max: 3 },
+    { id: "grid",  nm: "Mosaico",         ds: "todas del mismo tamaño", min: 1, max: 3 }
   ];
 
   function diagram(id) {
@@ -352,13 +359,14 @@
     mode: "solo",
     primary: "",
     secondaries: [],
-    rev: 0,
-    applied_rev: -1,
-    status: "",
-    nuc_seen_at: null,
-    dirty: false
+    sentRev: 0,          // ultimo rev que mandamos desde aqui
+    appliedRev: -1,      // el que la NUC dice haber aplicado (espejo)
+    nucStatus: "",
+    nucError: "",
+    nucSeen: null,
+    adopted: false
   };
-  var db = null, unsub = null, user = null;
+  var db = null, user = null, isAdmin = false;
 
   function modeDef() {
     for (var i = 0; i < MODES.length; i++) if (MODES[i].id === S.mode) return MODES[i];
@@ -381,7 +389,6 @@
         return [];
       })
       .catch(function () {
-        // Respaldo: BreakPoint tiene 5 canchas.
         return [1, 2, 3, 4, 5].map(function (n) {
           return { id: "Cancha" + n, nombre: "Cancha " + n };
         });
@@ -458,78 +465,96 @@
 
   function renderStatus() {
     var p = el("pillNuc");
-    var seen = S.nuc_seen_at && S.nuc_seen_at.toDate ? S.nuc_seen_at.toDate() : null;
+    var seen = (S.nucSeen && S.nucSeen.toDate) ? S.nucSeen.toDate() : null;
     var fresh = seen && (Date.now() - seen.getTime() < 90000);
     p.className = "pill " + (fresh ? "ok" : "warn");
     p.innerHTML = '<span class="dot"></span><span>' +
-      (fresh ? "NUC conectada" : "NUC sin responder") + "</span>";
+      (fresh ? "NUC conectada" : "NUC sin reportar") + "</span>";
 
     var a = el("pillApplied");
-    if (S.applied_rev < 0) { a.className = "pill"; a.innerHTML = "<span>sin layout aún</span>"; return; }
-    if (S.status === "error") {
+    if (S.nucStatus === "error") {
       a.className = "pill bad";
-      a.innerHTML = "<span>⚠ error</span>";
-    } else if (S.rev > S.applied_rev || S.status === "applying") {
+      a.innerHTML = "<span>⚠ error en la NUC</span>";
+      el("errBox").textContent = S.nucError || "La NUC reportó un error.";
+      return;
+    }
+    el("errBox").textContent = "";
+
+    if (S.sentRev && S.appliedRev < S.sentRev) {
       a.className = "pill warn";
       a.innerHTML = "<span>⏳ aplicando…</span>";
-    } else {
+    } else if (S.appliedRev > 0) {
       a.className = "pill ok";
       a.innerHTML = "<span>✅ al aire</span>";
+    } else if (S.sentRev) {
+      a.className = "pill warn";
+      a.innerHTML = "<span>✓ enviado</span>";
+    } else {
+      a.className = "pill";
+      a.innerHTML = "<span>—</span>";
     }
-    el("errBox").textContent = S.status === "error" ? (S.last_error || "La NUC reportó un error.") : "";
   }
 
-  // ── Firestore ──
+  // ── Firestore: solo leemos stream_public (publico). ──
   function watch() {
-    if (unsub) unsub();
-    unsub = db.collection("stream_control").doc(CLUB).onSnapshot(function (snap) {
-      var d = snap.exists ? snap.data() : {};
-      S.rev = d.rev || 0;
-      S.applied_rev = (typeof d.applied_rev === "number") ? d.applied_rev : -1;
-      S.status = d.status || "";
-      S.last_error = d.last_error || "";
-      S.nuc_seen_at = d.nuc_seen_at || null;
-      // Solo adoptamos el layout remoto si el operador no está editando.
-      if (!S.dirty && d.mode) {
-        S.mode = d.mode;
-        S.primary = d.primary || "";
-        S.secondaries = Array.isArray(d.secondaries) ? d.secondaries.slice(0, 3) : [];
-        renderModes(); renderCourts();
-      }
-      renderStatus();
-    }, function (err) {
-      el("errBox").textContent = "No se pudo leer el estado: " + (err.code || err.message);
-    });
-
     db.collection("stream_public").doc(CLUB).onSnapshot(function (snap) {
       if (!snap.exists) return;
       var d = snap.data();
-      if (document.activeElement !== el("inUrl")) el("inUrl").value = d.youtube_url || "";
-      if (document.activeElement !== el("inTitulo")) el("inTitulo").value = d.titulo || "";
-      el("btnLive").classList.toggle("live-on", d.live === true);
-      el("btnLive").textContent = d.live === true ? "🔴 EN VIVO (actualizar)" : "🔴 Poner EN VIVO";
-    }, function () {});
+
+      // Espejo del estado de la NUC.
+      S.appliedRev = (typeof d.layout_rev === "number") ? d.layout_rev : S.appliedRev;
+      S.nucStatus = d.layout_status || "";
+      S.nucError = d.layout_error || "";
+      S.nucSeen = d.nuc_seen_at || null;
+
+      // La primera vez adoptamos el layout que ya esta al aire, si la NUC lo espejo.
+      if (!S.adopted && d.layout_mode) {
+        S.adopted = true;
+        S.mode = d.layout_mode;
+        S.primary = d.layout_primary || S.primary;
+        S.secondaries = Array.isArray(d.layout_secondaries) ? d.layout_secondaries.slice(0, 3) : [];
+        renderModes(); renderCourts();
+      }
+      renderStatus();
+
+      // Card de publicacion (solo admin).
+      if (isAdmin) {
+        if (document.activeElement !== el("inUrl")) el("inUrl").value = d.youtube_url || "";
+        if (document.activeElement !== el("inTitulo")) el("inTitulo").value = d.titulo || "";
+        el("btnLive").classList.toggle("live-on", d.live === true);
+        el("btnLive").textContent = d.live === true ? "🔴 EN VIVO (actualizar)" : "🔴 Poner EN VIVO";
+      }
+    }, function (err) {
+      el("errBox").textContent = "No se pudo leer el estado: " + (err.code || err.message);
+    });
   }
 
   function apply() {
     if (!valid()) return;
     el("btnApply").disabled = true;
     el("errBox").textContent = "";
-    var ref = db.collection("stream_control").doc(CLUB);
-    ref.set({
+
+    // rev = reloj del cliente: siempre sube, y no necesitamos leer el doc
+    // (que a proposito no es legible para el operador con link).
+    var rev = Date.now();
+    var payload = {
       club: CLUB,
       mode: S.mode,
       primary: S.primary,
       secondaries: S.secondaries.slice(),
-      rev: (S.rev || 0) + 1,
+      rev: rev,
       requested_at: firebase.firestore.FieldValue.serverTimestamp(),
-      requested_by: (user && user.email) || "?"
-    }, { merge: true }).then(function () {
-      S.dirty = false;
+      requested_by: (user && user.email) || (TOKEN ? "link:" + TOKEN.slice(0, 6) : "?")
+    };
+    if (TOKEN) payload.token = TOKEN;
+
+    db.collection("stream_control").doc(CLUB).set(payload, { merge: true }).then(function () {
+      S.sentRev = rev;
       el("btnApply").disabled = false;
+      renderStatus();
     }).catch(function (err) {
       el("errBox").textContent = (err.code === "permission-denied")
-        ? "Tu cuenta no tiene permiso de operador todavía. Pídeselo a Isaac."
+        ? "Este link ya no sirve. Pídele uno nuevo a Puntazo."
         : ("No se pudo aplicar: " + (err.code || err.message));
       el("btnApply").disabled = false;
     });
@@ -549,11 +574,11 @@
       updated_by: (user && user.email) || "?"
     }, { merge: true }).then(function () {
       msg.className = "ct-msg ok";
-      msg.textContent = live ? "Listo: ya se ve en /vivo.html" : "Quitado del aire.";
+      msg.textContent = live ? "Listo: ya se ve en la página de transmisión." : "Quitado del aire.";
     }).catch(function (err) {
       msg.className = "ct-msg err";
       msg.textContent = (err.code === "permission-denied")
-        ? "Sin permiso de operador."
+        ? "Solo Isaac puede publicar el link."
         : ("Error: " + (err.code || err.message));
     });
   }
@@ -562,7 +587,6 @@
   el("modeGrid").addEventListener("click", function (e) {
     var b = e.target.closest("[data-mode]"); if (!b) return;
     S.mode = b.getAttribute("data-mode");
-    S.dirty = true;
     var d = modeDef();
     if (S.secondaries.length > d.max) S.secondaries = S.secondaries.slice(0, d.max);
     renderModes(); renderCourts();
@@ -571,7 +595,6 @@
   el("primGrid").addEventListener("click", function (e) {
     var b = e.target.closest("[data-prim]"); if (!b) return;
     S.primary = b.getAttribute("data-prim");
-    S.dirty = true;
     var i = S.secondaries.indexOf(S.primary);
     if (i >= 0) S.secondaries.splice(i, 1);
     renderCourts();
@@ -583,7 +606,6 @@
     var i = S.secondaries.indexOf(id);
     if (i >= 0) S.secondaries.splice(i, 1);
     else S.secondaries.push(id);
-    S.dirty = true;
     renderCourts();
   });
 
@@ -595,17 +617,16 @@
   });
 
   // ── Arranque ──
-  function boot(u) {
-    user = u;
-    if (!u) {
-      el("gate").classList.remove("hidden");
-      el("panel").classList.add("hidden");
-      el("applyBar").classList.add("hidden");
-      return;
-    }
+  var booted = false;
+
+  function openPanel() {
+    if (booted) return;
+    booted = true;
+
     el("gate").classList.add("hidden");
     el("panel").classList.remove("hidden");
     el("ctSub").textContent = CLUB + " · Torneo CPAM";
+    el("pubCard").classList.toggle("hidden", !isAdmin);
 
     try { db = window.PuntazoFirebase.db(); }
     catch (e) { el("errBox").textContent = "Firebase no cargó."; return; }
@@ -620,14 +641,30 @@
     setInterval(renderStatus, 20000);
   }
 
-  window.addEventListener("puntazo:auth-changed", function (e) {
-    boot(e.detail && e.detail.user);
-  });
-  window.addEventListener("puntazo:auth-ready", function (e) {
-    boot(e.detail && e.detail.user);
-  });
-  if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
-    boot(window.PuntazoAuth.currentUser);
+  function showGate() {
+    el("gate").classList.remove("hidden");
+    el("panel").classList.add("hidden");
+    el("applyBar").classList.add("hidden");
+  }
+
+  if (TOKEN) {
+    // Link secreto: entra directo, sin cuenta. Si el token esta revocado, la
+    // negativa aparece al intentar aplicar (las reglas son la autoridad).
+    openPanel();
+  } else {
+    showGate();
+    var onAuth = function (e) {
+      var u = e && e.detail && e.detail.user;
+      if (!u) { showGate(); return; }
+      user = u;
+      isAdmin = !!(window.PuntazoFirebase && window.PuntazoFirebase.isAdminEmail(u.email));
+      openPanel();
+    };
+    window.addEventListener("puntazo:auth-changed", onAuth);
+    window.addEventListener("puntazo:auth-ready", onAuth);
+    if (window.PuntazoAuth && window.PuntazoAuth.isBootstrapped) {
+      onAuth({ detail: { user: window.PuntazoAuth.currentUser } });
+    }
   }
 })();
 </script>

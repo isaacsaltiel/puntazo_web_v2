@@ -45,7 +45,8 @@ Campos que **escribe la web** (tú NUNCA los tocas):
 | `secondaries` | array<string> | 0 a 3 ids de cancha, ej. `["Cancha2","Cancha3"]` |
 | `rev` | number | entero que **sube en cada cambio** (idempotencia) |
 | `requested_at` | timestamp | server timestamp |
-| `requested_by` | string | email del operador |
+| `requested_by` | string | email del operador (o `link:xxxxxx`) |
+| `token` | string | **IGNORALO.** Es la llave del link secreto del operador; las reglas la validan. No la copies a ningun lado, no la loguees, y NUNCA la espejes a `stream_public` (que es de lectura publica). |
 
 Campos que **escribes tú** (merge, nunca pises los de arriba):
 
@@ -56,6 +57,9 @@ Campos que **escribes tú** (merge, nunca pises los de arriba):
 | `status` | string | `"applying"` \| `"live"` \| `"error"` |
 | `last_error` | string | texto corto si truena |
 | `nuc_seen_at` | timestamp | latido del watcher (cada ~15 s) — la web lo usa para decir "NUC conectada" |
+
+> **`rev` es el reloj del cliente (`Date.now()`, milisegundos)**, no un contador 1,2,3.
+> Siempre sube. Solo compara `rev > applied_rev`.
 
 **Regla de idempotencia:** solo actúas si `rev > applied_rev`. Si son iguales, no hagas nada.
 (Así un reinicio tuyo no re-dispara el último layout, y un `onSnapshot` duplicado tampoco.)
@@ -74,6 +78,25 @@ Campos que **escribes tú** (merge, nunca pises los de arriba):
   - 4 canchas → cuadrícula 2×2
 
 En todos los modos el orden es: `primary` primero, luego `secondaries` en el orden que vengan.
+
+### ⚠️ Espejo de estado (esto es NUEVO y te toca a ti)
+
+El panel del operador entra con un **link secreto**, no con cuenta, así que **no puede leer
+`stream_control`** (si pudiera, el token quedaría expuesto). Por eso tienes que **espejar tu
+estado** en `stream_public/{club}`, que sí es de lectura pública, con estos campos:
+
+| campo | tipo | |
+|---|---|---|
+| `nuc_seen_at` | timestamp | latido cada ~15 s → el panel pinta "NUC conectada" |
+| `layout_rev` | number | el `rev` que ya aplicaste |
+| `layout_status` | string | `"applying"` \| `"live"` \| `"error"` |
+| `layout_error` | string | texto corto si truena |
+| `layout_mode` | string | el modo que está al aire |
+| `layout_primary` | string | la cancha principal al aire |
+| `layout_secondaries` | array | las secundarias al aire |
+
+Sin esto el panel funciona igual (manda el layout), pero el operador no ve confirmación.
+Escríbelo con merge, y **jamás metas ahí el `token`**.
 
 ### Colección `stream_public`, doc id = `BreakPoint` (para la página pública)
 

@@ -627,11 +627,32 @@ service cloud.firestore {
            );
     }
 
+    // Link secreto (WhatsApp) en vez de cuentas: el panel manda `token` en el
+    // payload y las reglas lo validan contra stream_tokens/{token}. Revocar =
+    // poner active:false (o borrar el doc) con tools/stream_token.py.
+    // OJO: stream_control ya NO es de lectura publica, justo para que el token
+    // que queda guardado en el doc no se pueda leer desde fuera.
+    function validStreamToken(club) {
+      return request.resource.data.token is string
+        && request.resource.data.token.size() >= 16
+        && exists(/databases/$(database)/documents/stream_tokens/$(request.resource.data.token))
+        && get(/databases/$(database)/documents/stream_tokens/$(request.resource.data.token))
+             .data.active == true
+        && get(/databases/$(database)/documents/stream_tokens/$(request.resource.data.token))
+             .data.club == club;
+    }
+
+    match /stream_tokens/{token} {
+      // Solo el Admin SDK (tools/stream_token.py) los crea/revoca. Nadie los
+      // lee desde el cliente: get()/exists() dentro de reglas NO pasa por aqui.
+      allow read, write: if false;
+    }
+
     match /stream_control/{club} {
       // Campos que la WEB puede tocar. Lo demas (applied_rev, status,
       // last_error, nuc_seen_at) es territorio de la NUC.
       function webFields() {
-        return ['club','mode','primary','secondaries','rev','requested_at','requested_by'];
+        return ['club','mode','primary','secondaries','rev','requested_at','requested_by','token'];
       }
       function validPayload() {
         return request.resource.data.mode in ['solo','pip','multi','grid']
@@ -640,15 +661,19 @@ service cloud.firestore {
                && request.resource.data.secondaries.size() <= 3
                && request.resource.data.rev is number;
       }
+      function mayWrite() {
+        return isStreamOperator() || validStreamToken(club);
+      }
 
-      // Lectura publica: el panel y (a futuro) la pagina muestran el estado.
-      allow read: if true;
+      // NO publica: el doc guarda el token. Solo admin (para depurar); la NUC
+      // entra con Admin SDK y se salta las reglas.
+      allow read: if isStreamOperator();
 
-      allow create: if isStreamOperator()
+      allow create: if mayWrite()
                     && request.resource.data.keys().hasOnly(webFields())
                     && validPayload();
 
-      allow update: if isStreamOperator()
+      allow update: if mayWrite()
                     && request.resource.data.diff(resource.data)
                          .affectedKeys().hasOnly(webFields())
                     && validPayload();
@@ -665,9 +690,17 @@ service cloud.firestore {
 
       allow read: if true;
 
-      allow create, update: if isStreamOperator()
-                            && request.resource.data.keys().hasOnly(pubFields())
-                            && request.resource.data.live is bool;
+      allow create: if isStreamOperator()
+                    && request.resource.data.keys().hasOnly(pubFields())
+                    && request.resource.data.live is bool;
+
+      // En update se miran solo los campos TOCADOS: la NUC espeja aqui su
+      // estado (layout_rev, layout_status, nuc_seen_at...) con Admin SDK, y
+      // esos campos no deben tumbar la escritura del panel.
+      allow update: if isStreamOperator()
+                    && request.resource.data.diff(resource.data)
+                         .affectedKeys().hasOnly(pubFields())
+                    && request.resource.data.live is bool;
 
       allow delete: if false;
     }
