@@ -169,6 +169,30 @@
   .pill.bad { background: rgba(255,70,70,.13); border-color: rgba(255,70,70,.42); color: #ff9c9c; }
   .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 
+  /* ── Switch AL AIRE / BREAK ── */
+  .air-card { display: flex; gap: 10px; }
+  .air-btn {
+    flex: 1; padding: 15px 12px; border-radius: 15px; cursor: pointer;
+    font-family: inherit; font-weight: 900; font-size: .92rem; color: #eaf2ff;
+    background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.11);
+    transition: all .16s ease; display: flex; flex-direction: column;
+    align-items: center; gap: 5px; line-height: 1.2;
+  }
+  .air-btn .sub { font-size: .68rem; font-weight: 700; opacity: .6; }
+  .air-btn:hover { border-color: rgba(255,255,255,.3); }
+  .air-btn.on-live {
+    background: rgba(60,200,120,.16); border-color: #3cc878; color: #b6f3d1;
+    box-shadow: 0 0 22px rgba(60,200,120,.22);
+  }
+  .air-btn.on-break {
+    background: rgba(255,180,40,.16); border-color: #ffb428; color: #ffdb96;
+    box-shadow: 0 0 22px rgba(255,180,40,.22);
+  }
+  .air-note {
+    margin-top: 10px; font-size: .76rem; color: rgba(234,242,255,.45); line-height: 1.5;
+  }
+  .dim-while-break { opacity: .45; pointer-events: none; }
+
   /* ── Barra de aplicar ── */
   .ct-apply {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
@@ -252,8 +276,28 @@
       <div class="ct-msg err" id="errBox"></div>
     </div>
 
-    <!-- Paso 1: modo -->
+    <!-- Aire: al aire / break. NUNCA corta la transmision de YouTube:
+         el break solo cambia lo que se ve, la URL sigue siendo la misma. -->
     <div class="ct-card">
+      <div class="ct-step">
+        <div class="num">▶</div><div class="txt">Transmisión</div>
+      </div>
+      <div class="air-card">
+        <button type="button" class="air-btn" id="btnAirLive">
+          <span>▶ AL AIRE</span><span class="sub">se ven las canchas</span>
+        </button>
+        <button type="button" class="air-btn" id="btnAirBreak">
+          <span>⏸ EN BREAK</span><span class="sub">cortinilla "ya volvemos"</span>
+        </button>
+      </div>
+      <div class="air-note">
+        El break <b>no termina la transmisión</b>: el canal sigue al aire con la cortinilla,
+        así que el link de YouTube nunca cambia. Al darle "AL AIRE" vuelven las canchas.
+      </div>
+    </div>
+
+    <!-- Paso 1: modo -->
+    <div class="ct-card" id="modeCard">
       <div class="ct-step">
         <div class="num">1</div><div class="txt">¿Cómo se ve?</div>
       </div>
@@ -261,7 +305,7 @@
     </div>
 
     <!-- Paso 2: principal -->
-    <div class="ct-card">
+    <div class="ct-card" id="primCard">
       <div class="ct-step">
         <div class="num">2</div><div class="txt">Cancha principal</div>
         <div class="hint" id="hintPrim">la grande</div>
@@ -364,7 +408,9 @@
     nucStatus: "",
     nucError: "",
     nucSeen: null,
-    adopted: false
+    adopted: false,
+    air: "live",        // "live" = canchas al aire | "break" = cortinilla
+    airAdopted: false
   };
   var db = null, user = null, isAdmin = false;
 
@@ -463,6 +509,26 @@
     el("applySum").textContent = d.nm + " · " + parts.join(" + ");
   }
 
+  function renderAir() {
+    var live = S.air !== "break";
+    el("btnAirLive").classList.toggle("on-live", live);
+    el("btnAirBreak").classList.toggle("on-break", !live);
+    // En break, elegir canchas no tiene efecto visible: se atenua para que
+    // el operador entienda por que "no pasa nada" al cambiar el layout.
+    ["modeCard", "primCard", "secCard"].forEach(function (id) {
+      var n = el(id);
+      if (n) n.classList.toggle("dim-while-break", !live);
+    });
+    el("applyBar").style.opacity = live ? "1" : ".45";
+  }
+
+  function setAir(air) {
+    if (S.air === air) return;
+    S.air = air;
+    renderAir();
+    push();          // el break se manda solo, sin esperar a "APLICAR"
+  }
+
   function renderStatus() {
     var p = el("pillNuc");
     var seen = (S.nucSeen && S.nucSeen.toDate) ? S.nucSeen.toDate() : null;
@@ -507,6 +573,12 @@
       S.nucError = d.layout_error || "";
       S.nucSeen = d.nuc_seen_at || null;
 
+      if (!S.airAdopted && (d.air === "break" || d.air === "live")) {
+        S.airAdopted = true;
+        S.air = d.air;
+        renderAir();
+      }
+
       // La primera vez adoptamos el layout que ya esta al aire, si la NUC lo espejo.
       if (!S.adopted && d.layout_mode) {
         S.adopted = true;
@@ -529,19 +601,21 @@
     });
   }
 
-  function apply() {
-    if (!valid()) return;
+  // Manda el estado completo (layout + aire). rev = reloj del cliente: siempre
+  // sube, y asi no necesitamos leer el doc (que a proposito no es legible para
+  // el operador con link).
+  function push() {
+    if (!valid() || !db) return;
     el("btnApply").disabled = true;
     el("errBox").textContent = "";
 
-    // rev = reloj del cliente: siempre sube, y no necesitamos leer el doc
-    // (que a proposito no es legible para el operador con link).
     var rev = Date.now();
     var payload = {
       club: CLUB,
       mode: S.mode,
       primary: S.primary,
       secondaries: S.secondaries.slice(),
+      air: S.air,
       rev: rev,
       requested_at: firebase.firestore.FieldValue.serverTimestamp(),
       requested_by: (user && user.email) || (TOKEN ? "link:" + TOKEN.slice(0, 6) : "?")
@@ -558,6 +632,14 @@
         : ("No se pudo aplicar: " + (err.code || err.message));
       el("btnApply").disabled = false;
     });
+  }
+
+  function apply() {
+    if (!valid()) return;
+    // Elegir canchas y aplicar implica querer estar al aire.
+    S.air = "live";
+    renderAir();
+    push();
   }
 
   function savePublic(live) {
@@ -609,6 +691,8 @@
     renderCourts();
   });
 
+  el("btnAirLive").addEventListener("click", function () { setAir("live"); });
+  el("btnAirBreak").addEventListener("click", function () { setAir("break"); });
   el("btnApply").addEventListener("click", apply);
   el("btnLive").addEventListener("click", function () { savePublic(true); });
   el("btnOff").addEventListener("click", function () { savePublic(false); });
@@ -634,7 +718,7 @@
     loadCourts().then(function (cs) {
       S.courts = cs;
       if (!S.primary && cs.length) S.primary = cs[0].id;
-      renderModes(); renderCourts(); renderStatus();
+      renderModes(); renderCourts(); renderStatus(); renderAir();
       watch();
     });
 

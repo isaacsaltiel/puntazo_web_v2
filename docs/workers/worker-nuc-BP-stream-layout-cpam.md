@@ -46,6 +46,7 @@ Campos que **escribe la web** (tú NUNCA los tocas):
 | `rev` | number | entero que **sube en cada cambio** (idempotencia) |
 | `requested_at` | timestamp | server timestamp |
 | `requested_by` | string | email del operador (o `link:xxxxxx`) |
+| `air` | string | `"live"` (se ven las canchas) \| `"break"` (cortinilla de pausa). **Nunca cortar el RTMP.** |
 | `token` | string | **IGNORALO.** Es la llave del link secreto del operador; las reglas la validan. No la copies a ningun lado, no la loguees, y NUNCA la espejes a `stream_public` (que es de lectura publica). |
 
 Campos que **escribes tú** (merge, nunca pises los de arriba):
@@ -63,6 +64,25 @@ Campos que **escribes tú** (merge, nunca pises los de arriba):
 
 **Regla de idempotencia:** solo actúas si `rev > applied_rev`. Si son iguales, no hagas nada.
 (Así un reinicio tuyo no re-dispara el último layout, y un `onSnapshot` duplicado tampoco.)
+
+### ⏸ `air` — suspender / retomar (NUEVO, 21-ago)
+
+Decisión de Isaac: **no hay botón de "terminar transmisión"**, porque al reconectar YouTube
+da una URL nueva y tú no puedes leerla (no hay OAuth) → la página pública se quedaría con un
+link muerto. En su lugar:
+
+- `air: "break"` → **el RTMP sigue vivo**, pero en pantalla va solo la **cortinilla de pausa**
+  ("Estamos en un break, ya volvemos") con los logos. Nada de canchas.
+- `air: "live"` → vuelve el layout de `mode`/`primary`/`secondaries`.
+
+Regla dura: **pase lo que pase, no cierres la conexión a YouTube.** El video id
+`-i8S070-2Go` tiene que seguir siendo el mismo todo el torneo.
+
+Para la cortinilla puedes reusar `media\Prod\cortinilla.png` (la que ya sale los primeros 4 s)
+con un `drawtext` encima, o pedirle a Isaac una imagen dedicada. Lo importante es que se
+entienda que es una pausa, no una falla.
+
+Si `air` no viene en el doc, trátalo como `"live"` (compatibilidad con lo que ya hiciste).
 
 ### Semántica de los modos
 
@@ -94,6 +114,7 @@ estado** en `stream_public/{club}`, que sí es de lectura pública, con estos ca
 | `layout_mode` | string | el modo que está al aire |
 | `layout_primary` | string | la cancha principal al aire |
 | `layout_secondaries` | array | las secundarias al aire |
+| `air` | string | `"live"` o `"break"` — el panel Y la página pública lo pintan |
 
 Sin esto el panel funciona igual (manda el layout), pero el operador no ve confirmación.
 Escríbelo con merge, y **jamás metas ahí el `token`**.

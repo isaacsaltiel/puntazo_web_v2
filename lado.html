@@ -579,11 +579,6 @@ video.video-preview {
        lleva >5 min sin actualizar. Solo aparece si pasa el threshold. -->
   <div id="pz-hb-host"></div>
 
-  <!-- AVISO TEMPORAL (19-ago-2026): la NUC de BreakPoint estuvo caída varios días y
-       sus clips se están subiendo en diferido. Se avisa SOLO en ese club y el aviso
-       CADUCA SOLO el 26-ago (ver PZ_AVISO_RECUPERACION en el script de abajo): no
-       depende de que alguien se acuerde de quitarlo. -->
-  <div id="pz-aviso-host"></div>
 
   <!-- F126: barra de refresh con timestamp "Actualizado hace X" + botón
        "Actualizar" + panel desplegable con los pulsos pendientes del user
@@ -675,45 +670,6 @@ video.video-preview {
   };
 })();
 </script>
-
-<!-- Aviso temporal de recuperación de clips (19→26 ago 2026). Ámbar, NO rojo:
-     no es un error del jugador ni una alerta; es "estamos trabajando en ello". -->
-<style>
-  #pz-aviso-host { max-width: 880px; margin: 0 auto; padding: 0 16px; }
-  .pz-aviso-recuperacion {
-    display: flex; align-items: flex-start; gap: 12px;
-    margin: 14px 0 4px;
-    padding: 13px 16px;
-    border-radius: 14px;
-    font-family: 'Montserrat', sans-serif;
-    line-height: 1.45;
-    color: #fff;
-    background: linear-gradient(135deg, rgba(217,119,6,0.22), rgba(217,119,6,0.10));
-    border: 1px solid rgba(251,191,36,0.42);
-  }
-  .pz-aviso-recuperacion .pz-aviso-ico {
-    flex: 0 0 auto; font-size: 1.15rem; line-height: 1.2;
-    color: #fbbf24;
-    /* giro lento = "en proceso", sin ser una animación que distraiga */
-    animation: pz-aviso-spin 2.6s linear infinite;
-  }
-  @keyframes pz-aviso-spin { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) {
-    .pz-aviso-recuperacion .pz-aviso-ico { animation: none; }
-  }
-  .pz-aviso-recuperacion .pz-aviso-txt { min-width: 0; }
-  .pz-aviso-recuperacion strong {
-    display: block; font-size: 0.94rem; font-weight: 800; margin-bottom: 3px;
-    color: #fde68a;
-  }
-  .pz-aviso-recuperacion span { display: block; font-size: 0.86rem; opacity: 0.94; }
-  @media (max-width: 480px) {
-    #pz-aviso-host { padding: 0 12px; }
-    .pz-aviso-recuperacion { padding: 11px 13px; gap: 10px; }
-    .pz-aviso-recuperacion strong { font-size: 0.88rem; }
-    .pz-aviso-recuperacion span { font-size: 0.80rem; }
-  }
-</style>
 
 <!-- ── Banner CTA de partido (Etapa 4) — IIFE defensiva, no rompe nada si falla ── -->
 <style>
@@ -1209,43 +1165,6 @@ video.video-preview {
     return o;
   }
 
-  // ── AVISO TEMPORAL DE RECUPERACIÓN ────────────────────────────────────────
-  // La NUC de BreakPoint estuvo caída varios días; sus clips se subieron en
-  // diferido. El indexador clasifica por fecha de SUBIDA (server_modified), no
-  // por la del nombre, así que los atrasados sí entran como "recientes" — pero
-  // aparecen goteando conforme suben, y con la fecha real de juego. Este aviso
-  // explica ese desfase al jugador que no encuentra su clip todavía.
-  var PZ_AVISO_RECUPERACION = {
-    locs:  ["BreakPoint"],          // exacto, como viene en ?loc= (case-insensitive abajo)
-    hasta: "2026-08-26T23:59:59",   // CADUCA SOLO: pasada esta fecha no se pinta nunca más
-    titulo: "Estamos subiendo los clips atrasados",
-    texto:  "Tuvimos una falla en el equipo del club y varios días de clips se quedaron sin subir. " +
-            "Ya se están subiendo y van apareciendo poco a poco, cada uno con la fecha y hora en que se jugó. " +
-            "Si no ves el tuyo todavía, vuelve a revisar más tarde. Disculpa las molestias."
-  };
-
-  function renderAvisoRecuperacion(locId) {
-    var host = document.getElementById("pz-aviso-host");
-    if (!host || !locId) return;
-    var cfg = PZ_AVISO_RECUPERACION;
-    // Caducidad: si ya pasó la fecha, el aviso desaparece sin tocar nada.
-    if (new Date() > new Date(cfg.hasta)) return;
-    var loc = String(locId).toLowerCase();
-    var aplica = cfg.locs.some(function (x) { return String(x).toLowerCase() === loc; });
-    if (!aplica) return;
-
-    var box = document.createElement("div");
-    box.className = "pz-aviso-recuperacion";
-    box.setAttribute("role", "status");
-    box.innerHTML =
-      '<div class="pz-aviso-ico" aria-hidden="true">↻</div>' +
-      '<div class="pz-aviso-txt"><strong></strong><span></span></div>';
-    // textContent (no innerHTML) para el contenido variable: nada que inyectar.
-    box.querySelector("strong").textContent = cfg.titulo;
-    box.querySelector("span").textContent   = cfg.texto;
-    host.appendChild(box);
-  }
-
   // ── BANNER "EN VIVO" ──────────────────────────────────────────────────────
   // Mismo contrato que entrada.html: stream_public/{club}. Independiente del
   // resto de init() a proposito: si algo mas falla, el banner igual sale.
@@ -1300,7 +1219,6 @@ video.video-preview {
     } catch (_) {}
 
     // AVISO TEMPORAL DE RECUPERACIÓN (19→26 ago 2026, solo BreakPoint).
-    try { renderAvisoRecuperacion(p.loc); } catch (_) {}
 
     window.__pzLadoBar = window.PuntazoRefreshBar.attach(host, {
       label: "Actualizado",

@@ -111,6 +111,11 @@
   }
   @keyframes pzpulse { 0%,100% { opacity: 1 } 50% { opacity: .25 } }
 
+  .live-badge.is-break {
+    background: rgba(255,180,40,.14); border-color: rgba(255,180,40,.5); color: #ffd58a;
+  }
+  .live-badge.is-break .dot { background: #ffb428; box-shadow: 0 0 10px #ffb428; animation: none; }
+
   .live-player {
     position: relative; width: 100%; aspect-ratio: 16 / 9;
     background: #000; border-radius: 18px; overflow: hidden;
@@ -280,7 +285,11 @@
       return;
     }
 
+    var enBreak = (d.air === "break");
     el("liveBadge").classList.remove("hidden");
+    el("liveBadge").classList.toggle("is-break", enBreak);
+    el("liveBadge").lastChild.textContent = enBreak ? "EN UN BREAK" : "EN VIVO";
+    if (enBreak) el("liveSub").textContent = "Pausa entre partidos · ya volvemos";
     el("offBox").classList.add("hidden");
     el("btnYT").classList.remove("hidden");
     el("btnYT").href = vid

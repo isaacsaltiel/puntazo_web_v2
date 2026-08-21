@@ -652,14 +652,17 @@ service cloud.firestore {
       // Campos que la WEB puede tocar. Lo demas (applied_rev, status,
       // last_error, nuc_seen_at) es territorio de la NUC.
       function webFields() {
-        return ['club','mode','primary','secondaries','rev','requested_at','requested_by','token'];
+        return ['club','mode','primary','secondaries','rev','requested_at','requested_by','token','air'];
       }
       function validPayload() {
         return request.resource.data.mode in ['solo','pip','multi','grid']
                && request.resource.data.primary is string
                && request.resource.data.secondaries is list
                && request.resource.data.secondaries.size() <= 3
-               && request.resource.data.rev is number;
+               && request.resource.data.rev is number
+               // `air` es opcional; si viene, solo estos dos valores.
+               && (!('air' in request.resource.data)
+                   || request.resource.data.air in ['live','break']);
       }
       function mayWrite() {
         return isStreamOperator() || validStreamToken(club);
@@ -685,7 +688,7 @@ service cloud.firestore {
     match /stream_public/{club} {
       function pubFields() {
         return ['club','live','youtube_url','youtube_id','channel_id','titulo',
-                'subtitulo','organizador','organizador_logo','updated_at','updated_by'];
+                'subtitulo','organizador','organizador_logo','updated_at','updated_by','air'];
       }
 
       allow read: if true;
