@@ -529,13 +529,14 @@
     push();          // el break se manda solo, sin esperar a "APLICAR"
   }
 
+  // "NUC en línea" = nuc_seen_at reciente (<60s). Si se pasa, avisamos que no responde.
   function renderStatus() {
     var p = el("pillNuc");
     var seen = (S.nucSeen && S.nucSeen.toDate) ? S.nucSeen.toDate() : null;
-    var fresh = seen && (Date.now() - seen.getTime() < 90000);
+    var fresh = seen && (Date.now() - seen.getTime() < 60000);
     p.className = "pill " + (fresh ? "ok" : "warn");
     p.innerHTML = '<span class="dot"></span><span>' +
-      (fresh ? "NUC conectada" : "NUC sin reportar") + "</span>";
+      (fresh ? "NUC conectada" : "NUC no responde") + "</span>";
 
     var a = el("pillApplied");
     if (S.nucStatus === "error") {
@@ -546,15 +547,18 @@
     }
     el("errBox").textContent = "";
 
-    if (S.sentRev && S.appliedRev < S.sentRev) {
+    // Confirmado = la NUC ya aplicó ESTE rev exacto y quedó en "live".
+    // Mientras no coincidan (o mientras siga en "applying"), seguimos
+    // mostrando "aplicando" — el layout SÍ reinicia el encoder (~5-7s de
+    // corte); el operador no debe pensar que el botón no hizo nada.
+    var confirmado = S.appliedRev === S.sentRev && S.nucStatus === "live";
+
+    if (S.sentRev && !confirmado) {
       a.className = "pill warn";
       a.innerHTML = "<span>⏳ aplicando…</span>";
-    } else if (S.appliedRev > 0) {
+    } else if (confirmado || (S.appliedRev > 0 && S.nucStatus === "live")) {
       a.className = "pill ok";
       a.innerHTML = "<span>✅ al aire</span>";
-    } else if (S.sentRev) {
-      a.className = "pill warn";
-      a.innerHTML = "<span>✓ enviado</span>";
     } else {
       a.className = "pill";
       a.innerHTML = "<span>—</span>";

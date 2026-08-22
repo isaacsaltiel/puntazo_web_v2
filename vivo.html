@@ -152,6 +152,35 @@
     margin-top: 18px; text-align: center;
     font-size: .78rem; color: rgba(234,242,255,.45); line-height: 1.5;
   }
+  .past-streams { margin-top: 30px; }
+  .past-streams h2 {
+    font-size: 1rem; font-weight: 900; color: #fff; margin: 0 0 12px;
+    letter-spacing: -.2px;
+  }
+  .past-list {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .past-card {
+    display: flex; flex-direction: column; gap: 0; text-decoration: none;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.10);
+    border-radius: 14px; overflow: hidden; transition: all .16s ease;
+  }
+  .past-card:hover { border-color: rgba(11,124,255,.5); transform: translateY(-1px); }
+  .past-card img, .past-thumb-empty {
+    width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #000;
+  }
+  .past-thumb-empty {
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.3); font-size: 1.6rem;
+  }
+  .past-info { padding: 10px 12px 12px; }
+  .past-title {
+    font-size: .84rem; font-weight: 800; color: #fff; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .past-date { font-size: .72rem; color: rgba(234,242,255,.5); margin-top: 4px; font-weight: 600; }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -192,6 +221,11 @@
   <div class="live-note">
     ¿No se ve el video? Toca <b>Abrir en YouTube</b>.<br />
     Transmisión operada por Puntazo · <span id="noteOrg">Torneo CPAM</span>
+  </div>
+
+  <div id="pastBox" class="past-streams hidden">
+    <h2>Transmisiones anteriores</h2>
+    <div id="pastList" class="past-list"></div>
   </div>
 
 </main>
@@ -253,6 +287,70 @@
     return m ? m[1] : "";
   }
 
+  // Fechas de past_streams: pueden llegar como Timestamp de Firestore, como
+  // {seconds:...} o como string ("2026-08-15"). Cubrimos las tres.
+  function toDate(raw) {
+    if (!raw) return null;
+    if (typeof raw.toDate === "function") { try { return raw.toDate(); } catch (e) {} }
+    if (typeof raw.seconds === "number") return new Date(raw.seconds * 1000);
+    // "YYYY-MM-DD" es una fecha de CALENDARIO, sin hora: parsearla con
+    // `new Date(str)` la lee como medianoche UTC y con huso horario detras
+    // de UTC (todo Mexico) se corre un dia hacia atras al leerla en local.
+    // Construimos la fecha con componentes locales para que no se mueva.
+    if (typeof raw === "string") {
+      var m = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    }
+    var d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  var MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  function fmtFecha(raw) {
+    var d = toDate(raw);
+    if (!d) return "";
+    return d.getDate() + " " + MESES[d.getMonth()] + " " + d.getFullYear();
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // Transmisiones anteriores: mas reciente primero; mismo dia = orden del array.
+  function renderPastStreams(list) {
+    var box = el("pastBox");
+    if (!Array.isArray(list) || !list.length) { box.classList.add("hidden"); return; }
+
+    var withIdx = list.map(function (it, i) {
+      return { it: it || {}, i: i, d: toDate(it && it.fecha) };
+    });
+    withIdx.sort(function (a, b) {
+      var ta = a.d ? a.d.getTime() : -Infinity;
+      var tb = b.d ? b.d.getTime() : -Infinity;
+      if (tb !== ta) return tb - ta;
+      return a.i - b.i;
+    });
+
+    el("pastList").innerHTML = withIdx.map(function (x) {
+      var it = x.it;
+      var url = it.url || "#";
+      var vid = ytId(url);
+      var thumb = vid ? ("https://i.ytimg.com/vi/" + vid + "/hqdefault.jpg") : "";
+      var fecha = fmtFecha(it.fecha);
+      return '<a class="past-card" href="' + esc(url) + '" target="_blank" rel="noopener">' +
+        (thumb
+          ? '<img src="' + esc(thumb) + '" alt="" loading="lazy">'
+          : '<div class="past-thumb-empty">▶</div>') +
+        '<div class="past-info">' +
+          '<div class="past-title">' + esc(it.titulo || "Transmisión") + '</div>' +
+          (fecha ? '<div class="past-date">' + esc(fecha) + '</div>' : '') +
+        '</div></a>';
+    }).join("");
+    box.classList.remove("hidden");
+  }
+
   function render(d) {
     d = d || {};
     var url = d.youtube_url || d.url || "";
@@ -272,6 +370,7 @@
     if (d.organizador_logo) el("logoOrg").src = d.organizador_logo;
 
     el("btnClips").href = "/entrada.html?loc=" + encodeURIComponent(CLUB);
+    renderPastStreams(d.past_streams);
 
     if (!live) {
       el("liveBadge").classList.add("hidden");
