@@ -198,6 +198,7 @@
     border-radius: 18px;
     padding: 20px 18px;
     margin-top: 14px;
+    overflow-x: hidden; /* resguardo: si algo interno se pasa de ancho, se recorta en vez de romper la tarjeta */
   }
   .rec-form-context {
     font-size: 0.86rem;
@@ -302,19 +303,27 @@
     font-weight: 600;
   }
 
-  /* Un input type=time nativo trae su propio segmento AM/PM y no se achica
-     bien de lado a lado (a la mitad del ancho del teléfono se sale del
-     contenedor). Ancho completo, solo. */
+  /* Un input type=time nativo trae su propio segmento AM/PM con un ancho
+     mínimo interno que el navegador no comprime — agrandar su font-size
+     agranda ese mínimo y en pantalla angosta se sale de la caja aunque el
+     CSS diga width:100%. Por eso NO se le sube el tamaño de fuente aquí:
+     usa el mismo tamaño base que datetime-local (que nunca desbordó).
+     min-width:0 es el fix real para que un input nativo pueda encogerse
+     dentro de un contenedor flex en vez de forzar su ancho mínimo. */
   .rec-time-grid {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    min-width: 0;
+  }
+  .rec-time-field {
+    min-width: 0;
   }
   .rec-time-field input[type="time"] {
-    font-size: 1.15rem;
-    padding: 16px 14px;
     text-align: center;
+    width: 100%;
     max-width: 100%;
+    min-width: 0;
     box-sizing: border-box;
   }
 
