@@ -1229,14 +1229,6 @@ function createScrollToTopBtn() {
   window.addEventListener("scroll", () => { const y = window.scrollY; if (y > 100 && y < lastY && allVideos.length > 3) btn.style.display = "block"; else btn.style.display = "none"; lastY = y; });
 }
 
-async function isSingleLado(locId, canId) {
-  try {
-    let cfg = cfgGlobal; if (!cfg) cfg = await (await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" })).json();
-    const loc = cfg?.locaciones?.find(l => l.id === locId), can = loc?.cancha?.find(c => c.id === canId);
-    return Array.isArray(can?.lados) && can.lados.length === 1;
-  } catch { return false; }
-}
-
 // ----------------------- arranque -----------------------
 document.addEventListener("DOMContentLoaded", () => {
   const path = window.location.pathname, p = getQueryParams();
@@ -1272,17 +1264,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const btnVolver = document.getElementById("btn-volver");
   if (btnVolver) {
-    (async () => {
-      const p2 = getQueryParams();
-      // (2026-06-13) "← Regresar" desde lado.html (cancha de 1 lado) va DIRECTO
-      // a la pantalla de opciones de entrada (Ir al botón / Ver clips /
-      // Configurar) de la MISMA cancha. Antes iba a modo=canchas y reabría el
-      // selector, que terminaba devolviéndote a clips (nunca a las opciones).
-      // Multi-lado (Scorpion) sigue yendo a cancha.html para elegir el otro lado.
-      if (path.endsWith("lado.html"))    { const mono = await isSingleLado(p2.loc, p2.can); btnVolver.href = mono ? `entrada.html?loc=${encodeURIComponent(p2.loc)}&can=${encodeURIComponent(p2.can)}&lado=${encodeURIComponent(p2.lado)}` : `cancha.html?loc=${p2.loc}&can=${p2.can}`; }
-      else if (path.endsWith("cancha.html")) { btnVolver.href = `locacion.html?loc=${p2.loc}`; }
-      else if (path.endsWith("locacion.html")) { btnVolver.href = "explorar.html"; }
-    })();
+    const p2 = getQueryParams();
+    // (2026-08-23) "← Regresar" desde lado.html va SIEMPRE directo a la
+    // pantalla de opciones de entrada (Ver clips / Usar botón / Más
+    // herramientas) de la MISMA cancha y MISMO lado que se estaba viendo —
+    // sin excepción por club. Antes Scorpion (único club multi-lado) caía a
+    // cancha.html a re-elegir lado, rompiendo la regla "mismo flujo siempre
+    // para todos los clubes" (club → cancha → opciones → destino, y de
+    // regreso directo a opciones). "Cambiar cancha" sigue siendo el lugar
+    // explícito para cambiar de cancha o lado; regresar no debe forzarlo.
+    if (path.endsWith("lado.html")) {
+      btnVolver.href = `entrada.html?loc=${encodeURIComponent(p2.loc)}&can=${encodeURIComponent(p2.can)}&lado=${encodeURIComponent(p2.lado)}`;
+    }
+    else if (path.endsWith("cancha.html")) { btnVolver.href = `locacion.html?loc=${p2.loc}`; }
+    else if (path.endsWith("locacion.html")) { btnVolver.href = "explorar.html"; }
   }
 });
 
