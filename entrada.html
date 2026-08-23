@@ -1278,8 +1278,11 @@
       && Array.isArray(window.PuntazoPulses.FULL_MATCH_RECOVERY_CLUBS)
       && window.PuntazoPulses.FULL_MATCH_RECOVERY_CLUBS.indexOf(clubId) >= 0);
     const demoteDigital = ["Interpadel", "BreakPoint"].indexOf(clubId) >= 0;
+    // lado va incluido para que el botón "← Regresar" de recuperar.html pueda
+    // volver EXACTAMENTE a esta pantalla de opciones (no adivinarlo).
     const recoverHref = "/recuperar.html?loc=" + encodeURIComponent(clubId) +
-                         "&can=" + encodeURIComponent(canchaId);
+                         "&can=" + encodeURIComponent(canchaId) +
+                         "&lado=" + encodeURIComponent(lado);
 
     const $regA = document.getElementById("lnkRegistrarAuthed");
     const $regG = document.getElementById("lnkRegistrarGuest");

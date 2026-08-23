@@ -198,7 +198,12 @@
     border-radius: 18px;
     padding: 20px 18px;
     margin-top: 14px;
-    overflow-x: hidden; /* resguardo: si algo interno se pasa de ancho, se recorta en vez de romper la tarjeta */
+    /* overflow-x solo (sin overflow-y) hace que el navegador calcule
+       overflow-y:auto por detrás — con border-radius eso corta el redondeado
+       del lado derecho de forma dispareja. overflow:hidden en los dos ejes
+       evita el efecto raro y sigue sirviendo de resguardo si algo interno
+       se pasa de ancho. */
+    overflow: hidden;
   }
   .rec-form-context {
     font-size: 0.86rem;
@@ -355,6 +360,7 @@
   }
   .rec-duration-value {
     flex: 1;
+    min-width: 0;
     text-align: center;
     font-size: 1.35rem;
     font-weight: 900;
@@ -480,7 +486,23 @@
 
 <body>
 
-<div id="nav-root" data-nav-variant="internal"></div>
+<div id="nav-root" data-nav-variant="embedded"></div>
+<script>
+// (2026-08-23) header variant "embedded" necesita data-back-to ANTES de que
+// header.js renderice. Isaac: "una vez que entras a recuperar, está muy
+// difícil regresar". Si llegamos con contexto (?loc&can, desde el botón/link
+// de entrada.html) el regreso es EXACTO a esa pantalla de opciones; si no
+// (entrada genérica, ej. la card "¿Se te escapó un puntazo?" del selector de
+// clubs), regresa a entrada.html a secas.
+(function () {
+  var p = new URLSearchParams(window.location.search);
+  var loc = p.get("loc"), can = p.get("can"), lado = p.get("lado");
+  var backTo = (loc && can)
+    ? "/entrada.html?loc=" + encodeURIComponent(loc) + "&can=" + encodeURIComponent(can) + "&lado=" + encodeURIComponent(lado || "LadoA")
+    : "/entrada.html";
+  document.getElementById("nav-root").setAttribute("data-back-to", backTo);
+})();
+</script>
 <script src="/assets/header.js"></script>
 
 <main class="rec-wrap">
