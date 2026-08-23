@@ -355,10 +355,29 @@
 
     <div id="recAuthBanner" class="rec-banner info" style="display:none"></div>
 
-    <div class="rec-field">
+    <!-- Flujo normal: recuperar UN puntazo puntual (ventana ±90s) -->
+    <div id="recPointField" class="rec-field">
       <label for="recDateTime">¿Cuándo fue el puntazo?</label>
       <input id="recDateTime" type="datetime-local" />
       <div class="hint">Pon la hora aproximada. Buscaremos 90 segundos antes y 90 después.</div>
+    </div>
+
+    <!-- Flujo "partido completo": solo clubs en PuntazoPulses.FULL_MATCH_RECOVERY_CLUBS.
+         Reemplaza el campo de arriba para evitar que pidan el mismo partido
+         a punta de recuperaciones puntuales encadenadas. -->
+    <div id="recFullMatchFields" style="display:none">
+      <div id="recFullBanner" class="rec-banner info">
+        🎾 <strong>Ya puedes pedir tu partido completo.</strong> Elige el rango de tiempo que quieres que se suba (máximo <span id="recFullMaxMin">20</span> minutos).
+      </div>
+      <div class="rec-field">
+        <label for="recFullStart">Desde</label>
+        <input id="recFullStart" type="datetime-local" />
+      </div>
+      <div class="rec-field">
+        <label for="recFullEnd">Hasta</label>
+        <input id="recFullEnd" type="datetime-local" />
+        <div class="hint" id="recFullHint">Se subirá como un solo video de "Partido", no como clips sueltos.</div>
+      </div>
     </div>
 
     <button id="recSubmit" class="rec-submit" type="button">Pedir recuperación</button>
@@ -391,6 +410,14 @@
   const $feedback  = document.getElementById("recFeedback");
   const $after     = document.getElementById("recAfter");
   const $another   = document.getElementById("recAnother");
+
+  // Flujo "partido completo" (solo WellStreet, ver PuntazoPulses.FULL_MATCH_RECOVERY_CLUBS)
+  const $pointField     = document.getElementById("recPointField");
+  const $fullFields     = document.getElementById("recFullMatchFields");
+  const $fullMaxMinEl   = document.getElementById("recFullMaxMin");
+  const $fullStart      = document.getElementById("recFullStart");
+  const $fullEnd        = document.getElementById("recFullEnd");
+  const $fullHint       = document.getElementById("recFullHint");
 
   function escapeHtml(s) {
     return String(s || "").replace(/[&<>"']/g, c => ({
@@ -570,8 +597,21 @@
 
     const club = state.selectedClub;
     const cancha = state.selectedCancha;
-    $formCtx.innerHTML = "Recuperar puntazo en <strong>" + escapeHtml(club.nombre) +
-      "</strong> · <strong>" + escapeHtml(cancha.nombre) + "</strong>";
+
+    state.fullMatchMode = !!(window.PuntazoPulses
+      && typeof window.PuntazoPulses.canRequestFullMatchRecovery === "function"
+      && window.PuntazoPulses.canRequestFullMatchRecovery(club.id));
+
+    if (state.fullMatchMode) {
+      $formCtx.innerHTML = "Partido completo en <strong>" + escapeHtml(club.nombre) +
+        "</strong> · <strong>" + escapeHtml(cancha.nombre) + "</strong>";
+    } else {
+      $formCtx.innerHTML = "Recuperar puntazo en <strong>" + escapeHtml(club.nombre) +
+        "</strong> · <strong>" + escapeHtml(cancha.nombre) + "</strong>";
+    }
+    $pointField.style.display = state.fullMatchMode ? "none" : "block";
+    $fullFields.style.display = state.fullMatchMode ? "block" : "none";
+    $submit.textContent = state.fullMatchMode ? "Pedir partido completo" : "Pedir recuperación";
 
     // F129: si las cámaras del club están temporalmente fuera de línea,
     // mostrar banner pasivo arriba del form. El user igual puede pedir
@@ -589,17 +629,36 @@
       }
     } catch (_) {}
 
-    // Default datetime: ahora menos 5 min, con paso 1 min
-    const d = new Date();
-    d.setMinutes(d.getMinutes() - 5);
-    $datetime.value = toLocalDateTimeInputValue(d);
-
-    // Max: ahora (no se puede pedir un puntazo futuro)
-    // Min: 30 días atrás
+    // Max: ahora (no se puede pedir en el futuro). Min: 30 días atrás.
     const maxD = new Date();
     const minD = new Date(); minD.setDate(minD.getDate() - 30);
-    $datetime.max = toLocalDateTimeInputValue(maxD);
-    $datetime.min = toLocalDateTimeInputValue(minD);
+    const maxVal = toLocalDateTimeInputValue(maxD);
+    const minVal = toLocalDateTimeInputValue(minD);
+
+    if (state.fullMatchMode) {
+      const maxMin = (window.PuntazoPulses && window.PuntazoPulses.MATCH_RECORDING_MAX_MINUTES) || 20;
+      if ($fullMaxMinEl) $fullMaxMinEl.textContent = String(maxMin);
+      if ($fullHint) {
+        $fullHint.textContent = "Se subirá como un solo video de \"Partido\" (máx. " + maxMin +
+          " min), no como clips sueltos. Puedes pedir hasta " +
+          ((window.PuntazoPulses && window.PuntazoPulses.FULL_MATCH_RECOVERY_THROTTLE_MAX) || 3) +
+          " partidos de esta cancha por hora.";
+      }
+      // Default: últimos `maxMin` minutos.
+      const endD = new Date();
+      const startD = new Date(endD.getTime() - maxMin * 60 * 1000);
+      $fullStart.value = toLocalDateTimeInputValue(startD);
+      $fullEnd.value = toLocalDateTimeInputValue(endD);
+      $fullStart.max = maxVal; $fullStart.min = minVal;
+      $fullEnd.max = maxVal; $fullEnd.min = minVal;
+    } else {
+      // Default datetime: ahora menos 5 min, con paso 1 min
+      const d = new Date();
+      d.setMinutes(d.getMinutes() - 5);
+      $datetime.value = toLocalDateTimeInputValue(d);
+      $datetime.max = maxVal;
+      $datetime.min = minVal;
+    }
 
     refreshAuthBanner();
   }
@@ -663,25 +722,55 @@
       return;
     }
 
-    const dtVal = $datetime.value;
-    if (!dtVal) {
-      setFeedback("Selecciona la fecha y hora del puntazo.", "bad");
-      return;
-    }
-    const eventAt = new Date(dtVal);
-    if (isNaN(eventAt.getTime())) {
-      setFeedback("Fecha/hora inválida.", "bad");
-      return;
-    }
+    let eventAt = null, rangeStart = null, rangeEnd = null;
     const now = new Date();
-    if (eventAt.getTime() > now.getTime() + 60 * 1000) {
-      setFeedback("La hora no puede ser en el futuro.", "bad");
-      return;
-    }
-    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-    if (now.getTime() - eventAt.getTime() > thirtyDays) {
-      setFeedback("Solo se pueden recuperar puntazos de los últimos 30 días.", "bad");
-      return;
+
+    if (state.fullMatchMode) {
+      const sVal = $fullStart.value, eVal = $fullEnd.value;
+      if (!sVal || !eVal) {
+        setFeedback("Selecciona el inicio y el fin del rango.", "bad");
+        return;
+      }
+      rangeStart = new Date(sVal);
+      rangeEnd = new Date(eVal);
+      if (isNaN(rangeStart.getTime()) || isNaN(rangeEnd.getTime())) {
+        setFeedback("Fecha/hora inválida.", "bad");
+        return;
+      }
+      if (rangeEnd.getTime() <= rangeStart.getTime()) {
+        setFeedback("El fin debe ser posterior al inicio.", "bad");
+        return;
+      }
+      const maxMin = (window.PuntazoPulses && window.PuntazoPulses.MATCH_RECORDING_MAX_MINUTES) || 20;
+      const durMin = (rangeEnd.getTime() - rangeStart.getTime()) / 60000;
+      if (durMin > maxMin) {
+        setFeedback("El rango no puede pasar de " + maxMin + " minutos.", "bad");
+        return;
+      }
+      if (rangeEnd.getTime() > now.getTime() + 60 * 1000) {
+        setFeedback("El fin no puede ser en el futuro.", "bad");
+        return;
+      }
+    } else {
+      const dtVal = $datetime.value;
+      if (!dtVal) {
+        setFeedback("Selecciona la fecha y hora del puntazo.", "bad");
+        return;
+      }
+      eventAt = new Date(dtVal);
+      if (isNaN(eventAt.getTime())) {
+        setFeedback("Fecha/hora inválida.", "bad");
+        return;
+      }
+      if (eventAt.getTime() > now.getTime() + 60 * 1000) {
+        setFeedback("La hora no puede ser en el futuro.", "bad");
+        return;
+      }
+      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+      if (now.getTime() - eventAt.getTime() > thirtyDays) {
+        setFeedback("Solo se pueden recuperar puntazos de los últimos 30 días.", "bad");
+        return;
+      }
     }
 
     // Re-check auth + throttle justo antes de enviar
@@ -704,22 +793,33 @@
     $feedback.style.color = "rgba(234,242,255,.78)";
 
     try {
-      const result = await window.PuntazoPulses.requestPulse({
-        loc: club.id,
-        can: cancha.id,
-        // lado: undefined → pulses.js manda null para recovery; la NUC decide
-        source: "recovery",
-        event_at: eventAt,
-      });
-
-      if (isAnonUser(user)) markAnonSent();
-
-      $feedback.style.color = "";
-      setFeedback("✅ Listo. Tu clip estará disponible en ~7 minutos.", "ok");
-      $after.style.display = "block";
+      if (state.fullMatchMode) {
+        await window.PuntazoPulses.requestFullMatchRecovery({
+          loc: club.id,
+          can: cancha.id,
+          startAt: rangeStart,
+          endAt: rangeEnd,
+        });
+        if (isAnonUser(user)) markAnonSent();
+        $feedback.style.color = "";
+        setFeedback("✅ Listo. Tu partido completo estará disponible en unos minutos.", "ok");
+        $after.style.display = "block";
+      } else {
+        await window.PuntazoPulses.requestPulse({
+          loc: club.id,
+          can: cancha.id,
+          // lado: undefined → pulses.js manda null para recovery; la NUC decide
+          source: "recovery",
+          event_at: eventAt,
+        });
+        if (isAnonUser(user)) markAnonSent();
+        $feedback.style.color = "";
+        setFeedback("✅ Listo. Tu clip estará disponible en ~7 minutos.", "ok");
+        $after.style.display = "block";
+      }
       // No reseteamos el form para que vea qué pidió.
     } catch (err) {
-      console.error("[recuperar] requestPulse falló", err);
+      console.error("[recuperar] solicitud falló", err);
       $feedback.style.color = "";
       const msg = (err && err.message) ? err.message : "Error desconocido";
       setFeedback("No se pudo enviar: " + msg + ". Intenta de nuevo.", "bad");
@@ -734,12 +834,46 @@
     renderSelector();
   });
 
+  // ── Prefill ?loc=&can= (entrada.html → "Recuperar puntazo" / CTA roja) ──
+  // Sin esto, el link de entrada.html sirve de poco: manda al usuario de
+  // vuelta al selector de club/cancha que ya eligió hace un momento.
+  function getQueryParams() {
+    const params = {};
+    window.location.search.replace(/^\?/, "").split("&").forEach(function (pair) {
+      if (!pair) return;
+      const kv = pair.split("=");
+      params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || "");
+    });
+    return params;
+  }
+
   // ── Init ───────────────────────────────────────────────────────
   (async function init() {
     await Promise.all([
       loadCatalogSafe(),
       ensureAuthReady(),
     ]);
+
+    const qp = getQueryParams();
+    const clubs = (state.catalog && state.catalog.clubs) || [];
+    const preClub = qp.loc ? clubs.find(function (c) { return c.id === qp.loc; }) : null;
+    const preCancha = (preClub && qp.can)
+      ? (preClub.canchas || []).find(function (c) { return c.id === qp.can; })
+      : null;
+
+    if (preClub && preCancha) {
+      state.selectedClub = preClub;
+      state.selectedCancha = preCancha;
+      enterFormStep();
+      refreshAuthBanner();
+      if (window.firebase && firebase.auth) {
+        firebase.auth().onAuthStateChanged(function () {
+          if (state.step === "form") refreshAuthBanner();
+        });
+      }
+      return;
+    }
+
     renderSelector();
     refreshAuthBanner();
 

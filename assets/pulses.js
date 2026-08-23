@@ -237,6 +237,142 @@
     };
   }
 
+  // ── R9 — "Partido completo" desde recuperación (rango elegido a mano) ──
+  // Para clubs donde la recuperación puntual (source="recovery", ventana
+  // ±90s) se presta a abuso: un usuario pide 30 recuperaciones seguidas
+  // cada ~3 min para reconstruir el partido entero clip por clip (confirmado
+  // en datos reales de WellStreet-Pickleball, 22-ago-2026: 1 uid, 34
+  // solicitudes en 155 min). Para esos clubs, recuperar.html reemplaza el
+  // form de "hora del puntazo" por un rango [inicio,fin] de hasta
+  // MATCH_RECORDING_MAX_MINUTES, y este writer reusa EXACTAMENTE el
+  // contrato/handler de match_full ya probado (docs/workers/
+  // worker-nuc-match-full-grabacion-completa.md): ventana exacta, mismo
+  // tag de archivo _PARTIDO_<hash>, mismo badge en card.js. Solo cambia
+  // `source` a "match_full_recovery" (no hay matchId real) y se agrega
+  // un tope anti-abuso propio del flujo (ver checkFullMatchRecoveryThrottle).
+  const FULL_MATCH_RECOVERY_CLUBS = ["WellStreet-Pickleball", "WellStreet-Padel"];
+  const FULL_MATCH_RECOVERY_MIN_SECONDS = 60;
+  // Tope: máximo N solicitudes por (uid, club, cancha) en una ventana de
+  // M minutos. Evita que alguien esquive el límite de 20 min encadenando
+  // varias ventanas de "partido completo" en vez de recuperaciones puntuales.
+  const FULL_MATCH_RECOVERY_THROTTLE_MAX = 3;
+  const FULL_MATCH_RECOVERY_THROTTLE_WINDOW_MIN = 60;
+
+  function canRequestFullMatchRecovery(loc) {
+    return FULL_MATCH_RECOVERY_CLUBS.indexOf(loc) >= 0;
+  }
+
+  // Cuenta, vía Firestore (regla ya permite leer los propios pending_pulses
+  // por uid_creator == auth.uid), cuántas solicitudes match_full_recovery
+  // hizo este usuario para esta cancha en la última hora.
+  async function checkFullMatchRecoveryThrottle(loc, can, uid) {
+    const db = window.PuntazoFirebase.db();
+    const snap = await db.collection("pending_pulses")
+      .where("uid_creator", "==", uid)
+      .where("club", "==", loc)
+      .where("cancha", "==", canchaDigit(can))
+      .where("source", "==", "match_full_recovery")
+      .get();
+    const windowMs = FULL_MATCH_RECOVERY_THROTTLE_WINDOW_MIN * 60 * 1000;
+    const cutoff = Date.now() - windowMs;
+    const recent = [];
+    snap.forEach(function (doc) {
+      const ts = doc.data().created_at;
+      const ms = ts && typeof ts.toMillis === "function" ? ts.toMillis() : null;
+      if (ms && ms >= cutoff) recent.push(ms);
+    });
+    if (recent.length < FULL_MATCH_RECOVERY_THROTTLE_MAX) {
+      return { allowed: true };
+    }
+    recent.sort(function (a, b) { return a - b; });
+    const oldest = recent[0];
+    const waitMs = (oldest + windowMs) - Date.now();
+    const waitMin = Math.max(1, Math.ceil(waitMs / 60000));
+    return { allowed: false, waitMinutes: waitMin };
+  }
+
+  // requestFullMatchRecovery({ loc, can, startAt, endAt })
+  // Devuelve { ok, channel, docId, client_pulse_id, durationSec, clamped }.
+  async function requestFullMatchRecovery(opts) {
+    if (!opts || !opts.loc || !opts.can) {
+      throw new Error("requestFullMatchRecovery: faltan loc/can");
+    }
+    if (!canRequestFullMatchRecovery(opts.loc)) {
+      throw new Error("Recuperación de partido completo no disponible para " + opts.loc);
+    }
+    const start = toDate(opts.startAt);
+    const end = toDate(opts.endAt);
+    if (!start || !end) {
+      throw new Error("requestFullMatchRecovery: startAt/endAt inválidos");
+    }
+    const durationSec = Math.round((end.getTime() - start.getTime()) / 1000);
+    if (durationSec <= 0) {
+      throw new Error("El fin del rango debe ser posterior al inicio.");
+    }
+    if (durationSec < FULL_MATCH_RECOVERY_MIN_SECONDS) {
+      const e = new Error("El rango es muy corto. Elige al menos 1 minuto.");
+      e.code = "range_too_short";
+      throw e;
+    }
+    const maxSec = MATCH_RECORDING_MAX_MINUTES * 60;
+    const clamped = durationSec > maxSec;
+    if (clamped) {
+      const e = new Error("El rango no puede pasar de " + MATCH_RECORDING_MAX_MINUTES + " minutos.");
+      e.code = "range_too_long";
+      throw e;
+    }
+    const now = new Date();
+    if (end.getTime() > now.getTime() + 60 * 1000) {
+      const e = new Error("El fin del rango no puede ser en el futuro.");
+      e.code = "range_in_future";
+      throw e;
+    }
+
+    if (!window.PuntazoFirebase || typeof window.PuntazoFirebase.db !== "function"
+        || !window.firebase || !firebase.firestore) {
+      throw new Error("Firestore no disponible.");
+    }
+    const db = window.PuntazoFirebase.db();
+    const user = (window.PuntazoAuth && window.PuntazoAuth.currentUser)
+      || (firebase.auth && firebase.auth().currentUser) || null;
+    if (!user) {
+      throw new Error("No se pudo iniciar sesión. Recarga e intenta de nuevo.");
+    }
+
+    const throttle = await checkFullMatchRecoveryThrottle(opts.loc, opts.can, user.uid);
+    if (!throttle.allowed) {
+      const e = new Error("Ya pediste " + FULL_MATCH_RECOVERY_THROTTLE_MAX
+        + " partidos completos de esta cancha en la última hora. Intenta de nuevo en ~"
+        + throttle.waitMinutes + " min.");
+      e.code = "throttled";
+      throw e;
+    }
+
+    const doc = {
+      club: opts.loc,
+      cancha: canchaDigit(opts.can),
+      lado: null,
+      source: "match_full_recovery",
+      client_pulse_id: genClientPulseId(),
+      match_id: null,
+      uid_creator: user.uid,
+      created_at: firebase.firestore.FieldValue.serverTimestamp(),
+      start_at: firebase.firestore.Timestamp.fromDate(start),
+      end_at: firebase.firestore.Timestamp.fromDate(end),
+      consumed_at: null,
+      consumed_by: null,
+    };
+
+    const ref = await db.collection("pending_pulses").add(doc);
+    return {
+      ok: true,
+      channel: "firestore",
+      docId: ref.id,
+      client_pulse_id: doc.client_pulse_id,
+      durationSec: durationSec,
+    };
+  }
+
   // R8 — Edición de clips (trim + encuadre dinámico) y extracción de puntazos
   // cortos desde partidos largos. El RENDER se hace en la NUBE (GitHub Actions
   // + ffmpeg), NO en la NUC: la web encola el "spec" en la colección Firestore
@@ -315,10 +451,15 @@
     canRecordMatch: canRecordMatch,
     requestClipEdit: requestClipEdit,
     canEditClip: canEditClip,
+    requestFullMatchRecovery: requestFullMatchRecovery,
+    canRequestFullMatchRecovery: canRequestFullMatchRecovery,
     FIRESTORE_CLUBS: FIRESTORE_CLUBS.slice(),
     MATCH_RECORDING_CLUBS: MATCH_RECORDING_CLUBS.slice(),
     MATCH_RECORDING_MAX_MINUTES: MATCH_RECORDING_MAX_MINUTES,
     MATCH_RECORDING_MIN_SECONDS: MATCH_RECORDING_MIN_SECONDS,
+    FULL_MATCH_RECOVERY_CLUBS: FULL_MATCH_RECOVERY_CLUBS.slice(),
+    FULL_MATCH_RECOVERY_THROTTLE_MAX: FULL_MATCH_RECOVERY_THROTTLE_MAX,
+    FULL_MATCH_RECOVERY_THROTTLE_WINDOW_MIN: FULL_MATCH_RECOVERY_THROTTLE_WINDOW_MIN,
     _canchaDigit: canchaDigit,
     _genClientPulseId: genClientPulseId,
   };
