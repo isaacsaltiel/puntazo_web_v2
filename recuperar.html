@@ -75,6 +75,14 @@
 <script src="/assets/heartbeat-watcher.js"></script>
 
 <style>
+  /* KO del doble-tap zoom (mismo patrón que F77 en mi-partido.html): picar
+     dos veces seguidas +/- para subir la duración hacía zoom a toda la
+     pantalla. touch-action:manipulation en el root lo mata y lo heredan
+     todos los hijos que no definan otro touch-action. */
+  html, body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
     margin: 0;
     background: #050914;
@@ -308,28 +316,42 @@
     font-weight: 600;
   }
 
-  /* Un input type=time nativo trae su propio segmento AM/PM con un ancho
-     mínimo interno que el navegador no comprime — agrandar su font-size
-     agranda ese mínimo y en pantalla angosta se sale de la caja aunque el
-     CSS diga width:100%. Por eso NO se le sube el tamaño de fuente aquí:
-     usa el mismo tamaño base que datetime-local (que nunca desbordó).
-     min-width:0 es el fix real para que un input nativo pueda encogerse
-     dentro de un contenedor flex en vez de forzar su ancho mínimo. */
+  /* Un input type=time nativo tiene un ancho mínimo interno (el segmento
+     AM/PM) que el navegador NO comprime. Forzarle width:100% lo hace pelear
+     contra ese mínimo y termina saliéndose de la caja en pantalla angosta.
+     Fix: NO se le fuerza el ancho — usa su ancho natural (angosto) centrado
+     dentro de una caja full-width con el MISMO estilo que los steppers de
+     día y duración de abajo. Así se ve consistente y no puede desbordar. */
   .rec-time-grid {
     display: flex;
     flex-direction: column;
     gap: 14px;
     min-width: 0;
   }
-  .rec-time-field {
-    min-width: 0;
+  .rec-time-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 68px;          /* = altura de .rec-day-stepper (48px botón + 2*10px padding) */
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(0,0,0,.22);
+    border: 1px solid rgba(255,255,255,.12);
   }
-  .rec-time-field input[type="time"] {
-    text-align: center;
-    width: 100%;
+  .rec-time-box input[type="time"] {
+    width: auto;               /* ancho natural — nunca forzado, nunca desborda */
     max-width: 100%;
     min-width: 0;
-    box-sizing: border-box;
+    background: transparent;
+    border: none;
+    padding: 4px 8px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 1.35rem;        /* = .rec-duration-value, para que hagan juego */
+    font-weight: 900;
+    text-align: center;
+    outline: none;
+    color-scheme: dark;
   }
 
   /* Duración: mismo lenguaje visual que el selector de día (flechas
@@ -555,9 +577,11 @@
       </div>
 
       <div class="rec-time-grid">
-        <div class="rec-field rec-time-field">
+        <div class="rec-duration-stepper">
           <label for="recFullStartTime">Hora de inicio</label>
-          <input id="recFullStartTime" type="time" />
+          <div class="rec-time-box">
+            <input id="recFullStartTime" type="time" />
+          </div>
         </div>
       </div>
 
@@ -565,7 +589,7 @@
         <label>Duración</label>
         <div class="rec-duration-row">
           <button type="button" id="recDurMinus" class="rec-day-arrow" aria-label="Menos minutos">−</button>
-          <div class="rec-duration-value"><span id="recDurValue">20</span><span class="unit">min</span></div>
+          <div class="rec-duration-value"><span id="recDurValue">5</span><span class="unit">min</span></div>
           <button type="button" id="recDurPlus" class="rec-day-arrow" aria-label="Más minutos">+</button>
         </div>
       </div>
@@ -639,6 +663,7 @@
   const $fullLoginBtn   = document.getElementById("recFullLoginBtn");
 
   const FULL_MATCH_DAY_MIN_BACK = 7; // días atrás — igual a la retención del NVR que consume match_full
+  const FULL_MATCH_DEFAULT_MIN = 5;  // duración por defecto del stepper (se clampa a [min,max])
 
   function isRealUser(user) {
     return !!(user && !user.isAnonymous);
@@ -989,7 +1014,9 @@
       }
       const today0 = new Date(); today0.setHours(0, 0, 0, 0);
       state.fullMatchDay = today0;
-      state.fullMatchDurationMin = maxMin;
+      // Default 5 min (no el máximo): la mayoría quiere un tramo corto, y
+      // subir con + es más barato que bajar 15 veces desde 20.
+      state.fullMatchDurationMin = Math.min(Math.max(FULL_MATCH_DEFAULT_MIN, fullMinMin()), maxMin);
       renderDayStepper();
       renderDuration();
       defaultStartForDay();
