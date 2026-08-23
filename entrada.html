@@ -1179,17 +1179,12 @@
       window.location.href = "/entrada.html" + qs;
       return;
     }
-    // F111-B: modoClips → directo a /lado.html (atajo "solo ver clips" / QR /
-    // redirects legacy de cancha/explorar/locacion). El primer lado de la
-    // cancha es el default (internamente todas tienen 1 lado salvo Scorpion).
-    if (modoClips) {
-      const qs = "?loc=" + encodeURIComponent(club.id) +
-                 "&can=" + encodeURIComponent(cancha.id) +
-                 "&lado=" + encodeURIComponent(ld.id) +
-                 "&pg=0";
-      window.location.href = "/lado.html" + qs;
-      return;
-    }
+    // (2026-08-23) modoClips (botón "Encuentra tus clips" de la portada, QR /
+    // redirects legacy de cancha/explorar/locacion) YA NO salta directo a
+    // /lado.html. Isaac: "mismo flujo siempre para todos los clubes, siempre" —
+    // club → cancha → pantalla de opciones → destino, sin atajos por modo de
+    // entrada. modoClips solo cambia el copy del selector ("¿Dónde están tus
+    // clips?"); el destino final es el mismo que el flujo normal.
     // Flow normal: URL canónica para entrada.html.
     const qs = "?loc=" + encodeURIComponent(club.id) +
                "&can=" + encodeURIComponent(cancha.id) +

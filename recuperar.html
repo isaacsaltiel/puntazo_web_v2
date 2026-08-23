@@ -304,8 +304,7 @@
 
   /* Un input type=time nativo trae su propio segmento AM/PM y no se achica
      bien de lado a lado (a la mitad del ancho del teléfono se sale del
-     contenedor). Siempre apilados, ancho completo cada uno — hay espacio
-     de sobra en esta pantalla para eso. */
+     contenedor). Ancho completo, solo. */
   .rec-time-grid {
     display: flex;
     flex-direction: column;
@@ -317,6 +316,58 @@
     text-align: center;
     max-width: 100%;
     box-sizing: border-box;
+  }
+
+  /* Duración: mismo lenguaje visual que el selector de día (flechas
+     circulares grandes), pero +/- en vez de anterior/siguiente. Evita el
+     problema de encajar dos <input type=time> lado a lado — solo hay UNO
+     (hora de inicio); el fin se calcula y se muestra abajo. */
+  .rec-duration-stepper {
+    margin-bottom: 4px;
+  }
+  .rec-duration-stepper > label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: rgba(234,242,255,.75);
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .rec-duration-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(0,0,0,.22);
+    border: 1px solid rgba(255,255,255,.12);
+  }
+  .rec-duration-value {
+    flex: 1;
+    text-align: center;
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: #fff;
+  }
+  .rec-duration-value .unit {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: rgba(234,242,255,.55);
+    margin-left: 4px;
+  }
+  .rec-computed-range {
+    margin-top: 14px;
+    padding: 13px 14px;
+    border-radius: 12px;
+    background: rgba(11,124,255,.08);
+    border: 1px solid rgba(11,124,255,.22);
+    color: #cfe2ff;
+    font-size: 0.92rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.4;
   }
 
   /* Compuerta de sesión real (no invitado) para pedir partido completo. */
@@ -477,11 +528,18 @@
           <label for="recFullStartTime">Hora de inicio</label>
           <input id="recFullStartTime" type="time" />
         </div>
-        <div class="rec-field rec-time-field">
-          <label for="recFullEndTime">Hora de fin</label>
-          <input id="recFullEndTime" type="time" />
+      </div>
+
+      <div class="rec-duration-stepper">
+        <label>Duración</label>
+        <div class="rec-duration-row">
+          <button type="button" id="recDurMinus" class="rec-day-arrow" aria-label="Menos minutos">−</button>
+          <div class="rec-duration-value"><span id="recDurValue">20</span><span class="unit">min</span></div>
+          <button type="button" id="recDurPlus" class="rec-day-arrow" aria-label="Más minutos">+</button>
         </div>
       </div>
+
+      <div class="rec-computed-range" id="recComputedRange"></div>
       <div class="hint" id="recFullHint">Se subirá como un solo video de "Partido", no como clips sueltos.</div>
     </div>
 
@@ -542,7 +600,10 @@
   const $dayText        = document.getElementById("recDayText");
   const $daySub         = document.getElementById("recDaySub");
   const $fullStartTime  = document.getElementById("recFullStartTime");
-  const $fullEndTime    = document.getElementById("recFullEndTime");
+  const $durMinus       = document.getElementById("recDurMinus");
+  const $durPlus        = document.getElementById("recDurPlus");
+  const $durValue       = document.getElementById("recDurValue");
+  const $computedRange  = document.getElementById("recComputedRange");
   const $authGate       = document.getElementById("recFullAuthGate");
   const $fullLoginBtn   = document.getElementById("recFullLoginBtn");
 
@@ -578,37 +639,82 @@
     $dayPrev.disabled = d.getTime() <= minDay.getTime();
   }
 
-  function defaultTimesForDay() {
-    const maxMin = (window.PuntazoPulses && window.PuntazoPulses.MATCH_RECORDING_MAX_MINUTES) || 20;
+  function fullMaxMin() {
+    return (window.PuntazoPulses && window.PuntazoPulses.MATCH_RECORDING_MAX_MINUTES) || 20;
+  }
+  function fullMinMin() {
+    const s = (window.PuntazoPulses && window.PuntazoPulses.FULL_MATCH_RECOVERY_MIN_SECONDS) || 60;
+    return Math.max(1, Math.ceil(s / 60));
+  }
+
+  function defaultStartForDay() {
+    const maxMin = fullMaxMin();
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const pad = (n) => String(n).padStart(2, "0");
     if (sameYMD(state.fullMatchDay, today)) {
       const now = new Date();
-      const start = new Date(now.getTime() - maxMin * 60 * 1000);
+      const start = new Date(now.getTime() - state.fullMatchDurationMin * 60 * 1000);
       if (start.getDate() !== now.getDate()) { start.setHours(0, 0, 0, 0); } // no cruzar a ayer
       $fullStartTime.value = pad(start.getHours()) + ":" + pad(start.getMinutes());
-      $fullEndTime.value = pad(now.getHours()) + ":" + pad(now.getMinutes());
     } else {
-      // Día pasado: sin "ahora" de referencia — un rango de noche típico como default,
-      // el usuario lo ajusta con el picker nativo.
+      // Día pasado: sin "ahora" de referencia — hora de noche típica como default.
       $fullStartTime.value = "20:40";
-      $fullEndTime.value = "21:00";
     }
+    updateComputedRange();
   }
+
+  // ── Duración (+/-) ──────────────────────────────────────────────
+  function renderDuration() {
+    $durValue.textContent = String(state.fullMatchDurationMin);
+    $durMinus.disabled = state.fullMatchDurationMin <= fullMinMin();
+    $durPlus.disabled = state.fullMatchDurationMin >= fullMaxMin();
+  }
+  $durMinus.addEventListener("click", function () {
+    state.fullMatchDurationMin = Math.max(fullMinMin(), state.fullMatchDurationMin - 1);
+    renderDuration();
+    updateComputedRange();
+  });
+  $durPlus.addEventListener("click", function () {
+    state.fullMatchDurationMin = Math.min(fullMaxMin(), state.fullMatchDurationMin + 1);
+    renderDuration();
+    updateComputedRange();
+  });
+
+  // ── "Tu partido: de HH:MM a HH:MM" (calculado, hora de inicio + duración) ──
+  function fmtHora12(d) {
+    const h = d.getHours(), m = d.getMinutes();
+    const h12 = h % 12 || 12;
+    return h12 + ":" + String(m).padStart(2, "0") + " " + (h >= 12 ? "PM" : "AM");
+  }
+  function computeFullRange() {
+    const sVal = $fullStartTime.value;
+    if (!sVal) return null;
+    const parts = sVal.split(":");
+    const day = state.fullMatchDay;
+    const start = new Date(day.getFullYear(), day.getMonth(), day.getDate(), Number(parts[0]), Number(parts[1]));
+    const end = new Date(start.getTime() + state.fullMatchDurationMin * 60 * 1000);
+    return { start, end };
+  }
+  function updateComputedRange() {
+    const r = computeFullRange();
+    if (!r) { $computedRange.textContent = ""; return; }
+    $computedRange.textContent = "Tu partido: de " + fmtHora12(r.start) + " a " + fmtHora12(r.end);
+  }
+  $fullStartTime.addEventListener("input", updateComputedRange);
 
   $dayPrev.addEventListener("click", function () {
     if ($dayPrev.disabled) return;
     const d = new Date(state.fullMatchDay); d.setDate(d.getDate() - 1);
     state.fullMatchDay = d;
     renderDayStepper();
-    defaultTimesForDay();
+    defaultStartForDay();
   });
   $dayNext.addEventListener("click", function () {
     if ($dayNext.disabled) return;
     const d = new Date(state.fullMatchDay); d.setDate(d.getDate() + 1);
     state.fullMatchDay = d;
     renderDayStepper();
-    defaultTimesForDay();
+    defaultStartForDay();
   });
 
   function refreshFullMatchGate() {
@@ -852,8 +958,10 @@
       }
       const today0 = new Date(); today0.setHours(0, 0, 0, 0);
       state.fullMatchDay = today0;
+      state.fullMatchDurationMin = maxMin;
       renderDayStepper();
-      defaultTimesForDay();
+      renderDuration();
+      defaultStartForDay();
       refreshFullMatchGate();
     } else {
       // Default datetime: ahora menos 5 min, con paso 1 min
@@ -940,31 +1048,19 @@
         refreshFullMatchGate();
         return;
       }
-      const sVal = $fullStartTime.value, eVal = $fullEndTime.value;
-      if (!sVal || !eVal) {
-        setFeedback("Selecciona la hora de inicio y de fin.", "bad");
+      if (!$fullStartTime.value) {
+        setFeedback("Selecciona la hora de inicio.", "bad");
         return;
       }
-      const day = state.fullMatchDay;
-      const sParts = sVal.split(":"), ePart = eVal.split(":");
-      rangeStart = new Date(day.getFullYear(), day.getMonth(), day.getDate(), Number(sParts[0]), Number(sParts[1]));
-      rangeEnd = new Date(day.getFullYear(), day.getMonth(), day.getDate(), Number(ePart[0]), Number(ePart[1]));
-      if (isNaN(rangeStart.getTime()) || isNaN(rangeEnd.getTime())) {
+      const range = computeFullRange();
+      if (!range || isNaN(range.start.getTime()) || isNaN(range.end.getTime())) {
         setFeedback("Hora inválida.", "bad");
         return;
       }
-      if (rangeEnd.getTime() <= rangeStart.getTime()) {
-        setFeedback("La hora de fin debe ser posterior a la de inicio (mismo día).", "bad");
-        return;
-      }
-      const maxMin = (window.PuntazoPulses && window.PuntazoPulses.MATCH_RECORDING_MAX_MINUTES) || 20;
-      const durMin = (rangeEnd.getTime() - rangeStart.getTime()) / 60000;
-      if (durMin > maxMin) {
-        setFeedback("El rango no puede pasar de " + maxMin + " minutos.", "bad");
-        return;
-      }
+      rangeStart = range.start;
+      rangeEnd = range.end;
       if (rangeEnd.getTime() > now.getTime() + 60 * 1000) {
-        setFeedback("La hora de fin no puede ser en el futuro.", "bad");
+        setFeedback("Con esa hora de inicio y duración, el partido terminaría en el futuro. Ajusta la hora o la duración.", "bad");
         return;
       }
     } else {
