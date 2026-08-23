@@ -217,7 +217,8 @@
     text-transform: uppercase;
     letter-spacing: .5px;
   }
-  .rec-field input[type="datetime-local"] {
+  .rec-field input[type="datetime-local"],
+  .rec-field input[type="time"] {
     width: 100%;
     padding: 13px 14px;
     border-radius: 12px;
@@ -231,7 +232,8 @@
     transition: border-color .18s, box-shadow .18s;
     color-scheme: dark;
   }
-  .rec-field input[type="datetime-local"]:focus {
+  .rec-field input[type="datetime-local"]:focus,
+  .rec-field input[type="time"]:focus {
     border-color: rgba(11,124,255,.65);
     box-shadow: 0 0 0 3px rgba(11,124,255,.18);
   }
@@ -240,6 +242,93 @@
     font-size: 0.78rem;
     color: rgba(234,242,255,.50);
     line-height: 1.4;
+  }
+
+  /* Selector de día (Hoy / ← / →) para el flujo de partido completo. Un
+     solo día en lugar de pedir fecha dos veces (antes: Desde y Hasta, cada
+     uno con su propio datetime-local). Grande y táctil a propósito — hay
+     espacio de sobra en esta pantalla. */
+  .rec-day-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(0,0,0,.22);
+    border: 1px solid rgba(255,255,255,.12);
+  }
+  .rec-day-arrow {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(255,255,255,.06);
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s ease;
+  }
+  .rec-day-arrow:hover:not(:disabled) {
+    background: rgba(11,124,255,.20);
+    border-color: rgba(11,124,255,.45);
+  }
+  .rec-day-arrow:disabled {
+    opacity: .30;
+    cursor: not-allowed;
+  }
+  .rec-day-label {
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+  }
+  .rec-day-text {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.2;
+    text-transform: capitalize;
+  }
+  .rec-day-sub {
+    font-size: 0.80rem;
+    color: rgba(234,242,255,.55);
+    margin-top: 2px;
+    font-weight: 600;
+  }
+
+  .rec-time-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 380px) {
+    .rec-time-grid { grid-template-columns: 1fr; }
+  }
+  .rec-time-field input[type="time"] {
+    font-size: 1.15rem;
+    padding: 16px 14px;
+    text-align: center;
+  }
+
+  /* Compuerta de sesión real (no invitado) para pedir partido completo. */
+  .rec-auth-gate {
+    text-align: center;
+    padding: 26px 18px;
+    border-radius: 16px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.10);
+  }
+  .rec-auth-gate p {
+    color: rgba(234,242,255,.72);
+    font-size: 0.92rem;
+    line-height: 1.5;
+    margin: 0 0 16px;
   }
 
   .rec-banner {
@@ -364,20 +453,49 @@
 
     <!-- Flujo "partido completo": solo clubs en PuntazoPulses.FULL_MATCH_RECOVERY_CLUBS.
          Reemplaza el campo de arriba para evitar que pidan el mismo partido
-         a punta de recuperaciones puntuales encadenadas. -->
+         a punta de recuperaciones puntuales encadenadas. Requiere sesión real
+         (no invitado) — ver #recFullAuthGate. -->
     <div id="recFullMatchFields" style="display:none">
       <div id="recFullBanner" class="rec-banner info">
-        🎾 <strong>Ya puedes pedir tu partido completo.</strong> Elige el rango de tiempo que quieres que se suba (máximo <span id="recFullMaxMin">20</span> minutos).
+        🎾 <strong>Ya puedes pedir tu partido completo.</strong> Elige el día y el rango de tiempo que quieres que se suba (máximo <span id="recFullMaxMin">20</span> minutos).
       </div>
-      <div class="rec-field">
-        <label for="recFullStart">Desde</label>
-        <input id="recFullStart" type="datetime-local" />
+
+      <div class="rec-day-stepper">
+        <button type="button" id="recDayPrev" class="rec-day-arrow" aria-label="Día anterior">←</button>
+        <div class="rec-day-label">
+          <div id="recDayText" class="rec-day-text">Hoy</div>
+          <div id="recDaySub" class="rec-day-sub"></div>
+        </div>
+        <button type="button" id="recDayNext" class="rec-day-arrow" aria-label="Día siguiente" disabled>→</button>
       </div>
-      <div class="rec-field">
-        <label for="recFullEnd">Hasta</label>
-        <input id="recFullEnd" type="datetime-local" />
-        <div class="hint" id="recFullHint">Se subirá como un solo video de "Partido", no como clips sueltos.</div>
+
+      <div class="rec-time-grid">
+        <div class="rec-field rec-time-field">
+          <label for="recFullStartTime">Hora de inicio</label>
+          <input id="recFullStartTime" type="time" />
+        </div>
+        <div class="rec-field rec-time-field">
+          <label for="recFullEndTime">Hora de fin</label>
+          <input id="recFullEndTime" type="time" />
+        </div>
       </div>
+      <div class="hint" id="recFullHint">Se subirá como un solo video de "Partido", no como clips sueltos.</div>
+    </div>
+
+    <!-- Compuerta de sesión real: pedir partido completo requiere haber
+         iniciado sesión de verdad (no invitado) — es una descarga más pesada
+         y el tope de 3/hora necesita una identidad que no se resetee sola. -->
+    <div id="recFullAuthGate" class="rec-auth-gate" style="display:none">
+      <p>Para pedir tu partido completo necesitas iniciar sesión.</p>
+      <button id="recFullLoginBtn" class="btn-google" type="button" style="width:auto;min-height:44px;padding:0 22px;margin:0 auto;">
+        <svg viewBox="0 0 48 48" aria-hidden="true" style="width:18px;height:18px;">
+          <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.239 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+          <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 16.108 19.003 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4c-7.682 0-14.347 4.337-17.694 10.691z"/>
+          <path fill="#4CAF50" d="M24 44c5.169 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.144 35.091 26.688 36 24 36c-5.218 0-9.62-3.329-11.283-7.946l-6.522 5.025C9.5 39.556 16.227 44 24 44z"/>
+          <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.084 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+        </svg>
+        <span>Iniciar sesión / crear cuenta</span>
+      </button>
     </div>
 
     <button id="recSubmit" class="rec-submit" type="button">Pedir recuperación</button>
@@ -415,9 +533,94 @@
   const $pointField     = document.getElementById("recPointField");
   const $fullFields     = document.getElementById("recFullMatchFields");
   const $fullMaxMinEl   = document.getElementById("recFullMaxMin");
-  const $fullStart      = document.getElementById("recFullStart");
-  const $fullEnd        = document.getElementById("recFullEnd");
   const $fullHint       = document.getElementById("recFullHint");
+  const $dayPrev        = document.getElementById("recDayPrev");
+  const $dayNext        = document.getElementById("recDayNext");
+  const $dayText        = document.getElementById("recDayText");
+  const $daySub         = document.getElementById("recDaySub");
+  const $fullStartTime  = document.getElementById("recFullStartTime");
+  const $fullEndTime    = document.getElementById("recFullEndTime");
+  const $authGate       = document.getElementById("recFullAuthGate");
+  const $fullLoginBtn   = document.getElementById("recFullLoginBtn");
+
+  const FULL_MATCH_DAY_MIN_BACK = 7; // días atrás — igual a la retención del NVR que consume match_full
+
+  function isRealUser(user) {
+    return !!(user && !user.isAnonymous);
+  }
+
+  function sameYMD(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+  const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+  function renderDayStepper() {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const minDay = new Date(today); minDay.setDate(minDay.getDate() - FULL_MATCH_DAY_MIN_BACK);
+    const d = state.fullMatchDay;
+
+    if (sameYMD(d, today)) {
+      $dayText.textContent = "Hoy";
+    } else {
+      const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+      const dayBefore = new Date(today); dayBefore.setDate(dayBefore.getDate() - 2);
+      if (sameYMD(d, yesterday)) $dayText.textContent = "Ayer";
+      else if (sameYMD(d, dayBefore)) $dayText.textContent = "Antier";
+      else $dayText.textContent = DIAS_SEMANA[d.getDay()];
+    }
+    $daySub.textContent = d.getDate() + " de " + MESES[d.getMonth()];
+    $dayNext.disabled = sameYMD(d, today);
+    $dayPrev.disabled = d.getTime() <= minDay.getTime();
+  }
+
+  function defaultTimesForDay() {
+    const maxMin = (window.PuntazoPulses && window.PuntazoPulses.MATCH_RECORDING_MAX_MINUTES) || 20;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const pad = (n) => String(n).padStart(2, "0");
+    if (sameYMD(state.fullMatchDay, today)) {
+      const now = new Date();
+      const start = new Date(now.getTime() - maxMin * 60 * 1000);
+      if (start.getDate() !== now.getDate()) { start.setHours(0, 0, 0, 0); } // no cruzar a ayer
+      $fullStartTime.value = pad(start.getHours()) + ":" + pad(start.getMinutes());
+      $fullEndTime.value = pad(now.getHours()) + ":" + pad(now.getMinutes());
+    } else {
+      // Día pasado: sin "ahora" de referencia — un rango de noche típico como default,
+      // el usuario lo ajusta con el picker nativo.
+      $fullStartTime.value = "20:40";
+      $fullEndTime.value = "21:00";
+    }
+  }
+
+  $dayPrev.addEventListener("click", function () {
+    if ($dayPrev.disabled) return;
+    const d = new Date(state.fullMatchDay); d.setDate(d.getDate() - 1);
+    state.fullMatchDay = d;
+    renderDayStepper();
+    defaultTimesForDay();
+  });
+  $dayNext.addEventListener("click", function () {
+    if ($dayNext.disabled) return;
+    const d = new Date(state.fullMatchDay); d.setDate(d.getDate() + 1);
+    state.fullMatchDay = d;
+    renderDayStepper();
+    defaultTimesForDay();
+  });
+
+  function refreshFullMatchGate() {
+    const user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
+    const ok = isRealUser(user);
+    $authGate.style.display = ok ? "none" : "block";
+    $fullFields.style.display = ok ? "block" : "none";
+    $submit.style.display = ok ? "" : "none";
+  }
+  $fullLoginBtn.addEventListener("click", async function () {
+    if (!window.PuntazoAuth || typeof PuntazoAuth.signIn !== "function") return;
+    $fullLoginBtn.disabled = true;
+    try { await PuntazoAuth.signIn(); } catch (e) { console.warn("[recuperar] signIn falló", e); }
+    $fullLoginBtn.disabled = false;
+  });
 
   function escapeHtml(s) {
     return String(s || "").replace(/[&<>"']/g, c => ({
@@ -610,7 +813,7 @@
         "</strong> · <strong>" + escapeHtml(cancha.nombre) + "</strong>";
     }
     $pointField.style.display = state.fullMatchMode ? "none" : "block";
-    $fullFields.style.display = state.fullMatchMode ? "block" : "none";
+    $authGate.style.display = "none"; // refreshFullMatchGate() decide si aplica
     $submit.textContent = state.fullMatchMode ? "Pedir partido completo" : "Pedir recuperación";
 
     // F129: si las cámaras del club están temporalmente fuera de línea,
@@ -644,13 +847,11 @@
           ((window.PuntazoPulses && window.PuntazoPulses.FULL_MATCH_RECOVERY_THROTTLE_MAX) || 3) +
           " partidos de esta cancha por hora.";
       }
-      // Default: últimos `maxMin` minutos.
-      const endD = new Date();
-      const startD = new Date(endD.getTime() - maxMin * 60 * 1000);
-      $fullStart.value = toLocalDateTimeInputValue(startD);
-      $fullEnd.value = toLocalDateTimeInputValue(endD);
-      $fullStart.max = maxVal; $fullStart.min = minVal;
-      $fullEnd.max = maxVal; $fullEnd.min = minVal;
+      const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+      state.fullMatchDay = today0;
+      renderDayStepper();
+      defaultTimesForDay();
+      refreshFullMatchGate();
     } else {
       // Default datetime: ahora menos 5 min, con paso 1 min
       const d = new Date();
@@ -671,6 +872,10 @@
 
   // ── Banner según estado de auth ───────────────────────────────
   function refreshAuthBanner() {
+    // Partido completo tiene su propia compuerta de sesión (refreshFullMatchGate,
+    // más estricta: exige sesión REAL, no invitado). El banner de aquí es del
+    // flujo puntual (invitado permitido con throttle) — no aplica ahí.
+    if (state.fullMatchMode) { $authBanner.style.display = "none"; return; }
     const user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
     if (!user) {
       $authBanner.style.display = "none";
@@ -726,19 +931,27 @@
     const now = new Date();
 
     if (state.fullMatchMode) {
-      const sVal = $fullStart.value, eVal = $fullEnd.value;
-      if (!sVal || !eVal) {
-        setFeedback("Selecciona el inicio y el fin del rango.", "bad");
+      const authUser = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
+      if (!isRealUser(authUser)) {
+        setFeedback("Necesitas iniciar sesión para pedir tu partido completo.", "bad");
+        refreshFullMatchGate();
         return;
       }
-      rangeStart = new Date(sVal);
-      rangeEnd = new Date(eVal);
+      const sVal = $fullStartTime.value, eVal = $fullEndTime.value;
+      if (!sVal || !eVal) {
+        setFeedback("Selecciona la hora de inicio y de fin.", "bad");
+        return;
+      }
+      const day = state.fullMatchDay;
+      const sParts = sVal.split(":"), ePart = eVal.split(":");
+      rangeStart = new Date(day.getFullYear(), day.getMonth(), day.getDate(), Number(sParts[0]), Number(sParts[1]));
+      rangeEnd = new Date(day.getFullYear(), day.getMonth(), day.getDate(), Number(ePart[0]), Number(ePart[1]));
       if (isNaN(rangeStart.getTime()) || isNaN(rangeEnd.getTime())) {
-        setFeedback("Fecha/hora inválida.", "bad");
+        setFeedback("Hora inválida.", "bad");
         return;
       }
       if (rangeEnd.getTime() <= rangeStart.getTime()) {
-        setFeedback("El fin debe ser posterior al inicio.", "bad");
+        setFeedback("La hora de fin debe ser posterior a la de inicio (mismo día).", "bad");
         return;
       }
       const maxMin = (window.PuntazoPulses && window.PuntazoPulses.MATCH_RECORDING_MAX_MINUTES) || 20;
@@ -748,7 +961,7 @@
         return;
       }
       if (rangeEnd.getTime() > now.getTime() + 60 * 1000) {
-        setFeedback("El fin no puede ser en el futuro.", "bad");
+        setFeedback("La hora de fin no puede ser en el futuro.", "bad");
         return;
       }
     } else {
@@ -800,9 +1013,8 @@
           startAt: rangeStart,
           endAt: rangeEnd,
         });
-        if (isAnonUser(user)) markAnonSent();
         $feedback.style.color = "";
-        setFeedback("✅ Listo. Tu partido completo estará disponible en unos minutos.", "ok");
+        setFeedback("✅ Listo, quedó en cola. Por ser un video más largo que un clip normal puede tardar más — lo verás en \"Mis clips\" en cuanto esté listo.", "ok");
         $after.style.display = "block";
       } else {
         await window.PuntazoPulses.requestPulse({
@@ -868,7 +1080,9 @@
       refreshAuthBanner();
       if (window.firebase && firebase.auth) {
         firebase.auth().onAuthStateChanged(function () {
-          if (state.step === "form") refreshAuthBanner();
+          if (state.step !== "form") return;
+          refreshAuthBanner();
+          if (state.fullMatchMode) refreshFullMatchGate();
         });
       }
       return;
@@ -880,7 +1094,9 @@
     // Re-evaluar banner cuando cambia auth (login/logout)
     if (window.firebase && firebase.auth) {
       firebase.auth().onAuthStateChanged(function () {
-        if (state.step === "form") refreshAuthBanner();
+        if (state.step !== "form") return;
+        refreshAuthBanner();
+        if (state.fullMatchMode) refreshFullMatchGate();
       });
     }
   })();

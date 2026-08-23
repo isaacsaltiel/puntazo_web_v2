@@ -317,6 +317,7 @@
   .btn-primary {
     width: 100%;
     min-height: 56px;
+    padding: 8px 20px;
     border: none;
     border-radius: 999px;
     cursor: pointer;
@@ -332,6 +333,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    text-align: center;
     gap: 8px;
   }
 
@@ -346,6 +348,8 @@
   .btn-rec-full {
     width: 100%;
     min-height: 64px;
+    padding: 10px 20px;
+    line-height: 1.25;
     border: 1px solid rgba(255, 90, 80, 0.6);
     border-radius: 18px;
     cursor: pointer;
@@ -406,6 +410,9 @@
   .btn-secondary {
     width: 100%;
     min-height: 48px;
+    padding: 8px 20px;
+    text-align: center;
+    line-height: 1.3;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.05);
     border-radius: 999px;
@@ -767,7 +774,7 @@
            botón físico nuevo) sube a prioridad junto con "Ver clips"; en el
            resto queda discreta junto a "Ver herramientas". Oculta en WellStreet
            (la CTA roja ya cubre este caso). -->
-      <a id="lnkRecoverAuthed" class="btn-primary" href="#" style="display:none">🔍 ¿Se te escapó un puntazo? Recupéralo</a>
+      <a id="lnkRecoverAuthed" class="btn-primary" href="#" style="display:none">🔍 Recuperar puntazo</a>
       <!-- F119: link sutil a herramientas (sortear, marcador, torneo 5, etc).
            Pasa loc+can para que herramientas propague el contexto a los
            modos que lo entienden (Torneo 5 muestra botón Puntazo round). -->
@@ -787,7 +794,7 @@
         <img src="/assets/img/puntazo_boton_redondo.webp" alt="" aria-hidden="true" style="width:30px;height:30px;flex-shrink:0;border-radius:50%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(255,255,255,.45));">
         Usar botón digital
       </a>
-      <a id="lnkRecoverGuest" class="btn-primary" href="#" style="display:none">🔍 ¿Se te escapó un puntazo? Recupéralo</a>
+      <a id="lnkRecoverGuest" class="btn-primary" href="#" style="display:none">🔍 Recuperar puntazo</a>
       <button id="btnLogin" class="btn-google" type="button">
         <svg viewBox="0 0 48 48" aria-hidden="true">
           <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.239 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
@@ -812,6 +819,17 @@
 <script>
 (function () {
   "use strict";
+
+  // (2026-08-23) Si el navegador restaura esta página desde el bfcache (ej.
+  // botón "atrás" nativo del teléfono después de haber elegido un club), el
+  // estado JS congelado en ese momento (selectorState, catálogo cacheado)
+  // puede quedar desfasado un instante y mostrarse antes de que el click
+  // handler lo corrija — se ve como "abro Pickleball y por un segundo salen
+  // canchas de Pádel". Forzamos una recarga real en vez de dejar que el
+  // bfcache sirva ese estado congelado.
+  window.addEventListener("pageshow", function (ev) {
+    if (ev.persisted) window.location.reload();
+  });
 
   // ---------- helpers ----------
   function getQueryParams() {
