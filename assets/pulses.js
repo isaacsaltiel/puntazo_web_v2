@@ -102,6 +102,20 @@
         throw new Error("requestPulse: source=recovery requiere event_at:Date valido");
       }
       doc.event_at = firebase.firestore.Timestamp.fromDate(opts.event_at);
+      // (2026-08-23) Margen elegido por el usuario en recuperar.html (±N min,
+      // máx ±3 = 6 min totales). ADITIVO Y OPCIONAL: una NUC que no conozca
+      // estos campos sigue aplicando su ±90s fijo sobre event_at sin romperse.
+      // Para que el margen SURTA EFECTO, la NUC del club debe leer margin_sec
+      // (o start_at/end_at) — ver docs/workers/worker-nuc-recovery-margen.md.
+      if (typeof opts.margin_sec === "number" && isFinite(opts.margin_sec) && opts.margin_sec > 0) {
+        doc.margin_sec = Math.round(opts.margin_sec);
+      }
+      if (opts.start_at instanceof Date && !isNaN(opts.start_at.getTime())) {
+        doc.start_at = firebase.firestore.Timestamp.fromDate(opts.start_at);
+      }
+      if (opts.end_at instanceof Date && !isNaN(opts.end_at.getTime())) {
+        doc.end_at = firebase.firestore.Timestamp.fromDate(opts.end_at);
+      }
     }
 
     const ref = await db.collection("pending_pulses").add(doc);

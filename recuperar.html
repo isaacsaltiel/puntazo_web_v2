@@ -551,22 +551,20 @@
 
     <div id="recAuthBanner" class="rec-banner info" style="display:none"></div>
 
-    <!-- Flujo normal: recuperar UN puntazo puntual (ventana ±90s) -->
-    <div id="recPointField" class="rec-field">
-      <label for="recDateTime">¿Cuándo fue el puntazo?</label>
-      <input id="recDateTime" type="datetime-local" />
-      <div class="hint">Pon la hora aproximada. Buscaremos 90 segundos antes y 90 después.</div>
+    <!-- (2026-08-23) Los DOS flujos (puntazo puntual y partido completo) usan
+         EXACTAMENTE los mismos componentes: día + hora + cantidad. Solo cambian
+         las etiquetas y la matemática:
+           · Partido completo (WellStreet) → hora de INICIO + DURACIÓN
+             (start = hora, end = hora + duración)
+           · Puntazo puntual (resto)       → hora del PUNTO + MARGEN ±
+             (start = hora − margen, end = hora + margen)
+         Antes el flujo puntual usaba un datetime-local suelto que se veía
+         distinto y peor en móvil. -->
+    <div id="recFullBanner" class="rec-banner info" style="display:none">
+      🎾 <strong>Ya puedes pedir tu partido completo.</strong> Elige el día y el rango de tiempo que quieres que se suba (máximo <span id="recFullMaxMin">20</span> minutos).
     </div>
 
-    <!-- Flujo "partido completo": solo clubs en PuntazoPulses.FULL_MATCH_RECOVERY_CLUBS.
-         Reemplaza el campo de arriba para evitar que pidan el mismo partido
-         a punta de recuperaciones puntuales encadenadas. Requiere sesión real
-         (no invitado) — ver #recFullAuthGate. -->
-    <div id="recFullMatchFields" style="display:none">
-      <div id="recFullBanner" class="rec-banner info">
-        🎾 <strong>Ya puedes pedir tu partido completo.</strong> Elige el día y el rango de tiempo que quieres que se suba (máximo <span id="recFullMaxMin">20</span> minutos).
-      </div>
-
+    <div id="recFieldsCommon">
       <div class="rec-day-stepper">
         <button type="button" id="recDayPrev" class="rec-day-arrow" aria-label="Día anterior">←</button>
         <div class="rec-day-label">
@@ -578,7 +576,7 @@
 
       <div class="rec-time-grid">
         <div class="rec-duration-stepper">
-          <label for="recFullStartTime">Hora de inicio</label>
+          <label for="recFullStartTime" id="recTimeLabel">Hora de inicio</label>
           <div class="rec-time-box">
             <input id="recFullStartTime" type="time" />
           </div>
@@ -586,16 +584,16 @@
       </div>
 
       <div class="rec-duration-stepper">
-        <label>Duración</label>
+        <label id="recAmountLabel">Duración</label>
         <div class="rec-duration-row">
           <button type="button" id="recDurMinus" class="rec-day-arrow" aria-label="Menos minutos">−</button>
-          <div class="rec-duration-value"><span id="recDurValue">5</span><span class="unit">min</span></div>
+          <div class="rec-duration-value"><span id="recDurValue">5</span><span class="unit" id="recAmountUnit">min</span></div>
           <button type="button" id="recDurPlus" class="rec-day-arrow" aria-label="Más minutos">+</button>
         </div>
       </div>
 
       <div class="rec-computed-range" id="recComputedRange"></div>
-      <div class="hint" id="recFullHint">Se subirá como un solo video de "Partido", no como clips sueltos.</div>
+      <div class="hint" id="recFullHint"></div>
     </div>
 
     <!-- Compuerta de sesión real: pedir partido completo requiere haber
@@ -639,22 +637,24 @@
   const $formBack  = document.getElementById("recFormBack");
   const $formCtx   = document.getElementById("recFormContext");
   const $authBanner= document.getElementById("recAuthBanner");
-  const $datetime  = document.getElementById("recDateTime");
   const $submit    = document.getElementById("recSubmit");
   const $feedback  = document.getElementById("recFeedback");
   const $after     = document.getElementById("recAfter");
   const $another   = document.getElementById("recAnother");
 
-  // Flujo "partido completo" (solo WellStreet, ver PuntazoPulses.FULL_MATCH_RECOVERY_CLUBS)
-  const $pointField     = document.getElementById("recPointField");
-  const $fullFields     = document.getElementById("recFullMatchFields");
+  // Componentes COMPARTIDOS por los dos flujos (puntual y partido completo).
+  const $fieldsCommon   = document.getElementById("recFieldsCommon");
+  const $fullBanner     = document.getElementById("recFullBanner");
   const $fullMaxMinEl   = document.getElementById("recFullMaxMin");
   const $fullHint       = document.getElementById("recFullHint");
   const $dayPrev        = document.getElementById("recDayPrev");
   const $dayNext        = document.getElementById("recDayNext");
   const $dayText        = document.getElementById("recDayText");
   const $daySub         = document.getElementById("recDaySub");
+  const $timeLabel      = document.getElementById("recTimeLabel");
   const $fullStartTime  = document.getElementById("recFullStartTime");
+  const $amountLabel    = document.getElementById("recAmountLabel");
+  const $amountUnit     = document.getElementById("recAmountUnit");
   const $durMinus       = document.getElementById("recDurMinus");
   const $durPlus        = document.getElementById("recDurPlus");
   const $durValue       = document.getElementById("recDurValue");
@@ -664,6 +664,13 @@
 
   const FULL_MATCH_DAY_MIN_BACK = 7; // días atrás — igual a la retención del NVR que consume match_full
   const FULL_MATCH_DEFAULT_MIN = 5;  // duración por defecto del stepper (se clampa a [min,max])
+
+  // ── Flujo puntual (clubs que NO son WellStreet) ──────────────────
+  // El usuario recuerda el MOMENTO del puntazo, no un inicio → hora + margen.
+  // El margen N significa ±N min, así que la ventana total es 2N.
+  const POINT_MARGIN_DEFAULT_MIN = 1;   // preseleccionado (Isaac)
+  const POINT_MARGIN_MAX_MIN     = 3;   // ±3 = 6 min totales, el máximo pedido
+  const POINT_MARGIN_MIN_MIN     = 1;
 
   function isRealUser(user) {
     return !!(user && !user.isAnonymous);
@@ -679,7 +686,7 @@
   function renderDayStepper() {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const minDay = new Date(today); minDay.setDate(minDay.getDate() - FULL_MATCH_DAY_MIN_BACK);
-    const d = state.fullMatchDay;
+    const d = state.selectedDay;
 
     if (sameYMD(d, today)) {
       $dayText.textContent = "Hoy";
@@ -703,15 +710,21 @@
     return Math.max(1, Math.ceil(s / 60));
   }
 
+  // Límites del stepper de cantidad, según el modo activo.
+  function amountMax() { return state.fullMatchMode ? fullMaxMin() : POINT_MARGIN_MAX_MIN; }
+  function amountMin() { return state.fullMatchMode ? fullMinMin() : POINT_MARGIN_MIN_MIN; }
+
   function defaultStartForDay() {
-    const maxMin = fullMaxMin();
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const pad = (n) => String(n).padStart(2, "0");
-    if (sameYMD(state.fullMatchDay, today)) {
+    if (sameYMD(state.selectedDay, today)) {
       const now = new Date();
-      const start = new Date(now.getTime() - state.fullMatchDurationMin * 60 * 1000);
-      if (start.getDate() !== now.getDate()) { start.setHours(0, 0, 0, 0); } // no cruzar a ayer
-      $fullStartTime.value = pad(start.getHours()) + ":" + pad(start.getMinutes());
+      // Partido completo: la hora es el INICIO → retrocede la duración entera.
+      // Puntual: la hora es el MOMENTO del puntazo → unos minutos atrás basta.
+      const backMin = state.fullMatchMode ? state.amountMin : 5;
+      const t = new Date(now.getTime() - backMin * 60 * 1000);
+      if (t.getDate() !== now.getDate()) { t.setHours(0, 0, 0, 0); } // no cruzar a ayer
+      $fullStartTime.value = pad(t.getHours()) + ":" + pad(t.getMinutes());
     } else {
       // Día pasado: sin "ahora" de referencia — hora de noche típica como default.
       $fullStartTime.value = "20:40";
@@ -719,65 +732,85 @@
     updateComputedRange();
   }
 
-  // ── Duración (+/-) ──────────────────────────────────────────────
+  // ── Cantidad (+/-): duración en partido completo, margen ± en puntual ──
   function renderDuration() {
-    $durValue.textContent = String(state.fullMatchDurationMin);
-    $durMinus.disabled = state.fullMatchDurationMin <= fullMinMin();
-    $durPlus.disabled = state.fullMatchDurationMin >= fullMaxMin();
+    $durValue.textContent = String(state.amountMin);
+    $durMinus.disabled = state.amountMin <= amountMin();
+    $durPlus.disabled = state.amountMin >= amountMax();
   }
   $durMinus.addEventListener("click", function () {
-    state.fullMatchDurationMin = Math.max(fullMinMin(), state.fullMatchDurationMin - 1);
+    state.amountMin = Math.max(amountMin(), state.amountMin - 1);
     renderDuration();
     updateComputedRange();
   });
   $durPlus.addEventListener("click", function () {
-    state.fullMatchDurationMin = Math.min(fullMaxMin(), state.fullMatchDurationMin + 1);
+    state.amountMin = Math.min(amountMax(), state.amountMin + 1);
     renderDuration();
     updateComputedRange();
   });
 
-  // ── "Tu partido: de HH:MM a HH:MM" (calculado, hora de inicio + duración) ──
   function fmtHora12(d) {
     const h = d.getHours(), m = d.getMinutes();
     const h12 = h % 12 || 12;
     return h12 + ":" + String(m).padStart(2, "0") + " " + (h >= 12 ? "PM" : "AM");
   }
+
+  // Rango resultante según el modo:
+  //   partido completo → [hora, hora + duración]
+  //   puntual          → [hora − margen, hora + margen]
   function computeFullRange() {
     const sVal = $fullStartTime.value;
     if (!sVal) return null;
     const parts = sVal.split(":");
-    const day = state.fullMatchDay;
-    const start = new Date(day.getFullYear(), day.getMonth(), day.getDate(), Number(parts[0]), Number(parts[1]));
-    const end = new Date(start.getTime() + state.fullMatchDurationMin * 60 * 1000);
-    return { start, end };
+    const day = state.selectedDay;
+    const anchor = new Date(day.getFullYear(), day.getMonth(), day.getDate(), Number(parts[0]), Number(parts[1]));
+    if (state.fullMatchMode) {
+      return { start: anchor, end: new Date(anchor.getTime() + state.amountMin * 60 * 1000), anchor: anchor };
+    }
+    const ms = state.amountMin * 60 * 1000;
+    return { start: new Date(anchor.getTime() - ms), end: new Date(anchor.getTime() + ms), anchor: anchor };
   }
   function updateComputedRange() {
     const r = computeFullRange();
     if (!r) { $computedRange.textContent = ""; return; }
-    $computedRange.textContent = "Tu partido: de " + fmtHora12(r.start) + " a " + fmtHora12(r.end);
+    if (state.fullMatchMode) {
+      $computedRange.textContent = "Tu partido: de " + fmtHora12(r.start) + " a " + fmtHora12(r.end);
+    } else {
+      const totalMin = state.amountMin * 2;
+      $computedRange.textContent = "Buscaremos de " + fmtHora12(r.start) + " a " + fmtHora12(r.end)
+        + " (" + totalMin + " min)";
+    }
   }
   $fullStartTime.addEventListener("input", updateComputedRange);
 
   $dayPrev.addEventListener("click", function () {
     if ($dayPrev.disabled) return;
-    const d = new Date(state.fullMatchDay); d.setDate(d.getDate() - 1);
-    state.fullMatchDay = d;
+    const d = new Date(state.selectedDay); d.setDate(d.getDate() - 1);
+    state.selectedDay = d;
     renderDayStepper();
     defaultStartForDay();
   });
   $dayNext.addEventListener("click", function () {
     if ($dayNext.disabled) return;
-    const d = new Date(state.fullMatchDay); d.setDate(d.getDate() + 1);
-    state.fullMatchDay = d;
+    const d = new Date(state.selectedDay); d.setDate(d.getDate() + 1);
+    state.selectedDay = d;
     renderDayStepper();
     defaultStartForDay();
   });
 
   function refreshFullMatchGate() {
+    // La compuerta de sesión real SOLO aplica al partido completo; el flujo
+    // puntual sigue permitiendo invitado (con su throttle de 1/24h).
+    if (!state.fullMatchMode) {
+      $authGate.style.display = "none";
+      $fieldsCommon.style.display = "block";
+      $submit.style.display = "";
+      return;
+    }
     const user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
     const ok = isRealUser(user);
     $authGate.style.display = ok ? "none" : "block";
-    $fullFields.style.display = ok ? "block" : "none";
+    $fieldsCommon.style.display = ok ? "block" : "none";
     $submit.style.display = ok ? "" : "none";
   }
   $fullLoginBtn.addEventListener("click", async function () {
@@ -977,7 +1010,6 @@
       $formCtx.innerHTML = "Recuperar puntazo en <strong>" + escapeHtml(club.nombre) +
         "</strong> · <strong>" + escapeHtml(cancha.nombre) + "</strong>";
     }
-    $pointField.style.display = state.fullMatchMode ? "none" : "block";
     $authGate.style.display = "none"; // refreshFullMatchGate() decide si aplica
     $submit.textContent = state.fullMatchMode ? "Pedir partido completo" : "Pedir recuperación";
 
@@ -997,39 +1029,39 @@
       }
     } catch (_) {}
 
-    // Max: ahora (no se puede pedir en el futuro). Min: 30 días atrás.
-    const maxD = new Date();
-    const minD = new Date(); minD.setDate(minD.getDate() - 30);
-    const maxVal = toLocalDateTimeInputValue(maxD);
-    const minVal = toLocalDateTimeInputValue(minD);
+    // Ambos modos arrancan en HOY y usan los mismos componentes; solo cambian
+    // etiquetas, límites del stepper y la matemática del rango.
+    const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+    state.selectedDay = today0;
 
     if (state.fullMatchMode) {
-      const maxMin = (window.PuntazoPulses && window.PuntazoPulses.MATCH_RECORDING_MAX_MINUTES) || 20;
+      const maxMin = fullMaxMin();
       if ($fullMaxMinEl) $fullMaxMinEl.textContent = String(maxMin);
-      if ($fullHint) {
-        $fullHint.textContent = "Se subirá como un solo video de \"Partido\" (máx. " + maxMin +
-          " min), no como clips sueltos. Puedes pedir hasta " +
-          ((window.PuntazoPulses && window.PuntazoPulses.FULL_MATCH_RECOVERY_THROTTLE_MAX) || 3) +
-          " partidos de esta cancha por hora.";
-      }
-      const today0 = new Date(); today0.setHours(0, 0, 0, 0);
-      state.fullMatchDay = today0;
+      $fullBanner.style.display = "block";
+      $timeLabel.textContent = "Hora de inicio";
+      $amountLabel.textContent = "Duración";
+      $amountUnit.textContent = "min";
       // Default 5 min (no el máximo): la mayoría quiere un tramo corto, y
       // subir con + es más barato que bajar 15 veces desde 20.
-      state.fullMatchDurationMin = Math.min(Math.max(FULL_MATCH_DEFAULT_MIN, fullMinMin()), maxMin);
-      renderDayStepper();
-      renderDuration();
-      defaultStartForDay();
-      refreshFullMatchGate();
+      state.amountMin = Math.min(Math.max(FULL_MATCH_DEFAULT_MIN, fullMinMin()), maxMin);
+      $fullHint.textContent = "Se subirá como un solo video de \"Partido\" (máx. " + maxMin +
+        " min), no como clips sueltos. Puedes pedir hasta " +
+        ((window.PuntazoPulses && window.PuntazoPulses.FULL_MATCH_RECOVERY_THROTTLE_MAX) || 3) +
+        " partidos de esta cancha por hora.";
     } else {
-      // Default datetime: ahora menos 5 min, con paso 1 min
-      const d = new Date();
-      d.setMinutes(d.getMinutes() - 5);
-      $datetime.value = toLocalDateTimeInputValue(d);
-      $datetime.max = maxVal;
-      $datetime.min = minVal;
+      $fullBanner.style.display = "none";
+      $timeLabel.textContent = "¿A qué hora fue el puntazo?";
+      $amountLabel.textContent = "Margen (antes y después)";
+      $amountUnit.textContent = "min";
+      state.amountMin = POINT_MARGIN_DEFAULT_MIN;
+      $fullHint.textContent = "Si no recuerdas la hora exacta, sube el margen: buscamos esos minutos " +
+        "antes y después (máx. " + (POINT_MARGIN_MAX_MIN * 2) + " min en total).";
     }
 
+    renderDayStepper();
+    renderDuration();
+    defaultStartForDay();
+    refreshFullMatchGate();
     refreshAuthBanner();
   }
 
@@ -1122,16 +1154,18 @@
         return;
       }
     } else {
-      const dtVal = $datetime.value;
-      if (!dtVal) {
-        setFeedback("Selecciona la fecha y hora del puntazo.", "bad");
+      if (!$fullStartTime.value) {
+        setFeedback("Selecciona la hora del puntazo.", "bad");
         return;
       }
-      eventAt = new Date(dtVal);
-      if (isNaN(eventAt.getTime())) {
-        setFeedback("Fecha/hora inválida.", "bad");
+      const range = computeFullRange();
+      if (!range || isNaN(range.anchor.getTime())) {
+        setFeedback("Hora inválida.", "bad");
         return;
       }
+      eventAt = range.anchor;          // el momento del puntazo (contrato actual)
+      rangeStart = range.start;        // anchor − margen \
+      rangeEnd = range.end;            // anchor + margen  } → ver brief NUC
       if (eventAt.getTime() > now.getTime() + 60 * 1000) {
         setFeedback("La hora no puede ser en el futuro.", "bad");
         return;
@@ -1180,6 +1214,11 @@
           // lado: undefined → pulses.js manda null para recovery; la NUC decide
           source: "recovery",
           event_at: eventAt,
+          // Margen elegido por el usuario. Campos ADITIVOS: la NUC que aún no
+          // los conoce sigue aplicando su ±90s fijo sobre event_at sin romperse.
+          margin_sec: state.amountMin * 60,
+          start_at: rangeStart,
+          end_at: rangeEnd,
         });
         if (isAnonUser(user)) markAnonSent();
         $feedback.style.color = "";
