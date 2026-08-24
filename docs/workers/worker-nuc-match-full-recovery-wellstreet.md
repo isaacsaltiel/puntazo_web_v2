@@ -42,30 +42,46 @@ desde el formulario de recuperación.
 }
 ```
 
-## ⚠️ URGENTE (medido 2026-08-23) — hoy se sella `consumed_at` y no sale nada
+## ✅ RESUELTO (23-24 ago 2026) — el incidente del stamp faltante
 
-Tres pedidos reales llegaron a `pending_pulses` y la NUC les puso
-`consumed_at` + `clamped:false` en **~0.4 segundos**… y ahí murió todo: no
-apareció ningún clip, ningún doc en `clip_states`, y nada en el índice de la
-cancha. Dos de esos pedidos eran de un usuario real.
+Historia real, conservada porque la lección aplica a cualquier flujo futuro.
 
-Peor: como el backend interpretaba `consumed_at` como "clip listo", al usuario
-le llegó la notificación **"Tu puntazo en WellStreet Pickleball ya está listo —
-tócalo para verlo"** un segundo después de pedirlo, apuntando a un video que no
-existe. (El criterio ya se corrigió en la web: ahora exige `resolved_video`.)
+**Síntoma:** dos pedidos reales de partido completo quedaron con `consumed_at`
++ `clamped:false` a los ~0.4 s y, desde la web, jamás pasaron de ahí: sin
+`clip_states`, sin nada en el índice. Encima, el backend interpretaba
+`consumed_at` como "clip listo" y le mandó al usuario **"Tu puntazo ya está
+listo — tócalo para verlo"** un segundo después de pedirlo.
 
-Hace falta que revisen **por qué el pipeline se detiene después de aceptar el
-job** — logs de esa ventana horaria. Y que al terminar de publicar estampen:
+**Diagnóstico inicial del maestro: EQUIVOCADO.** Concluí "el pipeline se
+detiene después de aceptar el job" por ausencia de evidencia del lado web. La
+NUC fue al disco y demostró lo contrario: **ambos clips se generaron completos**
+(209 MB y 389 MB, con poster, ventanas exactas 1:1 con lo pedido).
 
-1. **`resolved_video`** en el propio doc de `pending_pulses` = el nombre exacto
-   del archivo publicado (ej. `WellStreet-Pickleball_Cancha1_LadoA_PARTIDO_ab12_23082026_231500.mp4`).
-   **Esta es ahora la señal oficial de "listo"** en todo el sistema: dispara la
-   notificación, el deep-link al video exacto, y el panel de seguimiento en
-   vivo de `/recuperar.html`. Sin este campo, para la web el pedido sigue
-   "procesando" para siempre. Es el mismo campo que ya estampan para los pulsos
-   normales (Nivel 1, 11-jun).
-2. **`error_reason`** si falla, en vez de dejarlo en silencio — así el usuario
-   ve "no se pudo" en lugar de esperar indefinidamente.
+**Causa raíz real (la encontró la NUC):** `match_worker_loop` en
+`queue_manager.py` leía `prebuffered_raw_path` del CSV pero **no `external_id`**,
+y `pipeline.py` solo estampa `if job.get("external_id")`. Resultado: **ningún
+partido estampó `resolved_video` jamás** — bug latente desde que existe el lane
+de partidos. Los puntazos normales sí lo hacían (su `worker_loop` sí leía el
+campo), por eso nadie lo notó. Segundo hueco: `queue_on_failure` marcaba
+`DISCARDED` al agotar reintentos **sin notificar** — mismo síntoma, otra causa.
+
+**Estado:** corregido, desplegado y verificado E2E por la NUC; los dos docs
+backfilleados con el nombre exacto del `.mp4`. Al escribirse `resolved_video`,
+la Cloud Function regeneró las notificaciones — esta vez apuntando a videos
+reales, que ya están en el índice público.
+
+### Las dos lecciones que quedan como regla
+
+1. **`consumed_at` NO significa "clip listo"** — significa "la NUC recogió el
+   pedido de la cola" (ACK de ingesta), y se sella en menos de un segundo. La
+   señal oficial de "listo" en todo el sistema es **`resolved_video`**: el
+   nombre exacto del archivo publicado, estampado en el propio doc de
+   `pending_pulses`. Dispara la notificación, el deep-link al video exacto y el
+   panel de seguimiento en vivo de `/recuperar.html`. Sin ese campo el pedido se
+   ve "procesando" para siempre. (`pulseIsReady()` en la Cloud Function ya lo
+   exige — desplegado y verificado en producción.)
+2. **Un fallo real debe escribir `error_reason`**, no morir en silencio: sin él
+   el usuario espera indefinidamente en lugar de ver "no se pudo".
 
 ## Obligaciones del handler
 
