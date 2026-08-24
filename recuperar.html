@@ -407,6 +407,53 @@
     line-height: 1.4;
   }
 
+  /* Seguimiento en vivo del pedido (en cola → procesando → listo). */
+  .rec-track {
+    margin-top: 16px;
+    padding: 16px 15px;
+    border-radius: 16px;
+    background: rgba(0,0,0,.22);
+    border: 1px solid rgba(255,255,255,.12);
+  }
+  .rec-track.is-ready {
+    background: rgba(34,197,94,.10);
+    border-color: rgba(34,197,94,.45);
+  }
+  .rec-track.is-error {
+    background: rgba(255,80,80,.08);
+    border-color: rgba(255,80,80,.35);
+  }
+  .rec-track-row { display: flex; align-items: flex-start; gap: 11px; }
+  .rec-track-icon { font-size: 1.5rem; line-height: 1.1; flex-shrink: 0; }
+  .rec-track-text { flex: 1; min-width: 0; }
+  .rec-track-text strong {
+    display: block; font-size: 1rem; font-weight: 900; color: #fff; line-height: 1.25;
+  }
+  .rec-track-text .meta {
+    display: block; font-size: .82rem; color: rgba(234,242,255,.70);
+    margin-top: 3px; line-height: 1.4;
+  }
+  .rec-track-bar {
+    margin-top: 12px; height: 6px; border-radius: 999px;
+    background: rgba(255,255,255,.09); overflow: hidden;
+  }
+  .rec-track-fill {
+    height: 100%; width: 8%; border-radius: 999px;
+    background: linear-gradient(90deg, #0B7CFF, #3395FF);
+    transition: width .6s ease, background .3s ease;
+  }
+  .rec-track.is-ready .rec-track-fill { width: 100%; background: linear-gradient(90deg,#22c55e,#4ade80); }
+  .rec-track.is-error .rec-track-fill { width: 100%; background: linear-gradient(90deg,#ef4444,#f87171); }
+  /* Pulso sutil mientras sigue en proceso (no en listo/error). */
+  .rec-track:not(.is-ready):not(.is-error) .rec-track-fill { animation: recTrackPulse 1.8s ease-in-out infinite; }
+  @keyframes recTrackPulse { 0%,100% { opacity:1 } 50% { opacity:.55 } }
+  .rec-track .rec-submit { margin-top: 14px; display: inline-flex; }
+  .rec-track-link {
+    display: block; margin-top: 12px; text-align: center;
+    font-size: .85rem; font-weight: 700; color: #6fb2ff; text-decoration: none;
+  }
+  .rec-track-link:hover { color: #9fcfff; text-decoration: underline; }
+
   /* Compuerta de sesión real (no invitado) para pedir partido completo. */
   .rec-auth-gate {
     text-align: center;
@@ -616,6 +663,24 @@
 
     <div id="recFeedback" class="rec-feedback"></div>
 
+    <!-- (2026-08-23) Seguimiento EN VIVO tras pedir. Antes la página solo decía
+         "listo, quedó en cola" y ahí moría: el watcher global está suprimido en
+         /recuperar.html, así que el usuario no se enteraba de nada sin salir y
+         volver. Ahora se escucha el doc de pending_pulses en tiempo real y se
+         muestra el estado real hasta que el video existe de verdad. -->
+    <div id="recTrack" class="rec-track" style="display:none">
+      <div class="rec-track-row">
+        <span id="recTrackIcon" class="rec-track-icon">⏳</span>
+        <div class="rec-track-text">
+          <strong id="recTrackTitle">En cola</strong>
+          <span id="recTrackMeta" class="meta"></span>
+        </div>
+      </div>
+      <div class="rec-track-bar"><div id="recTrackFill" class="rec-track-fill"></div></div>
+      <a id="recTrackWatch" class="rec-submit" style="display:none;text-decoration:none;align-items:center;justify-content:center;">▶ Ver mi video</a>
+      <a id="recTrackBrowse" class="rec-track-link" style="display:none">Ver los clips de esta cancha →</a>
+    </div>
+
     <div id="recAfter" class="rec-after" style="display:none">
       <button id="recAnother" type="button">Pedir otro</button>
     </div>
@@ -661,6 +726,15 @@
   const $computedRange  = document.getElementById("recComputedRange");
   const $authGate       = document.getElementById("recFullAuthGate");
   const $fullLoginBtn   = document.getElementById("recFullLoginBtn");
+
+  // Seguimiento en vivo del pedido
+  const $track        = document.getElementById("recTrack");
+  const $trackIcon    = document.getElementById("recTrackIcon");
+  const $trackTitle   = document.getElementById("recTrackTitle");
+  const $trackMeta    = document.getElementById("recTrackMeta");
+  const $trackFill    = document.getElementById("recTrackFill");
+  const $trackWatch   = document.getElementById("recTrackWatch");
+  const $trackBrowse  = document.getElementById("recTrackBrowse");
 
   const FULL_MATCH_DAY_MIN_BACK = 7; // días atrás — igual a la retención del NVR que consume match_full
   const FULL_MATCH_DEFAULT_MIN = 5;  // duración por defecto del stepper (se clampa a [min,max])
@@ -799,6 +873,9 @@
   });
 
   function refreshFullMatchGate() {
+    // Con un pedido ya enviado el panel de seguimiento manda: no reaparecer
+    // el form ni el botón por un cambio de auth de fondo.
+    if (state.tracking) return;
     // La compuerta de sesión real SOLO aplica al partido completo; el flujo
     // puntual sigue permitiendo invitado (con su throttle de 1/24h).
     if (!state.fullMatchMode) {
@@ -987,6 +1064,11 @@
     state.step = "canchas";
     clearFeedback();
     $after.style.display = "none";
+    stopTracking();
+    state.tracking = false;
+    $track.style.display = "none";
+    $submit.style.display = "";
+    $submit.disabled = false;
     renderSelector();
   });
 
@@ -995,6 +1077,14 @@
     state.step = "form";
     $selector.style.display = "none";
     $form.style.display = "block";
+
+    // Entrar al form siempre arranca limpio (sin panel de un pedido anterior).
+    stopTracking();
+    state.tracking = false;
+    $track.style.display = "none";
+    $submit.style.display = "";
+    $submit.disabled = false;
+    $after.style.display = "none";
 
     const club = state.selectedClub;
     const cancha = state.selectedCancha;
@@ -1107,6 +1197,119 @@
     }
   }
 
+  // ── Seguimiento EN VIVO del pedido ─────────────────────────────
+  //
+  // Criterio de "listo": NO basta con consumed_at. Ese campo solo significa
+  // "la NUC recogió el pedido" — de hecho la NUC de WellStreet lo sella en
+  // menos de un segundo, mucho antes de que exista video. La prueba real de
+  // que el clip existe es `resolved_video` (el nombre del archivo que la NUC
+  // estampa al publicarlo). Hasta entonces, esto dice "procesando", no
+  // "listo".
+  let _trackUnsub = null;
+  let _trackSlowTimer = null;
+  const TRACK_SLOW_MS = 10 * 60 * 1000; // a los 10 min avisamos que va lento
+
+  function stopTracking() {
+    if (_trackUnsub) { try { _trackUnsub(); } catch (_) {} _trackUnsub = null; }
+    if (_trackSlowTimer) { clearTimeout(_trackSlowTimer); _trackSlowTimer = null; }
+  }
+
+  function ladoIdOf(cancha) {
+    return (cancha && cancha.lados && cancha.lados[0] && cancha.lados[0].id) || "LadoA";
+  }
+  function ladoUrl(club, cancha, extra) {
+    return "/lado.html?loc=" + encodeURIComponent(club.id) +
+           "&can=" + encodeURIComponent(cancha.id) +
+           "&lado=" + encodeURIComponent(ladoIdOf(cancha)) + (extra || "");
+  }
+
+  function setTrack(kind, icon, title, meta, pct) {
+    $track.style.display = "block";
+    $track.className = "rec-track" + (kind ? " is-" + kind : "");
+    $trackIcon.textContent = icon;
+    $trackTitle.textContent = title;
+    $trackMeta.textContent = meta || "";
+    if (pct != null) $trackFill.style.width = pct + "%";
+  }
+
+  // anchorDate: momento al que apunta el pedido (para el fallback ?pt= si el
+  // doc se borra antes de que veamos resolved_video).
+  function startTracking(docId, club, cancha, anchorDate, isFull) {
+    stopTracking();
+    state.tracking = true;
+    $trackWatch.style.display = "none";
+    $trackBrowse.style.display = "none";
+    setTrack("", "⏳", "En cola",
+      "Tu pedido llegó. En cuanto la cámara del club lo procese, aquí mismo te aviso.", 12);
+
+    if (!window.PuntazoFirebase || typeof window.PuntazoFirebase.db !== "function") return;
+    const db = window.PuntazoFirebase.db();
+    const ref = db.collection("pending_pulses").doc(docId);
+
+    let sawReady = false;
+
+    _trackSlowTimer = setTimeout(function () {
+      if (sawReady) return;
+      $trackBrowse.href = ladoUrl(club, cancha,
+        anchorDate ? ("&pt=" + anchorDate.getTime()) : "");
+      $trackBrowse.style.display = "block";
+      $trackMeta.textContent = "Está tardando más de lo normal. Puedes cerrar esta página — "
+        + "cuando esté, te llega la notificación. También puedes revisar los clips de la cancha.";
+    }, TRACK_SLOW_MS);
+
+    _trackUnsub = ref.onSnapshot(function (snap) {
+      if (!snap.exists) {
+        // El doc se limpió. Si nunca vimos resolved_video no podemos afirmar
+        // que exista el video → mandamos a los clips de la cancha en vez de
+        // prometer algo que no podemos comprobar.
+        if (sawReady) return;
+        stopTracking();
+        setTrack("", "📁", "Tu pedido ya se procesó",
+          "Búscalo en los clips de esta cancha. Si no aparece, vuelve a pedirlo.", 100);
+        $trackBrowse.href = ladoUrl(club, cancha,
+          anchorDate ? ("&pt=" + anchorDate.getTime()) : "");
+        $trackBrowse.style.display = "block";
+        return;
+      }
+      const d = snap.data() || {};
+
+      if (d.error_reason) {
+        stopTracking();
+        setTrack("error", "⚠️", "No se pudo generar tu video",
+          "El club no pudo recuperar ese tramo. Intenta con otro horario o pídelo de nuevo.", 100);
+        $trackBrowse.href = ladoUrl(club, cancha, "");
+        $trackBrowse.style.display = "block";
+        return;
+      }
+
+      if (d.resolved_video) {
+        sawReady = true;
+        stopTracking();
+        setTrack("ready", "✅", isFull ? "¡Tu partido está listo!" : "¡Tu puntazo está listo!",
+          "Ya puedes verlo y compartirlo.", 100);
+        $trackWatch.href = ladoUrl(club, cancha, "&video=" + encodeURIComponent(d.resolved_video));
+        $trackWatch.style.display = "inline-flex";
+        $trackBrowse.style.display = "none";
+        return;
+      }
+
+      if (d.consumed_at) {
+        setTrack("", "🎬", isFull ? "Armando tu partido" : "Procesando tu video",
+          isFull
+            ? "El club ya lo está cortando del video de la cancha. Al ser un video largo puede tardar varios minutos."
+            : "El club ya lo está recortando. Normalmente tarda unos minutos.", 55);
+      }
+    }, function (err) {
+      console.warn("[recuperar] seguimiento falló", err && err.code);
+      stopTracking();
+      // Sin seguimiento en vivo, al menos dejamos una salida útil.
+      setTrack("", "📁", "Tu pedido quedó en cola",
+        "No pudimos seguirlo en vivo aquí, pero cuando esté te llega la notificación.", 40);
+      $trackBrowse.href = ladoUrl(club, cancha, "");
+      $trackBrowse.style.display = "block";
+    });
+  }
+
   // ── Submit ─────────────────────────────────────────────────────
   function setFeedback(msg, cls) {
     $feedback.className = "rec-feedback is-visible " + (cls || "");
@@ -1197,18 +1400,16 @@
     $feedback.style.color = "rgba(234,242,255,.78)";
 
     try {
+      let res;
       if (state.fullMatchMode) {
-        await window.PuntazoPulses.requestFullMatchRecovery({
+        res = await window.PuntazoPulses.requestFullMatchRecovery({
           loc: club.id,
           can: cancha.id,
           startAt: rangeStart,
           endAt: rangeEnd,
         });
-        $feedback.style.color = "";
-        setFeedback("✅ Listo, quedó en cola. Por ser un video más largo que un clip normal puede tardar más — lo verás en \"Mis clips\" en cuanto esté listo.", "ok");
-        $after.style.display = "block";
       } else {
-        await window.PuntazoPulses.requestPulse({
+        res = await window.PuntazoPulses.requestPulse({
           loc: club.id,
           can: cancha.id,
           // lado: undefined → pulses.js manda null para recovery; la NUC decide
@@ -1221,11 +1422,19 @@
           end_at: rangeEnd,
         });
         if (isAnonUser(user)) markAnonSent();
-        $feedback.style.color = "";
-        setFeedback("✅ Listo. Tu clip estará disponible en ~7 minutos.", "ok");
-        $after.style.display = "block";
       }
-      // No reseteamos el form para que vea qué pidió.
+
+      // El estado real lo cuenta el panel de seguimiento, no un texto fijo:
+      // el mensaje viejo ("estará disponible en ~7 minutos") era una promesa
+      // que nadie verificaba.
+      clearFeedback();
+      $feedback.style.color = "";
+      $after.style.display = "block";
+      // El form queda visible pero ya no se puede re-enviar sin tocar "Pedir otro".
+      $submit.style.display = "none";
+      $fieldsCommon.style.display = "none";
+      startTracking(res && res.docId, club, cancha,
+        state.fullMatchMode ? rangeEnd : eventAt, state.fullMatchMode);
     } catch (err) {
       console.error("[recuperar] solicitud falló", err);
       $feedback.style.color = "";
@@ -1237,6 +1446,11 @@
 
   $another.addEventListener("click", function () {
     $after.style.display = "none";
+    stopTracking();
+    state.tracking = false;
+    $track.style.display = "none";
+    $submit.style.display = "";
+    $submit.disabled = false;
     clearFeedback();
     state.step = "canchas";
     renderSelector();

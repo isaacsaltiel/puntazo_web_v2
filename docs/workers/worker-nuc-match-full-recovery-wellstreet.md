@@ -42,6 +42,31 @@ desde el formulario de recuperación.
 }
 ```
 
+## ⚠️ URGENTE (medido 2026-08-23) — hoy se sella `consumed_at` y no sale nada
+
+Tres pedidos reales llegaron a `pending_pulses` y la NUC les puso
+`consumed_at` + `clamped:false` en **~0.4 segundos**… y ahí murió todo: no
+apareció ningún clip, ningún doc en `clip_states`, y nada en el índice de la
+cancha. Dos de esos pedidos eran de un usuario real.
+
+Peor: como el backend interpretaba `consumed_at` como "clip listo", al usuario
+le llegó la notificación **"Tu puntazo en WellStreet Pickleball ya está listo —
+tócalo para verlo"** un segundo después de pedirlo, apuntando a un video que no
+existe. (El criterio ya se corrigió en la web: ahora exige `resolved_video`.)
+
+Hace falta que revisen **por qué el pipeline se detiene después de aceptar el
+job** — logs de esa ventana horaria. Y que al terminar de publicar estampen:
+
+1. **`resolved_video`** en el propio doc de `pending_pulses` = el nombre exacto
+   del archivo publicado (ej. `WellStreet-Pickleball_Cancha1_LadoA_PARTIDO_ab12_23082026_231500.mp4`).
+   **Esta es ahora la señal oficial de "listo"** en todo el sistema: dispara la
+   notificación, el deep-link al video exacto, y el panel de seguimiento en
+   vivo de `/recuperar.html`. Sin este campo, para la web el pedido sigue
+   "procesando" para siempre. Es el mismo campo que ya estampan para los pulsos
+   normales (Nivel 1, 11-jun).
+2. **`error_reason`** si falla, en vez de dejarlo en silencio — así el usuario
+   ve "no se pudo" en lugar de esperar indefinidamente.
+
 ## Obligaciones del handler
 
 1. **Reconocer `source == "match_full_recovery"`** junto a `"match_full"` en el listener

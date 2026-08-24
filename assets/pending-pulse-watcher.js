@@ -187,10 +187,14 @@
         .limit(QUERY_LIMIT)
         .get();
 
+      // (2026-08-23) "Listo" EXIGE resolved_video, igual que pulseIsReady en
+      // functions/lib/notify.js. `consumed_at` solo dice "la NUC recogió el
+      // pedido" — se sella en menos de un segundo y el clip puede tardar
+      // minutos (o no llegar). Antes esto anunciaba clips inexistentes.
       const readyIds = [];
       snap.forEach(function (doc) {
         const d = doc.data() || {};
-        if (d.consumed_at && !d.error_reason) readyIds.push(doc.id);
+        if (d.consumed_at && !d.error_reason && d.resolved_video) readyIds.push(doc.id);
       });
 
       const prev = loadReadyIds(user.uid);

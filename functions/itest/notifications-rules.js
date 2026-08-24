@@ -110,10 +110,15 @@ test("friendReceptor: el receptor es el participante que NO mandó la solicitud"
   assert.strictEqual(notify.friendReceptor({ uidA: "a", uidB: "b", requesterUid: "z" }), null);
 });
 
-test("pulseIsReady: consumed_at && !error_reason", () => {
-  assert.strictEqual(notify.pulseIsReady({ consumed_at: 123 }), true);
-  assert.strictEqual(notify.pulseIsReady({ consumed_at: 123, error_reason: "x" }), false);
-  assert.strictEqual(notify.pulseIsReady({ consumed_at: null }), false);
+test("pulseIsReady: exige resolved_video, no solo consumed_at", () => {
+  // Listo de verdad: la NUC ya publicó el clip y estampó su nombre.
+  assert.strictEqual(notify.pulseIsReady({ consumed_at: 123, resolved_video: "X.mp4" }), true);
+  // (2026-08-23) consumed_at SOLO = "la NUC recogió el pedido", no que exista
+  // video. WellStreet lo sella en ~0.4 s y el clip puede no llegar nunca; antes
+  // esto disparaba "tu puntazo ya está listo" al instante y era mentira.
+  assert.strictEqual(notify.pulseIsReady({ consumed_at: 123 }), false);
+  assert.strictEqual(notify.pulseIsReady({ consumed_at: 123, resolved_video: "X.mp4", error_reason: "x" }), false);
+  assert.strictEqual(notify.pulseIsReady({ consumed_at: null, resolved_video: "X.mp4" }), false);
   assert.strictEqual(notify.pulseIsReady(null), false);
 });
 

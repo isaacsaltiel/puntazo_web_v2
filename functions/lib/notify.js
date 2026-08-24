@@ -42,9 +42,22 @@ function registrantName(match) {
   return reg ? firstName(reg.nombre) : "Alguien";
 }
 
-// ¿El pulso está "listo"? (mismo criterio que el vigía / EN1)
+// ¿El pulso está "listo"?
+//
+// (2026-08-23) ANTES: `consumed_at && !error_reason`. Eso era FALSO:
+// `consumed_at` solo significa "la NUC recogió el pedido de la cola", no que
+// el video exista. Caso real medido: dos pedidos de partido completo en
+// WellStreet quedaron con consumed_at ~0.4 s después de crearse, la
+// notificación "Tu puntazo ya está listo" salió al instante, y el video nunca
+// se generó — el usuario tocó la notificación y no encontró nada.
+//
+// AHORA exigimos `resolved_video`: el nombre del archivo que la NUC estampa
+// en el pulso CUANDO YA PUBLICÓ el clip. Es la única prueba de que existe
+// algo que ver, y además es lo que usa el deep-link para aterrizar en el
+// video exacto. Si una NUC no lo estampa, no hay notificación — correcto:
+// no hay clip que anunciar.
 function pulseIsReady(d) {
-  return !!(d && d.consumed_at && !d.error_reason);
+  return !!(d && d.consumed_at && !d.error_reason && d.resolved_video);
 }
 
 /**
