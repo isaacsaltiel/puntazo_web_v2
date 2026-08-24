@@ -752,6 +752,19 @@
       <span style="opacity:.85">→</span>
     </a>
 
+    <!-- (2026-08-24) Banner de repeticiones: cuando NO hay transmision en vivo
+         pero ya quedaron transmisiones pasadas (torneo terminado), deja una
+         puerta de entrada discreta a /vivo.html en vez de desaparecer del
+         todo. Estilo neutro (azul), nunca compite con el rojo de EN VIVO. -->
+    <a id="replayBanner" href="#" style="display:none;align-items:center;justify-content:center;gap:9px;
+       margin:0 0 14px;padding:12px 18px;border-radius:999px;text-decoration:none;
+       background:rgba(11,124,255,.14);border:1px solid rgba(11,124,255,.4);color:#bcdcff;
+       font-weight:800;font-size:.88rem">
+      <span aria-hidden="true">📺</span>
+      <span>Ver transmisiones anteriores</span>
+      <span style="opacity:.85">→</span>
+    </a>
+
     <div id="actionsAuthed" class="entrada-actions" style="display:none">
       <!-- (2026-08-22) R9 — Solo WellStreet (ambos clubes): CTA roja principal
            que reemplaza el viejo "Grabar partido completo" (en vivo). Ahora va
@@ -1413,7 +1426,8 @@
   // y prende el banner rojo. Falla en silencio (nunca debe romper la entrada).
   function setupLiveBanner(clubId) {
     const box = document.getElementById("liveBanner");
-    if (!box || !clubId) return;
+    const replay = document.getElementById("replayBanner");
+    if ((!box && !replay) || !clubId) return;
     let db;
     try { db = window.PuntazoFirebase.db(); } catch (e) { return; }
     try {
@@ -1421,13 +1435,28 @@
         const d = snap.exists ? snap.data() : null;
         const on = !!(d && d.live === true &&
                       (d.youtube_url || d.youtube_id || d.channel_id));
-        if (!on) { box.style.display = "none"; return; }
-        box.href = "/vivo.html?club=" + encodeURIComponent(clubId);
-        const t = document.getElementById("liveBannerTxt");
-        if (t) t.textContent = d.titulo || "Transmisión en vivo";
-        box.style.display = "flex";
+        const hayAnteriores = !!(d && Array.isArray(d.past_streams) && d.past_streams.length);
+
+        if (box) {
+          if (on) {
+            box.href = "/vivo.html?club=" + encodeURIComponent(clubId);
+            const t = document.getElementById("liveBannerTxt");
+            if (t) t.textContent = d.titulo || "Transmisión en vivo";
+            box.style.display = "flex";
+          } else {
+            box.style.display = "none";
+          }
+        }
+        if (replay) {
+          if (!on && hayAnteriores) {
+            replay.href = "/vivo.html?club=" + encodeURIComponent(clubId);
+            replay.style.display = "flex";
+          } else {
+            replay.style.display = "none";
+          }
+        }
       }, function (err) { console.warn("[entrada] live banner:", err && err.code); });
-    } catch (e) { /* sin Firestore: el banner simplemente no aparece */ }
+    } catch (e) { /* sin Firestore: los banners simplemente no aparecen */ }
   }
 
   async function startReadyFlow() {

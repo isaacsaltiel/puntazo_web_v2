@@ -153,26 +153,67 @@
     font-size: .78rem; color: rgba(234,242,255,.45); line-height: 1.5;
   }
   .past-streams { margin-top: 30px; }
-  .past-streams h2 {
-    font-size: 1rem; font-weight: 900; color: #fff; margin: 0 0 12px;
-    letter-spacing: -.2px;
+  .past-streams .eyebrow {
+    font-size: .72rem; font-weight: 900; letter-spacing: .6px; text-transform: uppercase;
+    color: #7fb8ff; margin: 0 0 4px;
   }
+  .past-streams h2 {
+    font-size: 1.15rem; font-weight: 900; color: #fff; margin: 0 0 4px;
+    letter-spacing: -.3px;
+  }
+  .past-streams .past-sub {
+    font-size: .84rem; color: rgba(234,242,255,.55); font-weight: 600; margin: 0 0 16px;
+  }
+
+  /* Card destacada: la transmision mas reciente, mas grande, con "tag" */
+  .past-featured {
+    display: none; text-decoration: none; margin-bottom: 14px;
+    background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.12);
+    border-radius: 18px; overflow: hidden; transition: all .16s ease;
+  }
+  .past-featured.show { display: flex; }
+  .past-featured:hover { border-color: rgba(11,124,255,.55); transform: translateY(-1px); }
+  .past-featured .thumb-wrap { position: relative; width: 46%; max-width: 380px; flex: 0 0 auto; }
+  .past-featured img { width: 100%; height: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+  .past-featured .past-info { padding: 16px 20px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+  .past-featured .past-title { font-size: 1.05rem; -webkit-line-clamp: 3; }
+  .past-featured .past-date { font-size: .8rem; }
+  .past-tag {
+    display: inline-flex; align-self: flex-start; margin-bottom: 8px;
+    padding: 3px 11px; border-radius: 999px;
+    background: rgba(11,124,255,.18); border: 1px solid rgba(11,124,255,.45);
+    color: #bcdcff; font-size: .68rem; font-weight: 900; letter-spacing: .4px;
+  }
+  @media (max-width: 560px) {
+    .past-featured { flex-direction: column; }
+    .past-featured .thumb-wrap { width: 100%; max-width: none; }
+  }
+
   .past-list {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 12px;
   }
   .past-card {
-    display: flex; flex-direction: column; gap: 0; text-decoration: none;
+    position: relative; display: flex; flex-direction: column; gap: 0; text-decoration: none;
     background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.10);
     border-radius: 14px; overflow: hidden; transition: all .16s ease;
   }
   .past-card:hover { border-color: rgba(11,124,255,.5); transform: translateY(-1px); }
+  .past-card img, .past-thumb-empty, .past-featured .thumb-wrap {
+    background: #000;
+  }
   .past-card img, .past-thumb-empty {
-    width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #000;
+    width: 100%; aspect-ratio: 16/9; object-fit: cover;
   }
   .past-thumb-empty {
     display: flex; align-items: center; justify-content: center;
     color: rgba(255,255,255,.3); font-size: 1.6rem;
+  }
+  .play-ico {
+    position: absolute; top: 8px; right: 8px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(0,0,0,.55); color: #fff; font-size: .68rem;
+    display: flex; align-items: center; justify-content: center;
   }
   .past-info { padding: 10px 12px 12px; }
   .past-title {
@@ -224,7 +265,17 @@
   </div>
 
   <div id="pastBox" class="past-streams hidden">
-    <h2>Transmisiones anteriores</h2>
+    <div class="eyebrow" id="pastEyebrow">Transmisiones anteriores</div>
+    <h2 id="pastTitle">Transmisiones anteriores</h2>
+    <p class="past-sub" id="pastSub"></p>
+    <a id="pastFeatured" class="past-featured">
+      <div class="thumb-wrap"></div>
+      <div class="past-info">
+        <span class="past-tag">MÁS RECIENTE</span>
+        <div class="past-title"></div>
+        <div class="past-date"></div>
+      </div>
+    </a>
     <div id="pastList" class="past-list"></div>
   </div>
 
@@ -261,6 +312,14 @@
     "Scorpion": "",
     "WellStreet-Pickleball": "/assets/logos/wellstreet.webp",
     "WellStreet-Padel": "/assets/logos/wellstreet.webp"
+  };
+
+  var NOMBRES_CLUB = {
+    "BreakPoint": "BreakPoint",
+    "Interpadel": "Interpadel",
+    "Scorpion": "Scorpion",
+    "WellStreet-Pickleball": "WellStreet Pickleball",
+    "WellStreet-Padel": "WellStreet Pádel"
   };
 
   var el = function (id) { return document.getElementById(id); };
@@ -306,10 +365,27 @@
   }
 
   var MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  var MESES_LARGO = ["enero","febrero","marzo","abril","mayo","junio","julio",
+                      "agosto","septiembre","octubre","noviembre","diciembre"];
   function fmtFecha(raw) {
     var d = toDate(raw);
     if (!d) return "";
     return d.getDate() + " " + MESES[d.getMonth()] + " " + d.getFullYear();
+  }
+
+  // "agosto 2026" o, si el torneo cruzo meses, "agosto–septiembre 2026".
+  function rangoMeses(dates) {
+    if (!dates.length) return "";
+    var min = dates[0], max = dates[0];
+    for (var i = 1; i < dates.length; i++) {
+      if (dates[i] < min) min = dates[i];
+      if (dates[i] > max) max = dates[i];
+    }
+    var y1 = min.getFullYear(), y2 = max.getFullYear();
+    var m1 = min.getMonth(), m2 = max.getMonth();
+    if (y1 === y2 && m1 === m2) return MESES_LARGO[m1] + " " + y1;
+    if (y1 === y2) return MESES_LARGO[m1] + "–" + MESES_LARGO[m2] + " " + y1;
+    return MESES_LARGO[m1] + " " + y1 + " – " + MESES_LARGO[m2] + " " + y2;
   }
 
   function esc(s) {
@@ -319,7 +395,9 @@
   }
 
   // Transmisiones anteriores: mas reciente primero; mismo dia = orden del array.
-  function renderPastStreams(list) {
+  // La primera se pinta como card "destacada" (escaparate); el resto en grid.
+  function renderPastStreams(list, meta) {
+    meta = meta || {};
     var box = el("pastBox");
     if (!Array.isArray(list) || !list.length) { box.classList.add("hidden"); return; }
 
@@ -333,21 +411,54 @@
       return a.i - b.i;
     });
 
-    el("pastList").innerHTML = withIdx.map(function (x) {
-      var it = x.it;
+    // Encabezado del escaparate: "CPAM · BreakPoint · agosto 2026".
+    var clubNm = NOMBRES_CLUB[CLUB] || CLUB;
+    var meses = rangoMeses(withIdx.map(function (x) { return x.d; }).filter(Boolean));
+    var titleParts = [meta.organizador, clubNm, meses].filter(Boolean);
+    el("pastEyebrow").textContent = withIdx.length + (withIdx.length === 1 ? " transmisión" : " transmisiones");
+    el("pastTitle").textContent = titleParts.length ? titleParts.join(" · ") : "Transmisiones anteriores";
+    el("pastSub").textContent = "Así se vieron nuestras transmisiones. Toca cualquiera para revivirla en YouTube.";
+
+    // Datos sin escapar (para asignar a propiedades del DOM directamente);
+    // el escapado solo hace falta cuando se arma HTML como string (el grid).
+    function cardData(it) {
       var url = it.url || "#";
       var vid = ytId(url);
-      var thumb = vid ? ("https://i.ytimg.com/vi/" + vid + "/hqdefault.jpg") : "";
-      var fecha = fmtFecha(it.fecha);
-      return '<a class="past-card" href="' + esc(url) + '" target="_blank" rel="noopener">' +
-        (thumb
-          ? '<img src="' + esc(thumb) + '" alt="" loading="lazy">'
-          : '<div class="past-thumb-empty">▶</div>') +
+      return {
+        url: url,
+        thumb: vid ? ("https://i.ytimg.com/vi/" + vid + "/hqdefault.jpg") : "",
+        title: it.titulo || "Transmisión",
+        fecha: fmtFecha(it.fecha)
+      };
+    }
+
+    var featured = cardData(withIdx[0].it);
+    var feat = el("pastFeatured");
+    feat.href = featured.url;
+    feat.target = "_blank";
+    feat.rel = "noopener";
+    feat.querySelector(".thumb-wrap").innerHTML = featured.thumb
+      ? '<img src="' + esc(featured.thumb) + '" alt="" loading="lazy">'
+      : '<div class="past-thumb-empty">▶</div>';
+    feat.querySelector(".past-title").textContent = featured.title;
+    feat.querySelector(".past-date").textContent = featured.fecha;
+    feat.classList.add("show");
+
+    var rest = withIdx.slice(1);
+    el("pastList").innerHTML = rest.map(function (x) {
+      var c = cardData(x.it);
+      var thumbHtml = c.thumb
+        ? '<img src="' + esc(c.thumb) + '" alt="" loading="lazy">'
+        : '<div class="past-thumb-empty">▶</div>';
+      return '<a class="past-card" href="' + esc(c.url) + '" target="_blank" rel="noopener">' +
+        '<span class="play-ico">▶</span>' +
+        thumbHtml +
         '<div class="past-info">' +
-          '<div class="past-title">' + esc(it.titulo || "Transmisión") + '</div>' +
-          (fecha ? '<div class="past-date">' + esc(fecha) + '</div>' : '') +
+          '<div class="past-title">' + esc(c.title) + '</div>' +
+          (c.fecha ? '<div class="past-date">' + esc(c.fecha) + '</div>' : '') +
         '</div></a>';
     }).join("");
+
     box.classList.remove("hidden");
   }
 
@@ -370,7 +481,7 @@
     if (d.organizador_logo) el("logoOrg").src = d.organizador_logo;
 
     el("btnClips").href = "/entrada.html?loc=" + encodeURIComponent(CLUB);
-    renderPastStreams(d.past_streams);
+    renderPastStreams(d.past_streams, { organizador: d.organizador });
 
     if (!live) {
       el("liveBadge").classList.add("hidden");
@@ -378,8 +489,13 @@
       el("playerBox").innerHTML = "";
       el("btnYT").classList.add("hidden");
       el("offBox").classList.remove("hidden");
-      el("offTitle").textContent = "Ahorita no hay transmision";
-      el("offMsg").textContent = "Cuando el torneo este al aire, aparece aqui solito. Mientras tanto puedes ver los clips del club.";
+      var hayEscaparate = Array.isArray(d.past_streams) && d.past_streams.length > 0;
+      el("offTitle").textContent = hayEscaparate
+        ? "Ahorita no hay transmisión en vivo"
+        : "Ahorita no hay transmisión";
+      el("offMsg").textContent = hayEscaparate
+        ? "Pero puedes revivir el torneo completo aquí abajo ⬇"
+        : "Cuando el torneo esté al aire, aparece aquí solito. Mientras tanto puedes ver los clips del club.";
       applied = sig;
       return;
     }
