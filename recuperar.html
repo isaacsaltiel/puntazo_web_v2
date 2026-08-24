@@ -1434,7 +1434,11 @@
       $submit.style.display = "none";
       $fieldsCommon.style.display = "none";
       startTracking(res && res.docId, club, cancha,
-        state.fullMatchMode ? rangeEnd : eventAt, state.fullMatchMode);
+        // Ancla = INICIO de la ventana, que es lo que codifica el HHMMSS del
+        // nombre del archivo en ambos modos. Antes se mandaba eventAt en el
+        // flujo puntual: con margen ±3 el clip arranca 180s antes del evento y
+        // el fallback ?pt= (que matchea con tolerancia ±90s) no lo encontraba.
+        rangeStart, state.fullMatchMode);
     } catch (err) {
       console.error("[recuperar] solicitud falló", err);
       $feedback.style.color = "";
