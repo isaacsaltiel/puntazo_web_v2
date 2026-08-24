@@ -3745,6 +3745,12 @@
       "count": 3
     },
     {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "date": "2026-08-23",
+      "count": 3
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -4678,12 +4684,6 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "date": "2026-08-20",
-      "count": 2
-    },
-    {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha1",
-      "date": "2026-08-23",
       "count": 2
     },
     {
@@ -6473,6 +6473,12 @@
       "can": "cancha1",
       "date": "2026-08-22",
       "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-08-23",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -6951,6 +6957,12 @@
       "count": 24
     },
     {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "hour": "19",
+      "count": 24
+    },
+    {
       "loc": "breakpoint",
       "can": "cancha3",
       "hour": "20",
@@ -6966,12 +6978,6 @@
       "loc": "breakpoint",
       "can": "cancha2",
       "hour": "18",
-      "count": 23
-    },
-    {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha1",
-      "hour": "19",
       "count": 23
     },
     {
@@ -7467,6 +7473,12 @@
       "count": 11
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "21",
+      "count": 11
+    },
+    {
       "loc": "wellstreet-pickleball",
       "can": "cancha2",
       "hour": "03",
@@ -7518,12 +7530,6 @@
       "loc": "frondoso",
       "can": "cancha1",
       "hour": "18",
-      "count": 10
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "21",
       "count": 10
     },
     {
@@ -18692,10 +18698,19 @@
       "can": "cancha1",
       "date": "2026-08-23",
       "counts_por_lado": {
-        "ladoa": 2
+        "ladoa": 3
+      },
+      "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-08-23",
+      "counts_por_lado": {
+        "ladoa": 1
       },
       "diff": 0
     }
   ],
-  "generated_at_utc": "2026-08-24T00:31:46.513646+00:00"
+  "generated_at_utc": "2026-08-24T08:33:24.254726+00:00"
 }
