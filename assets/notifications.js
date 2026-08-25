@@ -486,9 +486,8 @@
         // (2026-08-24) El href guardado en la notificación apunta a
         // perfil.html (lo escribe la Cloud Function), pero perfil se retiró de
         // la navegación. El destino bueno es lado.html con el video exacto
-        // (abajo); si no se puede resolver, caemos a Mis clips, que sí sigue
-        // en uso — nunca a perfil.
-        var fallback = "/mis-clips.html";
+        // (abajo); si no se puede resolver, caemos a Guardados — nunca a perfil.
+        var fallback = "/guardados.html";
         var pRead = markOneRead(a.getAttribute("data-read-id"));
         var db = getDb(), user = currentUser();
         if (!db || !user || !pid) { navigateAfter(pRead, fallback); return; }
