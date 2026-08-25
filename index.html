@@ -880,7 +880,12 @@
      Showcase visual de los 6 modos shipeados: el partido oficial con
      clips reales (solo en clubs con cámaras) + 5 herramientas standalone
      que funcionan en cualquier cancha. -->
-<div class="section-wrap fade-section" id="modos">
+<!-- (2026-08-24) Sección "Modos y herramientas" OCULTA. Vendía Torneo 5, King,
+     Americano, Sortear y Marcador — modos que quedaron fuera de uso, así que
+     la portada estaba empujando al visitante hacia pantallas muertas. El
+     markup se conserva intacto: para reactivarla basta quitar el display:none.
+     Nada del nav apunta a #modos, así que ocultarla no deja links rotos. -->
+<div class="section-wrap fade-section" id="modos" style="display:none">
   <div class="section-tag">Modos y herramientas</div>
   <div class="section-title">No solo es un botón:<br>es una plataforma de juego.</div>
   <p class="section-sub">Más allá del partido oficial con clips, Puntazo trae herramientas para sortear parejas, llevar marcador, organizar torneos y mucho más. Funcionan en cualquier cancha — incluso si tu club no tiene Puntazo instalado.</p>
@@ -1261,6 +1266,7 @@
     <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
   </a>
   <div class="foot-links">
+    <a href="/privacidad.html">Aviso de Privacidad</a>
     <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
     <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
     <a href="https://wa.me/522206804856?text=Hola%20Puntazo!%20Quiero%20mas%20informacion." target="_blank" rel="noopener">WhatsApp</a>

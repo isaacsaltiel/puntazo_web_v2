@@ -788,10 +788,12 @@
            resto queda discreta junto a "Ver herramientas". Oculta en WellStreet
            (la CTA roja ya cubre este caso). -->
       <a id="lnkRecoverAuthed" class="btn-primary" href="#" style="display:none">🔍 Recuperar puntazo</a>
-      <!-- F119: link sutil a herramientas (sortear, marcador, torneo 5, etc).
-           Pasa loc+can para que herramientas propague el contexto a los
-           modos que lo entienden (Torneo 5 muestra botón Puntazo round). -->
-      <a id="lnkHerramientas" class="entrada-tools-link" href="#">
+      <!-- (2026-08-24) Se retiró el link a /herramientas.html (sortear,
+           marcador, Torneo 5, King, Americano). Esos modos quedaron fuera de
+           uso; el elemento se conserva OCULTO para no romper el JS que lo
+           referencia (applyClubActionTiers / startReadyFlow) y para que
+           reactivarlos sea quitar el display:none. -->
+      <a id="lnkHerramientas" class="entrada-tools-link" href="#" style="display:none">
         <span>¿Sortear parejas, llevar marcador o armar un torneo?</span>
         <strong>Ver herramientas →</strong>
       </a>
@@ -1060,14 +1062,9 @@
         const extras = document.createElement("div");
         extras.style.cssText = "grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; margin-top:8px;";
         extras.innerHTML =
-          // ① ¿Sin Puntazo en tu cancha? — arriba, card destacada morada
-          '<a href="/herramientas.html" class="sel-card" style="text-decoration:none; min-height:auto; padding:14px 16px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px; border-color:rgba(180,120,255,.32); background:linear-gradient(180deg, rgba(180,120,255,.10), rgba(11,124,255,.04));">' +
-            '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +
-              '<span class="name" style="font-size:.92rem;">¿Sin Puntazo en tu cancha?</span>' +
-              '<span class="meta" style="margin-top:0;">Prueba los modos de juego — Torneo, Americano, King, Marcador libre…</span>' +
-            '</span>' +
-            '<span style="font-size:1.45rem; opacity:.9; line-height:1;">🎲</span>' +
-          '</a>' +
+          // (2026-08-24) Se retiró la card "¿Sin Puntazo en tu cancha?" que
+          // llevaba a /herramientas.html (Torneo, Americano, King, Marcador).
+          // Esos modos quedaron fuera de uso; la card mandaba a pantallas muertas.
           // ② ¿Se te escapó un puntazo? — abajo con 🔍 (buscar)
           '<a href="/recuperar.html" class="sel-card" style="text-decoration:none; min-height:auto; padding:14px 16px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px;">' +
             '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +

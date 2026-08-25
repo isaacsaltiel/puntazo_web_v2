@@ -177,22 +177,18 @@
   }
 
   // ── CTAs compartidos ─────────────────────────────────────────
-  function getPhoneButtonCTA() {
-    // Mostrar en todas las páginas internas (antes solo en explorar)
+  // (2026-08-24) Se retiró el CTA verde "USAR BOTÓN" de TODOS los headers.
+  // Motivo (Isaac): ya están instalados los botones físicos en los clubes, así
+  // que el botón digital dejó de ser la acción que hay que empujar. El CTA del
+  // header pasa a ser el ▶ que lleva a /entrada.html (club → cancha → qué
+  // quieres hacer). El botón digital sigue disponible, pero desde el menú ☰ y
+  // desde la pantalla de la cancha, no como acción principal.
+  function getClipsCTA() {
     if (variant !== "internal" && variant !== "landing") return "";
     return `
-      <a href="/entrada.html?modo=boton" target="_blank" rel="noopener"
-         class="pz-phone-cta"
-         onclick="try{gtag('event','registrar_puntazo_vivo_click',{event_category:'CTA',event_label:'header_phone_button'});}catch(e){}">
-        <span class="pz-pcta-ico">P</span> <span class="pz-pcta-label">USAR BOTÓN</span>
-      </a>`;
-  }
-
-  function getClipsCTA() {
-    return `
       <a href="/entrada.html" class="pz-clips-cta"
-         onclick="try{gtag('event','encuentra_tus_clips_click',{event_category:'CTA',event_label:'header_jugar'});}catch(e){}">
-        ▶ <span class="cta-label">Jugar</span>
+         onclick="try{gtag('event','encuentra_tus_clips_click',{event_category:'CTA',event_label:'header_play'});}catch(e){}">
+        ▶ <span class="cta-label">Ver clips</span>
       </a>`;
   }
 
@@ -223,7 +219,6 @@
             <li><a href="/#locaciones"  onclick="closeMenu()">Locaciones</a></li>
           </ul>
           <div class="pz-nav-right">
-            ${getPhoneButtonCTA()}
             ${getClipsCTA()}
             <div class="pz-auth-slot pz-auth-slot--landing" data-auth-slot></div>
             <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Abrir menú" onclick="window.toggleNavMenu(event)">☰</button>
@@ -284,7 +279,7 @@
         </div>
         <nav class="navbar" id="nav-menu"></nav>
         <div class="pz-nav-right pz-nav-right--internal">
-          ${getPhoneButtonCTA()}
+          ${getClipsCTA()}
           <div class="pz-auth-slot" data-auth-slot></div>
         </div>
       </header>`;
@@ -299,24 +294,36 @@
   // Determinacion 2026-06-13 (analisis multi-agente IA/UX): la barra lleva 1
   // accion (Usar boton); el burger lleva los DESTINOS de app; el avatar solo
   // cuenta. Anonimo vs logueado cambia el set. Items "Mis X" van juntos aqui.
+  // (2026-08-24) Menú reducido a lo que HOY se usa de verdad. Isaac: la capa
+  // social/competitiva (Mis partidos, Mi nivel, Amigos, Grupos y ligas,
+  // Registrar partido, Mi perfil) quedó fuera de uso, y tenerla en el menú
+  // manda a la gente a pantallas muertas. Las páginas siguen existiendo y
+  // funcionando — solo se quitaron de la navegación, así que reactivarlas es
+  // volver a agregar la línea, sin recuperar código.
+  //
+  // Lo que SÍ se ve: ver clips · mis clips · guardados · recuperar puntazo ·
+  // botón digital · transmisión en vivo.
   function navItemsFor(user) {
     if (!user) {
       return [
         '<a href="/entrada.html" onclick="closeMenu()">▶ Ver mis clips</a>',
+        '<a href="/recuperar.html" onclick="closeMenu()">🔍 Recuperar puntazo</a>',
+        '<a href="/vivo.html" onclick="closeMenu()">📡 Transmisión en vivo</a>',
         '<a class="pz-nav-mkt" href="/" onclick="closeMenu()">🏠 Inicio</a>',
         '<a class="pz-nav-mkt" href="/#clubs" onclick="closeMenu()">🏢 Para clubs</a>',
+        '<a class="pz-nav-mkt" href="/privacidad.html" onclick="closeMenu()">🔒 Aviso de Privacidad</a>',
       ].join("");
     }
     return [
-      '<a href="/entrada.html" onclick="closeMenu()">▶ Jugar / ver mis clips</a>',
+      '<a href="/entrada.html" onclick="closeMenu()">▶ Ver mis clips</a>',
       '<a href="mis-clips.html" onclick="closeMenu()">🎬 Mis clips</a>',
-      '<a href="mis-partidos.html" onclick="closeMenu()">🎾 Mis partidos</a>',
-      '<a href="mi-nivel.html" onclick="closeMenu()">📊 Mi nivel</a>',
-      '<a href="amigos.html" onclick="closeMenu()">🤝 Amigos</a>',
-      '<a href="grupos.html" onclick="closeMenu()">🏆 Grupos y ligas</a>',
-      '<a class="pz-nav-action" href="registrar-min.html" onclick="closeMenu()">➕ Registrar partido</a>',
+      '<a href="guardados.html" onclick="closeMenu()">💾 Guardados</a>',
+      '<a href="/recuperar.html" onclick="closeMenu()">🔍 Recuperar puntazo</a>',
+      '<a href="/entrada.html?modo=boton" onclick="closeMenu()">📲 Botón digital</a>',
+      '<a href="/vivo.html" onclick="closeMenu()">📡 Transmisión en vivo</a>',
       '<a class="pz-nav-mkt" href="/" onclick="closeMenu()">🏠 Inicio</a>',
       '<a class="pz-nav-mkt" href="/#clubs" onclick="closeMenu()">🏢 Para clubs</a>',
+      '<a class="pz-nav-mkt" href="/privacidad.html" onclick="closeMenu()">🔒 Aviso de Privacidad</a>',
     ].join("");
   }
   function renderNavMenu(user) {
@@ -423,7 +430,9 @@
           <!-- (2026-06-13) Menu del avatar = CUENTA PURA. La navegacion de app
                (Mis clips/partidos/nivel, Amigos, Grupos, Registrar) se movio al
                burger ☰. Aqui solo vive lo que es "mi cuenta/sesion/rol". -->
-          <a href="perfil.html">👤 Mi perfil</a>
+          <!-- (2026-08-24) "Mi perfil" retirado junto con la capa social: la
+               página vive de partidos/nivel/amigos, que ya no se usan. El
+               dropdown queda como cuenta pura (sesión + rol). -->
           ${isAdmin ? '<a href="admin.html">📊 Dashboard admin</a>' : ""}
           <div class="pz-auth-dropdown-sep" role="separator"></div>
           <button type="button" data-auth-logout>Cerrar sesión</button>
