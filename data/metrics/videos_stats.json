@@ -4759,6 +4759,12 @@
       "count": 2
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "date": "2026-08-26",
+      "count": 2
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-09-10",
@@ -6587,6 +6593,24 @@
       "can": "cancha2",
       "date": "2026-08-25",
       "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "date": "2026-08-26",
+      "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "date": "2026-08-26",
+      "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2026-08-26",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -6693,15 +6717,15 @@
       "count": 70
     },
     {
-      "loc": "scorpion",
-      "can": "cancha1",
-      "hour": "19",
-      "count": 68
-    },
-    {
       "loc": "breakpoint",
       "can": "cancha4",
       "hour": "07",
+      "count": 69
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha1",
+      "hour": "19",
       "count": 68
     },
     {
@@ -6801,15 +6825,15 @@
       "count": 50
     },
     {
-      "loc": "scorpion",
-      "can": "cancha2",
-      "hour": "12",
-      "count": 48
-    },
-    {
       "loc": "breakpoint",
       "can": "cancha5",
       "hour": "06",
+      "count": 49
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "hour": "12",
       "count": 48
     },
     {
@@ -6831,6 +6855,12 @@
       "count": 44
     },
     {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "hour": "09",
+      "count": 43
+    },
+    {
       "loc": "breakpoint",
       "can": "cancha2",
       "hour": "16",
@@ -6845,12 +6875,6 @@
     {
       "loc": "scorpion",
       "can": "cancha1",
-      "hour": "09",
-      "count": 42
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha3",
       "hour": "09",
       "count": 42
     },
@@ -7197,6 +7221,18 @@
       "count": 19
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "hour": "06",
+      "count": 19
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "hour": "07",
+      "count": 19
+    },
+    {
       "loc": "wellstreet-pickleball",
       "can": "cancha1",
       "hour": "00",
@@ -7236,18 +7272,6 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "10",
-      "count": 18
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha3",
-      "hour": "06",
-      "count": 18
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha5",
-      "hour": "07",
       "count": 18
     },
     {
@@ -18986,7 +19010,43 @@
         "ladoa": 9
       },
       "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "date": "2026-08-26",
+      "counts_por_lado": {
+        "ladoa": 2
+      },
+      "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "date": "2026-08-26",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "date": "2026-08-26",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha3",
+      "date": "2026-08-26",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-08-26T08:27:59.374776+00:00"
+  "generated_at_utc": "2026-08-26T16:40:02.072149+00:00"
 }
