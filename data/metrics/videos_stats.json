@@ -2443,6 +2443,12 @@
       "count": 5
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "date": "2026-09-02",
+      "count": 5
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-08-31",
@@ -6899,6 +6905,12 @@
       "can": "cancha5",
       "date": "2026-09-01",
       "count": 1
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "date": "2026-09-02",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -7497,6 +7509,12 @@
       "count": 19
     },
     {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "hour": "18",
+      "count": 19
+    },
+    {
       "loc": "breakpoint",
       "can": "cancha4",
       "hour": "20",
@@ -7572,12 +7590,6 @@
       "loc": "interpadel",
       "can": "cancha4",
       "hour": "00",
-      "count": 18
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha4",
-      "hour": "18",
       "count": 18
     },
     {
@@ -7677,6 +7689,12 @@
       "count": 16
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "hour": "18",
+      "count": 16
+    },
+    {
       "loc": "interpadel",
       "can": "cancha6",
       "hour": "00",
@@ -7720,14 +7738,14 @@
     },
     {
       "loc": "breakpoint",
-      "can": "cancha3",
-      "hour": "16",
+      "can": "cancha5",
+      "hour": "17",
       "count": 14
     },
     {
       "loc": "breakpoint",
-      "can": "cancha5",
-      "hour": "18",
+      "can": "cancha3",
+      "hour": "16",
       "count": 14
     },
     {
@@ -7890,12 +7908,6 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "00",
-      "count": 11
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha5",
-      "hour": "17",
       "count": 11
     },
     {
@@ -19796,7 +19808,25 @@
         "ladoa": 5
       },
       "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "date": "2026-09-02",
+      "counts_por_lado": {
+        "ladoa": 5
+      },
+      "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha4",
+      "date": "2026-09-02",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-09-02T19:01:06.392020+00:00"
+  "generated_at_utc": "2026-09-03T01:45:00.852710+00:00"
 }
