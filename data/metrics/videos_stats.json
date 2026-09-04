@@ -3931,6 +3931,12 @@
       "count": 3
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "date": "2026-09-03",
+      "count": 3
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -6932,12 +6938,6 @@
     },
     {
       "loc": "breakpoint",
-      "can": "cancha2",
-      "date": "2026-09-03",
-      "count": 1
-    },
-    {
-      "loc": "breakpoint",
       "can": "cancha3",
       "date": "2026-09-03",
       "count": 1
@@ -6957,6 +6957,12 @@
     {
       "loc": "breakpoint",
       "can": "cancha4",
+      "date": "2026-09-03",
+      "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
       "date": "2026-09-03",
       "count": 1
     }
@@ -7319,6 +7325,12 @@
     {
       "loc": "breakpoint",
       "can": "cancha2",
+      "hour": "17",
+      "count": 34
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
       "hour": "22",
       "count": 34
     },
@@ -7326,12 +7338,6 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "09",
-      "count": 33
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha2",
-      "hour": "17",
       "count": 33
     },
     {
@@ -7408,6 +7414,18 @@
     },
     {
       "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "15",
+      "count": 26
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "hour": "18",
+      "count": 26
+    },
+    {
+      "loc": "breakpoint",
       "can": "cancha2",
       "hour": "15",
       "count": 26
@@ -7422,18 +7440,6 @@
       "loc": "scorpion",
       "can": "cancha2",
       "hour": "16",
-      "count": 25
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "15",
-      "count": 25
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha2",
-      "hour": "18",
       "count": 25
     },
     {
@@ -19913,7 +19919,7 @@
       "can": "cancha2",
       "date": "2026-09-03",
       "counts_por_lado": {
-        "ladoa": 1
+        "ladoa": 3
       },
       "diff": 0
     },
@@ -19952,7 +19958,16 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-09-03",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-09-03T18:56:49.906695+00:00"
+  "generated_at_utc": "2026-09-04T01:39:00.686000+00:00"
 }
