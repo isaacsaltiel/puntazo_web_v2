@@ -25,14 +25,16 @@ Referencia técnica completa del lado NUC: `docs/workers/worker-nuc-BP-stream-la
    ```
    python tools/stream_token.py new --club <Club> --label "Admin <Torneo>"
    ```
-   Manda `https://puntazoclips.com/control-stream.html?k=<TOKEN>` por WhatsApp a quien
+   Manda `https://puntazoclips.com/control-stream.html?club=<Club>&k=<TOKEN>` a quien
    vaya a operar el mosaico (organizador del torneo, Isaac, quien sea).
 3. **Avisarle a la NUC del club** (mensaje al chat de esa NUC — ver plantilla en
    `docs/workers/worker-nuc-BP-stream-layout-cpam.md`) que arranque el encoder con las
    canchas del torneo y que empiece a espejar `stream_public` (`nuc_seen_at`,
    `layout_*`, `air`).
-4. **Publicar el link de YouTube** en `stream_public/{club}` (el panel admin tiene un
-   card para esto, o a mano con `seed_stream_docs.py --url ... --live`).
+4. **Publicar el link de YouTube.** ⚠️ **La fuente de verdad es `stream_public_url.txt`
+   en la NUC, no Firestore**: si se escribe la URL solo desde el panel, el controlador la
+   revierte a lo que diga el archivo en su siguiente ciclo. Poner la URL en ese archivo; el
+   panel/`seed_stream_docs.py --url` sirven solo si el controlador está detenido.
 5. Compartir `https://puntazoclips.com/vivo.html?club=<Club>` — o dejar que aparezca
    solo: el banner rojo "🔴 Transmisión en vivo" en `entrada.html` se prende solo
    cuando `stream_public.live === true`.

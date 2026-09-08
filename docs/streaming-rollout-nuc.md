@@ -73,6 +73,39 @@ El contrato completo (campos, semántica de los 4 modos, `air`, espejo de estado
 `docs/workers/worker-nuc-BP-stream-layout-cpam.md`. **Está LOCKED — no lo cambies**, la web
 ya lo consume tal cual. Pásale ese doc a la NUC del club junto con este.
 
+**El kit ya existe y es idéntico en toda la flota.** La NUC de BP sacó todo lo específico
+del sitio a un solo archivo, `stream_club.json`; el resto de `tools/` se copia tal cual:
+
+```json
+{
+  "club": "Interpadel",                  // = id del doc en Firestore, exacto
+  "titulo": "Puntazo · Interpadel",
+  "organizador": "Interpadel",
+  "nvr_ip": "...", "nvr_user": "...", "nvr_pass": "...",
+  "canchas": [3, 4, 5, 6],
+  "canal_principal": "{n}01",
+  "canal_sub":       "{n}02",
+  "logo_club": "Interpadel.webm", "logo_club_png": "Interpadel.png"
+}
+```
+
+**No asumir la numeración de canales**: `{n}01`/`{n}02` es la convención del NVR de
+BreakPoint y puede no ser la misma. Probar cancha por cancha antes de seguir:
+
+```
+ffprobe -rtsp_transport tcp -v error -show_entries stream=codec_name,width,height   -of csv=p=0 "rtsp://USER:PASS@NVR_IP:554/Streaming/Channels/302"
+```
+
+El principal debe dar ~2560×1440 y el substream 640×360. Si difiere, se ajusta en el JSON
+sin tocar código.
+
+**Tampoco asumir el bitrate**: los 720p a 850 kbps son el óptimo **de BreakPoint**, sacado
+de medir con VMAF contra ese enlace. Otro club, otro ISP, otro resultado. Al arrancar, mirar
+el `speed` de ffmpeg: si no sostiene 1.0x, el bitrate no cabe.
+
+**La URL pública vive en `stream_public_url.txt`, y ese archivo manda**: si se escribe la URL
+solo en Firestore, el controlador la revierte a lo que diga el archivo en su siguiente ciclo.
+
 Piezas a construir, en este orden:
 
 1. **Supervisor + ffmpeg base** (equivalente a `stream_forever.bat` + `stream_yt.ps1` de BP):
@@ -87,12 +120,29 @@ Piezas a construir, en este orden:
 
 ### PARTE 3 — Específico por club
 
+**⚠️ Las canchas no empiezan en 1 ni son consecutivas.** Verificado contra
+`recording_daily` en Firestore (lo que las NUCs realmente graban), 8-sep:
+
+| Club | Canchas REALES | Ojo |
+|---|---|---|
+| `BreakPoint` | 1 2 3 4 5 | ya funcionando |
+| `Interpadel` | **3 4 5 6** | no hay 1 ni 2, y **sí hay 6** |
+| `WellStreet-Padel` | 1 2 3 4 | — |
+| `WellStreet-Pickleball` | **1 2 3 4 6** | **se salta la 5**, y **sí hay 6** |
+
+> `config_locations.json` (lo que la web ofrece) dice 1–6 para WS-Pickleball, pero la 5
+> nunca ha grabado. Para streaming manda `recording_daily`, que es lo que hay con cámara.
+
+**Bug que esto ya destapó (corregido por la NUC de BP el 7-sep):** el código validaba las
+canchas contra `1-5` a rajatabla, en tres sitios. Con esa validación, **la Cancha6 de
+Interpadel y de WS-Pickleball habría sido rechazada** y el controlador habría descartado
+cualquier orden del panel para esa cancha. Ya valida contra las canchas reales del club.
+
 | | Interpadel | WellStreet |
 |---|---|---|
 | Club id | `Interpadel` | `WellStreet-Pickleball` y/o `WellStreet-Padel` |
-| Canchas | Cancha3–6 (4) | Pickleball: 1–6 · Pádel: 1–4 |
 | Logo club | `interpadel.png` (ya en `nuc_assets`) | **falta confirmar** que el logo de WS esté en `media/Prod` |
-| Mosaico | 2×2 natural con 4 canchas | 6 canchas no caben legibles en 2×3 — **usar los modos**, no todas a la vez |
+| Mosaico | 2×2 natural con 4 canchas | 5 canchas no caben legibles a la vez — **usar los modos** |
 
 **Stream key**: una sola por club, en YouTube Studio, transmisión persistente/reutilizable.
 No reutilizar la de BreakPoint. Va en el archivo de keys de la NUC, **no** a git.

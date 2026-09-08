@@ -378,8 +378,15 @@
   // ─────────────────────────────────────────────────────────────────
 
   var qs = new URLSearchParams(location.search);
-  var CLUB = (qs.get("club") || qs.get("loc") || "BreakPoint").trim();
+  var CLUB_EN_URL = (qs.get("club") || qs.get("loc") || "").trim();
+  var CLUB = CLUB_EN_URL || "BreakPoint";
   var TOKEN = (qs.get("k") || "").trim();
+
+  // El cliente NO puede leer stream_tokens (reglas: read=false), asi que el club
+  // tiene que venir en el link. Si llega un token sin club, asumir "BreakPoint"
+  // mandaria las escrituras al doc equivocado y las reglas responderian
+  // permission-denied sin explicar por que. Mejor decirlo claro.
+  var LINK_INCOMPLETO = !!TOKEN && !CLUB_EN_URL;
 
   var MODES = [
     { id: "solo",  nm: "Una cancha",      ds: "pantalla completa",      min: 0, max: 0 },
@@ -713,7 +720,7 @@
 
     el("gate").classList.add("hidden");
     el("panel").classList.remove("hidden");
-    el("ctSub").textContent = CLUB + " · Torneo CPAM";
+    el("ctSub").textContent = CLUB;
     el("pubCard").classList.toggle("hidden", !isAdmin);
 
     try { db = window.PuntazoFirebase.db(); }
@@ -735,7 +742,15 @@
     el("applyBar").classList.add("hidden");
   }
 
-  if (TOKEN) {
+  if (LINK_INCOMPLETO) {
+    // Token sin club: no podemos deducirlo (stream_tokens no es legible desde el
+    // cliente). Seguir con el default mandaria las ordenes al club equivocado.
+    showGate();
+    el("gate").innerHTML =
+      '<h2>Link incompleto</h2>' +
+      '<p>Este link no dice de qué club es, así que no se puede abrir el panel. ' +
+      'Pídele a Puntazo un link nuevo.</p>';
+  } else if (TOKEN) {
     // Link secreto: entra directo, sin cuenta. Si el token esta revocado, la
     // negativa aparece al intentar aplicar (las reglas son la autoridad).
     openPanel();

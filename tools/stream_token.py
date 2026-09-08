@@ -4,7 +4,7 @@ stream_token.py — Links secretos para el panel de control de transmision.
 
 En vez de darle cuenta a nadie, se le manda por WhatsApp un link con clave:
 
-    https://puntazoclips.com/control-stream.html?k=<TOKEN>
+    https://puntazoclips.com/control-stream.html?club=<CLUB>&k=<TOKEN>
 
 El token vive en Firestore (stream_tokens/{token}) y las reglas lo validan en
 cada escritura a stream_control. Si se ve movimiento raro: --revoke y se emite
@@ -45,7 +45,7 @@ def cmd_new(db, fs, club, label):
     })
     print(f"[OK] Token nuevo para {club}" + (f" ({label})" if label else ""))
     print()
-    print(f"    {BASE_URL}?k={token}")
+    print(f"    {BASE_URL}?club={club}&k={token}")
     print()
     print("    Mandaselo por WhatsApp. Para matarlo:")
     print(f"    python tools/stream_token.py revoke {token}")

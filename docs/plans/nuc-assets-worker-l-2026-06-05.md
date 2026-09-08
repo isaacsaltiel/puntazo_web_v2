@@ -276,9 +276,13 @@ Riesgo especifico WS:
   hash. `asset_sync.py` debe deduplicar por target/hash para no tratarlo como
   conflicto.
 
-## WellStreet - Worker L instalado, restart pendiente
+## WellStreet - Worker L2 activo
 
-Worker L quedo instalado en WellStreet y validado manualmente.
+Worker L2 fue reportado como instalado en WellStreet y validado manualmente.
+Revalidacion directa en la NUC el 2026-06-07 confirmo que los assets activos
+actuales estan aplicados localmente. `applied.WellStreet-NUC` en Firestore puede
+quedar viejo/incompleto y no debe usarse como unica fuente de verdad; la fuente
+fuerte es hash local + `.assets_state.json` + dry-run de `asset_sync`.
 
 Archivos modificados en WS:
 
@@ -300,12 +304,12 @@ Integracion:
 - Temporales:
   - `media/Prod/.tmp/`
 
-Resultado del sync manual:
+Resultado actual:
 
 | Doc | Target | Version | Accion | Resultado |
 |---|---|---:|---|---|
-| `global__logo_puntazo` | `puntazo_anim.webm` | 2 | `skip_incompatible_format` | WS aun lee `puntazo.png`; no se aplico webm |
-| `global__anuncio` | `ANUNCIO.png` | 1 | noop | hash correcto |
+| `global__logo_puntazo` | `puntazo_anim.webm` | 2 | noop | satisfecho |
+| `global__anuncio` | `ANUNCIO.webm` | 3 | noop | satisfecho |
 | `global__outro` | `outro.mp4` | 1 | replace | aplicado |
 | `club__WellStreet-Padel__logo_club` + `club__WellStreet-Pickleball__logo_club` | `wellstreet.png` | 1 | noop/dedupe | hash correcto |
 
@@ -319,11 +323,128 @@ wellstreet.png sha256:3fe9065bb40f177331c0931ccad8669b264fbac115d6c10982ed4ce903
 
 Pendiente:
 
-- Hacer restart controlado para activar el thread automatico de `asset_sync`.
-- `global__logo_puntazo` queda pendiente en WS hasta adaptar soporte de
-  `puntazo_anim.webm` o decidir mantener `puntazo.png` local.
+- QSV existe y paso benchmark sintetico, pero queda apagado en WS:
+  `USE_QSV_ENCODER=False`.
+
+Update L2 reportado por worker:
+
+- `core/pipeline.py` ya soporta `puntazo_anim.webm`, `ANUNCIO.webm` y futuro
+  `wellstreet.webm`, con fallback a PNG.
+- `asset_sync.py` reconoce targets `.webm` y queda read-only respecto a
+  Firestore desde la NUC.
+- Restart controlado completado.
+- Runner actual: PID `16204`.
+- Logs confirmados:
+  - Worker thread iniciado.
+  - Match worker thread iniciado.
+  - Heartbeat iniciado.
+  - Listener Firestore para `WellStreet-Pickleball` y `WellStreet-Padel`.
+  - Firestore heartbeat iniciado.
+  - `asset sync cycle: ANUNCIO.webm:satisfied; outro.mp4:satisfied; puntazo_anim.webm:satisfied; wellstreet.png:satisfied`.
+- Hashes finales:
+
+```text
+puntazo_anim.webm sha256:5502b3fafecd67a9912c9bae003d55126e16e2e10c875dfb29c5dad481614964
+ANUNCIO.webm      sha256:49fbd7934afe681e6496c304fe03b550ac36ad93718e5839305a6eebafc13082
+outro.mp4         sha256:2da07f4ed1554958dd45440873f4d5b819e5ef637aece85eb3c17685c36d02cb
+```
+
+Verificacion Firestore 2026-06-07:
+
+```text
+global__logo_puntazo active: v3 puntazo_anim.webm
+global__anuncio active: v4 ANUNCIO.webm
+global__outro active: v3 outro.mp4
+club__WellStreet-Pickleball__logo_club active: v2 wellstreet.webm
+club__WellStreet-Padel__logo_club active: v2 wellstreet.webm
+```
+
+`applied.WellStreet-NUC` reportaba versiones viejas:
+
+```text
+global__anuncio applied: v1 ANUNCIO.png hash 12d784...
+global__outro applied: v1 outro.mp4 hash 2da07...
+club__WellStreet-*__logo_club applied: v1 wellstreet.png hash 3fe906...
+global__logo_puntazo: sin applied de WellStreet-NUC
+```
+
+Revalidacion NUC 2026-06-07:
+
+```text
+runner: main.py PID 18852
+asset_sync: activo, .assets_state.json actualizado 10:57:51
+remote: nombre: OK
+webm skip: no
+dedupe logo club: OK
+```
+
+Estado local confirmado:
+
+| Doc | Version | Target | Estado | Hash local |
+|---|---:|---|---|---|
+| `global__logo_puntazo` | 3 | `puntazo_anim.webm` | satisfied | `b1fbb67ff7e1b57d7c1ff2109f93efe292732443d36e26585a55071a60e80a62` |
+| `global__anuncio` | 4 | `ANUNCIO.webm` | satisfied | `6a8a535f608b1feb67e1e8d139ea797fc23384e88371441d75c37542b357e44e` |
+| `global__outro` | 3 | `outro.mp4` | satisfied | `09a91a730732f7efb9742cd6e01ec56c41ff1d606ff6ec61e77856c09f72a5ae` |
+| `club__WellStreet-Pickleball__logo_club` | 2 | `wellstreet.webm` | satisfied | `61895df3d5bb1f703322f5f8c22787dbacfb467b689167cf3b80b0bd4574047d` |
+| `club__WellStreet-Padel__logo_club` | 2 | `wellstreet.webm` | satisfied | `61895df3d5bb1f703322f5f8c22787dbacfb467b689167cf3b80b0bd4574047d` |
+
+Conclusion actual:
+
+- WellStreet esta sincronizado contra los docs actuales.
+- `wellstreet.png` queda como fallback local.
+- Hace falta solo pulso real si se quiere validar visualmente las versiones
+  actuales v3/v4/v2 en un clip nuevo.
+
+Pulso real L2:
+
+```text
+club: WellStreet-Pickleball
+court: Cancha1
+side: LadoA
+camera_key: 1
+channel_id: 101
+pulse_id: WS-L2-REAL-20260606-144419-8c4378
+job: 4ac0b3b2f62848bc
+status: DONE
+started/enqueued: 2026-06-06 14:44:35
+finished: 2026-06-06 14:52:24
+elapsed: ~7m49s
+duration: 70.2s
+size: 77,241,826 bytes
+```
+
+Output:
+
+```text
+exportados\WellStreet-Pickleball\Cancha1\LadoA\WellStreet-Pickleball_Cancha1_LadoA_06062026_144334.mp4
+nombre:/Puntazo/Locaciones/WellStreet-Pickleball/Cancha1/LadoA/WellStreet-Pickleball_Cancha1_LadoA_06062026_144334.mp4
+https://www.dropbox.com/scl/fi/tvn8m9z2ohxpprfnqqhdn/WellStreet-Pickleball_Cancha1_LadoA_06062026_144334.mp4?rlkey=9in6bp3l5lmwehdli0hs2g9jb&dl=0
+```
+
+Visual confirmado:
+
+- `puntazo_anim.webm` visible y animado con alpha correcto.
+- `wellstreet.png` visible arriba derecha.
+- `ANUNCIO.webm` visible como elemento animado.
+- `outro.mp4` visible al final.
+
+Post-pulso:
+
+- Firestore listener OK.
+- Heartbeat OK para `WellStreet-Pickleball`.
+- Heartbeat OK para `WellStreet-Padel`.
+- `pendingQueue=0`, `nvrConnected=True`.
+- `asset_sync` sigue satisfied para `ANUNCIO.webm`, `puntazo_anim.webm`,
+  `outro.mp4`, `wellstreet.png`.
 
 ## Como publicar cambios futuros
+
+Regla operativa:
+
+- Todo asset se publica desde la PC central con `tools/nuc_assets/push_asset.py`.
+- Las NUCs no publican assets; solo sincronizan.
+- Antes de activar un `.webm`, confirmar que esa NUC soporta ese
+  `target_filename` en FFmpeg.
 
 Ejemplo: nuevo anuncio global.
 
@@ -342,6 +463,78 @@ Ejemplo: logo de BreakPoint.
 ```powershell
 python tools\nuc_assets\push_asset.py --scope club --club BreakPoint --slot logo_club --file C:\assets\BreakPoint.png --target-filename BreakPoint.png
 ```
+
+Ejemplo: logo de BreakPoint animado.
+
+```powershell
+python tools\nuc_assets\push_asset.py --scope club --club BreakPoint --slot logo_club --file C:\assets\BreakPoint.webm --target-filename BreakPoint.webm --animated
+```
+
+Ejemplo: anuncio global animado.
+
+```powershell
+python tools\nuc_assets\push_asset.py --scope global --slot anuncio --file C:\assets\ANUNCIO.webm --target-filename ANUNCIO.webm --animated
+```
+
+## Assets animados staged
+
+Estos archivos ya estan en Dropbox como candidatos, pero no todos estan activos
+en Firestore:
+
+| Uso | Dropbox path | Hash | Size | Estado |
+|---|---|---|---:|---|
+| Logo Puntazo global | `/Puntazo/assets/global/v2__logo_puntazo.webm` | `sha256:5502b3fafecd67a9912c9bae003d55126e16e2e10c875dfb29c5dad481614964` | 2804086 | activo en `global__logo_puntazo` |
+| Anuncio global animado | `/Puntazo/assets/global/v3__anuncio.webm` | `sha256:49fbd7934afe681e6496c304fe03b550ac36ad93718e5839305a6eebafc13082` | 1052794 | activo en `global__anuncio` |
+| Logo BP animado | `/Puntazo/assets/clubs/BreakPoint/v2__logo_club.webm` | `sha256:f269b309de18a6379a473b67fabeaefd79a28dff82f8bb62e524c7d1da78ef2e` | 673070 | activo en `club__BreakPoint__logo_club` |
+
+## BreakPoint - plan inmediato para 3 animados
+
+Objetivo: dejar BP corriendo con:
+
+```text
+puntazo_anim.webm
+BreakPoint.webm
+ANUNCIO.webm
+```
+
+Orden:
+
+1. Activar QSV en BP:
+   - `USE_QSV_ENCODER = True` ya aplicado en runner BP
+   - restart controlado ya realizado
+   - pendiente pulso real de prueba
+2. Adaptar FFmpeg BP para:
+   - usar `BreakPoint.webm` si existe, fallback `BreakPoint.png` - listo
+   - usar `ANUNCIO.webm` si existe, fallback `ANUNCIO.png` - listo
+   - conservar soporte actual de `puntazo_anim.webm`
+3. Activar Firestore desde PC central:
+   - `club__BreakPoint__logo_club` -> version 2, `BreakPoint.webm` - listo
+   - `global__anuncio` -> version 3, `ANUNCIO.webm` - listo
+4. Esperar sync BP o correr sync manual.
+5. Pulso real de validacion.
+
+Estado BP 3 animados:
+
+- `global__logo_puntazo` v2 activo.
+- `club__BreakPoint__logo_club` v2 activo.
+- `global__anuncio` v3 activo.
+- BP ya tiene `BreakPoint.webm` y `ANUNCIO.webm` descargados manualmente con
+  hash correcto; al ver Firestore, `asset_sync` deberia quedar en noop.
+- Pendiente final: pulso real de prueba y commit de `script.py` con
+  `USE_QSV_ENCODER=True` + soporte de `BreakPoint.webm`/`ANUNCIO.webm`.
+
+Benchmarks BP:
+
+- 3 animados separados: aprox `25.5s` para clip `25.04s`.
+- Overlay pack no vale la pena: render casi igual y generar pack cuesta mucho.
+- QSV reduce pipeline completo logos+outro de `38.6s` a `23.4s` en bench.
+
+Decision:
+
+- Usar WebM VP9 alpha.
+- No usar ProRes en NUC.
+- No usar overlay pack por ahora.
+- Usar QSV con fallback a x264.
 
 ## Importante
 

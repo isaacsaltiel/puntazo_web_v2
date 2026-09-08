@@ -60,89 +60,79 @@ repository_dispatch:  0      ← la vía rápida NUNCA se usa
 
 **La rama rápida está implementada y funcional, esperando un evento que nadie manda.**
 
-### Por qué se rompió: quedó huérfana en la migración
+### Por qué nunca se dispara: una guarda que se muerde la cola
 
-El disparo por-video no lo mandaba la NUC. Lo mandaba **el propio workflow de quemado**, al
-terminar cada video:
+Mi primera explicación fue que el hook había quedado huérfano al migrar el quemado a la NUC
+(el disparo vivía dentro de `procesar_ffmpeg.yml`, con `POST_HOOK_PATH:
+scripts/dispatch_gestionar_indice.py`, y ese script ya ni existe en el repo).
 
-```yaml
-# procesar_ffmpeg.yml  (el que murió en febrero)
-POST_HOOK_PATH: scripts/dispatch_gestionar_indice.py
-POST_HOOK_ALWAYS: "false"
-PAT_GITHUB: ${{ secrets.PAT_GITHUB }}
+**El log de la NUC prueba que no es eso.** Ahí aparece:
+
+```
+GitHub dispatch omitido: workflow ya corre
 ```
 
-Ese hook hacía `POST /repos/{owner}/{repo}/dispatches` con
-`event_type: "gestionar_indice"` y `client_payload: {loc, can, lado, file, dest, status}`,
-sacando loc/can/lado del nombre del archivo (`Loc_Can_Lado_YYYYMMDD_HHMMSS.mp4`).
+O sea **la NUC sí tiene el dispatch cableado y sí lo intenta** — pero tiene una guarda que lo
+omite si ya hay un workflow corriendo. Y como el **barrido dura 12-13 min** y se dispara
+seguido, casi nunca hay una ventana libre.
 
-Cuando el quemado se movió a la NUC —que fue lo correcto, es mucho más rápido— **el hook se
-fue con el workflow que se dejó de usar.** El script `scripts/dispatch_gestionar_indice.py`
-ni siquiera existe ya en el repo (solo sobrevive en worktrees viejos de agentes).
-
-Resultado: no quedó nadie avisando "ya hay video nuevo, indexa este". Solo queda el barrido.
-
-**Síntoma que lo confirma:** 47 de las últimas 60 corridas son `workflow_dispatch` manual
-disparadas por Isaac en 4 días. Se está compensando a mano, cada vez pagando 12-13 minutos,
-un hook que se rompió en la migración.
+**Es un círculo vicioso: el barrido tarda tanto que bloquea justo el mecanismo que lo volvería
+innecesario.** Por eso el contador marca 0 de 60.
 
 ---
 
 ## El arreglo
 
-**Restaurar el disparo por-video, ahora desde la NUC.** Al terminar de publicar un clip, la
-NUC hace un `repository_dispatch`:
+### Opción A (la que propone la NUC, y es mejor) — sacar el CI del camino crítico
 
-```
-POST https://api.github.com/repos/isaacsaltiel/puntazo_web_v2/dispatches
-Authorization: Bearer <PAT>
-{
-  "event_type": "gestionar_indice",
-  "client_payload": { "loc": "...", "can": "...", "lado": "...",
-                      "file": "Loc_Can_Lado_YYYYMMDD_HHMMSS.mp4", "status": "ok" }
-}
-```
+`recording_daily` ya se escribe **directo a Firestore en el mismo segundo**. En vez de pelear
+por una ventana libre en Actions, **escribir también el metadato del clip por esa vía** y que
+la página lo lea de ahí. Eso saca a GitHub Actions del camino crítico **por completo**, en
+vez de hacerlo más rápido; el CI queda solo para el índice durable.
 
-La rama A ya existe en `gestion_indice.yml` y la consume tal cual — **cero cambios en el
-workflow**. El script viejo sirve de referencia exacta (está en
-`.claude/worktrees/agent-a911b8affc75f391c/dispatch_gestionar_indice.py`).
+Es trabajo del **lado web** (la página tendría que leer clips de Firestore además de
+`videos_index.json`), y ya hay precedente: `clip_states` y `pending_pulses.resolved_video` ya
+se leen así.
 
-Efecto: **de 12-13 min de barrido a segundos por video.** El barrido cada 8 h se queda como
-red de seguridad para lo que se haya escapado.
+### Opción B (parche, si A tarda) — quitar la guarda o hacer el barrido barato
 
-Cosas a cuidar:
-- El PAT que use la NUC necesita permiso de `repository_dispatch` en el repo.
-- Que el nombre del archivo respete el patrón `Loc_Can_Lado_fecha_hora.mp4`, o mandar
-  loc/can/lado explícitos en el payload.
-- Aplica a las 3 NUCs.
+El dispatch por-video ya funciona; lo único que le falta es poder ejecutarse. Dos vías:
+- Que la NUC **encole el dispatch** en vez de omitirlo cuando hay uno corriendo.
+- O que el `workflow_dispatch` mande **inputs loc/can/lado** para caer en la rama B (un
+  video, segundos) en vez de la C (barrido, 12-13 min). Hoy se dispara sin inputs.
 
----
+Cualquiera de las dos rompe el círculo. Pero A es la buena: mientras la publicación dependa
+de Actions, sigue habiendo cola, y la cola es lo que nos trajo aquí.
 
-## Lo que falta medir (ya sin adivinar el grueso)
+## ✅ Medido por la NUC de BP (8-sep): la traza real
 
-Con el índice arreglado, lo que quede es del lado NUC. Para saber si vale la pena tocarlo,
-instrumenta 5 clips reales con timestamp por etapa:
+**4 min 20 s del botón al archivo en Dropbox.**
 
-```
-t0  pulso recibido / job creado         → Δ(t0→t1) = cola
-t1  empieza extracción del NVR
-t2  termina extracción                  → Δ = costo del NVR   ← el piso sospechoso
-t3  termina corte + overlays            → Δ = encode real en la NUC
-t4  termina subida a la nube            → Δ = red
-t5  visible en la web                   → Δ = índice (esto es lo que arreglamos arriba)
-```
+| Etapa | Tiempo | Peso |
+|---|---|---|
+| Encolado + espera | 45 s | 17 % |
+| **Descarga del NVR** (1× tiempo real) | 65 s | 25 % |
+| **ffmpeg pase 1** — logos y amplify | 117 s | 45 % |
+| ffmpeg pase 2 + miniatura | 23 s | 9 % |
+| Subida a Dropbox | 10 s | **4 %** |
 
-**M1 — El NVR.** Muchos NVR sirven playback a 1×: bajar 30 s cuesta 30 s. Es el piso duro que
-ningún cambio de software arregla. Si resulta caro, la salida es **grabación continua
-segmentada** (rolling buffer): grabar en segmentos de ~2 s con `-c copy` y entonces "hacer un
-clip" = copiar segmentos, décimas de segundo, sin tocar el NVR. Cuesta disco (~9 GB/día por
-flujo a 850 kbps) y precisión de corte (±1 segmento). No lo construyas antes de medir M1.
+Confirma las dos sospechas de este doc: el NVR entrega a **1× tiempo real**, y hay **dos
+pases** de ffmpeg que juntos son el **54 %**. Y descarta una: **la subida nunca fue el
+problema** (4 %).
 
-**M2 — Pasadas de ffmpeg en la NUC.** ¿Cuántas invocaciones por clip? Si hay varias (cortar →
-logos → intro/outro → poster), cada una re-encodea el video completo; el streaming hace una
-sola con `filter_complex`. ¿Y usa `h264_qsv` o cayó a `libx264`?
+### Lo demás que propone la NUC
 
----
+- **Bajar el clip final a 1080p**: corta el encode casi a la mitad y de 52 MB a ~20 MB. Hoy
+  el crudo del NVR pesa 21 MB en HEVC y el procesado 52 MB en H.264 — **procesar lo hace 2.5×
+  más grande**, en 1440p, para algo que casi todo el mundo ve en el teléfono.
+- **Fusionar los dos pases** de ffmpeg: ahorra 23 s y una escritura completa a disco.
+- **Descarga acelerada del NVR: vía muerta probada.** La API de Hikvision
+  (`ISAPI/ContentMgmt/download`) no funciona en ese NVR — la búsqueda devuelve 0 coincidencias
+  aun pidiendo un día entero, mientras el RTSP de esa misma ventana sí responde. Queda la
+  opción de tirar del substream para clips: 16× menos datos, a costa de calidad.
+
+**Proyección de la NUC con los 3 primeros cambios:** 4m 20s → **~2m 20s** hasta el archivo
+subido, y de "variable" a **segundos** hasta que se ve en la web.
 
 ## Nota de método (para no repetirlo)
 
