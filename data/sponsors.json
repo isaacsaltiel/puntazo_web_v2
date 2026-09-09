@@ -1,0 +1,69 @@
+{
+  "_comentario": [
+    "Campañas de patrocinio de Puntazo. Este archivo es el RESPALDO estático y la",
+    "semilla: la fuente de verdad en vivo es la colección Firestore `sponsor_campaigns`,",
+    "que se edita desde admin.html sin desplegar código. Si Firestore no responde",
+    "(o el visitante tiene la red bloqueada), la web cae a este archivo y la página",
+    "sigue funcionando igual.",
+    "",
+    "Campos de una campaña:",
+    "  id        identificador único de la campaña (no del patrocinador)",
+    "  sponsorId marca; varias campañas pueden compartirlo",
+    "  activo    interruptor manual; false apaga aunque las fechas estén vigentes",
+    "  desde     AAAA-MM-DD o null = sin inicio",
+    "  hasta     AAAA-MM-DD INCLUSIVE o null = sin fin (se apaga sola al vencer)",
+    "  clubs     IDs de club donde se muestra; [] o null = todos",
+    "            válidos: BreakPoint · Interpadel · Scorpion · WellStreet-Padel · WellStreet-Pickleball",
+    "  slots     espacios donde puede salir: clip_page · feed_banner",
+    "  prioridad gana la más alta cuando varias compiten por el mismo espacio",
+    "  peso      reparto entre campañas de la MISMA prioridad (2 sale el doble que 1)",
+    "  creativo  el contenido; los colores viven aquí para no tocar CSS por patrocinador"
+  ],
+  "version": 1,
+  "actualizado": "2026-09-09",
+  "campanas": [
+    {
+      "id": "loka-2026-09",
+      "sponsorId": "loka",
+      "nombre": "Loka Healthy",
+      "activo": true,
+      "desde": "2026-09-09",
+      "hasta": null,
+      "prioridad": 10,
+      "peso": 1,
+      "clubs": ["BreakPoint", "Interpadel"],
+      "slots": ["clip_page", "feed_banner"],
+      "creativo": {
+        "kicker": "Snacks saludables",
+        "kickerCta": "Patrocinado por Loka Healthy",
+        "claim": "Sabor natural, energía real",
+        "logo": "/assets/img/sponsors/loka-coin.png",
+        "logo2x": "/assets/img/sponsors/loka-coin@2x.png",
+        "colores": {
+          "bg": "#16342b",
+          "bg2": "#1d4438",
+          "borde": "rgba(184,217,122,0.30)",
+          "acento": "#b8d97a",
+          "acentoTexto": "#16342b",
+          "texto": "#f7f2e7"
+        },
+        "acciones": [
+          {
+            "texto": "Pedir en lokahealthy.com",
+            "textoCorto": "Pedir",
+            "href": "https://lokahealthy.com",
+            "estilo": "primary",
+            "destino": "web"
+          },
+          {
+            "texto": "@lokahealthy",
+            "textoCorto": "@lokahealthy",
+            "href": "https://instagram.com/lokahealthy",
+            "estilo": "ghost",
+            "destino": "instagram"
+          }
+        ]
+      }
+    }
+  ]
+}

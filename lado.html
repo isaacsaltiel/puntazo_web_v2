@@ -85,6 +85,7 @@
 <link rel="stylesheet" href="/assets/fonts.css" />
 <link rel="stylesheet" href="assets/estilo.css" />
 <link rel="stylesheet" href="/assets/vitrina.css" />
+<link rel="stylesheet" href="/assets/sponsor.css" />
 
 <script src="/assets/lib/firebase-9.23.0/firebase-app-compat.js"></script>
 <script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
@@ -107,6 +108,7 @@
 <!-- F129: heartbeat-watcher para mostrar banner "cámaras fuera de línea"
      si nuc_heartbeat/{clubId} no se actualiza en >5 min. -->
 <script src="/assets/heartbeat-watcher.js"></script>
+<script src="/assets/sponsor.js"></script>
 
 <style>
 /* ═══════════════════════════════════════════════════
@@ -618,6 +620,45 @@ video.video-preview {
 </footer>
 
 <script src="assets/script.js?v=20260316"></script>
+
+<!-- ── Patrocinador: banner intercalado en el feed ──────────────
+     script.js pinta las tarjetas de forma asincrona y el filtro por
+     partido las oculta despues, asi que no hay un "ya termino" fiable:
+     se observa el contenedor y se re-inyecta con debounce. El guard
+     PuntazoSponsor.inyectando() evita que nuestras propias inserciones
+     vuelvan a disparar el observer. -->
+<script>
+(function () {
+  'use strict';
+  if (!window.PuntazoSponsor || !window.PuntazoSponsor.activo()) return;
+  var cont = document.getElementById('videos-container');
+  if (!cont) return;
+
+  var t = null;
+  function reinyectar() {
+    clearTimeout(t);
+    t = setTimeout(function () {
+      try {
+        window.PuntazoSponsor.inyectarEnFeed(cont, {
+          cada: 4,
+          selector: '.video-card',
+          // el club sale de ?loc= en la URL; el modulo lo lee solo
+        });
+      } catch (e) { console.warn('[pz-sponsor] feed', e); }
+    }, 260);
+  }
+
+  try {
+    new MutationObserver(function () {
+      if (window.PuntazoSponsor.inyectando()) return;
+      reinyectar();
+    }).observe(cont, { childList: true, attributes: true,
+                       attributeFilter: ['style'], subtree: true });
+  } catch (e) { console.warn('[pz-sponsor] observer', e); }
+
+  reinyectar();
+})();
+</script>
 
 <!-- ── Performance patches ── -->
 <script>

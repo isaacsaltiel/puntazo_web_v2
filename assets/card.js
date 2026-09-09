@@ -398,6 +398,10 @@ window.PuntazoCard = (function () {
       showSave:true, showShare:true, showFullscreen:true,
       showClubInfo:false, onUnsave:null,
       topLabel:null, shareMessage:null,
+      // Patrocinador bajo el video. Opt-in a propósito: en una lista larga
+      // (guardados, perfil) repetirlo por tarjeta sería spam. Se enciende
+      // donde hay UN clip y atención completa, p.ej. clip.html.
+      showSponsor:false, sponsorSlot:'card_cta',
     }, opts||{});
 
     if (!entry._meta && entry.nombre) entry._meta = parseFromName(entry.nombre);
@@ -476,6 +480,19 @@ window.PuntazoCard = (function () {
     if (opts.showSave)  pillsEl.appendChild(buildSavePill(entry, { onUnsave: opts.onUnsave }));
     if (opts.showFullscreen) pillsEl.appendChild(buildFullscreenPill(video));
     card.appendChild(pillsEl);
+
+    // 4. Patrocinador (opcional). El outro del video dice "Pídelos en el link
+    // de abajo": este bloque es ese link, y por eso va pegado al video.
+    // Se cuelga un hueco vacío que se llena solo cuando llegan las campañas;
+    // así el anuncio nunca retrasa ni rompe el clip.
+    if (opts.showSponsor && window.PuntazoSponsor) {
+      try {
+        // El club se toma del ID del archivo (entry._meta.loc), no del nombre
+        // para mostrar: la segmentación de campañas usa IDs.
+        const club = (entry._meta && entry._meta.loc) || entry.loc || null;
+        card.appendChild(window.PuntazoSponsor.crearHueco(opts.sponsorSlot, { club }));
+      } catch (e) { console.warn('[PuntazoCard sponsor]', e); }
+    }
 
     return card;
   }
