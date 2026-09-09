@@ -710,6 +710,40 @@ service cloud.firestore {
 
 
     // ════════════════════════════════════════════════════
+    // sponsor_campaigns — campañas de patrocinio (INGRESO)
+    // ════════════════════════════════════════════════════
+    // Lectura PÚBLICA: las páginas de clip y de cancha no piden sesión, y el
+    // contenido de un anuncio es público por definición.
+    // Escritura solo admin: cambiar quién patrocina qué club es una decisión
+    // comercial. `flags.isAdmin` es SERVER-ONLY (lo setea el SA, ver users/{uid}).
+    match /sponsor_campaigns/{campaignId} {
+      function isAdminUser() {
+        return signedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid))
+               .data.get('flags', {}).get('isAdmin', false) == true;
+      }
+      function campos() {
+        return ['sponsorId','nombre','activo','desde','hasta','prioridad','peso',
+                'clubs','slots','creativo','updated_at','updated_by','notas'];
+      }
+      // Una campaña sin estos tres campos no se puede ni mostrar ni facturar.
+      function formaValida() {
+        return request.resource.data.keys().hasOnly(campos())
+            && request.resource.data.sponsorId is string
+            && request.resource.data.activo is bool
+            && request.resource.data.creativo is map;
+      }
+
+      allow read:   if true;
+      allow create: if isAdminUser() && formaValida();
+      allow update: if isAdminUser() && formaValida();
+      // Nunca borrar: una campaña vencida es el respaldo de lo que se cobró.
+      // Para retirarla se pone activo=false o se le cierra `hasta`.
+      allow delete: if false;
+    }
+
+    // ════════════════════════════════════════════════════
     // Catch-all denegado
     // ════════════════════════════════════════════════════
     match /{document=**} {

@@ -1,0 +1,133 @@
+/* =============================================================
+   sponsor.css — Puntazo · Espacios de patrocinio
+   -------------------------------------------------------------
+   Aquí NO vive ningún color de ningún patrocinador. Los tokens
+   --pz-sp-* traen valores neutros de respaldo y cada campaña los
+   sobreescribe en línea desde su `creativo.colores` (lo hace
+   sponsor.js). Vender un patrocinio nuevo no toca este archivo.
+
+   Regla de diseño: el bloque es del patrocinador pero vive en una
+   página oscura de Puntazo, y el clip es el producto. Por eso el
+   fondo es oscuro y saturado, no claro: un bloque claro gritaría
+   más que el propio video.
+   ============================================================= */
+:root {
+  --pz-sp-bg:            #1a2030;
+  --pz-sp-bg2:           #232a3d;
+  --pz-sp-borde:         rgba(255,255,255,0.20);
+  --pz-sp-acento:        #7fb2ff;
+  --pz-sp-acento-texto:  #0b1020;
+  --pz-sp-texto:         #f2f5fb;
+}
+
+/* El hueco existe desde el primer pintado y se llena cuando llegan las
+   campañas. Sin alto propio: si no hay anuncio no deja un agujero. */
+.pz-sponsor-hueco:empty { display: none; }
+
+/* ── Tipografía ─────────────────────────────────────────────── */
+.pz-sponsor-kicker {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--pz-sp-acento);
+  line-height: 1.3;
+}
+.pz-sponsor-claim {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--pz-sp-texto);
+  line-height: 1.25;
+  margin-top: 2px;
+}
+
+.pz-sponsor-coin {
+  width: 48px; height: 48px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: block;
+}
+.pz-sponsor-coin.is-big { width: 62px; height: 62px; }
+
+/* ── Botones ────────────────────────────────────────────────── */
+.pz-sponsor-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+.pz-sponsor-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  line-height: 1;
+  white-space: nowrap;
+  transition: transform .12s ease, filter .12s ease, background .12s ease;
+}
+.pz-sponsor-btn.is-primary {
+  background: var(--pz-sp-acento);
+  color: var(--pz-sp-acento-texto);
+}
+.pz-sponsor-btn.is-ghost {
+  background: transparent;
+  color: var(--pz-sp-texto);
+  border: 1.5px solid var(--pz-sp-borde);
+}
+.pz-sponsor-btn:hover  { transform: translateY(-1px); filter: brightness(1.06); }
+.pz-sponsor-btn:active { transform: translateY(0); }
+.pz-sponsor-btn.is-ghost:hover { background: rgba(255,255,255,0.08); }
+.pz-sponsor-btn:focus-visible {
+  outline: 2px solid var(--pz-sp-acento);
+  outline-offset: 3px;
+}
+
+/* ── CTA bajo el video (slot clip_page) ─────────────────────── */
+.pz-sponsor-cta {
+  margin: 10px 0 2px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--pz-sp-bg2), var(--pz-sp-bg));
+  border: 1px solid var(--pz-sp-borde);
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.pz-sponsor-cta-head { display: flex; align-items: center; gap: 11px; }
+.pz-sponsor-cta-txt  { min-width: 0; }
+.pz-sponsor-cta .pz-sponsor-btn { flex: 1 1 auto; }
+
+/* ── Banner ancho (slot feed_banner) ────────────────────────── */
+.pz-sponsor-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  margin: 4px 0;
+  border-radius: 16px;
+  background: linear-gradient(120deg, var(--pz-sp-bg2), var(--pz-sp-bg) 65%);
+  border: 1px solid var(--pz-sp-borde);
+}
+.pz-sponsor-banner-txt { flex: 1 1 auto; min-width: 0; }
+.pz-sponsor-banner .pz-sponsor-claim { font-size: 16px; }
+.pz-sponsor-banner .pz-sponsor-acciones { flex: 0 0 auto; }
+
+/* En un grid de tarjetas ocupa el ancho completo. */
+.video-grid > .pz-sponsor-banner { grid-column: 1 / -1; }
+
+/* ── Móvil ──────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .pz-sponsor-banner { flex-wrap: wrap; gap: 11px; }
+  .pz-sponsor-banner-txt { flex: 1 1 140px; }
+  .pz-sponsor-banner .pz-sponsor-acciones { flex: 1 1 100%; }
+  .pz-sponsor-banner .pz-sponsor-btn { flex: 1 1 auto; }
+  .pz-sponsor-claim { font-size: 14px; }
+  .pz-sponsor-banner .pz-sponsor-claim { font-size: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pz-sponsor-btn { transition: none; }
+  .pz-sponsor-btn:hover { transform: none; }
+}

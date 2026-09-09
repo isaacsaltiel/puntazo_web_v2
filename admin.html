@@ -243,6 +243,35 @@ tr:hover td{background:rgba(255,255,255,.025);}
   th,td{padding:7px 8px;}
   .cfg-field-row{gap:6px;}
 }
+
+/* ── Patrocinios ─────────────────────────────────────────── */
+.sp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 10px;flex-wrap:wrap;}
+.sp-head h3{margin:0;font-size:.95rem;}
+.sp-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 16px;margin-bottom:10px;}
+.sp-card-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+.sp-name{font-size:.95rem;}
+.sp-id{font-size:.7rem;color:var(--muted);background:rgba(255,255,255,.05);padding:2px 7px;border-radius:5px;margin-left:6px;}
+.sp-acts{display:flex;gap:6px;flex-wrap:wrap;}
+.sp-pill{display:inline-block;font-size:.65rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;margin-right:8px;}
+.sp-pill.sp-live{background:rgba(60,220,130,.16);color:#5ee79b;border:1px solid rgba(60,220,130,.4);}
+.sp-pill.sp-wait{background:rgba(120,170,255,.14);color:#8fb8ff;border:1px solid rgba(120,170,255,.35);}
+.sp-pill.sp-dead{background:rgba(255,120,120,.13);color:#ff9d9d;border:1px solid rgba(255,120,120,.32);}
+.sp-pill.sp-off{background:rgba(255,255,255,.07);color:var(--muted);border:1px solid rgba(255,255,255,.14);}
+.sp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 18px;font-size:.8rem;color:rgba(234,242,255,.8);}
+.sp-grid span{display:block;font-size:.66rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:2px;}
+.sp-form{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:18px;margin-top:16px;}
+.sp-form h3{margin:0 0 14px;font-size:.95rem;}
+.sp-form label{display:block;font-size:.72rem;color:var(--muted);margin-bottom:10px;}
+.sp-form label small{opacity:.7;text-transform:none;letter-spacing:0;}
+.sp-form input{display:block;width:100%;margin-top:4px;padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.28);color:var(--text);font-size:.82rem;font-family:inherit;}
+.sp-form input:disabled{opacity:.5;}
+.sp-form fieldset{border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px;margin:0 0 14px;}
+.sp-form legend{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:0 6px;}
+.sp-f2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 14px;}
+.sp-f3{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0 12px;}
+.sp-chk{display:inline-flex;align-items:center;gap:6px;margin:0 14px 8px 0;font-size:.78rem;color:rgba(234,242,255,.85);}
+.sp-chk input{width:auto;display:inline-block;margin:0;}
+.sp-form-acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 </style>
 </head>
 <body>
@@ -329,6 +358,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
     <button class="tab-btn" data-tab="users">👤 Usuarios</button>
     <button class="tab-btn" data-tab="recent">🕐 Reciente</button>
     <button class="tab-btn" data-tab="stream">📡 Streaming</button>
+    <button class="tab-btn" data-tab="sponsors">📣 Patrocinios</button>
     <button class="tab-btn" data-tab="config">⚙️ Configuración</button>
   </div>
 
@@ -340,6 +370,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
   <div id="tab-users"     class="tab-pane"></div>
   <div id="tab-recent"    class="tab-pane"></div>
   <div id="tab-stream"    class="tab-pane"></div>
+  <div id="tab-sponsors" class="tab-pane"></div>
   <div id="tab-config"    class="tab-pane"></div>
 
 </div>
@@ -454,6 +485,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
     if(btn.dataset.tab==='config') renderConfigTab();
     if(btn.dataset.tab==='stream') startStreamTab(); else stopStreamWatch();
+    if(btn.dataset.tab==='sponsors') startSponsorTab(); else stopSponsorWatch();
   });
 });
 
@@ -1601,6 +1633,243 @@ function videoLabel(d){
   const t=m?`${parseInt(m[1])%12||12}:${m[2]} ${parseInt(m[1])>=12?'PM':'AM'}`:'';
   return`${t?`<strong>${esc(t)}</strong>`:''} ${d.club?`· ${esc(d.club)}`:''} ${d.cancha?`· ${esc(d.cancha)}`:''}`;
 }
+
+// ════════════════════════════════════════════════════════════
+//  PATROCINIOS — campañas que se venden y se cobran
+//  Fuente de verdad: Firestore `sponsor_campaigns`.
+//  data/sponsors.json es solo el respaldo si Firestore no responde.
+// ════════════════════════════════════════════════════════════
+const SPONSOR_COL = 'sponsor_campaigns';
+const SPONSOR_SLOTS = [
+  { id:'clip_page',   nombre:'Bajo el video (página de clip)' },
+  { id:'feed_banner', nombre:'Banner en el feed de cancha' },
+];
+let _spUnsub=null, _spDocs={}, _spEditando=null, _spClubs=null;
+
+function stopSponsorWatch(){ if(_spUnsub){ try{_spUnsub();}catch(e){} _spUnsub=null; } }
+
+async function sponsorClubs(){
+  if(_spClubs) return _spClubs;
+  const r=await fetch('data/config_locations.json?cb='+Date.now(),{cache:'no-store'});
+  const j=await r.json();
+  _spClubs=(j.locaciones||[]).map(l=>({id:l.id,nombre:l.nombre||l.id}));
+  return _spClubs;
+}
+
+function spFecha(v,fin){
+  if(v==null||v==='') return null;
+  if(v&&typeof v.toDate==='function') return v.toDate().getTime();
+  const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return null;
+  return fin ? new Date(+m[1],+m[2]-1,+m[3],23,59,59,999).getTime()
+             : new Date(+m[1],+m[2]-1,+m[3],0,0,0,0).getTime();
+}
+
+// Estado real de una campaña hoy: es lo que importa para cobrar.
+function sponsorEstado(c){
+  const hoy=Date.now();
+  if(c.activo===false) return {txt:'Apagada', cls:'sp-off'};
+  const d=spFecha(c.desde,false), h=spFecha(c.hasta,true);
+  if(d!==null&&hoy<d)  return {txt:'Programada', cls:'sp-wait'};
+  if(h!==null&&hoy>h)  return {txt:'Vencida', cls:'sp-dead'};
+  return {txt:'Al aire', cls:'sp-live'};
+}
+
+function fechaTxt(v){
+  if(v==null||v==='') return '';
+  if(v&&typeof v.toDate==='function') return v.toDate().toISOString().slice(0,10);
+  return String(v);
+}
+
+function startSponsorTab(){
+  const $pane=document.getElementById('tab-sponsors');
+  if(!$pane) return;
+  $pane.innerHTML='<div class="empty-note">⏳ Cargando campañas…</div>';
+  stopSponsorWatch();
+  waitFB(20).then(ok=>{
+    if(!ok){ $pane.innerHTML='<div class="info-box">⚠️ Firebase no cargó.</div>'; return; }
+    const db=window.PuntazoFirebase.db();
+    _spUnsub=db.collection(SPONSOR_COL).onSnapshot(snap=>{
+      _spDocs={}; snap.forEach(d=>_spDocs[d.id]=d.data()||{});
+      renderSponsorTab();
+    },err=>{
+      console.error('[sponsors]',err);
+      $pane.innerHTML='<div class="info-box">⚠️ Error leyendo '+SPONSOR_COL+': '+esc(err.message)+
+        '.<br>¿Reglas desplegadas y <code>flags.isAdmin</code> activo en tu cuenta?</div>';
+    });
+  });
+}
+
+async function renderSponsorTab(){
+  const $pane=document.getElementById('tab-sponsors');
+  if(!$pane) return;
+  const clubs=await sponsorClubs();
+  const ids=Object.keys(_spDocs).sort();
+
+  const filas=ids.map(id=>{
+    const c=_spDocs[id], st=sponsorEstado(c);
+    const cl=(c.clubs&&c.clubs.length)
+      ? c.clubs.map(x=>{const f=clubs.find(k=>k.id===x); return esc(f?f.nombre:x);}).join(' · ')
+      : '<i>todos los clubes</i>';
+    const sl=(c.slots&&c.slots.length)
+      ? c.slots.map(s=>{const f=SPONSOR_SLOTS.find(k=>k.id===s); return esc(f?f.nombre:s);}).join(' · ')
+      : '<i>todos los espacios</i>';
+    const desde=fechaTxt(c.desde)||'—', hasta=fechaTxt(c.hasta)||'sin fin';
+    return '<div class="sp-card">'+
+      '<div class="sp-card-top"><div>'+
+        '<span class="sp-pill '+st.cls+'">'+st.txt+'</span> '+
+        '<strong class="sp-name">'+esc(c.nombre||c.sponsorId||id)+'</strong> '+
+        '<code class="sp-id">'+esc(id)+'</code>'+
+      '</div><div class="sp-acts">'+
+        '<button class="btn-mini" onclick="sponsorToggle(\''+esc(id)+'\')">'+(c.activo===false?'▶ Activar':'⏸ Pausar')+'</button> '+
+        '<button class="btn-mini" onclick="sponsorEditar(\''+esc(id)+'\')">✏️ Editar</button>'+
+      '</div></div>'+
+      '<div class="sp-grid">'+
+        '<div><span>Clubes</span>'+cl+'</div>'+
+        '<div><span>Espacios</span>'+sl+'</div>'+
+        '<div><span>Vigencia</span>'+esc(desde)+' → '+esc(hasta)+'</div>'+
+        '<div><span>Prioridad / peso</span>'+(Number(c.prioridad)||0)+' / '+(Number(c.peso)||1)+'</div>'+
+      '</div></div>';
+  }).join('');
+
+  $pane.innerHTML=
+    '<div class="info-box">Las campañas se leen en vivo desde Firestore: lo que cambies aquí se ve '+
+    'en el sitio sin desplegar nada. Una campaña se apaga sola el día después de su fecha <b>hasta</b>. '+
+    'Las impresiones y clics llegan a GA4 como <code>sponsor_impression</code> y <code>sponsor_click</code>.</div>'+
+    '<div class="sp-head"><h3>Campañas ('+ids.length+')</h3>'+
+    '<button class="btn" onclick="sponsorEditar(null)">➕ Nueva campaña</button></div>'+
+    (filas||'<div class="empty-note">Todavía no hay campañas.</div>')+
+    '<div id="sp-form"></div>';
+}
+
+async function sponsorToggle(id){
+  const c=_spDocs[id]; if(!c) return;
+  const nuevo=(c.activo===false);
+  const msg=nuevo ? '¿Activar "'+(c.nombre||id)+'"?'
+                  : '¿Pausar "'+(c.nombre||id)+'"? Deja de mostrarse de inmediato.';
+  if(!confirm(msg)) return;
+  try{
+    const db=window.PuntazoFirebase.db();
+    await db.collection(SPONSOR_COL).doc(id).set({
+      activo:nuevo,
+      updated_at:firebase.firestore.FieldValue.serverTimestamp(),
+      updated_by:((window.PuntazoAuth&&window.PuntazoAuth.currentUser&&window.PuntazoAuth.currentUser.email)||'admin'),
+    },{merge:true});
+  }catch(e){ alert('No se pudo guardar: '+e.message); }
+}
+
+async function sponsorEditar(id){
+  const clubs=await sponsorClubs();
+  const base={
+    sponsorId:'', nombre:'', activo:true, desde:'', hasta:'', prioridad:10, peso:1,
+    clubs:[], slots:['clip_page','feed_banner'],
+    creativo:{ kicker:'', kickerCta:'', claim:'', logo:'', logo2x:'',
+      colores:{bg:'#16342b',bg2:'#1d4438',borde:'rgba(255,255,255,0.25)',
+               acento:'#b8d97a',acentoTexto:'#16342b',texto:'#f7f2e7'},
+      acciones:[{texto:'',textoCorto:'',href:'',estilo:'primary',destino:'web'},
+                {texto:'',textoCorto:'',href:'',estilo:'ghost',destino:'instagram'}] }
+  };
+  const c = id ? Object.assign({},base,_spDocs[id]||{}) : base;
+  _spEditando=id;
+  const cr=c.creativo||base.creativo, co=cr.colores||{}, ac=cr.acciones||[];
+  const a0=ac[0]||{}, a1=ac[1]||{};
+  const chk=(arr,v)=>(Array.isArray(arr)&&arr.indexOf(v)!==-1)?'checked':'';
+  const inp=(id2,val,ph,tipo)=>'<input id="'+id2+'" type="'+(tipo||'text')+'" value="'+esc(val||'')+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'>';
+
+  document.getElementById('sp-form').innerHTML=
+  '<div class="sp-form"><h3>'+(id?'Editar campaña':'Nueva campaña')+'</h3>'+
+  '<div class="sp-f2">'+
+    '<label>ID de campaña<input id="sfId" value="'+esc(id||'')+'" '+(id?'disabled':'')+' placeholder="loka-2026-10"></label>'+
+    '<label>Marca (sponsorId)'+inp('sfSponsor',c.sponsorId,'loka')+'</label>'+
+  '</div>'+
+  '<label>Nombre visible'+inp('sfNombre',c.nombre,'Loka Healthy')+'</label>'+
+  '<div class="sp-f2">'+
+    '<label>Desde'+inp('sfDesde',fechaTxt(c.desde),'','date')+'</label>'+
+    '<label>Hasta <small>(inclusive; vacío = sin fin)</small>'+inp('sfHasta',fechaTxt(c.hasta),'','date')+'</label>'+
+  '</div>'+
+  '<div class="sp-f2">'+
+    '<label>Prioridad <small>(gana la más alta)</small>'+inp('sfPrio',Number(c.prioridad)||0,'','number')+'</label>'+
+    '<label>Peso <small>(reparto a igual prioridad)</small>'+inp('sfPeso',Number(c.peso)||1,'','number')+'</label>'+
+  '</div>'+
+  '<fieldset><legend>Clubes <small>(ninguno marcado = todos)</small></legend>'+
+    clubs.map(k=>'<label class="sp-chk"><input type="checkbox" class="sfClub" value="'+esc(k.id)+'" '+chk(c.clubs,k.id)+'> '+esc(k.nombre)+'</label>').join('')+
+  '</fieldset>'+
+  '<fieldset><legend>Espacios</legend>'+
+    SPONSOR_SLOTS.map(s=>'<label class="sp-chk"><input type="checkbox" class="sfSlot" value="'+esc(s.id)+'" '+chk(c.slots,s.id)+'> '+esc(s.nombre)+'</label>').join('')+
+  '</fieldset>'+
+  '<fieldset><legend>Creativo</legend>'+
+    '<div class="sp-f2">'+
+      '<label>Etiqueta (feed)'+inp('sfKicker',cr.kicker,'Snacks saludables')+'</label>'+
+      '<label>Etiqueta (bajo el video)'+inp('sfKickerCta',cr.kickerCta,'Patrocinado por Loka Healthy')+'</label>'+
+    '</div>'+
+    '<label>Frase'+inp('sfClaim',cr.claim,'Sabor natural, energía real')+'</label>'+
+    '<div class="sp-f2">'+
+      '<label>Logo'+inp('sfLogo',cr.logo,'/assets/img/sponsors/loka-coin.png')+'</label>'+
+      '<label>Logo @2x'+inp('sfLogo2',cr.logo2x)+'</label>'+
+    '</div>'+
+    '<div class="sp-f3">'+
+      '<label>Fondo'+inp('sfCbg',co.bg)+'</label>'+
+      '<label>Fondo 2'+inp('sfCbg2',co.bg2)+'</label>'+
+      '<label>Borde'+inp('sfCborde',co.borde)+'</label>'+
+      '<label>Acento'+inp('sfCacento',co.acento)+'</label>'+
+      '<label>Texto s/ acento'+inp('sfCacentoTxt',co.acentoTexto)+'</label>'+
+      '<label>Texto'+inp('sfCtexto',co.texto)+'</label>'+
+    '</div>'+
+    '<div class="sp-f3">'+
+      '<label>Botón 1 · texto'+inp('sfA0t',a0.texto)+'</label>'+
+      '<label>Botón 1 · corto'+inp('sfA0c',a0.textoCorto)+'</label>'+
+      '<label>Botón 1 · enlace'+inp('sfA0h',a0.href)+'</label>'+
+    '</div>'+
+    '<div class="sp-f3">'+
+      '<label>Botón 2 · texto'+inp('sfA1t',a1.texto)+'</label>'+
+      '<label>Botón 2 · corto'+inp('sfA1c',a1.textoCorto)+'</label>'+
+      '<label>Botón 2 · enlace'+inp('sfA1h',a1.href)+'</label>'+
+    '</div>'+
+  '</fieldset>'+
+  '<div class="sp-form-acts">'+
+    '<button class="btn" onclick="sponsorGuardar()">💾 Guardar</button> '+
+    '<button class="btn-mini" onclick="document.getElementById(\'sp-form\').innerHTML=\'\'">Cancelar</button>'+
+  '</div></div>';
+  document.getElementById('sp-form').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function sponsorGuardar(){
+  const v=x=>{const e=document.getElementById(x);return e?String(e.value||'').trim():'';};
+  const marcados=cls=>Array.prototype.slice.call(document.querySelectorAll('.'+cls)).filter(e=>e.checked).map(e=>e.value);
+  const docId=_spEditando || v('sfId');
+  if(!docId){ alert('Falta el ID de campaña.'); return; }
+  if(!v('sfSponsor')){ alert('Falta la marca (sponsorId).'); return; }
+
+  const acciones=[];
+  if(v('sfA0h')) acciones.push({texto:v('sfA0t')||v('sfA0h'),textoCorto:v('sfA0c')||v('sfA0t')||v('sfA0h'),href:v('sfA0h'),estilo:'primary',destino:'web'});
+  if(v('sfA1h')) acciones.push({texto:v('sfA1t')||v('sfA1h'),textoCorto:v('sfA1c')||v('sfA1t')||v('sfA1h'),href:v('sfA1h'),estilo:'ghost',destino:'instagram'});
+  if(!acciones.length){ alert('Pon al menos un botón con enlace: sin enlace el anuncio no sirve de nada.'); return; }
+
+  const data={
+    sponsorId:v('sfSponsor'), nombre:v('sfNombre')||v('sfSponsor'),
+    activo: _spEditando && _spDocs[_spEditando] ? (_spDocs[_spEditando].activo!==false) : true,
+    desde:v('sfDesde')||null, hasta:v('sfHasta')||null,
+    prioridad:Number(v('sfPrio'))||0, peso:Math.max(1,Number(v('sfPeso'))||1),
+    clubs:marcados('sfClub'), slots:marcados('sfSlot'),
+    creativo:{
+      kicker:v('sfKicker'), kickerCta:v('sfKickerCta'), claim:v('sfClaim'),
+      logo:v('sfLogo'), logo2x:v('sfLogo2'),
+      colores:{bg:v('sfCbg'),bg2:v('sfCbg2'),borde:v('sfCborde'),
+               acento:v('sfCacento'),acentoTexto:v('sfCacentoTxt'),texto:v('sfCtexto')},
+      acciones:acciones,
+    },
+    updated_at:firebase.firestore.FieldValue.serverTimestamp(),
+    updated_by:((window.PuntazoAuth&&window.PuntazoAuth.currentUser&&window.PuntazoAuth.currentUser.email)||'admin'),
+  };
+
+  try{
+    const db=window.PuntazoFirebase.db();
+    await db.collection(SPONSOR_COL).doc(docId).set(data,{merge:true});
+    document.getElementById('sp-form').innerHTML='';
+    _spEditando=null;
+  }catch(e){ alert('No se pudo guardar: '+e.message); }
+}
+
 </script>
 
 </body>

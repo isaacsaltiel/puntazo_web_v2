@@ -81,12 +81,14 @@
 <link rel="stylesheet" href="/assets/fonts.css" />
 <link rel="stylesheet" href="assets/estilo.css" />
 <link rel="stylesheet" href="/assets/card.css" />
+<link rel="stylesheet" href="/assets/sponsor.css" />
 
 <script src="/assets/lib/firebase-9.23.0/firebase-app-compat.js"></script>
 <script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/util.js"></script>
 <script src="/assets/card.js"></script>
+<script src="/assets/sponsor.js"></script>
 <script src="/assets/pulses.js"></script>
 
 <style>
@@ -258,6 +260,10 @@
   const card = PuntazoCard.build(entry, {
     showSave:true, showShare:true, showFullscreen:true,
     topLabel: entry.club || PuntazoCard.formatDisplayTime(entry.nombre),
+    // Esta es la pagina de un clip compartido: un solo video, atencion
+    // completa, y suele abrirse desde WhatsApp por gente que no usa Puntazo.
+    // Es el mejor lugar del sitio para el patrocinador.
+    showSponsor:true, sponsorSlot:'clip_page',
   });
 
   $loading.style.display = 'none';
