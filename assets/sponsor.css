@@ -131,3 +131,83 @@
   .pz-sponsor-btn { transition: none; }
   .pz-sponsor-btn:hover { transform: none; }
 }
+
+/* ── Pastilla junto a los botones de cada clip (slot card_inline) ──
+   Moneda + acción principal + el resto como íconos. Mide 38px de alto,
+   lo mismo que los botones redondos del clip, para que la fila se lea
+   como una sola pieza. Los colores vienen de la campaña, como en todo
+   este archivo. */
+.pz-sponsor-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-sizing: border-box;
+  height: 38px;
+  padding: 3px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--pz-sp-bg2), var(--pz-sp-bg));
+  border: 1px solid var(--pz-sp-borde);
+  max-width: 100%;
+}
+.pz-sponsor-chip-coin {
+  width: 30px; height: 30px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: block;
+}
+.pz-sponsor-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 13px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--pz-sp-texto);
+  border: 1px solid var(--pz-sp-borde);
+  transition: filter .12s ease, transform .12s ease;
+}
+.pz-sponsor-chip-btn.is-primary {
+  background: var(--pz-sp-acento);
+  color: var(--pz-sp-acento-texto);
+  border-color: transparent;
+}
+.pz-sponsor-chip-ico {
+  --pz-ico: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px; height: 30px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: var(--pz-sp-texto);
+  border: 1px solid var(--pz-sp-borde);
+  text-decoration: none;
+  transition: background .12s ease;
+}
+.pz-sponsor-chip-ico::before {
+  content: "";
+  width: 16px; height: 16px;
+  background: currentColor;
+  -webkit-mask: var(--pz-ico) center/contain no-repeat;
+          mask: var(--pz-ico) center/contain no-repeat;
+}
+.pz-sponsor-chip-ico[data-destino="instagram"] { --pz-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='3.5' width='17' height='17' rx='5'/%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Ccircle cx='17.2' cy='6.8' r='1.1' fill='%23000' stroke='none'/%3E%3C/svg%3E"); }
+.pz-sponsor-chip-ico[data-destino="web"]       { --pz-ico: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c2.6 2.8 2.6 15.2 0 18M12 3c-2.6 2.8-2.6 15.2 0 18'/%3E%3C/svg%3E"); }
+@media (hover: hover) {
+  .pz-sponsor-chip-btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
+  .pz-sponsor-chip-ico:hover { background: rgba(255,255,255,0.10); }
+}
+.pz-sponsor-chip-btn:focus-visible,
+.pz-sponsor-chip-ico:focus-visible {
+  outline: 2px solid var(--pz-sp-acento);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pz-sponsor-chip-btn, .pz-sponsor-chip-ico { transition: none; }
+  .pz-sponsor-chip-btn:hover { transform: none; }
+}

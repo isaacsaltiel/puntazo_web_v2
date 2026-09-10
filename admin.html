@@ -1643,6 +1643,7 @@ const SPONSOR_COL = 'sponsor_campaigns';
 const SPONSOR_SLOTS = [
   { id:'clip_page',   nombre:'Bajo el video (página de clip)' },
   { id:'feed_banner', nombre:'Banner en el feed de cancha' },
+  { id:'card_inline', nombre:'Junto a los botones de cada clip (lado)' },
 ];
 let _spUnsub=null, _spDocs={}, _spEditando=null, _spClubs=null;
 
@@ -1762,7 +1763,7 @@ async function sponsorEditar(id){
   const clubs=await sponsorClubs();
   const base={
     sponsorId:'', nombre:'', activo:true, desde:'', hasta:'', prioridad:10, peso:1,
-    clubs:[], slots:['clip_page','feed_banner'],
+    clubs:[], slots:['clip_page','feed_banner','card_inline'],
     creativo:{ kicker:'', kickerCta:'', claim:'', logo:'', logo2x:'',
       colores:{bg:'#16342b',bg2:'#1d4438',borde:'rgba(255,255,255,0.25)',
                acento:'#b8d97a',acentoTexto:'#16342b',texto:'#f7f2e7'},

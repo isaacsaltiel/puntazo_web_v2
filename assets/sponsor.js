@@ -28,7 +28,10 @@
 
   var RUTA_JSON = "/data/sponsors.json";
   var COLECCION = "sponsor_campaigns";
-  var SLOTS = { CLIP: "clip_page", FEED: "feed_banner" };
+  // clip_page   bloque grande bajo el video, en la pagina de un clip
+  // feed_banner banner ancho intercalado en el feed de cancha (lado.html)
+  // card_inline pastilla compacta junto a los botones de CADA clip de lado
+  var SLOTS = { CLIP: "clip_page", FEED: "feed_banner", INLINE: "card_inline" };
 
   // ═══════════════════════════════════════════════════════════
   // LÓGICA PURA — sin DOM, sin red. Todo esto se testea en node.
@@ -336,16 +339,107 @@
     return img;
   }
 
-  function accionEl(accion, campana, slot, corto) {
-    var a = el("a", "pz-sponsor-btn is-" + (accion.estilo === "ghost" ? "ghost" : "primary"));
+  function enlaceBase(accion, campana, slot, clase) {
+    var a = el("a", clase);
     a.href = accion.href;
     a.target = "_blank";
     a.rel = "noopener noreferrer sponsored";     // lo correcto para un enlace pagado
-    a.textContent = (corto && accion.textoCorto) ? accion.textoCorto : accion.texto;
     a.addEventListener("click", function () {
       track("sponsor_click", campana, slot, accion.destino || "web");
     });
     return a;
+  }
+
+  function accionEl(accion, campana, slot, corto) {
+    var a = enlaceBase(accion, campana, slot,
+      "pz-sponsor-btn is-" + (accion.estilo === "ghost" ? "ghost" : "primary"));
+    a.textContent = (corto && accion.textoCorto) ? accion.textoCorto : accion.texto;
+    return a;
+  }
+
+  // Destinos que tienen icono propio en sponsor.css. Cualquier otro se pinta
+  // como texto corto, asi un patrocinador nuevo nunca se queda sin boton.
+  var ICONO_DESTINO = { instagram: "Instagram", web: "su sitio web" };
+
+  function accionIcono(accion, campana, slot) {
+    var a = enlaceBase(accion, campana, slot, "pz-sponsor-chip-ico");
+    a.dataset.destino = accion.destino;
+    var nombre = campana.nombre + " en " + ICONO_DESTINO[accion.destino];
+    a.setAttribute("aria-label", nombre);
+    a.title = accion.texto || nombre;
+    return a;
+  }
+
+  /** Pastilla compacta (slot card_inline): moneda + accion principal + el
+   *  resto como iconos. Va en la misma fila que descargar / guardar /
+   *  pantalla completa, asi que tiene que caber en un telefono junto a ellos. */
+  function construirInline(campana) {
+    var cr = campana.creativo;
+    var chip = el("div", "pz-sponsor-chip");
+    chip.dataset.sponsor = campana.sponsorId || "";
+    chip.dataset.campana = campana.id || "";
+    chip.dataset.slot = SLOTS.INLINE;
+    // Se declara como publicidad aunque la pastilla no tenga espacio para decirlo.
+    chip.title = cr.kickerCta || ("Patrocinado por " + campana.nombre);
+    chip.setAttribute("role", "group");
+    chip.setAttribute("aria-label", chip.title);
+    pintarColores(chip, cr);
+
+    var logo = logoEl(cr, "pz-sponsor-chip-coin");
+    if (logo) { logo.width = 30; logo.height = 30; chip.appendChild(logo); }
+
+    cr.acciones.forEach(function (a, i) {
+      if (i > 0 && ICONO_DESTINO[a.destino]) {
+        chip.appendChild(accionIcono(a, campana, SLOTS.INLINE));
+      } else {
+        var b = enlaceBase(a, campana, SLOTS.INLINE,
+          "pz-sponsor-chip-btn" + (i === 0 ? " is-primary" : ""));
+        b.textContent = a.textoCorto || a.texto;
+        chip.appendChild(b);
+      }
+    });
+
+    impresionAlVerse(chip, campana, SLOTS.INLINE);
+    return chip;
+  }
+
+  /** Impresion VISTA, no impresion pintada. Con una pastilla en cada clip del
+   *  feed, contar al construir inflaria el numero: una pagina de 20 clips daria
+   *  20 impresiones aunque la persona vea 3, y eso es cobrarle mal a quien paga.
+   *  Se cuenta cuando al menos la mitad del anuncio lleva 1 segundo seguido en
+   *  pantalla (el criterio de visibilidad estandar de la industria para
+   *  display), una sola vez por anuncio. Sin IntersectionObserver se cuenta al
+   *  construir, como antes. */
+  var _obsVista = null;
+  var _porVer = (typeof WeakMap === "function") ? new WeakMap() : null;
+
+  function impresionAlVerse(nodo, campana, slot) {
+    if (typeof IntersectionObserver !== "function" || !_porVer) {
+      track("sponsor_impression", campana, slot);
+      return;
+    }
+    if (!_obsVista) {
+      _obsVista = new IntersectionObserver(function (entradas) {
+        entradas.forEach(function (e) {
+          var d = _porVer.get(e.target);
+          if (!d) return;
+          if (e.isIntersecting) {
+            if (d.t) return;
+            d.t = setTimeout(function () {
+              if (!_porVer.has(e.target)) return;
+              _porVer.delete(e.target);
+              _obsVista.unobserve(e.target);
+              track("sponsor_impression", d.campana, d.slot);
+            }, 1000);
+          } else if (d.t) {
+            clearTimeout(d.t);
+            d.t = null;
+          }
+        });
+      }, { threshold: 0.5 });
+    }
+    _porVer.set(nodo, { campana: campana, slot: slot, t: null });
+    _obsVista.observe(nodo);
   }
 
   function textoEl(kicker, claim, clase) {
@@ -357,6 +451,7 @@
   }
 
   function construir(campana, slot) {
+    if (slot === SLOTS.INLINE) return construirInline(campana);
     var cr = campana.creativo;
     var esFeed = slot === SLOTS.FEED;
     var box = el("div", esFeed ? "pz-sponsor-banner" : "pz-sponsor-cta");
@@ -383,7 +478,7 @@
     cr.acciones.forEach(function (a) { acc.appendChild(accionEl(a, campana, slot, esFeed)); });
     box.appendChild(acc);
 
-    track("sponsor_impression", campana, slot);
+    impresionAlVerse(box, campana, slot);
     return box;
   }
 

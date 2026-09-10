@@ -288,6 +288,26 @@ test("normalizar: activo por defecto true, peso por defecto 1", () => {
   assert.strictEqual(c.peso, 1);
 });
 
+// ── Espacio en línea (junto a los botones de cada clip) ────────
+test("SLOTS: existe el espacio en línea y es distinto del banner", () => {
+  assert.strictEqual(S.SLOTS.INLINE, "card_inline");
+  assert.notStrictEqual(S.SLOTS.INLINE, S.SLOTS.FEED);
+  assert.notStrictEqual(S.SLOTS.INLINE, S.SLOTS.CLIP);
+});
+
+test("card_inline: una campaña que no lo contrató NO sale junto a los botones", () => {
+  const sinInline = campana({ slots: ["clip_page", "feed_banner"] });
+  assert.strictEqual(S.aplicaASlot(sinInline, S.SLOTS.INLINE), false);
+  assert.strictEqual(S.aplicaASlot(campana({ slots: ["card_inline"] }), S.SLOTS.INLINE), true);
+});
+
+test("card_inline: respeta la segmentación por club igual que los otros espacios", () => {
+  const c = campana({ clubs: ["BreakPoint"], slots: ["card_inline"] });
+  const ahora = Date.now();
+  assert.strictEqual(S.candidatas([c], S.SLOTS.INLINE, "BreakPoint", ahora).length, 1);
+  assert.strictEqual(S.candidatas([c], S.SLOTS.INLINE, "WellStreet-Padel", ahora).length, 0);
+});
+
 // ── El archivo real de configuración ─────────────────────────
 test("data/sponsors.json es válido y Loka está segmentada como se pactó", () => {
   const j = JSON.parse(fs.readFileSync(
@@ -305,6 +325,11 @@ test("data/sponsors.json es válido y Loka está segmentada como se pactó", () 
   assert.strictEqual(S.aplicaAClub(loka, "Scorpion"), false);
   // Y está vigente hoy.
   assert.strictEqual(S.vigente(loka, Date.now()), true);
+  // Lado es la página más visitada: Loka va junto a CADA clip, no solo en banners.
+  assert.ok(loka.slots.includes("card_inline"), "Loka debe salir junto a cada clip de lado");
+  assert.strictEqual(S.candidatas([loka], S.SLOTS.INLINE, "BreakPoint", Date.now()).length, 1);
+  assert.strictEqual(S.candidatas([loka], S.SLOTS.INLINE, "WellStreet-Padel", Date.now()).length, 0,
+    "en WellStreet no se muestra: no contrató");
   // Los dos destinos que promete el outro del video.
   const destinos = loka.creativo.acciones.map((a) => a.destino);
   assert.ok(destinos.includes("web"), "debe llevar a la web");

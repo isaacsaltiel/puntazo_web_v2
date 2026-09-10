@@ -327,93 +327,7 @@ video.video-preview {
   cursor: pointer;
 }
 
-/* 4. Botones de acción pill */
-.action-pills {
-  display: flex;
-  gap: 8px;
-  margin: 12px 0 6px;
-  flex-wrap: wrap;
-}
-
-.action-pill {
-  flex: 1;
-  min-width: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0.5rem 0.8rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: #eaf2ff;
-  font-size: 1.05rem;
-  cursor: pointer;
-  text-decoration: none;
-  font-family: inherit;
-  font-weight: 700;
-  transition: all .18s ease;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  white-space: nowrap;
-}
-
-.action-pill:hover {
-  background: rgba(255, 255, 255, 0.11);
-  border-color: rgba(255, 255, 255, 0.22);
-  transform: translateY(-1px);
-}
-
-.action-pill:active {
-  transform: scale(0.93);
-}
-
-.action-pill.is-saved {
-  background: rgba(0, 79, 200, 0.22);
-  border-color: rgba(11, 124, 255, 0.40);
-  color: #fff;
-  box-shadow: 0 0 20px rgba(0, 79, 200, 0.15);
-}
-
-.action-pill.is-active {
-  background: rgba(0, 79, 200, 0.18);
-  border-color: rgba(11, 124, 255, 0.35);
-  color: #fff;
-}
-
-/* 📤 Compartir: descarga con progreso antes de abrir el share sheet */
-.action-pill.is-progress {
-  position: relative;
-  overflow: hidden;
-  border-color: rgba(11, 124, 255, 0.40);
-  background: rgba(11, 124, 255, 0.10);
-  color: #fff;
-}
-.action-pill .pill-fill {
-  position: absolute;
-  inset: 0;
-  background: rgba(11, 124, 255, 0.40);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform .18s ease;
-  border-radius: inherit;
-}
-.action-pill .pill-fill.is-indeterminate {
-  animation: pz-pill-indeterminate 1.1s ease-in-out infinite;
-}
-@keyframes pz-pill-indeterminate {
-  0%     { transform-origin: left;  transform: scaleX(.15); }
-  50%    { transform-origin: left;  transform: scaleX(.85); }
-  50.01% { transform-origin: right; }
-  100%   { transform-origin: right; transform: scaleX(.15); }
-}
-.action-pill .pill-label {
-  position: relative;
-  z-index: 1;
-  font-size: .82rem;
-  font-weight: 800;
-  white-space: nowrap;
-}
+/* 4. Botones del clip: ver estilo.css, bloque ACCIONES DEL CLIP. */
 
 /* ── Botón "Otro ángulo" (aparece asíncronamente) ── */
 .btn-alt {
@@ -493,7 +407,6 @@ video.video-preview {
 @media (max-width: 480px) {
   #link-cancha { font-size: 1.3rem; }
   .card-time { font-size: 1.4rem; }
-  .action-pill { font-size: 0.95rem; padding: 0.5rem 0.65rem; }
 }
 </style>
 </head>
@@ -640,7 +553,7 @@ video.video-preview {
     t = setTimeout(function () {
       try {
         window.PuntazoSponsor.inyectarEnFeed(cont, {
-          cada: 4,
+          cada: 3,   // lado es lo mas visitado: el banner sale seguido
           selector: '.video-card',
           // el club sale de ?loc= en la URL; el modulo lo lee solo
         });
