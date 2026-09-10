@@ -743,7 +743,7 @@ async function downloadWithProgress(url, { onProgress, signal } = {}) {
 
 function crearSharePill(entry, video) {
   const btn = document.createElement("button");
-  btn.type = "button"; btn.className = "action-pill"; btn.textContent = "📤"; btn.title = "Compartir video"; btn.setAttribute("aria-label", "Compartir");
+  btn.type = "button"; btn.className = "action-pill"; btn.dataset.ico = "download"; btn.title = "Descargar video"; btn.setAttribute("aria-label", "Descargar video");
 
   let state = "idle"; // idle | downloading | ready
   let pendingFile = null;
@@ -752,11 +752,12 @@ function crearSharePill(entry, video) {
 
   const setIdle = () => {
     state = "idle"; pendingFile = null; controller = null; fillEl = null; labelEl = null;
-    btn.classList.remove("is-progress");
+    btn.classList.remove("is-progress", "is-indet", "is-ready");
+    btn.style.removeProperty("--p");
     btn.disabled = false;
     btn.innerHTML = "";
-    btn.textContent = "📤";
-    btn.title = "Compartir video";
+    btn.dataset.ico = "download";
+    btn.title = "Descargar video";
   };
 
   const tryShareFile = async (file) => {
@@ -778,6 +779,7 @@ function crearSharePill(entry, video) {
 
   const setProgress = ({ percent, indeterminate }) => {
     if (!fillEl || !labelEl) return;
+    btn.classList.toggle("is-indet", !!indeterminate);
     if (indeterminate) {
       fillEl.style.transform = "";
       fillEl.classList.add("is-indeterminate");
@@ -786,6 +788,7 @@ function crearSharePill(entry, video) {
       fillEl.classList.remove("is-indeterminate");
       fillEl.style.transform = `scaleX(${(percent || 0) / 100})`;
       labelEl.textContent = percent + "%";
+      btn.style.setProperty("--p", String(percent || 0));   // anillo de progreso (CSS)
     }
   };
 
@@ -839,7 +842,7 @@ function crearSharePill(entry, video) {
         trackEvent("share_ready", gaCtx({ video_name: entry.nombre }));
         pendingFile = file; state = "ready";
         btn.classList.remove("is-progress");
-        btn.innerHTML = ""; btn.textContent = "📤 Listo";
+        btn.classList.remove("is-indet"); btn.innerHTML = ""; btn.dataset.ico = "share"; btn.classList.add("is-ready");
         btn.title = "Toca para compartir";
       } else {
         trackEvent("download_fallback", gaCtx({ video_name: entry.nombre, mode: "local_blob" }));
@@ -870,8 +873,8 @@ function crearSavePill(entry, loc, can, lado) {
   const btn  = document.createElement("button");
   btn.type = "button"; btn.className = "action-pill"; btn.title = "Guardar en tu perfil"; btn.setAttribute("aria-label", "Guardar");
   btn.dataset.saved = "0"; btn.dataset.loading = "0";
-  // 💾 siempre — azul cuando guardado, gris cuando no (sin ✅)
-  btn.textContent = "💾";
+  // Marcador: contorno si no esta guardado, relleno azul si si (.is-saved en el CSS).
+  btn.dataset.ico = "save";
 
   const syncState = async () => {
     const user = getAuthUser();
@@ -921,8 +924,8 @@ async function requestVideoFullscreen(video) {
 function crearFullscreenPill(video, card, entry) {
   bindFullscreenUnlockOnce();
   const btn = document.createElement("button");
-  btn.type = "button"; btn.className = "action-pill"; btn.textContent = "⛶"; btn.title = "Pantalla completa"; btn.setAttribute("aria-label", "Pantalla completa"); btn.style.display = "none";
-  const syncLabel = () => { const a = isThisVideoFullscreen(video); btn.classList.toggle("is-active", a); btn.textContent = a ? "✕" : "⛶"; };
+  btn.type = "button"; btn.className = "action-pill"; btn.dataset.ico = "expand"; btn.title = "Pantalla completa"; btn.setAttribute("aria-label", "Pantalla completa"); btn.style.display = "none";
+  const syncLabel = () => { const a = isThisVideoFullscreen(video); btn.classList.toggle("is-active", a); btn.dataset.ico = a ? "collapse" : "expand"; btn.title = a ? "Salir de pantalla completa" : "Pantalla completa"; };
   const syncVis   = () => { btn.style.display = (!video.paused || isThisVideoFullscreen(video)) ? "inline-flex" : "none"; };
   btn.addEventListener("click", async () => {
     try {
@@ -1030,11 +1033,23 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     preview.style.width = "100%"; preview.style.borderRadius = "8px";
     wrap.appendChild(real); wrap.appendChild(preview); card.appendChild(wrap);
 
-    // 3. Botones pill
+    // 3. Una sola fila: los botones del clip a la izquierda (descargar,
+    // guardar, pantalla completa) y el patrocinador a la derecha. Lado es la
+    // pagina mas visitada y el outro del video dice "Pidelos en el link de
+    // abajo": el anuncio va pegado a CADA clip, donde se busca.
     const actionPills = document.createElement("div"); actionPills.className = "action-pills";
-    actionPills.appendChild(crearSharePill(entry, real));
-    actionPills.appendChild(crearSavePill(entry, loc, can, lado));
-    actionPills.appendChild(crearFullscreenPill(real, card, entry));
+    const accionesClip = document.createElement("div"); accionesClip.className = "acciones-clip";
+    accionesClip.appendChild(crearSharePill(entry, real));
+    accionesClip.appendChild(crearSavePill(entry, loc, can, lado));
+    accionesClip.appendChild(crearFullscreenPill(real, card, entry));
+    actionPills.appendChild(accionesClip);
+    // Hueco vacio que solo se llena si hay campana para ESTE club (WellStreet
+    // hoy no tiene: no deja rastro). Nunca retrasa ni bloquea el clip.
+    const SP = window.PuntazoSponsor;
+    if (SP && SP.SLOTS && SP.SLOTS.INLINE) {
+      try { actionPills.appendChild(SP.crearHueco(SP.SLOTS.INLINE, { club: loc })); }
+      catch (e) { console.warn("[pz-sponsor] inline", e); }
+    }
     card.appendChild(actionPills);
 
     // Promociones
@@ -1051,10 +1066,10 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
       try {
         const opposite = await findOppositeVideo(entry, cfgGlobal, loc, can, lado);
         if (opposite?.nombre) {
-          const btnAlt = document.createElement("a"); btnAlt.className = "btn-alt"; btnAlt.textContent = "← Otro ángulo"; btnAlt.title = "Ver desde la otra cámara";
+          const btnAlt = document.createElement("a"); btnAlt.className = "action-pill"; btnAlt.dataset.ico = "angle"; btnAlt.title = "Ver desde la otra cámara"; btnAlt.setAttribute("aria-label", "Ver desde la otra cámara");
           btnAlt.href = `lado.html?loc=${loc}&can=${can}&lado=${opposite.lado}&video=${encodeURIComponent(opposite.nombre)}`;
           btnAlt.addEventListener("click", () => trackEvent("click_other_perspective", gaCtx({ video_name: entry.nombre, target_lado: opposite.lado })));
-          actionPills.appendChild(btnAlt);
+          accionesClip.appendChild(btnAlt);
         }
       } catch {}
     })();

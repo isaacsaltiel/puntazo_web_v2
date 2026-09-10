@@ -14,13 +14,13 @@
     "  hasta     AAAA-MM-DD INCLUSIVE o null = sin fin (se apaga sola al vencer)",
     "  clubs     IDs de club donde se muestra; [] o null = todos",
     "            válidos: BreakPoint · Interpadel · Scorpion · WellStreet-Padel · WellStreet-Pickleball",
-    "  slots     espacios donde puede salir: clip_page · feed_banner",
+    "  slots     espacios donde puede salir: clip_page · feed_banner · card_inline",
     "  prioridad gana la más alta cuando varias compiten por el mismo espacio",
     "  peso      reparto entre campañas de la MISMA prioridad (2 sale el doble que 1)",
     "  creativo  el contenido; los colores viven aquí para no tocar CSS por patrocinador"
   ],
   "version": 1,
-  "actualizado": "2026-09-09",
+  "actualizado": "2026-09-10",
   "campanas": [
     {
       "id": "loka-2026-09",
@@ -32,7 +32,7 @@
       "prioridad": 10,
       "peso": 1,
       "clubs": ["BreakPoint", "Interpadel"],
-      "slots": ["clip_page", "feed_banner"],
+      "slots": ["clip_page", "feed_banner", "card_inline"],
       "creativo": {
         "kicker": "Snacks saludables",
         "kickerCta": "Patrocinado por Loka Healthy",

@@ -127,11 +127,13 @@ window.PuntazoCard = (function () {
   }
 
   // ── Pills de acción ────────────────────────────────────────
-  function makePill(emoji, title, extraClass) {
+  function makePill(ico, title, extraClass) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'action-pill' + (extraClass ? ' '+extraClass : '');
-    btn.textContent = emoji;
+    // El icono lo pinta el CSS (estilo.css, bloque ACCIONES DEL CLIP): SVG en
+    // mascara, igual en iPhone, Android y Windows. Los emoji no lo eran.
+    btn.dataset.ico = ico;
     if (title) { btn.title = title; btn.setAttribute('aria-label', title); }
     return btn;
   }
@@ -184,7 +186,7 @@ window.PuntazoCard = (function () {
 
   function buildSharePill(entry, opts) {
     opts = opts || {};
-    const btn = makePill('📤', 'Compartir video');
+    const btn = makePill('download', 'Descargar video');
     const shareText = opts.shareMessage || '¡Mira este puntazo! 🎾';
 
     let state = 'idle'; // idle | downloading | ready
@@ -194,11 +196,12 @@ window.PuntazoCard = (function () {
 
     const setIdle = () => {
       state = 'idle'; pendingFile = null; controller = null; fillEl = null; labelEl = null;
-      btn.classList.remove('is-progress');
+      btn.classList.remove('is-progress', 'is-indet', 'is-ready');
+      btn.style.removeProperty('--p');
       btn.disabled = false;
       btn.innerHTML = '';
-      btn.textContent = '📤';
-      btn.title = 'Compartir video';
+      btn.dataset.ico = 'download';
+      btn.title = 'Descargar video';
     };
 
     const tryShareFile = async (file) => {
@@ -220,6 +223,7 @@ window.PuntazoCard = (function () {
 
     const setProgress = ({ percent, indeterminate }) => {
       if (!fillEl || !labelEl) return;
+      btn.classList.toggle('is-indet', !!indeterminate);
       if (indeterminate) {
         fillEl.style.transform = '';
         fillEl.classList.add('is-indeterminate');
@@ -228,6 +232,7 @@ window.PuntazoCard = (function () {
         fillEl.classList.remove('is-indeterminate');
         fillEl.style.transform = `scaleX(${(percent || 0) / 100})`;
         labelEl.textContent = percent + '%';
+        btn.style.setProperty('--p', String(percent || 0));   // anillo de progreso (CSS)
       }
     };
 
@@ -285,7 +290,7 @@ window.PuntazoCard = (function () {
           trackEvent('share_ready', { video_name: entry.nombre });
           pendingFile = file; state = 'ready';
           btn.classList.remove('is-progress');
-          btn.innerHTML = ''; btn.textContent = '📤 Listo';
+          btn.classList.remove('is-indet'); btn.innerHTML = ''; btn.dataset.ico = 'share'; btn.classList.add('is-ready');
           btn.title = 'Toca para compartir';
         } else {
           trackEvent('download_fallback', { video_name: entry.nombre, mode: 'local_blob' });
@@ -313,9 +318,8 @@ window.PuntazoCard = (function () {
 
   function buildSavePill(entry, opts) {
     opts = opts || {};
-    const btn = makePill('💾', 'Guardar en tu perfil');
+    const btn = makePill('save', 'Guardar en tu perfil');
     btn.dataset.saved = '0'; btn.dataset.loading = '0';
-    btn.textContent = '💾'; // siempre el mismo emoji
 
     const sync = async () => {
       const user = getUser();
@@ -356,10 +360,10 @@ window.PuntazoCard = (function () {
 
   function buildFullscreenPill(video) {
     bindFsEvents();
-    const btn = makePill('⛶', 'Pantalla completa');
+    const btn = makePill('expand', 'Pantalla completa');
     btn.style.display = 'none';
 
-    const syncLabel = ()=>{ btn.classList.toggle('is-active',isFs(video)); btn.textContent=isFs(video)?'✕':'⛶'; };
+    const syncLabel = ()=>{ btn.classList.toggle('is-active',isFs(video)); btn.dataset.ico=isFs(video)?'collapse':'expand'; btn.title=isFs(video)?'Salir de pantalla completa':'Pantalla completa'; };
     const syncVis   = ()=>{ btn.style.display=(!video.paused||isFs(video))?'inline-flex':'none'; };
     const syncAll   = ()=>{ syncLabel(); syncVis(); };
     _fsSyncers.add(syncAll);
@@ -473,12 +477,17 @@ window.PuntazoCard = (function () {
     wrap.appendChild(video);
     card.appendChild(wrap);
 
-    // 3. Action pills
+    // 3. Fila de acciones. Los botones del clip van agrupados a la izquierda,
+    // igual que en el feed de lado.html (script.js), para que el sitio se vea
+    // igual en todas partes. Diseno en estilo.css, bloque ACCIONES DEL CLIP.
     const pillsEl = document.createElement('div');
     pillsEl.className = 'action-pills';
-    if (opts.showShare) pillsEl.appendChild(buildSharePill(entry, { shareMessage: opts.shareMessage, video }));
-    if (opts.showSave)  pillsEl.appendChild(buildSavePill(entry, { onUnsave: opts.onUnsave }));
-    if (opts.showFullscreen) pillsEl.appendChild(buildFullscreenPill(video));
+    const grupo = document.createElement('div');
+    grupo.className = 'acciones-clip';
+    if (opts.showShare) grupo.appendChild(buildSharePill(entry, { shareMessage: opts.shareMessage, video }));
+    if (opts.showSave)  grupo.appendChild(buildSavePill(entry, { onUnsave: opts.onUnsave }));
+    if (opts.showFullscreen) grupo.appendChild(buildFullscreenPill(video));
+    pillsEl.appendChild(grupo);
     card.appendChild(pillsEl);
 
     // 4. Patrocinador (opcional). El outro del video dice "Pídelos en el link
