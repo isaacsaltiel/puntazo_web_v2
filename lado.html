@@ -505,6 +505,10 @@ video.video-preview {
   <div id="loading" style="display:none">Cargando videos…</div>
 
   <!-- Videos -->
+  <!-- Patrocinador fijo arriba del feed (slot feed_top). Va FUERA del
+       contenedor de clips a proposito: script.js vacia #videos-container en
+       cada recarga y este bloque debe quedarse quieto, sin parpadear. -->
+  <div id="pz-sponsor-top"></div>
   <section id="videos-container" class="video-grid"></section>
 
 </main>
@@ -544,6 +548,15 @@ video.video-preview {
 (function () {
   'use strict';
   if (!window.PuntazoSponsor || !window.PuntazoSponsor.activo()) return;
+
+  // Arriba del feed, siempre (slot feed_top). Se monta una sola vez; si el
+  // club no tiene campana (WellStreet hoy), el hueco queda vacio y no ocupa nada.
+  try {
+    var arriba = document.getElementById('pz-sponsor-top');
+    if (arriba && !arriba.firstChild) {
+      window.PuntazoSponsor.montar(window.PuntazoSponsor.SLOTS.TOP || 'feed_top', arriba);
+    }
+  } catch (e) { console.warn('[pz-sponsor] arriba', e); }
   var cont = document.getElementById('videos-container');
   if (!cont) return;
 
@@ -553,7 +566,7 @@ video.video-preview {
     t = setTimeout(function () {
       try {
         window.PuntazoSponsor.inyectarEnFeed(cont, {
-          cada: 3,   // lado es lo mas visitado: el banner sale seguido
+          cada: 2,   // lado es lo mas visitado: banner cada 2 clips
           selector: '.video-card',
           // el club sale de ?loc= en la URL; el modulo lo lee solo
         });

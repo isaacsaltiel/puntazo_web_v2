@@ -308,6 +308,28 @@ test("card_inline: respeta la segmentación por club igual que los otros espacio
   assert.strictEqual(S.candidatas([c], S.SLOTS.INLINE, "WellStreet-Padel", ahora).length, 0);
 });
 
+// ── Espacio de arriba del feed (feed_top) ──────────────────────
+test("SLOTS: existe feed_top y ningún espacio repite id", () => {
+  assert.strictEqual(S.SLOTS.TOP, "feed_top");
+  const todos = Object.values(S.SLOTS);
+  assert.strictEqual(new Set(todos).size, todos.length);
+});
+
+test("feed_top: respeta la segmentación por club", () => {
+  const c = campana({ clubs: ["Interpadel"], slots: ["feed_top"] });
+  assert.strictEqual(S.candidatas([c], S.SLOTS.TOP, "Interpadel", Date.now()).length, 1);
+  assert.strictEqual(S.candidatas([c], S.SLOTS.TOP, "WellStreet-Pickleball", Date.now()).length, 0);
+});
+
+test("normalizar: conserva los campos de detalle del creativo", () => {
+  const c = S.normalizar(campana({ creativo: {
+    claim: "x", detalle: "d", beneficios: ["a", "b"], imagen: "/i.jpg", imagenAlt: "alt",
+    acciones: [{ texto: "Ir", href: "https://acme.mx" }] } }));
+  assert.strictEqual(c.creativo.detalle, "d");
+  assert.deepStrictEqual(c.creativo.beneficios, ["a", "b"]);
+  assert.strictEqual(c.creativo.imagen, "/i.jpg");
+});
+
 // ── El archivo real de configuración ─────────────────────────
 test("data/sponsors.json es válido y Loka está segmentada como se pactó", () => {
   const j = JSON.parse(fs.readFileSync(
@@ -330,6 +352,12 @@ test("data/sponsors.json es válido y Loka está segmentada como se pactó", () 
   assert.strictEqual(S.candidatas([loka], S.SLOTS.INLINE, "BreakPoint", Date.now()).length, 1);
   assert.strictEqual(S.candidatas([loka], S.SLOTS.INLINE, "WellStreet-Padel", Date.now()).length, 0,
     "en WellStreet no se muestra: no contrató");
+  // Arriba del feed de lado, con detalle: beneficios y foto que EXISTE en el repo.
+  assert.ok(loka.slots.includes("feed_top"), "Loka debe salir arriba del feed de lado");
+  assert.ok(Array.isArray(loka.creativo.beneficios) && loka.creativo.beneficios.length >= 2);
+  assert.ok(loka.creativo.imagen, "el bloque de arriba lleva foto");
+  assert.ok(fs.existsSync(path.join(__dirname, "..", loka.creativo.imagen)),
+    "la foto " + loka.creativo.imagen + " debe existir en el repo");
   // Los dos destinos que promete el outro del video.
   const destinos = loka.creativo.acciones.map((a) => a.destino);
   assert.ok(destinos.includes("web"), "debe llevar a la web");

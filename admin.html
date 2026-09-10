@@ -1644,6 +1644,7 @@ const SPONSOR_SLOTS = [
   { id:'clip_page',   nombre:'Bajo el video (página de clip)' },
   { id:'feed_banner', nombre:'Banner en el feed de cancha' },
   { id:'card_inline', nombre:'Junto a los botones de cada clip (lado)' },
+  { id:'feed_top',    nombre:'Arriba del feed de cancha, con detalle (lado)' },
 ];
 let _spUnsub=null, _spDocs={}, _spEditando=null, _spClubs=null;
 
@@ -1763,8 +1764,8 @@ async function sponsorEditar(id){
   const clubs=await sponsorClubs();
   const base={
     sponsorId:'', nombre:'', activo:true, desde:'', hasta:'', prioridad:10, peso:1,
-    clubs:[], slots:['clip_page','feed_banner','card_inline'],
-    creativo:{ kicker:'', kickerCta:'', claim:'', logo:'', logo2x:'',
+    clubs:[], slots:['clip_page','feed_banner','card_inline','feed_top'],
+    creativo:{ kicker:'', kickerCta:'', claim:'', detalle:'', beneficios:[], imagen:'', imagenAlt:'', logo:'', logo2x:'',
       colores:{bg:'#16342b',bg2:'#1d4438',borde:'rgba(255,255,255,0.25)',
                acento:'#b8d97a',acentoTexto:'#16342b',texto:'#f7f2e7'},
       acciones:[{texto:'',textoCorto:'',href:'',estilo:'primary',destino:'web'},
@@ -1804,6 +1805,12 @@ async function sponsorEditar(id){
       '<label>Etiqueta (bajo el video)'+inp('sfKickerCta',cr.kickerCta,'Patrocinado por Loka Healthy')+'</label>'+
     '</div>'+
     '<label>Frase'+inp('sfClaim',cr.claim,'Sabor natural, energía real')+'</label>'+
+    '<label>Detalle <small>(bloque de arriba del feed)</small>'+inp('sfDetalle',cr.detalle,'Sin comprometer el sabor')+'</label>'+
+    '<label>Beneficios <small>(separados por coma, máx. 4)</small>'+inp('sfBenef',(cr.beneficios||[]).join(', '),'Opciones sin azúcar, Superfoods, Hecho en México')+'</label>'+
+    '<div class="sp-f2">'+
+      '<label>Foto del producto'+inp('sfImagen',cr.imagen,'/assets/img/sponsors/loka-producto.jpg')+'</label>'+
+      '<label>Descripción de la foto'+inp('sfImagenAlt',cr.imagenAlt,'Tazón de snacks enchilados')+'</label>'+
+    '</div>'+
     '<div class="sp-f2">'+
       '<label>Logo'+inp('sfLogo',cr.logo,'/assets/img/sponsors/loka-coin.png')+'</label>'+
       '<label>Logo @2x'+inp('sfLogo2',cr.logo2x)+'</label>'+
@@ -1854,6 +1861,9 @@ async function sponsorGuardar(){
     clubs:marcados('sfClub'), slots:marcados('sfSlot'),
     creativo:{
       kicker:v('sfKicker'), kickerCta:v('sfKickerCta'), claim:v('sfClaim'),
+      detalle:v('sfDetalle'),
+      beneficios:v('sfBenef').split(',').map(x=>x.trim()).filter(Boolean).slice(0,4),
+      imagen:v('sfImagen'), imagenAlt:v('sfImagenAlt'),
       logo:v('sfLogo'), logo2x:v('sfLogo2'),
       colores:{bg:v('sfCbg'),bg2:v('sfCbg2'),borde:v('sfCborde'),
                acento:v('sfCacento'),acentoTexto:v('sfCacentoTxt'),texto:v('sfCtexto')},
