@@ -102,17 +102,19 @@
 /* ── Banner ancho (slot feed_banner) ────────────────────────── */
 .pz-sponsor-banner {
   display: flex;
+  flex-wrap: wrap;        /* responde a SU ancho, no al de la pantalla */
   align-items: center;
-  gap: 14px;
+  gap: 12px 14px;
   padding: 14px 16px;
   margin: 4px 0;
   border-radius: 16px;
   background: linear-gradient(120deg, var(--pz-sp-bg2), var(--pz-sp-bg) 65%);
   border: 1px solid var(--pz-sp-borde);
 }
-.pz-sponsor-banner-txt { flex: 1 1 auto; min-width: 0; }
+/* El texto nunca baja de 170px: si no cabe junto a las acciones, las acciones bajan. */
+.pz-sponsor-banner-txt { flex: 1 1 170px; min-width: 0; }
 .pz-sponsor-banner .pz-sponsor-claim { font-size: 16px; }
-.pz-sponsor-banner .pz-sponsor-acciones { flex: 0 0 auto; }
+.pz-sponsor-banner .pz-sponsor-acciones { flex: 0 1 auto; margin-left: auto; }
 
 /* En un grid de tarjetas ocupa el ancho completo. */
 .video-grid > .pz-sponsor-banner { grid-column: 1 / -1; }
@@ -210,4 +212,90 @@
 @media (prefers-reduced-motion: reduce) {
   .pz-sponsor-chip-btn, .pz-sponsor-chip-ico { transition: none; }
   .pz-sponsor-chip-btn:hover { transform: none; }
+}
+
+/* ── Bloque fijo arriba del feed de lado (slot feed_top) ──────
+   El más completo: franja con foto del producto, moneda montada sobre
+   la foto, claim, detalle, beneficios y las acciones completas. */
+.pz-sponsor-hero {
+  position: relative;
+  margin: 0 0 16px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--pz-sp-bg2), var(--pz-sp-bg) 70%);
+  border: 1px solid var(--pz-sp-borde);
+}
+.pz-sponsor-hero-etiqueta {
+  position: absolute;
+  top: 10px; right: 10px;
+  z-index: 1;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(0,0,0,0.50);
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+.pz-sponsor-hero-foto {
+  display: block;
+  width: 100%;
+  height: clamp(96px, 22vw, 150px);
+  object-fit: cover;
+}
+.pz-sponsor-hero-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+.pz-sponsor-hero.sin-foto .pz-sponsor-hero-cuerpo { padding-top: 16px; }
+.pz-sponsor-hero-cabeza { display: flex; align-items: flex-start; gap: 12px; }
+/* La moneda se monta sobre el borde de la foto, como un sello. */
+.pz-sponsor-coin.is-hero {
+  width: 60px; height: 60px;
+  margin-top: -26px;
+  background: var(--pz-sp-bg);
+  box-shadow: 0 0 0 3px var(--pz-sp-bg), 0 6px 18px rgba(0,0,0,0.35);
+}
+.pz-sponsor-hero.sin-foto .pz-sponsor-coin.is-hero { margin-top: 0; }
+.pz-sponsor-hero-txt { flex: 1 1 auto; min-width: 0; padding-top: 10px; }
+.pz-sponsor-hero .pz-sponsor-claim { font-size: 18px; line-height: 1.2; margin-top: 3px; }
+.pz-sponsor-detalle {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pz-sp-texto);
+  opacity: .75;
+}
+.pz-sponsor-beneficios {
+  list-style: none;
+  margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.pz-sponsor-beneficios li {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--pz-sp-texto);
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--pz-sp-borde);
+  background: rgba(255,255,255,0.05);
+}
+.pz-sponsor-hero .pz-sponsor-btn { flex: 1 1 auto; }
+
+/* Banner del feed: una línea de beneficios bajo el claim. */
+.pz-sponsor-beneficios-linea {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--pz-sp-texto);
+  opacity: .72;
+}
+
+@media (max-width: 420px) {
+  .pz-sponsor-hero .pz-sponsor-claim { font-size: 16.5px; }
+  .pz-sponsor-coin.is-hero { width: 54px; height: 54px; margin-top: -22px; }
 }

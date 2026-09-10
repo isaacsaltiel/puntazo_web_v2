@@ -31,7 +31,8 @@
   // clip_page   bloque grande bajo el video, en la pagina de un clip
   // feed_banner banner ancho intercalado en el feed de cancha (lado.html)
   // card_inline pastilla compacta junto a los botones de CADA clip de lado
-  var SLOTS = { CLIP: "clip_page", FEED: "feed_banner", INLINE: "card_inline" };
+  // feed_top    bloque grande y detallado, fijo arriba del feed de lado
+  var SLOTS = { CLIP: "clip_page", FEED: "feed_banner", INLINE: "card_inline", TOP: "feed_top" };
 
   // ═══════════════════════════════════════════════════════════
   // LÓGICA PURA — sin DOM, sin red. Todo esto se testea en node.
@@ -403,6 +404,64 @@
     return chip;
   }
 
+  /** Bloque grande arriba del feed de lado (slot feed_top), el mas completo:
+   *  foto del producto, claim, detalle, beneficios y las acciones completas.
+   *  Todo sale de la campana; si falta un campo, esa pieza no se pinta (un
+   *  patrocinador sin foto se sigue viendo bien). */
+  function construirHero(campana) {
+    var cr = campana.creativo;
+    var box = el("div", "pz-sponsor-hero" + (cr.imagen ? "" : " sin-foto"));
+    box.dataset.sponsor = campana.sponsorId || "";
+    box.dataset.campana = campana.id || "";
+    box.dataset.slot = SLOTS.TOP;
+    pintarColores(box, cr);
+
+    // Es publicidad y se declara, como en las fotos patrocinadas de cualquier red.
+    var tag = el("span", "pz-sponsor-hero-etiqueta");
+    tag.textContent = "Patrocinado";
+    box.appendChild(tag);
+
+    if (cr.imagen) {
+      var foto = el("img", "pz-sponsor-hero-foto");
+      foto.src = cr.imagen;
+      foto.alt = cr.imagenAlt || "";
+      foto.decoding = "async";
+      foto.width = 960; foto.height = 320;   // proporcion real: evita saltos al cargar
+      box.appendChild(foto);
+    }
+
+    var cuerpo = el("div", "pz-sponsor-hero-cuerpo");
+    var cabeza = el("div", "pz-sponsor-hero-cabeza");
+    var logo = logoEl(cr, "pz-sponsor-coin is-hero");
+    if (logo) cabeza.appendChild(logo);
+    var txt = el("div", "pz-sponsor-hero-txt");
+    var k = el("span", "pz-sponsor-kicker"); k.textContent = cr.kicker || campana.nombre;
+    var c = el("strong", "pz-sponsor-claim"); c.textContent = cr.claim || "";
+    txt.appendChild(k); txt.appendChild(c);
+    if (cr.detalle) {
+      var d = el("span", "pz-sponsor-detalle"); d.textContent = cr.detalle;
+      txt.appendChild(d);
+    }
+    cabeza.appendChild(txt);
+    cuerpo.appendChild(cabeza);
+
+    if (Array.isArray(cr.beneficios) && cr.beneficios.length) {
+      var lista = el("ul", "pz-sponsor-beneficios");
+      cr.beneficios.slice(0, 4).forEach(function (b) {
+        var li = el("li"); li.textContent = b; lista.appendChild(li);
+      });
+      cuerpo.appendChild(lista);
+    }
+
+    var acc = el("div", "pz-sponsor-acciones");
+    cr.acciones.forEach(function (a) { acc.appendChild(accionEl(a, campana, SLOTS.TOP, false)); });
+    cuerpo.appendChild(acc);
+    box.appendChild(cuerpo);
+
+    impresionAlVerse(box, campana, SLOTS.TOP);
+    return box;
+  }
+
   /** Impresion VISTA, no impresion pintada. Con una pastilla en cada clip del
    *  feed, contar al construir inflaria el numero: una pagina de 20 clips daria
    *  20 impresiones aunque la persona vea 3, y eso es cobrarle mal a quien paga.
@@ -452,6 +511,7 @@
 
   function construir(campana, slot) {
     if (slot === SLOTS.INLINE) return construirInline(campana);
+    if (slot === SLOTS.TOP) return construirHero(campana);
     var cr = campana.creativo;
     var esFeed = slot === SLOTS.FEED;
     var box = el("div", esFeed ? "pz-sponsor-banner" : "pz-sponsor-cta");
@@ -464,7 +524,14 @@
 
     if (esFeed) {
       if (logo) box.appendChild(logo);
-      box.appendChild(textoEl(cr.kicker || campana.nombre, cr.claim || "", "pz-sponsor-banner-txt"));
+      var tf = textoEl(cr.kicker || campana.nombre, cr.claim || "", "pz-sponsor-banner-txt");
+      // Mas detalle en el banner del feed: los beneficios en una linea.
+      if (Array.isArray(cr.beneficios) && cr.beneficios.length) {
+        var bl = el("span", "pz-sponsor-beneficios-linea");
+        bl.textContent = cr.beneficios.slice(0, 3).join(" · ");
+        tf.appendChild(bl);
+      }
+      box.appendChild(tf);
     } else {
       var head = el("div", "pz-sponsor-cta-head");
       if (logo) head.appendChild(logo);
@@ -538,22 +605,38 @@
       if (_inyectando) return 0;
       _inyectando = true;
       try {
-        var viejos = contenedor.querySelectorAll(".pz-sponsor-banner, .pz-sponsor-hueco");
-        Array.prototype.forEach.call(viejos, function (n) { n.remove(); });
-
+        // Solo los hijos DIRECTOS del feed son banners de este espacio. Las
+        // pastillas de card_inline viven DENTRO de cada tarjeta y tambien son
+        // .pz-sponsor-hueco: limpiar con un selector de descendientes las
+        // borraba todas (bug real, cazado el 10-sep-2026 con el constructor real).
+        var MIOS = ":scope > .pz-sponsor-banner, :scope > .pz-sponsor-hueco";
         var c = elegirPara(SLOTS.FEED, club);
-        if (!c) return 0;
-
         var tarjetas = Array.prototype.filter.call(
           contenedor.querySelectorAll(":scope > " + selector), esVisible);
-        // Con pocos clips el banner competiría con el contenido.
-        if (tarjetas.length < cada) return 0;
-
-        var puestos = 0;
-        for (var i = cada - 1; i < tarjetas.length; i += cada) {
-          tarjetas[i].insertAdjacentElement("afterend", construir(c, SLOTS.FEED));
-          puestos++;
+        // Con pocos clips el banner competiria con el contenido.
+        var anclas = [];
+        if (c && tarjetas.length >= cada) {
+          for (var i = cada - 1; i < tarjetas.length; i += cada) anclas.push(tarjetas[i]);
         }
+
+        // RECONCILIAR, no borrar y repintar. El observer de lado.html dispara con
+        // cualquier cambio del feed, incluidas estas inserciones: repintar cada vez
+        // era un ciclo sin fin que hacia parpadear el banner y le impedia llegar al
+        // segundo en pantalla que exige la impresion vista. Si ya esta en su lugar,
+        // no se toca nada y el ciclo se corta solo.
+        Array.prototype.forEach.call(contenedor.querySelectorAll(MIOS), function (n) {
+          var enSuLugar = n.classList.contains("pz-sponsor-banner") &&
+            anclas.indexOf(n.previousElementSibling) !== -1;
+          if (!enSuLugar) n.remove();
+        });
+        var puestos = 0;
+        anclas.forEach(function (t) {
+          var sig = t.nextElementSibling;
+          if (!(sig && sig.classList.contains("pz-sponsor-banner"))) {
+            t.insertAdjacentElement("afterend", construir(c, SLOTS.FEED));
+          }
+          puestos++;
+        });
         return puestos;
       } finally {
         _inyectando = false;
