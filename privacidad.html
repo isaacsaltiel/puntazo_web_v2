@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+<!-- Guardia de arranque: si la pagina no termina de cargar (red lenta, red
+     que filtra, proxy roto), en vez de dejar la pantalla en blanco muestra
+     un aviso con boton de reintento. Va inline y antes que todo lo demas. -->
+<script id="pz-boot-guard">
+(function () {
+  var TIMEOUT_MS = 12000;
+  var shown = false;
+  function box() {
+    if (shown || window.__pzBooted) return;
+    shown = true;
+    var root = document.body || document.documentElement;
+    if (!root) return;
+    var d = document.createElement("div");
+    d.id = "pz-boot-guard-box";
+    d.setAttribute("style", [
+      "position:fixed", "inset:0", "z-index:2147483647",
+      "background:#050914", "color:#fff",
+      "font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif",
+      "display:flex", "flex-direction:column",
+      "align-items:center", "justify-content:center",
+      "text-align:center", "padding:24px", "gap:14px"
+    ].join(";"));
+    d.innerHTML =
+      '<div style="font-size:44px;line-height:1">🎾</div>' +
+      '<div style="font-size:19px;font-weight:800">La conexión está tardando</div>' +
+      '<div style="font-size:14px;opacity:.75;max-width:22em;line-height:1.5">' +
+      'No pudimos cargar Puntazo con esta red. Prueba con datos móviles ' +
+      'o con otra red Wi-Fi.</div>' +
+      '<button type="button" id="pz-boot-guard-retry" style="margin-top:6px;' +
+      'background:#0B7CFF;color:#fff;border:0;border-radius:999px;' +
+      'padding:13px 30px;font-size:15px;font-weight:800;cursor:pointer">' +
+      'Reintentar</button>';
+    root.appendChild(d);
+    var b = document.getElementById("pz-boot-guard-retry");
+    if (b) b.addEventListener("click", function () { location.reload(); });
+  }
+  function booted() {
+    window.__pzBooted = true;
+    var d = document.getElementById("pz-boot-guard-box");
+    if (d && d.parentNode) d.parentNode.removeChild(d);
+  }
+  setTimeout(box, TIMEOUT_MS);
+  document.addEventListener("DOMContentLoaded", booted);
+  window.addEventListener("load", booted);
+})();
+</script>
+<!-- Sin <base href="/">: con él, los enlaces del índice (#datos, #arco…)
+     resuelven a "/#datos" y mandan al inicio en vez de bajar a la sección. -->
+<title>Aviso de Privacidad · Puntazo</title>
+<meta name="description" content="Aviso de privacidad de Puntazo: qué datos recabamos, para qué usamos los clips de video, con quién los compartimos y cómo ejercer tus derechos ARCO." />
+<link rel="canonical" href="https://puntazoclips.com/privacidad.html" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Puntazo" />
+<meta property="og:title" content="Aviso de Privacidad · Puntazo" />
+<meta property="og:description" content="Qué datos recabamos, para qué usamos los clips de video y cómo ejercer tus derechos ARCO." />
+<meta property="og:url" content="https://puntazoclips.com/privacidad.html" />
+<meta property="og:image" content="https://puntazoclips.com/assets/og-card.jpg" />
+<meta property="og:locale" content="es_MX" />
+
+<!-- Favicons -->
+<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#050914" />
+
+<link rel="stylesheet" href="/assets/fonts.css" />
+<link rel="stylesheet" href="/assets/estilo.css" />
+<script src="/assets/analytics.js" async></script>
+
+<script src="/assets/lib/firebase-9.23.0/firebase-app-compat.js"></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js"></script>
+<script src="/assets/firebase-core.js"></script>
+<script src="/assets/auth.js"></script>
+
+<style>
+  /* ── Aviso de Privacidad ────────────────────────────────────────────
+     El texto legal es el aprobado por Puntazo; esta hoja solo le da forma.
+     OJO: estilo.css fija cualquier <nav> arriba (nav{position:fixed}),
+     por eso el índice es un <div role="navigation">. */
+  :root {
+    --pv-lime: #c8e835;
+    --pv-sky: #8cc2ff;
+    --pv-ink: rgba(234, 242, 255, 0.82);
+    --pv-soft: rgba(234, 242, 255, 0.62);
+    --pv-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238cc2ff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+  }
+
+  .pv { max-width: 720px; margin: 0 auto; }
+  .ic {
+    width: 1em; height: 1em; flex: none;
+    fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  /* ── Hero ── */
+  .pv-hero { position: relative; padding: 4px 0 30px; animation: pvIn .5s ease both; }
+  .pv-hero::before {
+    content: ""; position: absolute; left: -60px; top: 30px;
+    width: 300px; height: 300px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(11, 124, 255, 0.20), transparent 68%);
+    z-index: -1; pointer-events: none;
+  }
+  .pv-back {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 14px 8px 11px; border-radius: 999px;
+    background: rgba(11, 124, 255, 0.10);
+    border: 1px solid rgba(11, 124, 255, 0.30);
+    color: #cfe2ff; font-size: .84rem; font-weight: 700; text-decoration: none;
+    transition: background .15s, border-color .15s;
+  }
+  .pv-back:hover { background: rgba(11, 124, 255, 0.20); border-color: rgba(11, 124, 255, 0.55); }
+  .pv-back .ic { font-size: 15px; }
+  .pv-badge {
+    width: 58px; height: 58px; margin: 26px 0 18px;
+    display: grid; place-items: center; border-radius: 17px;
+    color: #fff; font-size: 28px;
+    background: linear-gradient(135deg, var(--blue2), var(--blue));
+    box-shadow: 0 12px 32px rgba(0, 79, 200, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+  .pv-eyebrow {
+    margin: 0 0 6px; font-size: .72rem; font-weight: 800;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--blue3);
+  }
+  .pv-hero h1 {
+    margin: 0 0 12px; color: #fff;
+    font-size: clamp(2rem, 7vw, 2.7rem); font-weight: 900;
+    line-height: 1.05; letter-spacing: -0.035em;
+  }
+  .pv-lead { margin: 0 0 20px; max-width: 32em; font-size: 1rem; line-height: 1.65; color: var(--pv-soft); }
+  .pv-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pv-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 13px; border-radius: 999px;
+    font: inherit; font-size: .78rem; font-weight: 700; color: #dbe8ff;
+    background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border2);
+  }
+  .pv-pill .ic { font-size: 14px; color: var(--blue3); }
+  .pv-print { cursor: pointer; transition: background .15s, border-color .15s; }
+  .pv-print:hover { background: rgba(11, 124, 255, 0.14); border-color: rgba(11, 124, 255, 0.45); }
+
+  /* ── Índice ── */
+  .pv-toc {
+    margin: 0 0 44px; padding: 16px 14px 10px;
+    border-radius: var(--radius); background: var(--card); border: 1px solid var(--border);
+    animation: pvIn .5s .08s ease both;
+  }
+  .pv-toc-title {
+    margin: 0 0 6px 8px; font-size: .7rem; font-weight: 800;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--muted);
+  }
+  .pv-toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  @media (min-width: 600px) {
+    .pv-toc ol { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, auto); grid-auto-flow: column; column-gap: 10px; }
+  }
+  .pv-toc a {
+    display: flex; align-items: baseline; gap: 12px;
+    padding: 9px 8px; border-radius: 10px;
+    color: #dbe8ff; text-decoration: none;
+    font-size: .9rem; font-weight: 600; line-height: 1.35;
+    transition: background .15s, color .15s;
+  }
+  .pv-toc a:hover { background: rgba(11, 124, 255, 0.12); color: #fff; }
+  .pv-toc a span { min-width: 1.7em; font-size: .76rem; font-weight: 800; color: var(--blue3); font-variant-numeric: tabular-nums; }
+
+  /* ── Secciones ── */
+  .pv-sec { margin: 0 0 40px; padding: 0 0 40px; border-bottom: 1px solid var(--border2); scroll-margin-top: 90px; }
+  .pv-sec:last-child { margin-bottom: 0; padding-bottom: 8px; border-bottom: 0; }
+  .pv-sec h2 {
+    margin: 0 0 14px; color: #fff;
+    font-size: clamp(1.18rem, 4vw, 1.4rem); font-weight: 800;
+    line-height: 1.3; letter-spacing: -0.015em;
+  }
+  .pv-num {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 9px;
+    font-size: .74rem; font-weight: 900; letter-spacing: .14em; color: var(--blue3);
+  }
+  .pv-num::after {
+    content: ""; flex: 0 0 46px; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--blue2), transparent);
+  }
+  .pv-sec p, .pv-sec li { font-size: .95rem; line-height: 1.75; color: var(--pv-ink); }
+  .pv-sec p { margin: 0 0 12px; }
+  .pv-sec p:last-child { margin-bottom: 0; }
+  .pv-sec strong { color: #fff; font-weight: 700; }
+  .pv-sec p a, .pv-sec li a {
+    color: var(--blue3); text-decoration: underline;
+    text-decoration-color: rgba(51, 149, 255, 0.45); text-underline-offset: 3px;
+  }
+  .pv-sec p a:hover, .pv-sec li a:hover { text-decoration-color: currentColor; }
+
+  /* ── Tarjetas (fuentes de datos) ── */
+  .pv-card {
+    margin: 16px 0 0; padding: 18px; border-radius: 16px;
+    background: linear-gradient(180deg, rgba(0, 79, 200, 0.11), rgba(0, 79, 200, 0.04));
+    border: 1px solid var(--border);
+  }
+  .pv-card-head { display: flex; align-items: flex-start; gap: 13px; margin-bottom: 14px; }
+  .pv-ico {
+    width: 40px; height: 40px; flex: none;
+    display: grid; place-items: center; border-radius: 12px;
+    font-size: 19px; color: var(--pv-sky);
+    background: rgba(11, 124, 255, 0.15); border: 1px solid rgba(11, 124, 255, 0.32);
+  }
+  .pv-card h3, .pv-purpose h3 { margin: 0; font-size: 1rem; font-weight: 800; line-height: 1.35; color: #fff; }
+  .pv-letter { color: var(--blue3); margin-right: 3px; }
+  .pv-sec .pv-card-sub { margin: 3px 0 0; font-size: .82rem; line-height: 1.45; color: var(--muted); }
+  .pv-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .pv-sec .pv-chips li {
+    margin: 0; padding: 7px 14px; border-radius: 999px;
+    font-size: .86rem; font-weight: 600; line-height: 1.35; color: #eaf2ff;
+    background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border2);
+  }
+  .pv-card-foot {
+    display: flex; gap: 12px; align-items: flex-start;
+    margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(255, 255, 255, 0.14);
+  }
+  .pv-card-foot .ic { font-size: 19px; color: var(--blue3); margin-top: 4px; }
+
+  /* ── Avisos destacados ── */
+  .pv-note {
+    display: flex; gap: 12px; align-items: flex-start;
+    margin: 16px 0 0; padding: 14px 16px; border-radius: 14px;
+    background: rgba(11, 124, 255, 0.08); border: 1px solid rgba(11, 124, 255, 0.28);
+  }
+  .pv-note .ic { font-size: 19px; color: var(--blue3); margin-top: 4px; }
+  .pv-sec .pv-note p { font-size: .92rem; color: #dbe8ff; }
+  .pv-note--lime { background: rgba(200, 232, 53, 0.06); border-color: rgba(200, 232, 53, 0.30); }
+  .pv-note--lime .ic { color: var(--pv-lime); }
+
+  /* ── Finalidades ── */
+  .pv-purposes { display: grid; gap: 12px; }
+  @media (min-width: 640px) { .pv-purposes { grid-template-columns: 1fr 1fr; } }
+  .pv-purpose {
+    padding: 18px; border-radius: 16px;
+    background: rgba(0, 79, 200, 0.07);
+    border: 1px solid var(--border); border-top: 3px solid var(--blue2);
+  }
+  .pv-purpose--sec {
+    background: rgba(200, 232, 53, 0.04);
+    border-color: rgba(200, 232, 53, 0.22); border-top-color: var(--pv-lime);
+  }
+  .pv-list { list-style: none; margin: 12px 0 0; padding: 0; }
+  .pv-sec .pv-list li { position: relative; margin: 9px 0 0; padding-left: 28px; font-size: .92rem; line-height: 1.6; }
+  .pv-list li::before {
+    content: ""; position: absolute; left: 0; top: .2em;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(11, 124, 255, 0.18) var(--pv-check) center / 11px no-repeat;
+  }
+  /* Secundarias: aro vacío (son opcionales, no se hacen “en automático”). */
+  .pv-list--opt li::before { left: 2px; top: .32em; width: 14px; height: 14px; background: none; border: 2px solid var(--pv-lime); }
+
+  /* ── Transferencias ── */
+  .pv-rows { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+  .pv-sec .pv-rows li {
+    display: flex; gap: 14px; align-items: flex-start;
+    margin: 0; padding: 15px 16px; border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border2);
+  }
+  .pv-rows li > div { padding-top: 7px; }
+
+  /* ── Derechos ARCO ── */
+  .pv-arco { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 16px 0 0; }
+  @media (min-width: 520px) { .pv-arco { grid-template-columns: repeat(4, 1fr); } }
+  .pv-arco div {
+    padding: 13px 6px 12px; border-radius: 14px; text-align: center;
+    background: rgba(255, 255, 255, 0.035); border: 1px solid var(--border2);
+  }
+  .pv-arco b {
+    display: block; margin-bottom: 6px;
+    font-size: 1.75rem; font-weight: 900; line-height: 1;
+    background: linear-gradient(135deg, var(--pv-sky), var(--blue2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .pv-arco span { font-size: .74rem; font-weight: 700; color: var(--pv-soft); }
+
+  .pv-contact {
+    margin: 18px 0 0; padding: 20px 18px; border-radius: 18px;
+    background: linear-gradient(160deg, rgba(11, 124, 255, 0.16), rgba(0, 79, 200, 0.05) 60%);
+    border: 1px solid rgba(11, 124, 255, 0.35);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  }
+  .pv-sec .pv-contact-label {
+    margin: 0; font-size: .7rem; font-weight: 800;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--muted);
+  }
+  .pv-contact-mail {
+    display: inline-block; margin: 2px 0 16px;
+    font-size: clamp(1.08rem, 4.8vw, 1.4rem); font-weight: 800; letter-spacing: -0.01em;
+    color: #fff; text-decoration: none; overflow-wrap: anywhere;
+  }
+  .pv-contact-mail:hover { color: var(--pv-sky); }
+  .pv-sec .pv-contact-h { margin: 0; font-size: .86rem; font-weight: 700; color: #fff; }
+  .pv-btn {
+    display: flex; align-items: center; justify-content: center; gap: 9px;
+    margin: 20px 0 0; padding: 14px 24px; border-radius: 50px;
+    font-size: .95rem; font-weight: 800; color: #fff; text-decoration: none;
+    background: linear-gradient(135deg, var(--blue2), var(--blue));
+    box-shadow: 0 0 30px rgba(0, 79, 200, 0.45);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .pv-btn:hover { transform: translateY(-1px); box-shadow: 0 0 40px rgba(11, 124, 255, 0.6); }
+  .pv-btn .ic { font-size: 18px; }
+  @media (min-width: 600px) { .pv-btn { display: inline-flex; } }
+  .pv-sec .pv-btn-hint { margin: 8px 0 0; font-size: .78rem; line-height: 1.5; color: var(--muted); }
+  .pv-sla {
+    display: flex; gap: 16px; align-items: center;
+    margin-top: 20px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.10);
+  }
+  .pv-sla-num {
+    flex: none; width: 76px; height: 76px; border-radius: 16px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(5, 9, 20, 0.55); border: 1px solid rgba(11, 124, 255, 0.30);
+  }
+  .pv-sla-num b { font-size: 1.8rem; font-weight: 900; line-height: 1; color: #fff; }
+  .pv-sla-num span {
+    margin-top: 4px; font-size: .58rem; font-weight: 800; line-height: 1.2;
+    letter-spacing: .06em; text-transform: uppercase; text-align: center; color: var(--pv-sky);
+  }
+  .pv-sec .pv-sla p { font-size: .9rem; }
+
+  /* ── Contacto ── */
+  .pv-links { display: grid; gap: 10px; margin-top: 14px; }
+  @media (min-width: 560px) { .pv-links { grid-template-columns: 1fr 1fr; } }
+  .pv-link {
+    display: flex; align-items: center; gap: 13px; min-width: 0;
+    padding: 14px 16px; border-radius: 14px; text-decoration: none;
+    background: var(--card); border: 1px solid var(--border);
+    transition: background .15s, border-color .15s, transform .15s;
+  }
+  .pv-link:hover { background: rgba(11, 124, 255, 0.12); border-color: rgba(11, 124, 255, 0.5); transform: translateY(-1px); }
+  .pv-link > span:last-child { min-width: 0; }
+  .pv-link small {
+    display: block; font-size: .66rem; font-weight: 800;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  }
+  .pv-link b { display: block; font-size: .95rem; font-weight: 800; color: #fff; overflow-wrap: anywhere; }
+
+  @keyframes pvIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .pv-hero, .pv-toc { animation: none; }
+  }
+
+  /* ── Impresión / guardar como PDF: hoja blanca, solo el texto ── */
+  @media print {
+    @page { margin: 18mm 16mm; }
+    body { background: #fff !important; color: #000 !important; }
+    .page-bg, #nav-root, nav, .pv-back, .pv-print, .pv-badge, .pv-hero::before,
+    .pv-toc, .pv-btn, .pv-btn-hint, .site-footer { display: none !important; }
+    .site-content { padding: 0 !important; max-width: none !important; }
+    .pv-hero, .pv-toc { animation: none !important; }
+    .pv * { color: #000 !important; box-shadow: none !important; }
+    .pv-card, .pv-purpose, .pv-note, .pv-rows li, .pv-contact, .pv-link,
+    .pv-arco div, .pv-sla-num, .pv-pill, .pv-ico, .pv-chips li {
+      background: none !important; border-color: #bbb !important;
+    }
+    .pv-arco b { background: none !important; -webkit-text-fill-color: #000; }
+    .pv-sec { border-color: #ddd !important; }
+    .pv-card, .pv-purpose, .pv-note, .pv-contact, .pv-rows li { break-inside: avoid; }
+    .pv-sec h2 { break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="page-bg"></div>
+<div id="nav-root" data-nav-variant="internal"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-toggle" viewBox="0 0 24 24"><rect x="1" y="5" width="22" height="14" rx="7" ry="7"/><circle cx="16" cy="12" r="3"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+</svg>
+
+<main class="site-content">
+  <article class="pv">
+
+    <div class="pv-hero">
+      <a href="/" class="pv-back"><svg class="ic"><use href="#i-back"/></svg>Volver a Puntazo</a>
+      <div class="pv-badge" aria-hidden="true"><svg class="ic"><use href="#i-shield"/></svg></div>
+      <p class="pv-eyebrow">Legal</p>
+      <h1>Aviso de Privacidad</h1>
+      <p class="pv-lead">Cómo tratamos tus datos y tu imagen en los clips de Puntazo, y cómo puedes pedirnos que eliminemos un clip en el que aparezcas.</p>
+      <div class="pv-meta">
+        <span class="pv-pill"><svg class="ic"><use href="#i-clock"/></svg>Última actualización: Septiembre 2026</span>
+        <button type="button" class="pv-pill pv-print" onclick="window.print()"><svg class="ic"><use href="#i-print"/></svg>Imprimir o guardar PDF</button>
+      </div>
+    </div>
+
+    <div class="pv-toc" role="navigation" aria-label="Contenido del aviso">
+      <p class="pv-toc-title">Contenido</p>
+      <ol>
+        <li><a href="#responsable"><span>01</span>Responsable</a></li>
+        <li><a href="#datos"><span>02</span>Datos que se recaban</a></li>
+        <li><a href="#finalidades"><span>03</span>Finalidades</a></li>
+        <li><a href="#transferencias"><span>04</span>Transferencias</a></li>
+        <li><a href="#fundamento"><span>05</span>El video como dato personal</a></li>
+        <li><a href="#arco"><span>06</span>Derechos ARCO</a></li>
+        <li><a href="#cambios"><span>07</span>Cambios al aviso</a></li>
+        <li><a href="#contacto"><span>08</span>Contacto</a></li>
+      </ol>
+    </div>
+
+    <section class="pv-sec" id="responsable">
+      <h2><span class="pv-num">01</span>Identidad y domicilio del responsable</h2>
+      <p>
+        Puntazo (en adelante, “Puntazo”), con domicilio en Ciudad de México, México, es responsable
+        del tratamiento de los datos personales que se recaban a través de este sitio web y de los
+        sistemas instalados en los clubes de pádel afiliados (BreakPoint, Interpadel, WellStreet y
+        futuros clubes), de conformidad con lo dispuesto en la Ley Federal de Protección de Datos
+        Personales en Posesión de los Particulares (LFPDPPP) y su Reglamento.
+      </p>
+    </section>
+
+    <section class="pv-sec" id="datos">
+      <h2><span class="pv-num">02</span>Datos personales que se recaban</h2>
+      <p>Para efectos de este aviso, distinguimos dos fuentes de datos:</p>
+
+      <div class="pv-card">
+        <div class="pv-card-head">
+          <span class="pv-ico" aria-hidden="true"><svg class="ic"><use href="#i-user"/></svg></span>
+          <div>
+            <h3><span class="pv-letter">a)</span> Datos que nos proporcionas directamente</h3>
+            <p class="pv-card-sub">Si te registras, contactas o contratas con nosotros:</p>
+          </div>
+        </div>
+        <ul class="pv-chips">
+          <li>Nombre</li>
+          <li>Correo electrónico</li>
+          <li>Teléfono</li>
+          <li>Club al que perteneces (en su caso)</li>
+        </ul>
+      </div>
+
+      <div class="pv-card">
+        <div class="pv-card-head">
+          <span class="pv-ico" aria-hidden="true"><svg class="ic"><use href="#i-video"/></svg></span>
+          <div>
+            <h3><span class="pv-letter">b)</span> Datos generados por el uso del servicio</h3>
+            <p class="pv-card-sub">Captura de video:</p>
+          </div>
+        </div>
+        <p>
+          <strong>Video e imagen:</strong> Puntazo cuenta con cámaras instaladas en las canchas de
+          pádel afiliadas. Un clip de video únicamente se genera cuando tú, de forma voluntaria,
+          presionas el botón físico (o realizas el gesto correspondiente) dispuesto para ello. No se
+          generan ni almacenan clips de tu jugada sin esta acción expresa de tu parte.
+        </p>
+        <div class="pv-card-foot">
+          <svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg>
+          <p>
+            Una vez generado, el clip queda <strong>disponible públicamente</strong> en la página de
+            Puntazo asociada al club, y puede ser visualizado y descargado por cualquier persona que
+            tenga acceso al enlace o a la página, no solo por ti.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pv-sec" id="finalidades">
+      <h2><span class="pv-num">03</span>Finalidades del tratamiento</h2>
+      <div class="pv-purposes">
+        <div class="pv-purpose">
+          <h3>Finalidades primarias</h3>
+          <p class="pv-card-sub">Necesarias para el servicio.</p>
+          <ul class="pv-list">
+            <li>Generar, procesar y poner a tu disposición el clip de video de tu jugada.</li>
+            <li>Permitir su visualización y descarga en la página del club correspondiente.</li>
+            <li>Dar mantenimiento y soporte técnico al sistema.</li>
+          </ul>
+        </div>
+        <div class="pv-purpose pv-purpose--sec">
+          <h3>Finalidades secundarias</h3>
+          <p class="pv-card-sub">No indispensables para el servicio, pero para las que solicitamos tu consentimiento.</p>
+          <ul class="pv-list pv-list--opt">
+            <li>Publicar tu clip, o fragmentos del mismo, en las redes sociales oficiales de Puntazo y/o de sus patrocinadores, con fines de mercadotecnia y promoción del producto.</li>
+            <li>Uso del clip en materiales comerciales o de prensa relacionados con Puntazo o sus marcas patrocinadoras.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pv-note pv-note--lime">
+        <svg class="ic" aria-hidden="true"><use href="#i-toggle"/></svg>
+        <p>
+          Si no deseas que tu clip se use para las finalidades secundarias, puedes manifestarlo por
+          los medios indicados en la <a href="#arco">sección 6</a>, sin que esto afecte tu posibilidad
+          de seguir usando el servicio.
+        </p>
+      </div>
+    </section>
+
+    <section class="pv-sec" id="transferencias">
+      <h2><span class="pv-num">04</span>Transferencias de datos</h2>
+      <p>Puntazo podrá compartir los clips de video (<strong>no datos de contacto</strong>) con:</p>
+      <ul class="pv-rows">
+        <li>
+          <span class="pv-ico" aria-hidden="true"><svg class="ic"><use href="#i-tag"/></svg></span>
+          <div><strong>Marcas patrocinadoras</strong> cuyos anuncios o branding aparecen integrados en el clip, únicamente para fines de exhibición del contenido patrocinado.</div>
+        </li>
+        <li>
+          <span class="pv-ico" aria-hidden="true"><svg class="ic"><use href="#i-share"/></svg></span>
+          <div><strong>Plataformas de redes sociales</strong> (Instagram, TikTok, Facebook, etc.), al momento de publicar el contenido en dichas plataformas.</div>
+        </li>
+      </ul>
+      <div class="pv-note">
+        <svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg>
+        <p>Puntazo no vende ni renta datos personales a terceros para fines distintos a los aquí señalados.</p>
+      </div>
+    </section>
+
+    <section class="pv-sec" id="fundamento">
+      <h2><span class="pv-num">05</span>Fundamento y naturaleza del video como dato personal</h2>
+      <p>
+        El video e imagen captados no constituyen, por sí mismos, datos personales sensibles
+        conforme a la LFPDPPP (que protege categorías como origen étnico, salud, creencias
+        religiosas, afiliación política o preferencia sexual).
+      </p>
+      <div class="pv-note">
+        <svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>
+        <p>
+          No obstante, dado que se trata de tu imagen y que ésta se hace pública y descargable,
+          Puntazo asume compromisos reforzados de transparencia descritos en este aviso.
+        </p>
+      </div>
+    </section>
+
+    <section class="pv-sec" id="arco">
+      <h2><span class="pv-num">06</span>Mecanismos para ejercer tus derechos ARCO y limitar el uso de tus datos</h2>
+      <p>
+        Puedes ejercer tus derechos de <strong>Acceso</strong>, <strong>Rectificación</strong>,
+        <strong>Cancelación</strong> y <strong>Oposición</strong> (ARCO), así como solicitar la
+        eliminación de un clip específico en el que aparezcas, enviando una solicitud&nbsp;a:
+      </p>
+
+      <div class="pv-arco" aria-hidden="true">
+        <div><b>A</b><span>Acceso</span></div>
+        <div><b>R</b><span>Rectificación</span></div>
+        <div><b>C</b><span>Cancelación</span></div>
+        <div><b>O</b><span>Oposición</span></div>
+      </div>
+
+      <div class="pv-contact">
+        <p class="pv-contact-label">Correo</p>
+        <a class="pv-contact-mail" href="mailto:puntazoclips@gmail.com">puntazoclips@gmail.com</a>
+        <p class="pv-contact-h">Incluye:</p>
+        <ul class="pv-list">
+          <li>Tu nombre</li>
+          <li>El club y fecha aproximada del clip</li>
+          <li>Una descripción que nos permita identificarlo (los clips no siempre están asociados a tu nombre en automático)</li>
+        </ul>
+        <a class="pv-btn"
+           href="mailto:puntazoclips@gmail.com?subject=Solicitud%20ARCO%20%2F%20eliminaci%C3%B3n%20de%20clip&amp;body=Nombre%3A%20%0D%0AClub%3A%20%0D%0AFecha%20aproximada%20del%20clip%3A%20%0D%0ADescripci%C3%B3n%20para%20identificarlo%3A%20%0D%0A%0D%0A%C2%BFQu%C3%A9%20solicitas%3F%20(acceso%2C%20rectificaci%C3%B3n%2C%20cancelaci%C3%B3n%2C%20oposici%C3%B3n%20o%20eliminaci%C3%B3n%20de%20un%20clip)%3A%20"
+           onclick="try{gtag('event','privacy_request_click',{event_category:'Legal'});}catch(e){}">
+          <svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>Enviar solicitud por correo
+        </a>
+        <p class="pv-btn-hint">Abre tu correo con estos datos listos para llenar.</p>
+        <div class="pv-sla">
+          <div class="pv-sla-num" aria-hidden="true"><b>20</b><span>días<br>hábiles</span></div>
+          <p>Puntazo dará respuesta en un plazo máximo de 20 días hábiles, conforme a la ley.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pv-sec" id="cambios">
+      <h2><span class="pv-num">07</span>Cambios al aviso de privacidad</h2>
+      <p>
+        Puntazo podrá modificar este aviso de privacidad en cualquier momento. Cualquier cambio será
+        publicado en esta misma página, indicando la fecha de la última actualización.
+      </p>
+    </section>
+
+    <section class="pv-sec" id="contacto">
+      <h2><span class="pv-num">08</span>Contacto</h2>
+      <p>Para dudas relacionadas con este aviso de privacidad, contáctanos en:</p>
+      <div class="pv-links">
+        <a class="pv-link" href="mailto:puntazoclips@gmail.com">
+          <span class="pv-ico" aria-hidden="true"><svg class="ic"><use href="#i-mail"/></svg></span>
+          <span><small>Correo</small><b>puntazoclips@gmail.com</b></span>
+        </a>
+        <a class="pv-link" href="https://puntazoclips.com/">
+          <span class="pv-ico" aria-hidden="true"><svg class="ic"><use href="#i-globe"/></svg></span>
+          <span><small>Sitio</small><b>puntazoclips.com</b></span>
+        </a>
+      </div>
+    </section>
+
+  </article>
+</main>
+
+<footer class="site-footer">
+  <a href="/inicio.html" class="foot-logo">
+    <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
+  </a>
+  <div class="foot-links">
+    <a href="/privacidad.html" aria-current="page">Aviso de Privacidad</a>
+    <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
+    <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>
+    <a href="https://wa.me/522206804856?text=Hola%20Puntazo!%20Quiero%20mas%20informacion." target="_blank" rel="noopener">WhatsApp</a>
+    <a href="https://ig.me/m/puntazoclips" target="_blank" rel="noopener">Mensaje</a>
+  </div>
+  <span class="foot-copy">© 2026 Puntazo – Todos los derechos reservados</span>
+</footer>
+
+<script src="/assets/header.js"></script>
+</body>
+</html>
