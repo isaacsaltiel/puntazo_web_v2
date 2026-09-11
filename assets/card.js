@@ -488,6 +488,13 @@ window.PuntazoCard = (function () {
     if (opts.showSave)  grupo.appendChild(buildSavePill(entry, { onUnsave: opts.onUnsave }));
     if (opts.showFullscreen) grupo.appendChild(buildFullscreenPill(video));
     pillsEl.appendChild(grupo);
+    // En medio: Spotify, solo en clips que llevan la música de AquaWolf (assets/musica.js).
+    if (window.PuntazoMusica) {
+      try {
+        const b = window.PuntazoMusica.crearBoton(entry._meta, { nombre: entry.nombre });
+        if (b) pillsEl.appendChild(b);
+      } catch (e) { console.warn('[PuntazoCard musica]', e); }
+    }
     card.appendChild(pillsEl);
 
     // 4. Patrocinador (opcional). El outro del video dice "Pídelos en el link

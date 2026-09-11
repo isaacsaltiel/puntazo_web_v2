@@ -13,8 +13,29 @@ vivos en Dropbox). Ver `tools/nuc_assets/README.md`.
 | 2026-09-08 | `global__anuncio` | 5 | `ANUNCIO.webm` | 1,548,761 | `b578e6e2…b176` | claude-code |
 | 2026-09-08 | `club__BreakPoint__outro` | 1 | `outro.mp4` | 9,626,780 | `d1ee2068…1432` | claude-code |
 | 2026-09-08 | `club__Interpadel__outro` | 1 | `outro.mp4` | 9,626,780 | `d1ee2068…1432` | claude-code |
+| 2026-09-11 | `club__WellStreet-Padel__anuncio` | 1 | `ANUNCIO.webm` | 820,151 | `6a8a535f…e44e` | claude-code |
+| 2026-09-11 | `club__WellStreet-Pickleball__anuncio` | 1 | `ANUNCIO.webm` | 820,151 | `6a8a535f…e44e` | claude-code |
 
 ## Detalle de cambios
+
+### `club__WellStreet-Padel__anuncio` v1 + `club__WellStreet-Pickleball__anuncio` v1 (2026-09-11)
+WellStreet vuelve al ANUNCIO de Puntazo, "¿Tu marca aquí?". Es el mismo archivo que
+`global__anuncio` v4.
+
+**Por qué (decisión de Isaac):** Loka solo paga BreakPoint e Interpadel. Su banner animado
+le llegó también a WellStreet porque `global__anuncio` v5 es global, y la NUC de WS sí lo
+bajó el 8-sep (su log dijo `ANUNCIO.webm:applied`).
+
+**Cómo:** mismo mecanismo que los outros: override por club sobre el mismo
+`target_filename`. Los dos clubes de WS comparten NUC y archivo, por eso van con el mismo
+hash. `global__anuncio` v5 (Loka) queda intacto para BP e IP.
+
+**Verificar:**
+- En la NUC de WS, el sha256 de `ANUNCIO.webm` debe ser `6a8a535f…e44e`. No mires
+  `applied`: el writeback de WS está roto.
+- O baja un clip nuevo de WS y mira el banner.
+
+**Rollback:** `enabled=false` en los dos docs de club; vuelve el global v5.
 
 ### `club__BreakPoint__outro` v1 + `club__Interpadel__outro` v1 (2026-09-08)
 Outro **Loka Healthy x Puntazo** (co-branded, 1920x1080, 10s, H.264 + AAC 44100, con
@@ -65,11 +86,12 @@ azul). Ciclo 12s, loop seamless, WebM VP9 + alpha. Fuente: `puntazo_combo.webm`.
 Ojo: aparecer en `applied` NO significa estar al día — hay que mirar la VERSIÓN.
 - **BreakPoint**: al día. Tomó `anuncio` v5 en ~1 min (2026-09-08 19:47).
 - **Interpadel**: iba en v4 al momento del push; su ciclo la levanta sola (≤5 min).
-- **⚠️ WellStreet**: **CONGELADA EN v1 EN TODOS LOS ASSETS**, último apply
-  2026-06-06 17:37. No tomó anuncio v2/v3/v4/v5, ni outro v2/v3, ni sus propios
-  logos de club v2 (el `wellstreet.webm` animado). Su `asset_sync` no corre continuo
-  — es el pendiente viejo de "restart controlado en la NUC de WS". Mientras no se
-  arregle, WellStreet sigue mostrando los PNG estáticos y **no muestra a Loka**.
+- **WellStreet**: ⚠️ **CORRECCIÓN (8-sep, tarde):** esta línea decía que WS estaba
+  "congelada en v1" y que no mostraba a Loka. Era FALSO. Su `asset_sync` SÍ corre: el
+  log del runner dijo `ANUNCIO.webm:applied`, así que bajó a Loka. Lo roto es solo el
+  writeback `applied` de Firestore, que se quedó en v1 del 6-jun. Nunca diagnostiques WS
+  con `applied`: mira el log del runner o el sha256 en disco. Desde el 11-sep, WS usa
+  su propio override de anuncio (ver arriba).
 
 ## Notas operativas
 - Las fuentes de los assets viven en `C:\Users\Isaac\Desktop\puntazo_banner_animado\`.
