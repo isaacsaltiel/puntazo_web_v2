@@ -968,7 +968,11 @@ function limpiarRecursosDePagina() {
 }
 
 // ========== renderPaginaActual — con separadores de fecha ==========
+// Cada render se numera. Si empieza otro mientras este espera (paginar rápido,
+// o un clip que llega en vivo), el viejo se retira sin pintar tarjetas encima.
+let renderGen = 0;
 async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
+  const miRender = ++renderGen;
   limpiarRecursosDePagina();
 
   const params = getQueryParams();
@@ -1060,6 +1064,8 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
         promoButtons.forEach(b => pc.appendChild(b)); card.appendChild(pc);
       }
     } catch {}
+    // Empezó otro render mientras esperábamos: ese pinta la página, este se retira.
+    if (miRender !== renderGen) return;
 
     // Otro ángulo (async)
     (async () => {
@@ -1099,6 +1105,8 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
 async function populateVideos() {
   const params = getQueryParams();
   const { loc, can, lado, filtro, video: targetId } = params;
+  // Mientras carga, assets/clips-en-vivo.js no toca el feed (ver PuntazoLado).
+  ladoCargando = true;
 
   try {
     const resCfg = await fetch(`data/config_locations.json?cb=${Date.now()}`, { cache: "no-store" });
@@ -1139,6 +1147,12 @@ async function populateVideos() {
     ensureOppositeTopButton(oppTopHref, oppInfoCache?.oppName);
 
     const recientes = Array.isArray(data.videos) ? data.videos : [];
+    // Clips que la NUC ya publicó en vivo pero el índice todavía no trae
+    // (assets/clips-en-vivo.js). Cuando el índice los traiga, se deduplican aquí.
+    const nombresIndice = new Set(recientes.map(v => v.nombre));
+    for (const e of clipsEnVivoPendientes()) {
+      if (e && e.nombre && !nombresIndice.has(e.nombre)) { recientes.push(Object.assign({}, e)); nombresIndice.add(e.nombre); }
+    }
     recientes.forEach(v => { v._meta = parseFromName(v.nombre); v._isVitrina = false; });
 
     // ── 2. Vitrina: SIEMPRE se carga (19-ago-2026) ─────────────
@@ -1226,14 +1240,62 @@ async function populateVideos() {
     await renderPaginaActual({ fueCambioDePagina: false });
     if (loading) loading.style.display = "none";
     if (targetIdResolved) scrollToVideoById(targetIdResolved);
+    ladoListo = true;
 
   } catch(err) {
     console.error("populateVideos:", err);
     const vc = document.getElementById("videos-container");
     if (vc) vc.innerHTML = "<p style='color:#fff;padding:20px 0'>No hay videos disponibles.</p>";
     const loading = document.getElementById("loading"); if (loading) loading.style.display = "none";
+  } finally {
+    ladoCargando = false;
+    // assets/clips-en-vivo.js entrega aquí los clips que llegaron mientras cargaba.
+    if (ladoListo) { try { window.dispatchEvent(new Event("pz:lado-cargado")); } catch {} }
   }
 }
+
+// ── Clips en vivo (assets/clips-en-vivo.js) ─────────────────────
+// La NUC publica cada clip en Firestore en cuanto lo sube, antes de que el CI
+// lo meta al índice JSON. Esto deja que ese módulo los sume al feed sin volver
+// a descargar nada; cuando el índice los trae, todo se deduplica por nombre.
+let ladoCargando = false, ladoListo = false;
+
+function clipsEnVivoPendientes() {
+  try { return (window.PuntazoClipsVivo && window.PuntazoClipsVivo.entradas()) || []; } catch { return []; }
+}
+
+function sumarClipsEnVivo(entradas) {
+  const ya = new Set(videosListaCompleta.map(v => v.nombre));
+  const nuevas = [];
+  for (const e of entradas || []) {
+    if (!e || !e.nombre || ya.has(e.nombre)) continue;
+    const v = Object.assign({}, e, { _isVitrina: false });
+    v._meta = parseFromName(v.nombre);
+    if (!v._meta) continue;
+    if (ultimoFiltroActivo && v._meta.h !== ultimoFiltroActivo) continue;   // respeta ?filtro=HH
+    v._dateLabel = getDateLabel(v._meta);
+    nuevas.push(v); ya.add(v.nombre);
+  }
+  if (!nuevas.length) return [];
+  videosListaCompleta = videosListaCompleta.concat(nuevas)
+    .sort((a, b) => (b._meta?.tsKey ?? -Infinity) - (a._meta?.tsKey ?? -Infinity));
+  paginasPorDia = construirPaginasPorDia(videosListaCompleta);
+  return nuevas;
+}
+
+window.PuntazoLado = {
+  listo: () => ladoListo && !ladoCargando,
+  sumarClipsEnVivo,
+  enPrimeraPagina: () => paginaActual === 0,
+  algoReproduciendo: () => !!(document.fullscreenElement || document.webkitFullscreenElement) ||
+    allVideos.some(v => v && !v.paused && !v.ended),
+  render: () => renderPaginaActual({ fueCambioDePagina: false }),
+  irAlInicio: async () => {
+    paginaActual = 0; setQueryParams({ pg: 0 });
+    await renderPaginaActual({ fueCambioDePagina: false });
+    scrollToTop();
+  },
+};
 
 // ----------------------- scroll top -----------------------
 function createScrollToTopBtn() {
