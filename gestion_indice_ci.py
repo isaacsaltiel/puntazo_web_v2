@@ -10,10 +10,12 @@ import os
 import argparse
 import dropbox
 import json
+import random
 import re
+import time
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
-from github import Github, Auth
+from github import Github, Auth, GithubException
 
 # ──────────────────────────────────────────
 # Config
@@ -107,19 +109,34 @@ def upload_to_github(json_data: str, github_path: str, message: str = None):
     branch = repo.default_branch
     msg    = message or f"CI: actualizar {github_path.split('/')[-1]}"
     print(f"[DEBUG] Subiendo {github_path} → GitHub ({branch})")
-    try:
-        contents = repo.get_contents(github_path, ref=branch)
-        repo.update_file(contents.path, msg, json_data, contents.sha, branch=branch)
-        print(f"[OK] {github_path} actualizado")
-    except Exception as e:
-        if "404" in str(e):
-            try:
-                repo.create_file(github_path, msg, json_data, branch=branch)
-                print(f"[OK] {github_path} creado")
-            except Exception as inner:
-                print(f"[ERROR] No se pudo crear {github_path}: {inner}")
-        else:
+    # Desde sep-2026 corren a la vez corridas de lados distintos (un grupo de
+    # concurrencia por lado). Si otra corrida movió la rama entre la lectura y
+    # la escritura, GitHub responde 409: se relee el sha y se reintenta.
+    for intento in range(1, 5):
+        try:
+            contents = repo.get_contents(github_path, ref=branch)
+            repo.update_file(contents.path, msg, json_data, contents.sha, branch=branch)
+            print(f"[OK] {github_path} actualizado")
+            return
+        except GithubException as e:
+            if e.status == 404:
+                try:
+                    repo.create_file(github_path, msg, json_data, branch=branch)
+                    print(f"[OK] {github_path} creado")
+                except Exception as inner:
+                    print(f"[ERROR] No se pudo crear {github_path}: {inner}")
+                return
+            if (e.status == 409 or e.status >= 500) and intento < 4:
+                espera = 1.5 * intento + random.random()
+                print(f"[WARN] {github_path}: HTTP {e.status} (otra corrida escribió a la vez); "
+                      f"reintento {intento}/3 en {espera:.1f}s")
+                time.sleep(espera)
+                continue
             print(f"[ERROR] No se pudo subir {github_path}: {e}")
+            return
+        except Exception as e:
+            print(f"[ERROR] No se pudo subir {github_path}: {e}")
+            return
 
 
 def save_and_upload(data: dict, local_path: str, github_path: str, label: str):

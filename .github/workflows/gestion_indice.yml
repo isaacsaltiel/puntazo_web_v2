@@ -11,8 +11,15 @@ on:
       can:  { type: string, required: false }
       lado: { type: string, required: false }
 
+# Un grupo por lado (sep-2026). Las NUCs empiezan a disparar con loc/can/lado,
+# que indexa solo ese lado en ~1 min. Con un grupo único, GitHub guarda UNA sola
+# corrida pendiente y la más nueva cancela a la anterior: el disparo de un lado
+# podía tumbar el barrido pendiente que esperaba otro club. Los barridos (cron o
+# disparo sin inputs) siguen compartiendo su propio grupo, como antes. Dos
+# corridas de lados distintos sí escriben a la vez: upload_to_github reintenta
+# si GitHub responde conflicto.
 concurrency:
-  group: gestionar-indice
+  group: gestionar-indice-${{ github.event.inputs.loc || github.event.client_payload.loc || 'barrido' }}-${{ github.event.inputs.can || github.event.client_payload.can || 'todo' }}-${{ github.event.inputs.lado || github.event.client_payload.lado || 'todo' }}
   cancel-in-progress: false
 
 jobs:
@@ -98,11 +105,12 @@ jobs:
           if ok==0 and fail>0: sys.exit(1)
           PY
 
-      # ── SIEMPRE al final: regenerar stats_summary.json ──────
-      # Corre sin importar cuál paso anterior se ejecutó.
-      # Lee todos los videos_recientes.json ya subidos a GitHub
-      # y produce data/stats_summary.json con conteos por club/cancha/lado.
+      # ── Al final de cada BARRIDO: regenerar stats_summary.json ─
+      # Lee todos los videos_recientes.json ya subidos a GitHub y produce el
+      # stats_summary.json que lee admin.html. Tarda ~25 s, así que solo corre en
+      # barridos (cron o disparo sin inputs), aunque el barrido falle: en las
+      # corridas de un solo lado alargaría justo la vía rápida.
       - name: Generar stats_summary.json
-        if: always()
+        if: always() && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.loc == '' || github.event.inputs.loc == null)))
         run: |
           python generar_stats.py
