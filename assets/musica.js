@@ -20,11 +20,14 @@
     url: "https://open.spotify.com/artist/4GTPeoDoqIDrJ6GQZZKy4u",
     // Club (ID de config_locations) → desde cuándo sus clips llevan música, en
     // hora local del club. Para sumar un club, agrega su línea el día que su NUC
-    // la tenga en producción (Interpadel todavía no).
+    // la tenga en producción. Ya están los tres.
     desde: {
       "BreakPoint": "2026-09-10T12:53:00",
       "WellStreet-Padel": "2026-09-10T20:12:00",
       "WellStreet-Pickleball": "2026-09-10T20:12:00",
+      // En Interpadel las cámaras graban sonido de cancha: ahí la canción va
+      // encima y el audio de la cancha debajo (ver Paso 5-C del tutorial).
+      "Interpadel": "2026-09-11T15:01:00",
     },
   };
 

@@ -23,8 +23,11 @@ test("WellStreet (los dos clubes) desde el 10-sep 20:12", () => {
   assert.strictEqual(M.llevaMusica(meta("WellStreet-Padel", 2026, 9, 10, 19, 0)), false);
 });
 
-test("Interpadel todavía no tiene música: sin botón", () => {
-  assert.strictEqual(M.llevaMusica(meta("Interpadel", 2026, 9, 11, 9, 0)), false);
+test("Interpadel desde el 11-sep 15:01 (ahí la canción va sobre el audio de la cancha)", () => {
+  assert.strictEqual(M.llevaMusica(meta("Interpadel", 2026, 9, 11, 15, 2)), true);
+  assert.strictEqual(M.llevaMusica(meta("Interpadel", 2026, 9, 11, 15, 1)), true, "justo al arrancar");
+  assert.strictEqual(M.llevaMusica(meta("Interpadel", 2026, 9, 11, 9, 0)), false, "antes de la música");
+  assert.strictEqual(M.llevaMusica(meta("Interpadel", 2026, 9, 10, 22, 4)), false);
 });
 
 test("el partido completo va sin música: sin botón", () => {
