@@ -105,12 +105,13 @@ jobs:
           if ok==0 and fail>0: sys.exit(1)
           PY
 
-      # ── Al final de cada BARRIDO: regenerar stats_summary.json ─
-      # Lee todos los videos_recientes.json ya subidos a GitHub y produce el
-      # stats_summary.json que lee admin.html. Tarda ~25 s, así que solo corre en
-      # barridos (cron o disparo sin inputs), aunque el barrido falle: en las
-      # corridas de un solo lado alargaría justo la vía rápida.
+      # ── SIEMPRE al final: stats_summary.json + videos_index.json ─
+      # Corre sin importar cuál paso anterior se ejecutó, también en las
+      # corridas de un solo lado (~25 s). Además de las stats de admin.html,
+      # regenera videos_index.json: el índice global con el que clip.html abre
+      # los links compartidos. Si solo corriera en barridos, el link de un clip
+      # nuevo no abriría hasta el siguiente barrido.
       - name: Generar stats_summary.json
-        if: always() && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.loc == '' || github.event.inputs.loc == null)))
+        if: always()
         run: |
           python generar_stats.py

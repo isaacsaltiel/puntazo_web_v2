@@ -1289,11 +1289,34 @@ window.PuntazoLado = {
   enPrimeraPagina: () => paginaActual === 0,
   algoReproduciendo: () => !!(document.fullscreenElement || document.webkitFullscreenElement) ||
     allVideos.some(v => v && !v.paused && !v.ended),
-  render: () => renderPaginaActual({ fueCambioDePagina: false }),
+  // ¿Bajó más de una pantalla desde el inicio de los clips? Entonces está viendo
+  // clips viejos y re-pintar le movería lo que ve. Se mide contra el inicio del
+  // feed y no contra el tope de la página: en el teléfono el bloque del
+  // patrocinador empuja el primer clip a ~720 px (la primera versión medía 240 px
+  // desde el tope y casi siempre avisaba, cazado en la prueba de BP 11-sep).
+  lejosDelInicio: () => !!contenedorVideos && contenedorVideos.getBoundingClientRect().top < -window.innerHeight,
+  // Re-pinta sin que el navegador mueva el scroll: mientras el contenedor se
+  // vacía y se vuelve a llenar, conserva su alto.
+  render: async () => {
+    const cont = contenedorVideos, y = window.scrollY;
+    if (cont) cont.style.minHeight = cont.offsetHeight + "px";
+    try { await renderPaginaActual({ fueCambioDePagina: false }); }
+    finally {
+      if (cont) cont.style.minHeight = "";
+      window.scrollTo({ top: y, behavior: "instant" });
+    }
+  },
+  // Lleva la vista a la tarjeta más arriba de las indicadas, solo si no se ve entera.
+  mostrarClip: (nombres) => {
+    const cards = [].concat(nombres || []).map(n => document.getElementById(n)).filter(Boolean);
+    if (!cards.length) return;
+    const card = cards.reduce((a, b) => (a.getBoundingClientRect().top <= b.getBoundingClientRect().top ? a : b));
+    const r = card.getBoundingClientRect();
+    if (r.top < 72 || r.bottom > window.innerHeight) card.scrollIntoView({ behavior: "smooth", block: "center" });
+  },
   irAlInicio: async () => {
     paginaActual = 0; setQueryParams({ pg: 0 });
     await renderPaginaActual({ fueCambioDePagina: false });
-    scrollToTop();
   },
 };
 

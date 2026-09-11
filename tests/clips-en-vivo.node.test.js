@@ -99,15 +99,17 @@ function fakeCard() {
   const s = new Set();
   return { classList: { add: (c) => s.add(c), remove: (c) => s.delete(c), contains: (c) => s.has(c) } };
 }
-/** Imita window.PuntazoLado (script.js). `enLista` = lo que ya trae el índice. */
+/** Imita window.PuntazoLado (script.js). `enLista` = lo que ya trae el índice;
+ *  `lejos` = bajó más de una pantalla desde el inicio de los clips. */
 function fakeLado(o = {}) {
   const lista = new Set(o.enLista || []);
   return {
-    estado: { listo: o.listo !== false, pagina: o.pagina || 0, reproduciendo: !!o.reproduciendo },
-    llamadas: { render: 0, irAlInicio: 0 },
+    estado: { listo: o.listo !== false, pagina: o.pagina || 0, reproduciendo: !!o.reproduciendo, lejos: !!o.lejos },
+    llamadas: { render: 0, irAlInicio: 0, mostrarClip: [] },
     listo() { return this.estado.listo; },
     enPrimeraPagina() { return this.estado.pagina === 0; },
     algoReproduciendo() { return this.estado.reproduciendo; },
+    lejosDelInicio() { return this.estado.lejos; },
     sumarClipsEnVivo(ents) {
       const n = ents.filter((e) => !lista.has(e.nombre));
       n.forEach((e) => lista.add(e.nombre));
@@ -115,26 +117,25 @@ function fakeLado(o = {}) {
     },
     render() { this.llamadas.render++; return Promise.resolve(); },
     irAlInicio() { this.llamadas.irAlInicio++; return Promise.resolve(); },
+    mostrarClip(nombres) { this.llamadas.mostrarClip.push(nombres); },
   };
 }
 function montar(opts = {}) {
   const doc = fakeDoc();
   const L = fakeLado(opts);
   const eventos = [];
-  const ctl = V.crearControlador(CTX, {
-    lado: () => L, scrollY: () => opts.scrollY || 0, doc,
-    gtag: () => (...a) => eventos.push(a),
-  });
+  const ctl = V.crearControlador(CTX, { lado: () => L, doc, gtag: () => (...a) => eventos.push(a) });
   return { doc, L, ctl, eventos };
 }
 const tick = () => new Promise((r) => setImmediate(r));
 
-test("arriba y sin video sonando: el clip se pinta al instante y se resalta", async () => {
+test("cerca del inicio de los clips y sin video sonando: se pinta y la vista va al clip", async () => {
   const { doc, L, ctl, eventos } = montar();
   doc.cards[NOMBRE] = fakeCard();
   assert.strictEqual(ctl.recibir([DOC]), "directo");
   assert.strictEqual(L.llamadas.render, 1);
   await tick();
+  assert.deepStrictEqual(L.llamadas.mostrarClip, [[NOMBRE]], "la vista debe ir al clip nuevo");
   assert.ok(doc.cards[NOMBRE].classList.contains("pz-clip-nuevo"), "la tarjeta nueva no se resaltó");
   assert.deepStrictEqual(eventos[0].slice(0, 2), ["event", "clip_en_vivo"]);
   assert.strictEqual(eventos[0][2].modo, "directo");
@@ -152,11 +153,12 @@ test("viendo un video: NO re-pinta (no se lo corta); avisa, y el aviso lleva al 
   assert.strictEqual(L.llamadas.irAlInicio, 1);
   assert.strictEqual(doc.body.hijos.length, 0, "el aviso debe desaparecer al tocarlo");
   await tick();
+  assert.deepStrictEqual(L.llamadas.mostrarClip, [[NOMBRE]], "tocar el aviso debe llevar AL CLIP, no al tope");
   assert.ok(doc.cards[NOMBRE].classList.contains("pz-clip-nuevo"));
 });
 
-test("scrolleado abajo: avisa; un segundo clip se suma al MISMO aviso", () => {
-  const { doc, L, ctl } = montar({ scrollY: 900 });
+test("bajó más de una pantalla desde el inicio de los clips: avisa; otro clip se suma al MISMO aviso", () => {
+  const { doc, L, ctl } = montar({ lejos: true });
   assert.strictEqual(ctl.recibir([DOC]), "aviso");
   assert.strictEqual(ctl.recibir([DOC, OTRO]), "aviso");
   assert.strictEqual(doc.body.hijos.length, 1);
@@ -199,10 +201,19 @@ test("docs de otros estados o sin link no despiertan nada", () => {
   assert.strictEqual(L.llamadas.render, 0);
 });
 
+test("con un script.js viejo (sin mostrarClip) igual pinta y resalta, sin romperse", async () => {
+  const { doc, L, ctl } = montar();
+  delete L.mostrarClip;
+  doc.cards[NOMBRE] = fakeCard();
+  assert.strictEqual(ctl.recibir([DOC]), "directo");
+  await tick();
+  assert.ok(doc.cards[NOMBRE].classList.contains("pz-clip-nuevo"));
+});
+
 // Regresión cazada en el navegador: tras "Actualizar", el clip ya estaba pintado
 // arriba y el aviso seguía ahí.
 test("tras recargar en la página 1, el aviso sobra y se quita", () => {
-  const { doc, ctl } = montar({ scrollY: 900 });
+  const { doc, ctl } = montar({ lejos: true });
   ctl.recibir([DOC]);
   assert.strictEqual(doc.body.hijos.length, 1);
   ctl.alCargar();

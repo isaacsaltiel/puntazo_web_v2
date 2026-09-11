@@ -28,8 +28,6 @@
   var OFFSET_MX_MS = -6 * 3600 * 1000;
   var HOSTS_DROPBOX = { "www.dropbox.com": true, "dropbox.com": true, "dl.dropboxusercontent.com": true };
   var RE_NOMBRE = /^[A-Za-z0-9_-]+_\d{8}_\d{6}\.mp4$/;
-  // Más abajo que esto, re-pintar el feed movería lo que la persona está viendo.
-  var MAX_SCROLL_PARA_PINTAR = 240;
 
   function p2(n) { return (n < 10 ? "0" : "") + n; }
 
@@ -81,7 +79,7 @@
   }
 
   // Une lo que llega de Firestore con el feed de script.js. deps permite
-  // probarlo sin navegador: { lado(), scrollY(), doc, gtag() }.
+  // probarlo sin navegador: { lado(), doc, gtag() }.
   function crearControlador(ctx, deps) {
     var vivos = {};
     var aviso = null;
@@ -108,6 +106,13 @@
       });
     }
 
+    // Lleva la vista al clip nuevo (script.js elige la tarjeta de más arriba)
+    // y lo resalta.
+    function mostrar(L, nombres) {
+      if (typeof L.mostrarClip === "function") L.mostrarClip(nombres);
+      resaltar(nombres);
+    }
+
     function avisar(nuevas) {
       if (!aviso) {
         aviso = deps.doc.createElement("button");
@@ -119,7 +124,7 @@
           aviso.remove();
           aviso = null;
           var L = deps.lado();
-          if (L) Promise.resolve(L.irAlInicio()).then(function () { resaltar(nombres); });
+          if (L) Promise.resolve(L.irAlInicio()).then(function () { mostrar(L, nombres); });
         });
         deps.doc.body.appendChild(aviso);
       }
@@ -129,16 +134,17 @@
     }
 
     // Suma al feed lo que el índice todavía no trae. Si no interrumpe nada
-    // (página 1, arriba de todo, sin video sonando) se ve al instante; si no,
-    // sale el aviso y la persona decide cuándo verlo.
+    // (página 1, sin video sonando y sin haber bajado más de una pantalla desde
+    // el inicio de los clips) se pinta y la vista va al clip. Si no, sale el
+    // aviso y la persona decide cuándo verlo.
     function entregar() {
       var L = deps.lado();
       if (!L || !L.listo()) return "espera";   // script.js las suma al terminar de cargar
       var nuevas = L.sumarClipsEnVivo(entradas());
       if (!nuevas.length) return "nada";
-      if (L.enPrimeraPagina() && deps.scrollY() < MAX_SCROLL_PARA_PINTAR && !L.algoReproduciendo()) {
-        var nombres = nuevas.map(function (e) { return e.nombre; });
-        Promise.resolve(L.render()).then(function () { resaltar(nombres); });
+      var nombres = nuevas.map(function (e) { return e.nombre; });
+      if (L.enPrimeraPagina() && !L.algoReproduciendo() && !L.lejosDelInicio()) {
+        Promise.resolve(L.render()).then(function () { mostrar(L, nombres); });
         medir(nuevas, "directo");
         return "directo";
       }
@@ -180,7 +186,6 @@
 
     var ctl = crearControlador(ctx, {
       lado: function () { return win.PuntazoLado; },
-      scrollY: function () { return win.scrollY || 0; },
       doc: win.document,
       gtag: function () { return win.gtag; },
     });
