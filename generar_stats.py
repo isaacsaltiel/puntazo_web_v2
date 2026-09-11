@@ -15,11 +15,13 @@ Genera:
 import os
 import csv
 import json
+import random
 import sys
+import time
 from collections import defaultdict
 from datetime import datetime, timezone
 from io import StringIO
-from github import Github, Auth
+from github import Github, Auth, GithubException
 
 GITHUB_TOKEN = os.environ.get("PAT_GITHUB")
 GITHUB_REPO  = "isaacsaltiel/puntazo_web_v2"
@@ -54,16 +56,31 @@ def upload_to_github(content: str, path: str, message: str, repo=None):
         print("[WARN] Sin repo GitHub — no se sube archivo.")
         return
     branch = repo.default_branch
-    try:
-        existing = repo.get_contents(path, ref=branch)
-        repo.update_file(existing.path, message, content, existing.sha, branch=branch)
-        print(f"[OK] {path} actualizado")
-    except Exception as e:
-        if "404" in str(e):
-            repo.create_file(path, message, content, branch=branch)
-            print(f"[OK] {path} creado")
-        else:
+    # Desde sep-2026 corren a la vez corridas de lados distintos y todas terminan
+    # aquí. Si otra movió la rama entre la lectura y la escritura, GitHub
+    # responde 409: se relee el sha y se reintenta.
+    for intento in range(1, 5):
+        try:
+            existing = repo.get_contents(path, ref=branch)
+            repo.update_file(existing.path, message, content, existing.sha, branch=branch)
+            print(f"[OK] {path} actualizado")
+            return
+        except GithubException as e:
+            if e.status == 404:
+                repo.create_file(path, message, content, branch=branch)
+                print(f"[OK] {path} creado")
+                return
+            if (e.status == 409 or e.status >= 500) and intento < 4:
+                espera = 1.5 * intento + random.random()
+                print(f"[WARN] upload {path}: HTTP {e.status} (otra corrida escribió a la vez); "
+                      f"reintento {intento}/3 en {espera:.1f}s")
+                time.sleep(espera)
+                continue
             print(f"[ERROR] upload {path}: {e}")
+            return
+        except Exception as e:
+            print(f"[ERROR] upload {path}: {e}")
+            return
 
 
 def save_local_and_upload(content: str, local_path: str, github_path: str, msg: str, repo=None):
