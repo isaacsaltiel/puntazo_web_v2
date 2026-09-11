@@ -1047,6 +1047,11 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     accionesClip.appendChild(crearSavePill(entry, loc, can, lado));
     accionesClip.appendChild(crearFullscreenPill(real, card, entry));
     actionPills.appendChild(accionesClip);
+    // En medio: Spotify, solo en clips que llevan la música de AquaWolf (assets/musica.js).
+    if (window.PuntazoMusica) {
+      try { const b = window.PuntazoMusica.crearBoton(entry._meta, { nombre: entry.nombre }); if (b) actionPills.appendChild(b); }
+      catch (e) { console.warn("[musica]", e); }
+    }
     // Hueco vacio que solo se llena si hay campana para ESTE club (WellStreet
     // hoy no tiene: no deja rastro). Nunca retrasa ni bloquea el clip.
     const SP = window.PuntazoSponsor;
