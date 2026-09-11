@@ -293,6 +293,16 @@
   }
 
   function track(evento, campana, slot, destino) {
+    // Conteo exacto en Firestore (assets/metricas.js). GA4, abajo, queda para
+    // análisis: redondea y esconde los números chicos.
+    try {
+      var M = (typeof window !== "undefined") ? window.PuntazoMetricas : null;
+      var sujeto = campana.id || campana.sponsorId;
+      if (M && sujeto) {
+        if (evento === "sponsor_impression") M.vista(sujeto, slot, campana._club);
+        else if (evento === "sponsor_click") M.click(sujeto, slot, destino, campana._club);
+      }
+    } catch (e) {}
     try {
       if (typeof gtag !== "function") return;
       var p = {
