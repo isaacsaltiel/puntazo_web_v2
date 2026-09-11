@@ -171,3 +171,18 @@ test("inyectarEnFeed: en un club que no contrató no pone banners y quita los qu
   // y las pastillas siguen donde estaban (su visibilidad la decide su propio espacio)
   assert.strictEqual(cont.querySelectorAll(".pz-sponsor-chip").length, 6);
 });
+
+// Conteo exacto (assets/metricas.js): cada banner avisa su vista con la
+// campaña, el espacio y el club, que es lo que se le reporta a la marca.
+test("inyectarEnFeed: cada banner cuenta su vista exacta con campaña, espacio y club", async () => {
+  const llamadas = [];
+  global.window.PuntazoMetricas = { vista: (...a) => llamadas.push(a), click: () => {} };
+  try {
+    const cont = feed(4);
+    await S.inyectarEnFeed(cont, OPTS);
+    assert.ok(llamadas.length >= 1, "no se contó ninguna vista");
+    assert.deepStrictEqual(llamadas[0], ["loka-2026-09", "feed_banner", "BreakPoint"]);
+  } finally {
+    delete global.window.PuntazoMetricas;
+  }
+});

@@ -503,6 +503,52 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════
+    // (2026-09-11) metricas_marcas/{sujeto__metrica__club__fecha} — conteo
+    // EXACTO de vistas y clics de las marcas del sitio (Loka, AquaWolf…);
+    // GA4 solo da aproximados. Lo escribe assets/metricas.js desde cualquier
+    // navegador, sin login, así que se valida como video_stats: crear con
+    // n = 1 y actualizar sumando exactamente 1. El id tiene que ser el que
+    // forman los campos, para que nadie invente documentos. Solo admin lee.
+    // ════════════════════════════════════════════════════
+    match /metricas_marcas/{docId} {
+      function isAdminUser() {
+        return signedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid))
+               .data.get('flags', {}).get('isAdmin', false) == true;
+      }
+      function formaValida(d) {
+        return d.keys().hasOnly(['n', 'sujeto', 'metrica', 'club', 'fecha', 'updatedAt'])
+          && d.sujeto is string && d.sujeto.matches('^[a-z0-9-]{1,40}$')
+          && d.metrica is string
+          && d.metrica.matches('^(vista|persona|persona_total|click|clicker|clicker_total)[.][a-z_]{2,20}([.][a-z_]{2,20})?$')
+          && d.club is string && d.club.matches('^[A-Za-z0-9-]{1,40}$')
+          && d.fecha is string && d.fecha.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && docId == d.sujeto + '__' + d.metrica + '__' + d.club + '__' + d.fecha;
+      }
+      allow read: if isAdminUser();
+      allow create: if request.resource.data.n == 1 && formaValida(request.resource.data);
+      allow update: if request.resource.data.n == resource.data.n + 1
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['n', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // (2026-09-11) metricas_campanas/{campanaId} — cuándo va cada marca dentro
+    // de los videos (desde/hasta por club) y la lista de clips que la llevan.
+    // El índice web solo guarda 14 días: el panel admin va agregando aquí los
+    // clips nuevos para que el conteo no se pierda. Solo admin.
+    match /metricas_campanas/{campanaId} {
+      function isAdminUser() {
+        return signedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid))
+               .data.get('flags', {}).get('isAdmin', false) == true;
+      }
+      allow read, write: if isAdminUser();
+    }
+
+    // ════════════════════════════════════════════════════
     // (2026-08-04) download_stats/{videoId} — contador de descargas del
     // botón compartir/descargar (mismo patrón que video_stats de arriba).
     // A diferencia de views, esto es métrica interna: solo admin lee.

@@ -62,6 +62,7 @@
 <script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
+<script src="/assets/metricas.js"></script>
 <script src="/assets/auth.js"></script>
 
 
@@ -272,6 +273,17 @@ tr:hover td{background:rgba(255,255,255,.025);}
 .sp-chk{display:inline-flex;align-items:center;gap:6px;margin:0 14px 8px 0;font-size:.78rem;color:rgba(234,242,255,.85);}
 .sp-chk input{width:auto;display:inline-block;margin:0;}
 .sp-form-acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+/* Métricas de marcas (conteo exacto, metricas_marcas) */
+.mm-card{margin-bottom:14px;}
+.mm-kpis{margin:10px 0 6px;}
+.mm-kpis .kpi-value{font-size:1.45rem;}
+.mm-sub{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin:14px 0 4px;}
+.mm-nota{font-size:.7rem;color:var(--muted);font-weight:600;}
+.mm-scroll{overflow-x:auto;}
+.mm-tabla{width:100%;border-collapse:collapse;font-size:.78rem;}
+.mm-tabla th{color:var(--muted);font-weight:700;font-size:.66rem;text-transform:uppercase;letter-spacing:.04em;}
+.mm-tabla th,.mm-tabla td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.07);text-align:right;white-space:nowrap;}
+.mm-tabla th:first-child,.mm-tabla td:first-child{text-align:left;}
 </style>
 </head>
 <body>
@@ -1737,11 +1749,168 @@ async function renderSponsorTab(){
   $pane.innerHTML=
     '<div class="info-box">Las campañas se leen en vivo desde Firestore: lo que cambies aquí se ve '+
     'en el sitio sin desplegar nada. Una campaña se apaga sola el día después de su fecha <b>hasta</b>. '+
-    'Las impresiones y clics llegan a GA4 como <code>sponsor_impression</code> y <code>sponsor_click</code>.</div>'+
+    'Cada vista y cada clic se cuenta exacto en Firestore (<code>metricas_marcas</code>) y además llega a '+
+    'GA4 como <code>sponsor_impression</code> / <code>sponsor_click</code>.</div>'+
+    '<div id="sp-metricas"></div>'+
     '<div class="sp-head"><h3>Campañas ('+ids.length+')</h3>'+
     '<button class="btn" onclick="sponsorEditar(null)">➕ Nueva campaña</button></div>'+
     (filas||'<div class="empty-note">Todavía no hay campañas.</div>')+
     '<div id="sp-form"></div>';
+  cargarMetricasMarcas();
+}
+
+// ════════════════════════════════════════════════════════════
+//  MÉTRICAS DE MARCAS — conteo exacto
+//  · Vistas y clics: metricas_marcas. Lo escribe assets/metricas.js desde
+//    cada navegador y aquí se suma. Arrancó el 11-sep-2026; lo de antes solo
+//    está en GA4.
+//  · Videos con la marca dentro: metricas_campanas/{id} guarda cuándo iba la
+//    marca en los videos de cada club (ventanas) y la lista de esos clips. El
+//    índice web solo guarda 14 días, así que al abrir este panel se agregan
+//    los clips nuevos. Las reproducciones salen de video_stats.
+// ════════════════════════════════════════════════════════════
+const MM_SLOT = {
+  feed_top:'Bloque de arriba (lado)', feed_banner:'Banner entre clips (lado)',
+  card_inline:'Pastilla junto a cada clip (lado)', clip_page:'Bajo el video (página del clip)',
+};
+let _mmToken=0;
+
+function mmN(n){ return (Number(n)||0).toLocaleString('es-MX'); }
+function mmKpi(valor,etiqueta){ return '<div class="kpi"><div class="kpi-value">'+valor+'</div><div class="kpi-label">'+etiqueta+'</div></div>'; }
+function mmTabla(cabeza,filas){
+  if(!filas.length) return '<div class="empty-note">Sin datos todavía.</div>';
+  return '<div class="mm-scroll"><table class="mm-tabla"><thead><tr>'+cabeza.map(h=>'<th>'+h+'</th>').join('')+
+    '</tr></thead><tbody>'+filas.map(f=>'<tr>'+f.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+
+    '</tbody></table></div>';
+}
+
+async function cargarMetricasMarcas(){
+  const $m=document.getElementById('sp-metricas');
+  if(!$m) return;
+  const M=window.PuntazoMetricas;
+  if(!M){ $m.innerHTML='<div class="info-box">⚠️ Falta assets/metricas.js.</div>'; return; }
+  const token=++_mmToken;
+  $m.innerHTML='<div class="empty-note">⏳ Contando vistas, clics y videos…</div>';
+  try{
+    const db=window.PuntazoFirebase.db();
+    const campanas=Object.keys(_spDocs).sort();
+    const agregados={};
+    await Promise.all(campanas.concat(['aquawolf']).map(async s=>{
+      const snap=await db.collection(M.COL).where('sujeto','==',s).get();
+      const docs=[]; snap.forEach(d=>docs.push(d.data()));
+      agregados[s]=M.agregar(docs);
+    }));
+    const videos={};
+    await Promise.all(campanas.map(async id=>{ videos[id]=await mmVideosDeCampana(db,id); }));
+    if(token!==_mmToken) return;       // ya empezó una carga más nueva
+    $m.innerHTML=campanas.map(id=>mmTarjetaCampana(id,agregados[id],videos[id])).join('')+
+                 mmTarjetaAquaWolf(agregados.aquawolf);
+  }catch(e){
+    console.error('[metricas]',e);
+    if(token===_mmToken) $m.innerHTML='<div class="info-box">⚠️ No pude leer las métricas: '+esc(e.message)+
+      '.<br>¿Reglas desplegadas y <code>flags.isAdmin</code> activo en tu cuenta?</div>';
+  }
+}
+
+// Clips con la marca dentro: el registro, más los nuevos del índice web, y sus
+// reproducciones. La ventana manda: si se corrige un "hasta", los clips que
+// quedan fuera dejan de contar.
+async function mmVideosDeCampana(db,id){
+  const M=window.PuntazoMetricas;
+  const ref=db.collection('metricas_campanas').doc(id);
+  const snap=await ref.get();
+  if(!snap.exists) return null;
+  const cfg=snap.data()||{}, ventanas=cfg.ventanas||{};
+  let registro=Array.isArray(cfg.clips)?cfg.clips.slice():[];
+  try{
+    const idx=await (await fetch('data/videos_index.json?cb='+Date.now(),{cache:'no-store'})).json();
+    const ya=new Set(registro);
+    const nuevos=Object.keys(idx.videos||{}).filter(n=>!ya.has(n)&&M.enVentana(n,ventanas));
+    if(nuevos.length){
+      await ref.update({ clips:firebase.firestore.FieldValue.arrayUnion(...nuevos),
+                         actualizado:firebase.firestore.FieldValue.serverTimestamp() });
+      registro=registro.concat(nuevos);
+    }
+  }catch(e){ console.warn('[metricas] no pude sumar los clips nuevos al registro',e); }
+  const clips=registro.filter(n=>M.enVentana(n,ventanas));
+  const views={}, porId=firebase.firestore.FieldPath.documentId();
+  for(let i=0;i<clips.length;i+=30){
+    const s=await db.collection('video_stats').where(porId,'in',clips.slice(i,i+30)).get();
+    s.forEach(d=>{ views[d.id]=Number((d.data()||{}).views)||0; });
+  }
+  const porClub={};
+  clips.forEach(n=>{
+    const c=M.enVentana(n,ventanas);
+    const pc=porClub[c]=porClub[c]||{clips:0,views:0,vistos:0};
+    pc.clips++; pc.views+=views[n]||0; if(views[n]) pc.vistos++;
+  });
+  return {ventanas,porClub};
+}
+
+function mmTarjetaCampana(id,a,vid){
+  const M=window.PuntazoMetricas, c=_spDocs[id]||{}, nombre=esc(c.nombre||id);
+  a=a||{total:{},porClub:{},porDia:{}};
+  const t=a.total, slots=Object.keys(MM_SLOT);
+  // Videos: en los KPI solo cuentan los clubes que pagan; los demás van aparte.
+  const pagados={clips:0,views:0}, filasV=[];
+  if(vid){
+    Object.keys(vid.porClub).sort().forEach(cl=>{
+      const v=vid.porClub[cl], w=vid.ventanas[cl]||{}, pagado=w.pagado!==false;
+      if(pagado){ pagados.clips+=v.clips; pagados.views+=v.views; }
+      filasV.push([esc(cl)+(pagado?'':' <span class="mm-nota">sin costo</span>'),
+        esc(w.desde||'')+' → '+(w.hasta?esc(w.hasta)+(w.hasta_por_confirmar?' <span class="mm-nota">por confirmar</span>':''):'hoy'),
+        mmN(v.clips),mmN(v.views),mmN(v.vistos)]);
+    });
+  }
+  const dias=Object.keys(a.porDia).sort().reverse().slice(0,14);
+  return '<div class="sp-card mm-card">'+
+    '<div class="sp-card-top"><strong class="sp-name">📊 '+nombre+' — conteo exacto</strong>'+
+      '<span class="mm-nota">vistas y clics desde el 11-sep-2026 (lo anterior solo está en GA4)</span></div>'+
+    '<div class="kpi-grid mm-kpis">'+
+      mmKpi(mmN(t['persona_total.feed_top']),'Personas que vieron el bloque de arriba')+
+      mmKpi(mmN(t['vista.feed_top']),'Vistas del bloque de arriba')+
+      mmKpi(mmN(M.sumaPrefijo(t,'click.')),'Clics en '+nombre)+
+      mmKpi(mmN(t['clicker_total.todos']),'Personas que dieron clic')+
+      (vid?mmKpi(mmN(pagados.clips),'Videos con '+nombre+' dentro')+mmKpi(mmN(pagados.views),'Reproducciones de esos videos'):'')+
+    '</div>'+
+    '<div class="mm-sub">Por espacio</div>'+
+    mmTabla(['Espacio','Vistas','Personas','Clics web','Clics Instagram','Clics','Personas que dieron clic'],
+      slots.filter(s=>t['vista.'+s]||M.sumaPrefijo(t,'click.'+s)).map(s=>[esc(MM_SLOT[s]),
+        mmN(t['vista.'+s]),mmN(t['persona_total.'+s]),mmN(t['click.'+s+'.web']),mmN(t['click.'+s+'.instagram']),
+        mmN(M.sumaPrefijo(t,'click.'+s)),mmN(t['clicker_total.'+s])]))+
+    '<div class="mm-sub">Por club</div>'+
+    mmTabla(['Club','Vistas del bloque de arriba','Personas','Clics','Personas que dieron clic'],
+      Object.keys(a.porClub).sort().map(cl=>{ const x=a.porClub[cl];
+        return [esc(cl),mmN(x['vista.feed_top']),mmN(x['persona_total.feed_top']),mmN(M.sumaPrefijo(x,'click.')),mmN(x['clicker_total.todos'])]; }))+
+    (vid?'<div class="mm-sub">Videos con '+nombre+' dentro</div>'+
+      mmTabla(['Club','Ventana (hora local)','Videos','Reproducciones','Videos vistos al menos una vez'],filasV):
+      '<div class="info-box">Esta campaña no tiene registro de videos (<code>metricas_campanas/'+esc(id)+'</code>).</div>')+
+    '<div class="mm-sub">Por día (últimos 14)</div>'+
+    mmTabla(['Día','Vistas del bloque de arriba','Personas ese día','Clics','Personas que dieron clic'],
+      dias.map(f=>{ const x=a.porDia[f];
+        return [esc(f),mmN(x['vista.feed_top']),mmN(x['persona.feed_top']),mmN(M.sumaPrefijo(x,'click.')),mmN(x['clicker.todos'])]; }))+
+  '</div>';
+}
+
+function mmTarjetaAquaWolf(a){
+  const M=window.PuntazoMetricas;
+  a=a||{total:{},porClub:{},porDia:{}};
+  const t=a.total, hoy=M.fechaMX(Date.now()), dias=Object.keys(a.porDia).sort().reverse().slice(0,14);
+  return '<div class="sp-card mm-card">'+
+    '<div class="sp-card-top"><strong class="sp-name">🎵 AquaWolf — botón de Spotify</strong>'+
+      '<span class="mm-nota">desde el 11-sep-2026</span></div>'+
+    '<div class="kpi-grid mm-kpis">'+
+      mmKpi(mmN(t['click.spotify']),'Clics al botón')+
+      mmKpi(mmN(t['clicker_total.spotify']),'Personas que dieron clic')+
+      mmKpi(mmN((a.porDia[hoy]||{})['click.spotify']),'Clics hoy')+
+    '</div>'+
+    '<div class="mm-sub">Por club</div>'+
+    mmTabla(['Club','Clics','Personas que dieron clic'],
+      Object.keys(a.porClub).sort().map(cl=>[esc(cl),mmN(a.porClub[cl]['click.spotify']),mmN(a.porClub[cl]['clicker_total.spotify'])]))+
+    '<div class="mm-sub">Por día (últimos 14)</div>'+
+    mmTabla(['Día','Clics','Personas ese día'],
+      dias.map(f=>[esc(f),mmN(a.porDia[f]['click.spotify']),mmN(a.porDia[f]['clicker.spotify'])]))+
+  '</div>';
 }
 
 async function sponsorToggle(id){

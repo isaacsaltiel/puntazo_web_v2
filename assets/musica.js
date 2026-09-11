@@ -65,6 +65,8 @@
     a.appendChild(ico);
     a.appendChild(txt);
     a.addEventListener("click", function () {
+      // Conteo exacto en Firestore (assets/metricas.js), además de GA4.
+      try { if (global.PuntazoMetricas) global.PuntazoMetricas.click("aquawolf", "spotify", null, meta.loc); } catch (e) {}
       try {
         if (typeof global.gtag === "function") {
           global.gtag("event", "spotify_click", { video_name: opts.nombre || "", club: meta.loc, artista: MUSICA.artista });
