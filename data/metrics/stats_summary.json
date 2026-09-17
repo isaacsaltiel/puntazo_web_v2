@@ -1,29 +1,36 @@
 {
-  "generado_el": "2026-09-17T12:23:35.925758+00:00",
+  "generado_el": "2026-09-17T13:00:45.940347+00:00",
   "totales": {
-    "videos_historico": 7220,
-    "dias_con_videos": 309,
+    "videos_historico": 7225,
+    "dias_con_videos": 310,
     "clubs_activos": 10,
     "clubs": 5,
     "canchas": 21,
     "lados": 23,
-    "videos_activos": 20,
+    "videos_activos": 21,
     "videos_vitrina": 294
   },
   "historial": [
+    {
+      "fecha": "2026-09-17",
+      "loc": "wellstreet-padel",
+      "can": "cancha2",
+      "lado": "ladoa",
+      "count": 1
+    },
     {
       "fecha": "2026-09-16",
       "loc": "wellstreet-pickleball",
       "can": "cancha1",
       "lado": "ladoa",
-      "count": 6
+      "count": 7
     },
     {
       "fecha": "2026-09-16",
       "loc": "interpadel",
       "can": "cancha3",
       "lado": "ladoa",
-      "count": 1
+      "count": 2
     },
     {
       "fecha": "2026-09-16",
@@ -50,6 +57,13 @@
       "fecha": "2026-09-16",
       "loc": "breakpoint",
       "can": "cancha2",
+      "lado": "ladoa",
+      "count": 2
+    },
+    {
+      "fecha": "2026-09-16",
+      "loc": "breakpoint",
+      "can": "cancha3",
       "lado": "ladoa",
       "count": 1
     },
@@ -9471,7 +9485,7 @@
               "nombre": "Lado A",
               "count_activos": 2,
               "count_vitrina": 3,
-              "generado_el": "2026-09-17T03:18:06.047360+00:00",
+              "generado_el": "2026-09-17T13:00:21.476290+00:00",
               "videos": [
                 "Interpadel_Cancha3_LadoA_10092026_083900.mp4",
                 "Interpadel_Cancha3_LadoA_16092026_101200.mp4"
@@ -9494,7 +9508,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 14,
-              "generado_el": "2026-09-17T03:13:03.139838+00:00",
+              "generado_el": "2026-09-17T13:00:38.071659+00:00",
               "videos": [],
               "videos_vitrina": [
                 "Interpadel_Cancha4_LadoA_11092026_230232.mp4",
@@ -10096,7 +10110,7 @@
     {
       "id": "WellStreet-Padel",
       "nombre": "WellStreet - Pádel",
-      "total_videos_activos": 2,
+      "total_videos_activos": 3,
       "canchas": [
         {
           "id": "Cancha1",
@@ -10120,15 +10134,16 @@
         {
           "id": "Cancha2",
           "nombre": "Cancha 2",
-          "total_videos_activos": 2,
+          "total_videos_activos": 3,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 2,
+              "count_activos": 3,
               "count_vitrina": 10,
-              "generado_el": "2026-09-17T12:23:01.313657+00:00",
+              "generado_el": "2026-09-17T13:00:09.421587+00:00",
               "videos": [
+                "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSWfd0c_16092026_200000.mp4",
                 "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSW1c77_16092026_194000.mp4",
                 "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSW577f_14092026_195500.mp4"
               ],
