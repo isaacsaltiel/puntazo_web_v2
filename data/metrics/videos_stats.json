@@ -2593,6 +2593,12 @@
       "count": 5
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-09-18",
+      "count": 5
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-08-31",
@@ -4195,8 +4201,8 @@
       "count": 3
     },
     {
-      "loc": "breakpoint",
-      "can": "cancha1",
+      "loc": "wellstreet-pickleball",
+      "can": "cancha6",
       "date": "2026-09-18",
       "count": 3
     },
@@ -7899,16 +7905,16 @@
       "count": 43
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "14",
+      "count": 43
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "09",
       "count": 42
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "14",
-      "count": 41
     },
     {
       "loc": "breakpoint",
@@ -9627,6 +9633,12 @@
       "count": 3
     },
     {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha6",
+      "hour": "14",
+      "count": 3
+    },
+    {
       "loc": "breakpoint",
       "can": "cancha2",
       "hour": "01",
@@ -9789,12 +9801,6 @@
       "count": 2
     },
     {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha6",
-      "hour": "14",
-      "count": 2
-    },
-    {
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "00",
@@ -9876,6 +9882,12 @@
       "loc": "breakpoint",
       "can": "cancha4",
       "hour": "01",
+      "count": 2
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha6",
+      "hour": "13",
       "count": 2
     },
     {
@@ -21590,7 +21602,7 @@
       "can": "cancha1",
       "date": "2026-09-18",
       "counts_por_lado": {
-        "ladoa": 3
+        "ladoa": 5
       },
       "diff": 0
     },
@@ -21611,7 +21623,16 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha6",
+      "date": "2026-09-18",
+      "counts_por_lado": {
+        "ladoa": 3
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-09-18T18:41:51.509243+00:00"
+  "generated_at_utc": "2026-09-19T01:55:26.654127+00:00"
 }
