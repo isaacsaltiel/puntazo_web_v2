@@ -1,13 +1,13 @@
 {
-  "generado_el": "2026-09-22T02:02:16.424710+00:00",
+  "generado_el": "2026-09-22T02:20:01.840265+00:00",
   "totales": {
-    "videos_historico": 7384,
+    "videos_historico": 7391,
     "dias_con_videos": 314,
     "clubs_activos": 10,
     "clubs": 5,
     "canchas": 21,
     "lados": 23,
-    "videos_activos": 32,
+    "videos_activos": 33,
     "videos_vitrina": 366
   },
   "historial": [
@@ -23,7 +23,7 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "lado": "ladoa",
-      "count": 4
+      "count": 7
     },
     {
       "fecha": "2026-09-21",
@@ -37,11 +37,18 @@
       "loc": "interpadel",
       "can": "cancha5",
       "lado": "ladoa",
-      "count": 1
+      "count": 3
     },
     {
       "fecha": "2026-09-21",
       "loc": "interpadel",
+      "can": "cancha3",
+      "lado": "ladoa",
+      "count": 2
+    },
+    {
+      "fecha": "2026-09-21",
+      "loc": "breakpoint",
       "can": "cancha3",
       "lado": "ladoa",
       "count": 1
@@ -9725,7 +9732,7 @@
     {
       "id": "Interpadel",
       "nombre": "Interpadel",
-      "total_videos_activos": 24,
+      "total_videos_activos": 25,
       "canchas": [
         {
           "id": "Cancha3",
@@ -9813,15 +9820,16 @@
         {
           "id": "Cancha5",
           "nombre": "Cancha 5",
-          "total_videos_activos": 3,
+          "total_videos_activos": 4,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 3,
+              "count_activos": 4,
               "count_vitrina": 19,
-              "generado_el": "2026-09-22T01:57:49.034830+00:00",
+              "generado_el": "2026-09-22T02:19:16.519868+00:00",
               "videos": [
+                "Interpadel_Cancha5_LadoA_21092026_201332.mp4",
                 "Interpadel_Cancha5_LadoA_21092026_195207.mp4",
                 "Interpadel_Cancha5_LadoA_21092026_194502.mp4",
                 "Interpadel_Cancha5_LadoA_21092026_103017.mp4"
