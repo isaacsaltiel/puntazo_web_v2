@@ -102,6 +102,10 @@ window.PuntazoVertical = (function () {
     return new Blob(partes, { type: 'video/mp4' });
   }
 
+  // El ícono va aquí y no solo en estilo.css: GitHub Pages deja el CSS en caché
+  // hasta 4 h, y con un CSS viejo el botón se vería como un cuadro sólido.
+  const ICONO = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6.5' y='2.5' width='11' height='19' rx='2.6'/%3E%3Cpath d='M10.6 9.2v5.6l4.4-2.8z' fill='%23000' stroke-width='1.6'/%3E%3C/svg%3E")`;
+
   function evento(nombre, params) {
     try { if (typeof window.gtag === 'function') window.gtag('event', nombre, params || {}); } catch (e) {}
   }
@@ -126,6 +130,7 @@ window.PuntazoVertical = (function () {
     btn.type = 'button';
     btn.className = 'action-pill pill-vertical';
     btn.dataset.ico = 'vertical';
+    btn.style.setProperty('--ico', ICONO);
     btn.title = TITULO; btn.setAttribute('aria-label', TITULO);
     btn.style.display = 'none';
 
@@ -138,7 +143,7 @@ window.PuntazoVertical = (function () {
       estado = 'libre'; ctrl = null; archivo = null;
       btn.classList.remove('is-progress', 'is-indet', 'is-ready');
       btn.style.removeProperty('--p');
-      btn.innerHTML = ''; btn.dataset.ico = 'vertical'; btn.title = TITULO;
+      btn.innerHTML = ''; btn.dataset.ico = 'vertical'; btn.style.setProperty('--ico', ICONO); btn.title = TITULO;
     };
     const compartir = async (f) => {
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [f] })) {
@@ -197,6 +202,7 @@ window.PuntazoVertical = (function () {
           // iOS: el share tiene que salir de un toque del usuario; queda listo para el segundo.
           archivo = f; estado = 'listo';
           btn.classList.remove('is-progress', 'is-indet'); btn.innerHTML = '';
+          btn.style.removeProperty('--ico');   // ícono de "compartir" del CSS
           btn.dataset.ico = 'share'; btn.classList.add('is-ready'); btn.title = 'Toca para compartir';
         } else {
           guardar(f); ponerLibre();
