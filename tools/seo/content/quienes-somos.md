@@ -57,3 +57,4 @@ Puntazo fue fundado por **{{fundador}}**, que sigue a cargo del producto: del di
 - Correo: [puntazoclips@gmail.com](mailto:puntazoclips@gmail.com)
 - Instagram: [@puntazoclips](https://www.instagram.com/puntazoclips/)
 - TikTok: [@puntazoclips](https://www.tiktok.com/@puntazoclips)
+- YouTube (transmisiones): [@PuntazoStreams](https://www.youtube.com/@PuntazoStreams)

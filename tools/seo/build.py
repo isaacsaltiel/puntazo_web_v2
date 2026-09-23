@@ -253,6 +253,7 @@ def org_node():
         "sameAs": [
             "https://www.instagram.com/puntazoclips/",
             "https://www.tiktok.com/@puntazoclips",
+            "https://www.youtube.com/@PuntazoStreams",
         ],
         "contactPoint": [{
             "@type": "ContactPoint",
@@ -476,6 +477,7 @@ def footer_html(all_pages):
           <li><a href="/herramientas.html">Herramientas gratis</a></li>
           <li><a href="https://www.instagram.com/puntazoclips/" rel="noopener">Instagram</a></li>
           <li><a href="https://www.tiktok.com/@puntazoclips" rel="noopener">TikTok</a></li>
+          <li><a href="https://www.youtube.com/@PuntazoStreams" rel="noopener">YouTube</a></li>
       </ul>
     </div>
     <div>
@@ -768,7 +770,7 @@ def write_llms(pages):
 
 Datos clave (actualizados el {fecha_larga(TODAY)}):
 
-- Sitio oficial: {SITE}/ · Instagram y TikTok: @puntazoclips · WhatsApp: +52 220 680 4856 · {EMAIL}
+- Sitio oficial: {SITE}/ · Instagram y TikTok: @puntazoclips · YouTube: @PuntazoStreams · WhatsApp: +52 220 680 4856 · {EMAIL}
 - Qué hace: el jugador presiona un botón junto a la cancha (botón físico Wi-Fi o botón digital en el celular). El sistema toma el último minuto de juego de las cámaras del club y lo publica en la página de esa cancha en puntazoclips.com, normalmente en un par de minutos.
 - Para jugadores: gratis, sin descargar ninguna app. Los clips se ven, descargan y comparten desde el navegador (WhatsApp, Instagram, TikTok).
 - Para clubes: Puntazo instala y opera el sistema (hardware, software, publicación). El club lo contrata; los precios se cotizan por WhatsApp según número de canchas.

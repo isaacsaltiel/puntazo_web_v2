@@ -64,7 +64,7 @@ Por favor, no alteres el logo ni lo pongas sobre fondos claros sin contraste. Si
 
 - **Puntazo** o **Puntazo Clips**. El sitio es **puntazoclips.com**.
 - No confundir con apps de marcador de pádel ni con cuentas de videos de pádel profesional que usan nombres parecidos.
-- En redes: **@puntazoclips** en Instagram y TikTok.
+- En redes: **@puntazoclips** en Instagram y TikTok; las transmisiones en vivo están en YouTube como **@PuntazoStreams**.
 
 ## Contacto de prensa
 
