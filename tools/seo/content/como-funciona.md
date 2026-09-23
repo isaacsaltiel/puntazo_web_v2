@@ -60,7 +60,7 @@ Por eso no tienes que "empezar a grabar" antes del punto. Nadie sabe cuándo va 
 
 ## El botón físico
 
-Junto a cada cancha hay un botón con una luz. Cuando lo presionas, la luz hace una animación y termina en verde: eso significa que tu jugada ya quedó registrada. El botón se conecta por Wi-Fi a la computadora del club. Si el internet del club se cae un momento, el botón guarda el pulso y lo manda en cuanto vuelve la conexión, así que el clip no se pierde.
+Junto a la cancha hay un botón físico. En los botones más nuevos, una luz hace una animación al presionarlo y termina en verde: eso significa que tu jugada ya quedó registrada. Estos botones se conectan por Wi-Fi a la computadora del club. Si el internet del club se cae un momento, el botón guarda el pulso y lo manda en cuanto vuelve la conexión, así que el clip no se pierde.
 
 Presiónalo una sola vez por jugada. Si presionas dos veces seguidas, puedes terminar con dos clips casi iguales.
 

@@ -169,6 +169,7 @@ def compute_stats():
         "stat_total": _miles(total),
         "stat_total_redondo": _miles(total // 100 * 100),
         "stat_desde": f"{MESES[d0.month - 1]} de {d0.year}",
+        "stat_desde_en": d0.strftime("%B %Y"),
         "stat_30d": _miles(len(ult30)),
         "stat_diario_30d": str(round(len(ult30) / 30)),
         "stat_canchas": str(canchas),
@@ -288,7 +289,7 @@ def founder_node():
 
 
 def crumbs_for(p):
-    items = [("Inicio", "/")]
+    items = [("Home" if p.get("lang") == "en" else "Inicio", "/")]
     for label, href in p.get("breadcrumbs") or []:
         items.append((label, href))
     items.append((p.get("crumb") or p["h1"], p["url"]))
@@ -312,7 +313,7 @@ def build_schema(p, all_pages):
         "isPartOf": {"@id": SITE_ID},
         "about": {"@id": ORG_ID},
         "breadcrumb": {"@id": url + "#breadcrumb"},
-        "inLanguage": "es-MX",
+        "inLanguage": p.get("lang", "es-MX"),
         "datePublished": str(p["published"]),
         "dateModified": str(p["updated"]),
         "primaryImageOfPage": {"@type": "ImageObject", "url": SITE + p["image"]},
@@ -328,7 +329,7 @@ def build_schema(p, all_pages):
         else:
             graph.append({"@type": "FAQPage", "@id": url + "#faq", "url": url,
                           "isPartOf": {"@id": url + "#webpage"}, "mainEntity": faq_entities,
-                          "inLanguage": "es-MX"})
+                          "inLanguage": p.get("lang", "es-MX")})
     graph.append(webpage)
 
     graph.append({
@@ -352,7 +353,7 @@ def build_schema(p, all_pages):
             "publisher": {"@id": ORG_ID},
             "mainEntityOfPage": {"@id": url + "#webpage"},
             "image": SITE + p["image"],
-            "inLanguage": "es-MX",
+            "inLanguage": p.get("lang", "es-MX"),
             "keywords": ", ".join(p.get("keywords") or []),
             "articleSection": p.get("section", "Guías"),
         })
@@ -410,11 +411,19 @@ def build_schema(p, all_pages):
 
 # ─────────────────────────── bloques HTML ───────────────────────────
 
-def nav_html(active):
+NAV_EN = [
+    ("en", "/en/", "Puntazo in English"),
+    ("para-clubes", "/para-clubes/", "Para clubes (ES)"),
+    ("clubes", "/clubes/", "Clubs"),
+    ("preguntas", "/preguntas-frecuentes/", "FAQ (ES)"),
+]
+
+
+def nav_html(active, lang="es-MX"):
     cur = ' aria-current="page"'
     links = "\n".join(
         f'      <li><a href="{href}"{cur if key == active else ""}>{label}</a></li>'
-        for key, href, label in NAV
+        for key, href, label in (NAV_EN if lang == "en" else NAV)
     )
     return f"""<nav class="ct-nav" aria-label="Principal">
   <a href="/" class="nav-logo" aria-label="Puntazo, inicio">
@@ -424,8 +433,8 @@ def nav_html(active):
 {links}
   </ul>
   <div class="ct-nav-right">
-    <a class="ct-cta" href="/entrada.html">&#9654; Ver clips</a>
-    <button class="menu-toggle" type="button" aria-label="Abrir menú" aria-controls="nav-menu" aria-expanded="false"
+    <a class="ct-cta" href="/entrada.html">&#9654; {"Watch clips" if lang == "en" else "Ver clips"}</a>
+    <button class="menu-toggle" type="button" aria-label="{"Open menu" if lang == "en" else "Abrir menú"}" aria-controls="nav-menu" aria-expanded="false"
       onclick="var m=document.getElementById('nav-menu');var o=m.classList.toggle('show');this.setAttribute('aria-expanded',o)">&#9776;</button>
   </div>
 </nav>"""
@@ -453,6 +462,8 @@ def footer_html(all_pages):
           <li><a href="/clubes/">Clubes con Puntazo</a></li>
           <li><a href="/preguntas-frecuentes/">Preguntas frecuentes</a></li>
           <li><a href="/quienes-somos/">Quiénes somos</a></li>
+          <li><a href="/prensa/">Kit de prensa</a></li>
+          <li><a href="/en/" hreflang="en">English</a></li>
           <li><a href="/privacidad.html">Aviso de privacidad</a></li>
       </ul>
     </div>
@@ -524,6 +535,14 @@ def cards_html(pages):
 def band_html(kind):
     if kind == "none" or not kind:
         return ""
+    if kind == "clubs_en":
+        wa = wa_link("Hi Puntazo team! I run a padel club and I'd like to know more about Puntazo.")
+        return f"""<section class="ct-band">
+  <h2>Do you run a padel club?</h2>
+  <p>Tell us how many courts you have and where you are. We reply on WhatsApp, in English or Spanish.</p>
+  <div class="ct-actions"><a class="ct-btn ct-btn--wa" href="{wa}" rel="noopener">Message us on WhatsApp</a>
+  <a class="ct-btn ct-btn--ghost" href="mailto:{EMAIL}">{EMAIL}</a></div>
+</section>"""
     if kind == "players":
         return """<section class="ct-band">
   <h2>¿Jugaste en un club con Puntazo?</h2>
@@ -546,6 +565,16 @@ def author_html(p):
   <div>Escrito por <b>{FOUNDER}</b>, fundador de Puntazo, con datos de la operación en clubes de pádel en México.
   Actualizado el {fecha_larga(p["updated"])}. <a href="/quienes-somos/">Quiénes somos</a></div>
 </aside>"""
+
+
+def hreflang_html(p):
+    """Por defecto la página es su propia alternativa es-MX. Con `alternates`
+    ({"es-MX": "/", "en": "/en/"}) se declaran las versiones equivalentes."""
+    alts = p.get("alternates") or {p.get("lang", "es-MX"): p["url"]}
+    lines = [f'<link rel="alternate" hreflang="{lg}" href="{SITE}{u}" />' for lg, u in alts.items()]
+    default = alts.get("es-MX") or p["url"]
+    lines.append(f'<link rel="alternate" hreflang="x-default" href="{SITE}{default}" />')
+    return "\n".join(lines)
 
 
 # ─────────────────────────── render ───────────────────────────
@@ -621,7 +650,7 @@ def render(p, all_pages):
                         f'\n<meta property="article:author" content="{FOUNDER}" />')
 
     return f"""<!DOCTYPE html>
-<html lang="es-MX">
+<html lang="{p.get("lang", "es-MX")}">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -629,11 +658,10 @@ def render(p, all_pages):
 <meta name="description" content="{esc(p["description"])}" />
 <meta name="robots" content="{robots}" />
 <link rel="canonical" href="{url}" />
-<link rel="alternate" hreflang="es-MX" href="{url}" />
-<link rel="alternate" hreflang="x-default" href="{url}" />
+{hreflang_html(p)}
 <meta property="og:type" content="{og_type}" />
 <meta property="og:site_name" content="Puntazo" />
-<meta property="og:locale" content="es_MX" />
+<meta property="og:locale" content="{"en_US" if p.get("lang") == "en" else "es_MX"}" />
 <meta property="og:title" content="{esc(p.get("og_title") or p["title"])}" />
 <meta property="og:description" content="{esc(p["description"])}" />
 <meta property="og:url" content="{url}" />
@@ -659,7 +687,7 @@ def render(p, all_pages):
 </head>
 <body class="ct">
 <div class="page-bg"></div>
-{nav_html(p.get("nav"))}
+{nav_html(p.get("nav"), p.get("lang", "es-MX"))}
 <main class="ct-main">
 <article class="{"ct-wide" if wide else "ct-wrap"}">
 {crumbs_html}
@@ -731,7 +759,7 @@ def write_llms(pages):
         p = by_url.get(u)
         return f"- [{p['h1']}]({SITE}{u}): {p['description']}" if p else ""
 
-    core = ["/como-funciona/", "/para-clubes/", "/clubes/", "/preguntas-frecuentes/", "/quienes-somos/"]
+    core = ["/como-funciona/", "/para-clubes/", "/clubes/", "/preguntas-frecuentes/", "/quienes-somos/", "/prensa/", "/en/"]
     guides = [p["url"] for p in pages if p["type"] == "article"]
     cities = [p["url"] for p in pages if p["type"] == "city"]
     txt = f"""# Puntazo (Puntazo Clips)
