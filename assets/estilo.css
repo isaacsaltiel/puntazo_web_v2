@@ -980,6 +980,8 @@ footer{
   --ico-save: url("/assets/img/iconos/guardar.png");
   --ico-expand: url("/assets/img/iconos/pantalla-completa.png");
   --ico-collapse: url("/assets/img/iconos/pantalla-completa.png");   /* mismo dibujo; el estado lo marca el color */
+  /* Vertical 9:16 (assets/vertical.js): un teléfono parado con "play" */
+  --ico-vertical: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6.5' y='2.5' width='11' height='19' rx='2.6'/%3E%3Cpath d='M10.6 9.2v5.6l4.4-2.8z' fill='%23000' stroke-width='1.6'/%3E%3C/svg%3E");
   --ico-angle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h14l-3.5-3.5M20 16H6l3.5 3.5'/%3E%3C/svg%3E");
 }
 .action-pills{
@@ -1056,6 +1058,14 @@ footer{
 .action-pill[data-ico="expand"]  { --ico:var(--ico-expand); }
 .action-pill[data-ico="collapse"]{ --ico:var(--ico-collapse); }
 .action-pill[data-ico="angle"]   { --ico:var(--ico-angle); }
+.action-pill[data-ico="vertical"]{ --ico:var(--ico-vertical); }
+/* Aviso corto de assets/vertical.js (descargado / cancelado) */
+.pz-vertical-toast{
+  position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%);
+  z-index:9999; padding:10px 16px; border-radius:999px;
+  background:rgba(8,16,34,.92); color:#eaf2ff; font:600 .88rem/1.2 Montserrat, system-ui, sans-serif;
+  box-shadow:0 8px 24px rgba(0,0,0,.35); pointer-events:none;
+}
 
 @media (hover:hover){
   .action-pill:hover{ background:rgba(255,255,255,.11); border-color:rgba(255,255,255,.24); color:#fff; }

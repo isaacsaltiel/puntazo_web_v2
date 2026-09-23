@@ -1046,6 +1046,11 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     accionesClip.appendChild(crearSharePill(entry, real));
     accionesClip.appendChild(crearSavePill(entry, loc, can, lado));
     accionesClip.appendChild(crearFullscreenPill(real, card, entry));
+    // Vertical 9:16 (assets/vertical.js): aparece solo si la NUC ya lo generó.
+    if (window.PuntazoVertical) {
+      try { accionesClip.appendChild(window.PuntazoVertical.crearPill(Object.assign({ loc, can, lado }, entry), { video: real })); }
+      catch (e) { console.warn("[vertical]", e); }
+    }
     actionPills.appendChild(accionesClip);
     // En medio: Spotify, solo en clips que llevan la música de AquaWolf (assets/musica.js).
     if (window.PuntazoMusica) {

@@ -210,6 +210,16 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════
+    // NUEVO (23-sep) — Clips verticales 9:16 que genera la NUC en su tiempo
+    // libre (servicio vision/vertical). La web solo lee el link para el botón
+    // "Vertical"; escribe únicamente la NUC con la cuenta de servicio.
+    // ════════════════════════════════════════════════════
+    match /clip_verticals/{clipId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ════════════════════════════════════════════════════
     // EXISTENTE — Pulsos pendientes desde web (R4)
     // ════════════════════════════════════════════════════
     match /pending_pulses/{pulseId} {

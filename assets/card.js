@@ -487,6 +487,11 @@ window.PuntazoCard = (function () {
     if (opts.showShare) grupo.appendChild(buildSharePill(entry, { shareMessage: opts.shareMessage, video }));
     if (opts.showSave)  grupo.appendChild(buildSavePill(entry, { onUnsave: opts.onUnsave }));
     if (opts.showFullscreen) grupo.appendChild(buildFullscreenPill(video));
+    // Vertical 9:16 (assets/vertical.js): aparece solo si la NUC ya lo generó.
+    if (opts.showShare && window.PuntazoVertical) {
+      try { grupo.appendChild(window.PuntazoVertical.crearPill(entry, { video })); }
+      catch (e) { console.warn('[PuntazoCard vertical]', e); }
+    }
     pillsEl.appendChild(grupo);
     // En medio: Spotify, solo en clips que llevan la música de AquaWolf (assets/musica.js).
     if (window.PuntazoMusica) {
