@@ -52,7 +52,7 @@ Para el jugador, pádel y pickleball funcionan igual. Lo que cambia es la págin
 
 ## ¿Cómo encuentro mi clip en Well Street?
 
-1. **Presiona el botón una vez, justo después del punto.** La luz hace una animación y termina en verde cuando la jugada quedó registrada. El sistema toma los 60 segundos anteriores.
+1. **Presiona el botón una vez, justo después del punto.** Con una vez basta: cada pulso genera un clip. El sistema toma los 60 segundos anteriores.
 2. **Espera un par de minutos.** En ese tiempo se corta el clip, se le pone el logo del club y la música de fondo, y se publica.
 3. **Entra con el QR de tu cancha** o desde [Ver clips](/entrada.html): Well Street, luego pádel o pickleball, luego tu cancha.
 4. **Busca por hora.** Los clips van del más nuevo al más viejo. Tú reconoces el tuyo por la hora y por quién sale jugando.
