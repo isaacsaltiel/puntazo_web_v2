@@ -1,0 +1,23 @@
+name: Avisar a buscadores (IndexNow)
+
+# Cuando cambia el contenido público (páginas generadas, portada, sitemap),
+# avisa a Bing/Copilot y demás buscadores de IndexNow. Los commits del CI de
+# clips solo tocan data/, así que no disparan este workflow.
+on:
+  push:
+    branches: [master]
+    paths:
+      - "sitemap.xml"
+      - "index.html"
+      - "tools/seo/content/**"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # GitHub Pages tarda ~1 min en publicar; esperamos para que el buscador
+      # encuentre la versión nueva cuando venga a leer.
+      - run: sleep 120
+      - run: python tools/seo/indexnow.py
