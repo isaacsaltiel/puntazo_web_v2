@@ -213,10 +213,10 @@
             <img src="/assets/img/P_blanca_transparente.png" alt="Puntazo" onerror="this.style.display='none'">
           </a>
           <ul class="nav-links" id="nav-menu">
-            <li><a href="/#producto"    onclick="closeMenu()">Producto</a></li>
-            <li><a href="/#vision"      onclick="closeMenu()">Visión</a></li>
-            <li><a href="/#clubs"       onclick="closeMenu()">Para clubs</a></li>
-            <li><a href="/#locaciones"  onclick="closeMenu()">Locaciones</a></li>
+            <li><a href="/como-funciona/" onclick="closeMenu()">Cómo funciona</a></li>
+            <li><a href="/para-clubes/"   onclick="closeMenu()">Para clubes</a></li>
+            <li><a href="/clubes/"        onclick="closeMenu()">Clubes</a></li>
+            <li><a href="/guias/"         onclick="closeMenu()">Guías</a></li>
           </ul>
           <div class="pz-nav-right">
             ${getClipsCTA()}
@@ -310,7 +310,7 @@
         '<a href="/recuperar.html" onclick="closeMenu()">🔍 Recuperar puntazo</a>',
         '<a href="/vivo.html" onclick="closeMenu()">📡 Transmisión en vivo</a>',
         '<a class="pz-nav-mkt" href="/" onclick="closeMenu()">🏠 Inicio</a>',
-        '<a class="pz-nav-mkt" href="/#clubs" onclick="closeMenu()">🏢 Para clubs</a>',
+        '<a class="pz-nav-mkt" href="/para-clubes/" onclick="closeMenu()">🏢 Para clubes</a>',
         '<a class="pz-nav-mkt" href="/privacidad.html" onclick="closeMenu()">🔒 Aviso de Privacidad</a>',
       ].join("");
     }
@@ -322,7 +322,7 @@
       '<a href="/entrada.html?modo=boton" onclick="closeMenu()">📲 Botón digital</a>',
       '<a href="/vivo.html" onclick="closeMenu()">📡 Transmisión en vivo</a>',
       '<a class="pz-nav-mkt" href="/" onclick="closeMenu()">🏠 Inicio</a>',
-      '<a class="pz-nav-mkt" href="/#clubs" onclick="closeMenu()">🏢 Para clubs</a>',
+      '<a class="pz-nav-mkt" href="/para-clubes/" onclick="closeMenu()">🏢 Para clubes</a>',
       '<a class="pz-nav-mkt" href="/privacidad.html" onclick="closeMenu()">🔒 Aviso de Privacidad</a>',
     ].join("");
   }

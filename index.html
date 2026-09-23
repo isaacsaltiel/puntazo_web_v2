@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-MX">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -73,73 +73,239 @@
   })();
 </script>
 
-<title>Puntazo · Captura tus mejores puntos de pádel automáticamente</title>
+<title>Puntazo Clips: el botón que graba tus jugadas de pádel</title>
 
 <!-- F121: SEO base. Description optimizada para CTR (≤155 chars) y
      keywords del nicho padel-tech. Canonical URL para evitar split. -->
-<meta name="description" content="Toca el botón en la cancha y en 60 segundos tienes tu mejor puntazo en HD listo para compartir. Sin apps. Sin esperas. Solo en clubs con Puntazo." />
-<meta name="keywords" content="puntazo, padel, clips de padel, replay padel, video padel automatico, padel mexico, paddle, deporte tecnologia, padel social" />
-<meta name="author" content="Puntazo" />
+<meta name="description" content="Presiona el botón en la cancha y en un par de minutos tu mejor jugada de pádel está en puntazoclips.com, lista para descargar y compartir. Gratis, sin app." />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 <link rel="canonical" href="https://puntazoclips.com/" />
+<link rel="alternate" hreflang="es-MX" href="https://puntazoclips.com/" />
+<link rel="alternate" hreflang="x-default" href="https://puntazoclips.com/" />
 
 <!-- F121: Open Graph para previews en WhatsApp / Facebook / LinkedIn. -->
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Puntazo" />
-<meta property="og:title" content="Puntazo · Captura tus mejores puntos de pádel" />
-<meta property="og:description" content="Toca un botón cuando juegues un puntazo. En 60 segundos tienes tu clip HD listo para compartir. Sin apps que descargar." />
+<meta property="og:title" content="Puntazo Clips: el botón que graba tus jugadas de pádel" />
+<meta property="og:description" content="Presiona el botón de la cancha y en un par de minutos tu jugada está lista para descargar y compartir. Gratis para jugadores, sin app." />
 <meta property="og:url" content="https://puntazoclips.com/" />
 <meta property="og:image" content="https://puntazoclips.com/assets/og-card.jpg" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content="Puntazo · Tu mejor puntazo de pádel, listo en 60 segundos" />
+<meta property="og:image:alt" content="Puntazo Clips · Tu mejor jugada de pádel, lista para compartir" />
 <meta property="og:locale" content="es_MX" />
 
 <!-- F123: Twitter Card con og-card 1200x630 -> summary_large_image. -->
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Puntazo · Captura tus mejores puntos de pádel" />
-<meta name="twitter:description" content="Toca un botón. En 60 segundos tienes tu clip HD listo para compartir." />
+<meta name="twitter:title" content="Puntazo Clips: el botón que graba tus jugadas de pádel" />
+<meta name="twitter:description" content="Presiona el botón de la cancha y en un par de minutos tu jugada está lista para compartir." />
 <meta name="twitter:image" content="https://puntazoclips.com/assets/og-card.jpg" />
-<meta name="twitter:image:alt" content="Puntazo · Tu mejor puntazo de pádel, listo en 60 segundos" />
+<meta name="twitter:image:alt" content="Puntazo Clips · Tu mejor jugada de pádel, lista para compartir" />
 
-<!-- F121: structured data (schema.org) — Organization + WebSite con
-     SearchAction. Ayuda a Google a entender la marca y abre sitelinks. -->
+<!-- seo:jsonld (lo genera tools/seo/build.py; no editar a mano) -->
 <script type="application/ld+json">
 {
-  "@context": "https://schema.org",
-  "@graph": [
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "Organization",
+   "@id": "https://puntazoclips.com/#org",
+   "name": "Puntazo",
+   "alternateName": [
+    "Puntazo Clips",
+    "PuntazoClips",
+    "puntazoclips.com"
+   ],
+   "url": "https://puntazoclips.com/",
+   "logo": {
+    "@type": "ImageObject",
+    "url": "https://puntazoclips.com/assets/icons/icon-512.png",
+    "width": 512,
+    "height": 512
+   },
+   "image": "https://puntazoclips.com/assets/og-card.jpg",
+   "description": "Puntazo (Puntazo Clips, puntazoclips.com) es un sistema de clips para clubes de pádel y pickleball en México: el jugador presiona un botón en la cancha (físico o en su celular) y el último minuto de juego, grabado por las cámaras del club, aparece en puntazoclips.com en un par de minutos, listo para descargar y compartir. Gratis para el jugador; el club lo contrata.",
+   "disambiguatingDescription": "Empresa mexicana de clips de video para clubes de pádel y pickleball (puntazoclips.com). No es una app de marcador de pádel ni una cuenta de videos de pádel profesional.",
+   "slogan": "Tu mejor jugada de pádel, lista para compartir.",
+   "email": "puntazoclips@gmail.com",
+   "telephone": "+52 220 680 4856",
+   "founder": {
+    "@id": "https://puntazoclips.com/quienes-somos/#fundador"
+   },
+   "areaServed": [
     {
-      "@type": "Organization",
-      "@id": "https://puntazoclips.com/#org",
-      "name": "Puntazo",
-      "alternateName": "Puntazo Clips",
-      "url": "https://puntazoclips.com",
-      "logo": "https://puntazoclips.com/assets/logo.png",
-      "description": "Plataforma de captura automática de puntos de pádel en clubs. Toca un botón y tu mejor jugada queda guardada en HD lista para compartir.",
-      "sameAs": [
-        "https://tiktok.com/@puntazoclips",
-        "https://instagram.com/puntazoclips"
-      ],
-      "contactPoint": [{
-        "@type": "ContactPoint",
-        "telephone": "+52-220-680-4856",
-        "contactType": "Sales",
-        "areaServed": "MX",
-        "availableLanguage": ["Spanish", "English"]
-      }]
+     "@type": "Country",
+     "name": "México"
     },
     {
-      "@type": "WebSite",
-      "@id": "https://puntazoclips.com/#site",
-      "url": "https://puntazoclips.com",
-      "name": "Puntazo",
-      "publisher": { "@id": "https://puntazoclips.com/#org" },
-      "inLanguage": "es-MX"
+     "@type": "City",
+     "name": "Ciudad de México"
+    },
+    {
+     "@type": "AdministrativeArea",
+     "name": "Estado de México"
+    },
+    {
+     "@type": "City",
+     "name": "Guadalajara"
+    },
+    {
+     "@type": "City",
+     "name": "Monterrey"
+    },
+    {
+     "@type": "City",
+     "name": "Toluca"
+    },
+    {
+     "@type": "City",
+     "name": "Cuernavaca"
+    },
+    {
+     "@type": "City",
+     "name": "Mérida"
+    },
+    {
+     "@type": "City",
+     "name": "Acapulco"
     }
-  ]
+   ],
+   "knowsAbout": [
+    "pádel",
+    "pickleball",
+    "clips de pádel",
+    "repeticiones instantáneas",
+    "cámaras para canchas de pádel",
+    "botón para grabar jugadas",
+    "transmisión en vivo de torneos de pádel",
+    "tecnología para clubes deportivos"
+   ],
+   "sameAs": [
+    "https://www.instagram.com/puntazoclips/",
+    "https://www.tiktok.com/@puntazoclips"
+   ],
+   "contactPoint": [
+    {
+     "@type": "ContactPoint",
+     "contactType": "sales",
+     "telephone": "+52 220 680 4856",
+     "email": "puntazoclips@gmail.com",
+     "areaServed": "MX",
+     "availableLanguage": [
+      "es",
+      "en"
+     ]
+    }
+   ]
+  },
+  {
+   "@type": "WebSite",
+   "@id": "https://puntazoclips.com/#website",
+   "url": "https://puntazoclips.com/",
+   "name": "Puntazo",
+   "alternateName": [
+    "Puntazo Clips",
+    "puntazoclips.com"
+   ],
+   "publisher": {
+    "@id": "https://puntazoclips.com/#org"
+   },
+   "inLanguage": "es-MX"
+  },
+  {
+   "@type": "Person",
+   "@id": "https://puntazoclips.com/quienes-somos/#fundador",
+   "name": "Shmalti K.",
+   "jobTitle": "Fundador de Puntazo",
+   "worksFor": {
+    "@id": "https://puntazoclips.com/#org"
+   },
+   "url": "https://puntazoclips.com/quienes-somos/"
+  },
+  {
+   "@type": "WebPage",
+   "@id": "https://puntazoclips.com/#webpage",
+   "url": "https://puntazoclips.com/",
+   "name": "Puntazo Clips: el botón que graba tus jugadas de pádel",
+   "description": "Puntazo (Puntazo Clips, puntazoclips.com) es un sistema de clips para clubes de pádel y pickleball en México: el jugador presiona un botón en la cancha (físico o en su celular) y el último minuto de juego, grabado por las cámaras del club, aparece en puntazoclips.com en un par de minutos, listo para descargar y compartir. Gratis para el jugador; el club lo contrata.",
+   "isPartOf": {
+    "@id": "https://puntazoclips.com/#website"
+   },
+   "about": {
+    "@id": "https://puntazoclips.com/#org"
+   },
+   "inLanguage": "es-MX",
+   "dateModified": "2026-09-23",
+   "primaryImageOfPage": {
+    "@type": "ImageObject",
+    "url": "https://puntazoclips.com/assets/og-card.jpg"
+   }
+  },
+  {
+   "@type": "FAQPage",
+   "@id": "https://puntazoclips.com/#faq",
+   "url": "https://puntazoclips.com/",
+   "isPartOf": {
+    "@id": "https://puntazoclips.com/#webpage"
+   },
+   "mainEntity": [
+    {
+     "@type": "Question",
+     "name": "¿Qué es Puntazo?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Un sistema de clips para canchas de pádel y pickleball. Cada cancha tiene cámara y botón: presionas el botón después de un buen punto y el último minuto de juego aparece en la página de tu cancha en puntazoclips.com, con el logo del club, listo para descargar y compartir."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Cuánto cuesta?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Para el jugador, nada: ver, descargar y compartir clips es gratis y no necesitas cuenta. El club contrata Puntazo con una cuota mensual según su número de canchas."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Cuánto tarda en aparecer mi clip?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Normalmente un par de minutos. En BreakPoint medimos 2 minutos con 22 segundos desde que se presiona el botón hasta que el clip se puede ver en la web."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Tengo que descargar una app?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "No. Todo funciona desde el navegador del celular. El botón digital también está en la web."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Dónde hay Puntazo?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "En BreakPoint (Atizapán de Zaragoza), InterPadel (Interlomas) y Well Street (Mérida). La lista con direcciones está en clubes con Puntazo ."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Cómo llevo Puntazo a mi club?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Escríbenos por WhatsApp con el número de canchas y tu ciudad. Nosotros ponemos el sistema y lo operamos; el club pone el espacio, la luz y el internet. Todo el detalle está en Puntazo para clubes ."
+     }
+    }
+   ],
+   "inLanguage": "es-MX"
+  }
+ ]
 }
 </script>
+<!-- /seo:jsonld -->
 
-<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-7HTMSTJ035"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -157,7 +323,8 @@
 
 
 <link rel="stylesheet" href="/assets/fonts.css" />
-<link rel="stylesheet" href="assets/estilo.css" />
+<link rel="stylesheet" href="/assets/estilo.css" />
+<link rel="stylesheet" href="/assets/contenido.css" />
 
 <style>
 /* ── HERO ── */
@@ -848,7 +1015,17 @@
   });
 </script>
 
-<div id="nav-root" data-nav-variant="landing"></div>
+<div id="nav-root" data-nav-variant="landing">
+  <nav>
+    <a href="/" class="nav-logo"><img src="/assets/img/P_blanca_transparente.png" alt="Puntazo" width="26" height="32"></a>
+    <ul class="nav-links">
+      <li><a href="/como-funciona/">Cómo funciona</a></li>
+      <li><a href="/para-clubes/">Para clubes</a></li>
+      <li><a href="/clubes/">Clubes</a></li>
+      <li><a href="/guias/">Guías</a></li>
+    </ul>
+  </nav>
+</div>
 <script src="/assets/header.js"></script>
 
 
@@ -856,8 +1033,8 @@
   <div class="hero-bg"></div>
   <div class="grid-bg"></div>
 
-  <h1>Tu partido. Tus puntazos. <span class="blue">Tu resumen.</span></h1>
-  <h2 class="hero-sub">Inicia tu partido, captura cada puntazo con el botón, y comparte el resumen visual al terminar.</h2>
+  <h1>El botón que graba tus <span class="blue">mejores jugadas</span> de pádel.</h1>
+  <p class="hero-sub">Presiona el botón en la cancha y en un par de minutos tu clip está listo para descargar y compartir. Gratis para jugadores, sin app.</p>
 
   <!-- (2026-07-13) Reprioridad del hero: encontrar clips es AHORA la acción
        principal; "usar teléfono como botón" queda de secundario. Se quitó
@@ -874,6 +1051,13 @@
     <div class="scroll-line"></div>
     scroll
   </div>
+</div>
+
+<div class="section-wrap" id="que-es">
+  <div class="section-tag">Qué es Puntazo</div>
+  <h2 class="section-title">Tu mejor punto, en video, sin preparar nada.</h2>
+  <p class="section-sub" style="margin-bottom:1.2rem"><strong style="color:#fff">Puntazo Clips</strong> es un sistema mexicano de clips para clubes de pádel y pickleball. Cada cancha tiene una cámara y un botón: cuando haces un buen punto, presionas el botón y el último minuto de juego aparece en la página de tu cancha en puntazoclips.com, con el logo del club, listo para descargar y mandar por WhatsApp, Instagram o TikTok. El jugador no paga ni descarga nada; el club lo contrata.</p>
+  <p class="section-sub" style="margin-bottom:0">Hoy está en <a href="/clubes/#breakpoint" style="color:#8cc2ff">BreakPoint</a> (Atizapán), <a href="/clubes/#interpadel" style="color:#8cc2ff">InterPadel</a> (Interlomas) y <a href="/clubes/#well-street" style="color:#8cc2ff">Well Street</a> (Mérida). <a href="/como-funciona/" style="color:#8cc2ff">Cómo funciona paso a paso →</a></p>
 </div>
 
 <!-- F121: Modos y herramientas (reemplaza "Lo nuevo: partidos digitales").
@@ -973,16 +1157,20 @@
 <div class="section-wrap" id="stats">
   <div class="section-tag">Stats</div>
   <div class="section-title">Impacto en números</div>
-  <p class="section-sub">Actividad reciente y alcance de la plataforma.</p>
+  <p class="section-sub">Medido en nuestros clubes. Del botón a la web: 2 minutos con 22 segundos en BreakPoint.</p>
 
   <div class="hero-stats" style="margin-top:1rem;border-top:0;padding-top:0;max-width:720px;">
     <div class="hero-stat">
       <div class="num">60<span>s</span></div>
-      <div class="lbl">Replay automático del puntazo</div>
+      <div class="lbl">De juego en cada clip</div>
     </div>
     <div class="hero-stat">
-      <div class="num" style="color:var(--blue2)">24h</div>
-      <div class="lbl">Tus clips disponibles</div>
+      <div class="num" style="color:var(--blue2)">~2 min</div>
+      <div class="lbl">Del botón a la web</div>
+    </div>
+    <div class="hero-stat">
+      <div class="num">+<!--stat:stat_total_redondo-->7,400<!--/stat--></div>
+      <div class="lbl">Clips publicados</div>
     </div>
     <div class="hero-stat">
       <div class="num">0</div>
@@ -994,31 +1182,31 @@
 <div class="section-wrap fade-section">
   <div class="section-tag">Cómo funciona</div>
   <div class="section-title">Así de simple.</div>
-  <p class="section-sub">Desde QR hasta resumen, todo sin pensarlo.</p>
+  <p class="section-sub">Del punto al celular en tres pasos. <a href="/como-funciona/" style="color:#8cc2ff">Ver la explicación completa →</a></p>
 
   <div class="steps-wrap">
     <div class="steps">
       <div class="step">
         <div class="step-left"><div class="step-num">1</div><div class="step-connector"></div></div>
         <div class="step-body">
-          <h3>Escaneas QR de tu cancha</h3>
-          <p>Llegas al club, escaneas el QR de tu cancha y arrancas tu partido digital en segundos.</p>
+          <h3>Juegas en un club con Puntazo</h3>
+          <p>Cada cancha tiene su cámara, su botón y un QR que te lleva directo a sus clips.</p>
         </div>
       </div>
 
       <div class="step">
         <div class="step-left"><div class="step-num">2</div><div class="step-connector"></div></div>
         <div class="step-body">
-          <h3>Tocas botón en cada puntazo</h3>
-          <p>Usa el botón físico de la cancha o el botón digital en tu teléfono. El sistema guarda el minuto previo al instante.</p>
+          <h3>Presionas el botón después del punto</h3>
+          <p>Usa el botón físico de la cancha o el botón digital en tu celular. Se guarda el último minuto de juego.</p>
         </div>
       </div>
 
       <div class="step">
         <div class="step-left"><div class="step-num">3</div><div class="step-connector"></div></div>
         <div class="step-body">
-          <h3>Terminas partido y compartes resumen</h3>
-          <p>Cierra el partido cuando termines. Marcador, clips y resumen visual estilo Strava — listos para compartir.</p>
+          <h3>Descargas y compartes tu clip</h3>
+          <p>En un par de minutos aparece en la página de tu cancha, con el logo del club. Lo bajas o lo mandas por WhatsApp.</p>
         </div>
       </div>
 
@@ -1027,10 +1215,10 @@
     <div class="phone-mockup">
       <div class="phone-label-top">📲 Tu partido, en tu mano</div>
       <div class="phone-screen">
-        <a href="entrada.html" class="phone-btn-big" style="display:block;text-decoration:none;text-align:center;" onclick="try{gtag('event','mockup_iniciar_partido',{event_category:'CTA',event_label:'mockup'});}catch(e){}">▶ INICIAR PARTIDO</a>
-        <a href="explorar.html" class="phone-clips-btn" style="display:block;text-decoration:none;text-align:center;">Ver mis puntazos ▶</a>
+        <a href="/entrada.html?modo=clips" class="phone-btn-big" style="display:block;text-decoration:none;text-align:center;" onclick="try{gtag('event','mockup_ver_clips',{event_category:'CTA',event_label:'mockup'});}catch(e){}">▶ VER MIS CLIPS</a>
+        <a href="/entrada.html?modo=boton" class="phone-clips-btn" style="display:block;text-decoration:none;text-align:center;">📲 Usar mi celular como botón</a>
       </div>
-      <p class="phone-note">Selecciona tu club y cancha, lleva el marcador y comparte el resumen al terminar.</p>
+      <p class="phone-note">Elige tu club y tu cancha. Tus clips aparecen ordenados por hora.</p>
     </div>
   </div>
 </div>
@@ -1073,8 +1261,8 @@
       <div class="feat-icon">
         <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       </div>
-      <h3>Resumen del partido</h3>
-      <p>Cierra el partido y genera el marcador final, la lista de clips y un resumen visual estilo Strava listo para compartir.</p>
+      <h3>Recupera tu jugada</h3>
+      <p>¿Se te olvidó presionar el botón? Indica cancha y hora aproximada y buscamos el punto en la grabación del club.</p>
       <span class="badge badge-live">● Live</span>
     </div>
 
@@ -1082,8 +1270,8 @@
       <div class="feat-icon">
         <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
       </div>
-      <h3>Link compartible del partido</h3>
-      <p>Comparte el link y tus rivales se unen sin descargar nada. Cada quien reclama su slot con un toque y todos ven el partido en vivo.</p>
+      <h3>Música y logo del club</h3>
+      <p>Cada clip sale con el logo de tu club y, donde el club lo activa, con música de fondo. Listo para subir a historias.</p>
       <span class="badge badge-live">● Live</span>
     </div>
   </div>
@@ -1122,8 +1310,8 @@
       </div>
 
       <div class="vision-item">
-        <h4>Patrocinios integrados <span class="tag-sm tag-dev">Dev</span></h4>
-        <p>Marcas sobre las experiencias con más tráfico y atención. Ingreso para el club sin cobrarle al jugador.</p>
+        <h4>Patrocinios integrados <span class="tag-sm tag-live">Live</span></h4>
+        <p>Marcas en los clips y en la página de cada cancha, con conteo exacto de vistas y clics. Ingreso para el club sin cobrarle al jugador.</p>
       </div>
     </div>
   </div>
@@ -1191,6 +1379,7 @@
         Escríbenos por WhatsApp
       </a>
       <p style="font-size:0.7rem;color:var(--muted);margin-top:1rem;position:relative;z-index:1;">Respondemos en menos de 24 horas.</p>
+      <p style="margin-top:0.6rem;position:relative;z-index:1;"><a href="/para-clubes/" style="color:#8cc2ff;font-weight:800;font-size:0.85rem;text-decoration:none">Ver todo lo que incluye Puntazo para clubes →</a></p>
     </div>
   </div>
 </div>
@@ -1198,7 +1387,7 @@
 <div class="section-wrap fade-section" id="locaciones">
   <div class="section-tag">Locaciones</div>
   <div class="section-title">Ya activos en<br>estos clubs.</div>
-  <p class="section-sub">Interpadel, BreakPoint, Scorpion y WellStreet ya son parte de Puntazo. Escanea el QR en tu cancha, inicia tu partido y revive cada puntazo en segundos.</p>
+  <p class="section-sub">BreakPoint, InterPadel y WellStreet ya tienen Puntazo en sus canchas. Escanea el QR de tu cancha y encuentra tus clips. <a href="/clubes/" style="color:#8cc2ff">Ver clubes y direcciones →</a></p>
 
   <div class="locs-grid">
     <!-- F121: logos reales (assets/logos/) en vez de emojis. onerror cae a
@@ -1211,7 +1400,7 @@
              onerror="this.outerHTML='🎾';">
       </div>
       <h4>Interpadel</h4>
-      <p>Activo · Escanea el QR en cancha</p>
+      <p>Interlomas, Edo. Méx. · 4 canchas</p>
     </div>
     <div class="loc-card">
       <div class="loc-icon loc-icon--has-img">
@@ -1219,12 +1408,7 @@
              onerror="this.outerHTML='⚡';">
       </div>
       <h4>BreakPoint</h4>
-      <p>Activo · Escanea el QR en cancha</p>
-    </div>
-    <div class="loc-card">
-      <div class="loc-icon">🦂</div>
-      <h4>Scorpion</h4>
-      <p>Activo · Escanea el QR en cancha</p>
+      <p>Atizapán, Edo. Méx. · 5 canchas</p>
     </div>
     <div class="loc-card">
       <div class="loc-icon loc-icon--has-img">
@@ -1232,13 +1416,59 @@
              onerror="this.outerHTML='🏟';">
       </div>
       <h4>WellStreet</h4>
-      <p>Activo · Escanea el QR en cancha</p>
+      <p>Mérida, Yuc. · pádel y pickleball</p>
     </div>
     <div class="loc-coming">
       <div class="plus-icon">+</div>
       <p>Tu club aquí · Habla con nosotros</p>
     </div>
   </div>
+</div>
+
+<div class="section-wrap" id="preguntas">
+  <div class="section-tag">Preguntas frecuentes</div>
+  <h2 class="section-title">Lo que más nos preguntan.</h2>
+<!-- seo:faq (lo genera tools/seo/build.py; no editar a mano) -->
+<div class="ct-faq">
+<details>
+<summary>¿Qué es Puntazo?</summary>
+<div class="ct-faq-a">
+<p>Un sistema de clips para canchas de pádel y pickleball. Cada cancha tiene cámara y botón: presionas el botón después de un buen punto y el último minuto de juego aparece en la página de tu cancha en puntazoclips.com, con el logo del club, listo para descargar y compartir.</p>
+</div>
+</details>
+<details>
+<summary>¿Cuánto cuesta?</summary>
+<div class="ct-faq-a">
+<p>Para el jugador, nada: ver, descargar y compartir clips es gratis y no necesitas cuenta. El club contrata Puntazo con una cuota mensual según su número de canchas.</p>
+</div>
+</details>
+<details>
+<summary>¿Cuánto tarda en aparecer mi clip?</summary>
+<div class="ct-faq-a">
+<p>Normalmente un par de minutos. En BreakPoint medimos 2 minutos con 22 segundos desde que se presiona el botón hasta que el clip se puede ver en la web.</p>
+</div>
+</details>
+<details>
+<summary>¿Tengo que descargar una app?</summary>
+<div class="ct-faq-a">
+<p>No. Todo funciona desde el navegador del celular. El botón digital también está en la web.</p>
+</div>
+</details>
+<details>
+<summary>¿Dónde hay Puntazo?</summary>
+<div class="ct-faq-a">
+<p>En BreakPoint (Atizapán de Zaragoza), InterPadel (Interlomas) y Well Street (Mérida). La lista con direcciones está en <a href="/clubes/">clubes con Puntazo</a>.</p>
+</div>
+</details>
+<details>
+<summary>¿Cómo llevo Puntazo a mi club?</summary>
+<div class="ct-faq-a">
+<p>Escríbenos por <a href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo%21%20Tengo%20un%20club%20de%20p%C3%A1del%20y%20me%20interesa%20instalar%20Puntazo.">WhatsApp</a> con el número de canchas y tu ciudad. Nosotros ponemos el sistema y lo operamos; el club pone el espacio, la luz y el internet. Todo el detalle está en <a href="/para-clubes/">Puntazo para clubes</a>.</p>
+</div>
+</details>
+</div>
+<!-- /seo:faq -->
+  <p class="section-sub" style="margin-top:1.5rem;margin-bottom:0">Más respuestas en <a href="/preguntas-frecuentes/" style="color:#8cc2ff">preguntas frecuentes</a> y en nuestras <a href="/guias/" style="color:#8cc2ff">guías para jugadores y clubes</a>.</p>
 </div>
 
 <div class="footer-cta fade-section">
@@ -1262,10 +1492,16 @@
 </div>
 
 <footer>
-  <a href="inicio.html" class="foot-logo">
+  <a href="/" class="foot-logo">
     <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'">
   </a>
   <div class="foot-links">
+    <a href="/como-funciona/">Cómo funciona</a>
+    <a href="/para-clubes/">Para clubes</a>
+    <a href="/clubes/">Clubes</a>
+    <a href="/guias/">Guías</a>
+    <a href="/preguntas-frecuentes/">Preguntas</a>
+    <a href="/quienes-somos/">Quiénes somos</a>
     <a href="/privacidad.html">Aviso de Privacidad</a>
     <a href="https://tiktok.com/@puntazoclips" target="_blank" rel="noopener">TikTok</a>
     <a href="https://instagram.com/puntazoclips" target="_blank" rel="noopener">Instagram</a>

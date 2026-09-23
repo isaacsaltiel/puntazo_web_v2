@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Cómo transmitir un torneo de pádel en vivo por YouTube</title>
+<meta name="description" content="Qué equipo, qué internet y qué pasos necesitas para transmitir un torneo de pádel en YouTube: cámaras, OBS, bitrate, marcador, audio, privacidad y checklist." />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+<link rel="canonical" href="https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/" />
+<link rel="alternate" hreflang="es-MX" href="https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/" />
+<link rel="alternate" hreflang="x-default" href="https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/" />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Puntazo" />
+<meta property="og:locale" content="es_MX" />
+<meta property="og:title" content="Cómo transmitir un torneo de pádel en vivo por YouTube" />
+<meta property="og:description" content="Qué equipo, qué internet y qué pasos necesitas para transmitir un torneo de pádel en YouTube: cámaras, OBS, bitrate, marcador, audio, privacidad y checklist." />
+<meta property="og:url" content="https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/" />
+<meta property="og:image" content="https://puntazoclips.com/assets/og/guias-como-transmitir-un-torneo-de-padel-en-vivo.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="article:published_time" content="2026-09-22" />
+<meta property="article:modified_time" content="2026-09-22" />
+<meta property="article:author" content="Shmalti K." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Cómo transmitir un torneo de pádel en vivo por YouTube" />
+<meta name="twitter:description" content="Qué equipo, qué internet y qué pasos necesitas para transmitir un torneo de pádel en YouTube: cámaras, OBS, bitrate, marcador, audio, privacidad y checklist." />
+<meta name="twitter:image" content="https://puntazoclips.com/assets/og/guias-como-transmitir-un-torneo-de-padel-en-vivo.jpg" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/android-icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-icon-180x180.png" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#050914" />
+<link rel="stylesheet" href="/assets/fonts.css" />
+<link rel="stylesheet" href="/assets/estilo.css" />
+<link rel="stylesheet" href="/assets/contenido.css" />
+<script src="/assets/analytics.js" async></script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "Organization",
+   "@id": "https://puntazoclips.com/#org",
+   "name": "Puntazo",
+   "alternateName": [
+    "Puntazo Clips",
+    "PuntazoClips",
+    "puntazoclips.com"
+   ],
+   "url": "https://puntazoclips.com/",
+   "logo": {
+    "@type": "ImageObject",
+    "url": "https://puntazoclips.com/assets/icons/icon-512.png",
+    "width": 512,
+    "height": 512
+   },
+   "image": "https://puntazoclips.com/assets/og-card.jpg",
+   "description": "Puntazo (Puntazo Clips, puntazoclips.com) es un sistema de clips para clubes de pádel y pickleball en México: el jugador presiona un botón en la cancha (físico o en su celular) y el último minuto de juego, grabado por las cámaras del club, aparece en puntazoclips.com en un par de minutos, listo para descargar y compartir. Gratis para el jugador; el club lo contrata.",
+   "disambiguatingDescription": "Empresa mexicana de clips de video para clubes de pádel y pickleball (puntazoclips.com). No es una app de marcador de pádel ni una cuenta de videos de pádel profesional.",
+   "slogan": "Tu mejor jugada de pádel, lista para compartir.",
+   "email": "puntazoclips@gmail.com",
+   "telephone": "+52 220 680 4856",
+   "founder": {
+    "@id": "https://puntazoclips.com/quienes-somos/#fundador"
+   },
+   "areaServed": [
+    {
+     "@type": "Country",
+     "name": "México"
+    },
+    {
+     "@type": "City",
+     "name": "Ciudad de México"
+    },
+    {
+     "@type": "AdministrativeArea",
+     "name": "Estado de México"
+    },
+    {
+     "@type": "City",
+     "name": "Guadalajara"
+    },
+    {
+     "@type": "City",
+     "name": "Monterrey"
+    },
+    {
+     "@type": "City",
+     "name": "Toluca"
+    },
+    {
+     "@type": "City",
+     "name": "Cuernavaca"
+    },
+    {
+     "@type": "City",
+     "name": "Mérida"
+    },
+    {
+     "@type": "City",
+     "name": "Acapulco"
+    }
+   ],
+   "knowsAbout": [
+    "pádel",
+    "pickleball",
+    "clips de pádel",
+    "repeticiones instantáneas",
+    "cámaras para canchas de pádel",
+    "botón para grabar jugadas",
+    "transmisión en vivo de torneos de pádel",
+    "tecnología para clubes deportivos"
+   ],
+   "sameAs": [
+    "https://www.instagram.com/puntazoclips/",
+    "https://www.tiktok.com/@puntazoclips"
+   ],
+   "contactPoint": [
+    {
+     "@type": "ContactPoint",
+     "contactType": "sales",
+     "telephone": "+52 220 680 4856",
+     "email": "puntazoclips@gmail.com",
+     "areaServed": "MX",
+     "availableLanguage": [
+      "es",
+      "en"
+     ]
+    }
+   ]
+  },
+  {
+   "@type": "WebSite",
+   "@id": "https://puntazoclips.com/#website",
+   "url": "https://puntazoclips.com/",
+   "name": "Puntazo",
+   "alternateName": [
+    "Puntazo Clips",
+    "puntazoclips.com"
+   ],
+   "publisher": {
+    "@id": "https://puntazoclips.com/#org"
+   },
+   "inLanguage": "es-MX"
+  },
+  {
+   "@type": "FAQPage",
+   "@id": "https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/#faq",
+   "url": "https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/",
+   "isPartOf": {
+    "@id": "https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/#webpage"
+   },
+   "mainEntity": [
+    {
+     "@type": "Question",
+     "name": "¿Qué velocidad de internet necesito para transmitir pádel en vivo?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Depende de la calidad. YouTube recomienda 4 Mbps de subida para 720p a 30 cuadros por segundo, 6 Mbps para 720p a 60 y 10 Mbps para 1080p a 30, por cada transmisión. Mide tu subida a la hora del torneo, con el club lleno, y deja margen: si apenas alcanzas el número, la transmisión se va a trabar."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Puedo usar las cámaras de seguridad del club para transmitir?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Muchas veces sí. Si son cámaras IP y alguna ve la cancha completa desde atrás y en alto, OBS puede tomar su señal por la red. Revisa la resolución y los cuadros por segundo de esa cámara: una cámara pensada solo para vigilancia puede verse pobre en pantalla completa."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Cuánto tarda YouTube en habilitar la transmisión en vivo?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "La primera vez puede tardar hasta 24 horas, según la ayuda de YouTube, y el canal tiene que estar verificado con un número de teléfono. Hazlo al menos una semana antes del torneo para tener tiempo de hacer una prueba completa."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Necesito permiso de los jugadores para transmitir el torneo?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Conviene tenerlo siempre. Pon en la inscripción que el torneo se transmite, coloca letreros en las canchas y ofrece una alternativa a quien no quiera salir. Para categorías infantiles o juveniles, pide autorización por escrito a los padres."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Cuántas cámaras necesito para transmitir un torneo de pádel?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Una por cancha que quieras mostrar. Para la mayoría de los torneos de club basta con las cámaras de las canchas principales y una sola transmisión en la que un operador va cambiando de cancha. Una segunda cámara lateral en la cancha central se ve bien en la final, pero no es indispensable."
+     }
+    }
+   ],
+   "inLanguage": "es-MX"
+  },
+  {
+   "@type": "WebPage",
+   "@id": "https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/#webpage",
+   "url": "https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/",
+   "name": "Cómo transmitir un torneo de pádel en vivo por YouTube",
+   "description": "Qué equipo, qué internet y qué pasos necesitas para transmitir un torneo de pádel en YouTube: cámaras, OBS, bitrate, marcador, audio, privacidad y checklist.",
+   "isPartOf": {
+    "@id": "https://puntazoclips.com/#website"
+   },
+   "about": {
+    "@id": "https://puntazoclips.com/#org"
+   },
+   "breadcrumb": {
+    "@id": "https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/#breadcrumb"
+   },
+   "inLanguage": "es-MX",
+   "datePublished": "2026-09-22",
+   "dateModified": "2026-09-22",
+   "primaryImageOfPage": {
+    "@type": "ImageObject",
+    "url": "https://puntazoclips.com/assets/og/guias-como-transmitir-un-torneo-de-padel-en-vivo.jpg"
+   }
+  },
+  {
+   "@type": "BreadcrumbList",
+   "@id": "https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/#breadcrumb",
+   "itemListElement": [
+    {
+     "@type": "ListItem",
+     "position": 1,
+     "name": "Inicio",
+     "item": "https://puntazoclips.com/"
+    },
+    {
+     "@type": "ListItem",
+     "position": 2,
+     "name": "Guías",
+     "item": "https://puntazoclips.com/guias/"
+    },
+    {
+     "@type": "ListItem",
+     "position": 3,
+     "name": "Transmitir un torneo",
+     "item": "https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/"
+    }
+   ]
+  },
+  {
+   "@type": "BlogPosting",
+   "@id": "https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/#article",
+   "headline": "Cómo transmitir un torneo de pádel en vivo",
+   "description": "Qué equipo, qué internet y qué pasos necesitas para transmitir un torneo de pádel en YouTube: cámaras, OBS, bitrate, marcador, audio, privacidad y checklist.",
+   "datePublished": "2026-09-22",
+   "dateModified": "2026-09-22",
+   "author": {
+    "@id": "https://puntazoclips.com/quienes-somos/#fundador"
+   },
+   "publisher": {
+    "@id": "https://puntazoclips.com/#org"
+   },
+   "mainEntityOfPage": {
+    "@id": "https://puntazoclips.com/guias/como-transmitir-un-torneo-de-padel-en-vivo/#webpage"
+   },
+   "image": "https://puntazoclips.com/assets/og/guias-como-transmitir-un-torneo-de-padel-en-vivo.jpg",
+   "inLanguage": "es-MX",
+   "keywords": "transmitir torneo de pádel en vivo, streaming de pádel para clubes, cómo transmitir pádel en YouTube, cámaras para transmitir pádel, transmisión en vivo torneo de pádel, OBS pádel YouTube",
+   "articleSection": "Guías"
+  },
+  {
+   "@type": "Person",
+   "@id": "https://puntazoclips.com/quienes-somos/#fundador",
+   "name": "Shmalti K.",
+   "jobTitle": "Fundador de Puntazo",
+   "worksFor": {
+    "@id": "https://puntazoclips.com/#org"
+   },
+   "url": "https://puntazoclips.com/quienes-somos/"
+  }
+ ]
+}
+</script>
+</head>
+<body class="ct">
+<div class="page-bg"></div>
+<nav class="ct-nav" aria-label="Principal">
+  <a href="/" class="nav-logo" aria-label="Puntazo, inicio">
+    <img src="/assets/img/P_blanca_transparente.png" alt="Puntazo" width="26" height="32">
+  </a>
+  <ul class="nav-links" id="nav-menu">
+      <li><a href="/como-funciona/">Cómo funciona</a></li>
+      <li><a href="/para-clubes/">Para clubes</a></li>
+      <li><a href="/clubes/">Clubes</a></li>
+      <li><a href="/guias/" aria-current="page">Guías</a></li>
+      <li><a href="/preguntas-frecuentes/">Preguntas</a></li>
+  </ul>
+  <div class="ct-nav-right">
+    <a class="ct-cta" href="/entrada.html">&#9654; Ver clips</a>
+    <button class="menu-toggle" type="button" aria-label="Abrir menú" aria-controls="nav-menu" aria-expanded="false"
+      onclick="var m=document.getElementById('nav-menu');var o=m.classList.toggle('show');this.setAttribute('aria-expanded',o)">&#9776;</button>
+  </div>
+</nav>
+<main class="ct-main">
+<article class="ct-wrap">
+<ol class="ct-crumbs"><li><a href="/">Inicio</a></li><li><a href="/guias/">Guías</a></li><li aria-current="page">Transmitir un torneo</li></ol>
+<header class="ct-hero">
+<p class="ct-eyebrow">Guía para clubes</p>
+<h1>Cómo transmitir un torneo de pádel en vivo</h1>
+<p class="ct-lead">Para transmitir un torneo de pádel en vivo necesitas <strong>una cámara que vea la cancha completa</strong>, <strong>un encoder</strong> como OBS y <strong>internet con subida estable</strong>: YouTube recomienda 4 Mbps para 720p y 10 Mbps para 1080p a 30 cuadros por segundo, por cada transmisión. Lo difícil no es la tecnología, es que no se caiga a media final.</p>
+<p class="ct-meta">Por <a href="/quienes-somos/">Shmalti K.</a> · Actualizado el <time datetime="2026-09-22">22 de septiembre de 2026</time></p>
+
+</header>
+<div class="ct-body">
+<div class="ct-tldr"><p>En corto</p><ul><li><strong>Lo mínimo:</strong> una cámara alta detrás de la cancha, una computadora con OBS conectada por cable y un canal de YouTube verificado.</li><li><strong>Internet:</strong> YouTube recomienda 4 Mbps de subida para 720p y 10 Mbps para 1080p a 30 cuadros por segundo, por cada transmisión. Deja margen de sobra.</li><li><strong>Una semana antes:</strong> verifica el canal y activa las transmisiones en vivo; la primera vez puede tardar hasta 24 horas.</li><li><strong>Una transmisión con cambio de cancha</strong> suele ser mejor que una por cancha: gasta menos internet y siempre muestra el partido que importa.</li><li><strong>Plan B:</strong> graba en local al mismo tiempo, ten un internet de respaldo y avisa a los jugadores que el torneo se transmite.</li></ul></div>
+<h2 id="que-necesitas-para-transmitir-un-torneo-de-padel">¿Qué necesitas para transmitir un torneo de pádel?</h2>
+<p>Menos de lo que parece, pero cada pieza tiene que ser confiable: en un torneo no hay segunda toma.</p>
+<div class="ct-table"><table>
+<thead>
+<tr>
+<th>Pieza</th>
+<th>Opción básica</th>
+<th>Opción de club</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cámara</td>
+<td>Un celular o una webcam en un tripié alto</td>
+<td>Cámaras IP fijas del club, una por cancha</td>
+</tr>
+<tr>
+<td>Encoder</td>
+<td>Laptop con OBS Studio (gratis)</td>
+<td>Computadora dedicada o un sistema administrado por un proveedor</td>
+</tr>
+<tr>
+<td>Internet</td>
+<td>El del club, por cable</td>
+<td>Línea con subida suficiente y un respaldo móvil</td>
+</tr>
+<tr>
+<td>Plataforma</td>
+<td>Canal de YouTube verificado</td>
+<td>El mismo, con eventos programados por día</td>
+</tr>
+<tr>
+<td>Marcador</td>
+<td>Texto que el operador actualiza a mano</td>
+<td>Gráfico con nombres, ronda y marcador</td>
+</tr>
+<tr>
+<td>Personas</td>
+<td>Una persona que opere todo el día</td>
+<td>Un operador y alguien que lleve los marcadores</td>
+</tr>
+</tbody>
+</table></div>
+<p>El encoder es el programa que toma la imagen de la cámara, le agrega el marcador y los logos, y la manda a YouTube. OBS Studio es gratis y funciona en Windows, Mac y Linux. Si tus cámaras son IP, OBS puede recibir su señal por la red con una fuente de medios y la dirección RTSP de cada cámara, sin cables de video hasta la computadora.</p>
+<h2 id="cuanto-internet-necesitas">¿Cuánto internet necesitas?</h2>
+<p>YouTube publica la <a href="https://support.google.com/youtube/answer/2853702?hl=es-419">tasa de bits recomendada para transmisiones en vivo</a>. Estos son los valores para H.264, el códec más común:</p>
+<div class="ct-table"><table>
+<thead>
+<tr>
+<th>Calidad</th>
+<th>Cuadros por segundo</th>
+<th>Subida recomendada por transmisión</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>720p</td>
+<td>30</td>
+<td>4 Mbps</td>
+</tr>
+<tr>
+<td>720p</td>
+<td>60</td>
+<td>6 Mbps</td>
+</tr>
+<tr>
+<td>1080p</td>
+<td>30</td>
+<td>10 Mbps</td>
+</tr>
+<tr>
+<td>1080p</td>
+<td>60</td>
+<td>12 Mbps</td>
+</tr>
+</tbody>
+</table></div>
+<p>A eso súmale el audio (YouTube recomienda 128 Kbps en estéreo) y deja margen. Una regla prudente es que tu subida medida sea al menos el doble de lo que vas a transmitir. Si vas a mandar dos canchas en 720p a 30, son 8 Mbps de video: busca 16 Mbps de subida libres.</p>
+<p>Tres detalles que se olvidan:</p>
+<ul>
+<li><strong>Mide a la hora del torneo.</strong> Un sábado con el club lleno, cien celulares en el Wi-Fi le quitan subida a todo. Si puedes, separa la red de invitados o ponle límite ese día.</li>
+<li><strong>La computadora va por cable.</strong> Nunca transmitas un torneo con el encoder conectado por Wi-Fi.</li>
+<li><strong>No subas de más.</strong> Muchas cámaras de seguridad trabajan a 25 o 30 cuadros por segundo. Configurar 60 en OBS no mejora nada si la cámara no los da.</li>
+</ul>
+<p>Para un torneo de club, 720p a 30 cuadros se ve bien en el celular, donde lo verá casi todo el mundo, y es más fácil de sostener que 1080p.</p>
+<h2 id="como-se-configura-youtube-para-transmitir">¿Cómo se configura YouTube para transmitir?</h2>
+<ol class="ct-steps">
+<li><strong>Verifica el canal.</strong> YouTube pide un número de teléfono y manda un código por mensaje o llamada. Sin verificación no se puede transmitir en vivo. Usa el canal del club, no el personal de alguien que mañana se va. Detalles en la <a href="https://support.google.com/youtube/answer/171664?hl=es-419">ayuda de verificación</a>.</li>
+<li><strong>Activa las transmisiones en vivo con tiempo.</strong> Según YouTube, la primera vez <a href="https://support.google.com/youtube/answer/2907883?hl=es-419">puede tardar hasta 24 horas</a>. También pide que el canal no haya tenido restricciones de transmisión en los últimos 90 días y que la persona que transmite tenga al menos 16 años.</li>
+<li><strong>Programa el evento.</strong> En YouTube Studio: Crear, Transmitir en vivo, Administrar, Programar transmisión. Ponle un título que se entienda ("Final Torneo de Primavera, 2ª fuerza varonil") y una miniatura con el logo del club. Así el link existe desde antes y la gente puede activar el recordatorio.</li>
+<li><strong>Conecta el encoder.</strong> Copia la URL del servidor y la clave de transmisión a OBS. La clave es como una contraseña: quien la tenga puede transmitir en tu canal, así que no la mandes por el grupo de WhatsApp.</li>
+<li><strong>Haz una prueba real.</strong> El día anterior, transmite 20 minutos en privado o no listado desde la misma computadora, con la misma cámara y a la misma hora del torneo. Míralo desde un celular con datos, no desde el Wi-Fi del club.</li>
+</ol>
+
+<p>Un detalle de YouTube que afecta a los torneos largos: si una transmisión dura más de 12 horas, <a href="https://support.google.com/youtube/answer/6247592?hl=es-419">es posible que no se archive</a>. Si el torneo va de 8 de la mañana a 10 de la noche, crea un evento por bloque (mañana y tarde) o uno por día de finales.</p>
+<h2 id="una-cancha-principal-o-todas-las-canchas">¿Una cancha principal o todas las canchas?</h2>
+<p>Hay dos formas de hacerlo y cada una tiene su costo.</p>
+<p><strong>Una transmisión por cancha.</strong> Cada cancha tiene su propio evento de YouTube y el público elige. Es lo que quieren las familias, porque encuentran el partido de su gente. El problema es que multiplicas la subida (cuatro canchas en 720p a 30 cuadros son 16 Mbps solo de video) y necesitas a alguien pendiente de cuatro marcadores.</p>
+<p><strong>Una sola transmisión que cambia de cancha.</strong> Un operador decide qué partido sale al aire: el más cerrado, el de la siguiente ronda, la final. Gasta el internet de una sola transmisión y el video resultante se puede ver completo después, como si fuera un programa. Para la mayoría de los torneos de club es la mejor opción.</p>
+<p>Así lo hacemos en Puntazo: tomamos la señal de las cámaras que ya graban las canchas para los clips y la mandamos a YouTube, con un panel desde el que se elige qué cancha sale al aire. Lo hemos usado en InterPadel y en torneos.</p>
+<h2 id="donde-se-pone-la-camara">¿Dónde se pone la cámara?</h2>
+<p>Detrás de la cancha, en alto y centrada a lo ancho. La pared de fondo de una cancha reglamentaria mide 4 metros entre cristal y malla, así que la cámara tiene que ir por encima de eso para ver las dos mitades, los globos y la salida de pared.</p>
+<p>Errores típicos:</p>
+<ul>
+<li><strong>Cámara lateral y baja.</strong> Se ve bonito en una foto, pero en video no se entiende la profundidad y la mitad de la cancha queda tapada por los jugadores.</li>
+<li><strong>Detrás del cristal y a la altura de la gente.</strong> Reflejos, manos en el vidrio y espectadores caminando enfrente todo el partido.</li>
+<li><strong>Luces de frente.</strong> En canchas techadas, un reflector apuntando al lente quema la imagen. Muévela unos centímetros antes de fijarla.</li>
+</ul>
+<h2 id="el-marcador-en-pantalla">El marcador en pantalla</h2>
+<p>Un torneo sin marcador en pantalla se sigue a medias. Lo mínimo es un cintillo con los nombres de las parejas, la ronda y el marcador por sets.</p>
+<p>La forma más confiable en un torneo de club es un operador que actualiza el marcador a mano en OBS entre puntos (una fuente de texto por pareja y otra por el marcador). Hay aplicaciones que generan gráficos para OBS, pero lo que suele fallar es la persona, no el programa: asigna a alguien que solo haga eso.</p>
+<p>Si el árbitro o un jugador quiere llevar la cuenta desde su celular, nuestro <a href="/marcador.html">marcador de pádel gratis</a> sirve para eso, aunque no se conecta con la transmisión.</p>
+<h2 id="audio-menos-es-mas">Audio: menos es más</h2>
+<p>El sonido de la cancha (la bola en la pala, el golpe en el cristal, los gritos después del punto) es lo que hace que una transmisión de pádel se sienta viva. Si tu cámara no tiene micrófono, un micrófono sencillo cerca de la cancha mejora mucho la experiencia.</p>
+<p>Lo que no debes hacer es transmitir con la música del club de fondo. YouTube <a href="https://support.google.com/youtube/answer/3367684?hl=es-419">revisa cada transmisión en busca de contenido de terceros</a>: si detecta música con derechos, puede reemplazar tu imagen por una fija, cortar la transmisión y quitarte temporalmente el acceso a transmitir en vivo. Apaga las bocinas cerca de las canchas que se transmiten.</p>
+<h2 id="como-compartir-el-link-y-avisar-a-los-jugadores">¿Cómo compartir el link y avisar a los jugadores?</h2>
+<ul>
+<li><strong>Comparte el link del evento programado</strong> unos días antes en los grupos de WhatsApp del club, en historias de Instagram y en el correo de inscripción.</li>
+<li><strong>Pon un QR en el club</strong> que lleve a la transmisión, para que quien está en la cafetería vea la otra cancha.</li>
+<li><strong>Para los patrocinadores,</strong> el logo en el cintillo del marcador es un espacio que se puede vender. En la guía de <a href="/guias/patrocinios-para-clubes-de-padel/">patrocinios para clubes de pádel</a> explicamos cómo medirlo.</li>
+</ul>
+<p>Y antes que todo, avisa que se transmite. En México, la <a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/LFPDPPP.pdf">Ley Federal de Protección de Datos Personales en Posesión de los Particulares</a> (la versión nueva se publicó en el Diario Oficial el 20 de marzo de 2025) obliga a informar para qué usas los datos de las personas, y la imagen de alguien identificable cuenta como dato personal. Esto no es asesoría legal, pero en la práctica funciona así:</p>
+<ul>
+<li>Una línea en la inscripción: "El torneo se transmite en vivo por YouTube y puede quedar grabado".</li>
+<li>Letreros en las canchas que se transmiten.</li>
+<li>Una alternativa para quien no quiera salir, como jugar en una cancha que no se transmite.</li>
+<li>En categorías infantiles o juveniles, autorización por escrito de los padres. YouTube, además, <a href="https://support.google.com/youtube/answer/2474026?hl=es-419">tiene reglas propias</a> para transmisiones donde aparecen menores y puede desactivar el chat.</li>
+<li>Que la cámara vea la cancha y nada más: ni la cafetería ni los vestidores.</li>
+</ul>
+<h2 id="plan-b-si-se-cae-el-internet">Plan B: si se cae el internet</h2>
+<p>Se va a caer algún día. Prepárate para que no sea en la final:</p>
+<ul>
+<li><strong>Graba en local al mismo tiempo.</strong> OBS puede grabar y transmitir a la vez. Si la transmisión falla, el partido queda en el disco duro y lo subes después. YouTube también recomienda guardar una copia local.</li>
+<li><strong>Ten un internet de respaldo.</strong> Un celular o un módem con datos móviles y buena señal en el club. Prueba antes cuánta subida da en la cancha, no en la calle.</li>
+<li><strong>Guarda en OBS un perfil más ligero</strong> (720p y menos bitrate) por si la subida no alcanza.</li>
+<li><strong>Conecta el router y la computadora a un no-break,</strong> porque un apagón de dos segundos lo reinicia todo.</li>
+<li><strong>Comparte el link de tu canal terminado en /live,</strong> que lleva a la transmisión activa. Si tienes que crear un evento nuevo, nadie se pierde.</li>
+</ul>
+<h2 id="checklist-del-dia-del-torneo">Checklist del día del torneo</h2>
+<ul>
+<li><strong>Una semana antes:</strong> canal verificado, transmisiones en vivo activadas, cámaras revisadas (encuadre y limpieza) y el aviso de transmisión incluido en la inscripción.</li>
+<li><strong>El día anterior:</strong> eventos programados con título y miniatura, prueba de 20 minutos a la misma hora del torneo vista con datos móviles, prueba de subida con el club en uso, internet de respaldo probado y letreros impresos.</li>
+<li><strong>Una hora antes:</strong> grabación local activa, nombres de las parejas en el marcador, música del club apagada y link publicado en los grupos.</li>
+<li><strong>Durante:</strong> una persona dedicada solo a la transmisión, que revise de vez en cuando el estado de la transmisión en YouTube Studio y el chat.</li>
+<li><strong>Al terminar:</strong> revisar que la transmisión quedó guardada y cortar los mejores puntos para redes.</li>
+</ul>
+<p>Sobre ese último punto: si tu club tiene Puntazo, los jugadores pueden marcar sus mejores puntos con el botón durante el torneo y tener su clip en un par de minutos, aparte de la transmisión. Si quieres transmitir los torneos de tu club con las cámaras de las canchas, en <a href="/para-clubes/">Puntazo para clubes</a> está lo que instalamos, o escríbenos por <a href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo%21%20Tengo%20un%20club%20de%20p%C3%A1del%20y%20me%20interesa%20instalar%20Puntazo.">WhatsApp</a>.</p>
+<h2 id="preguntas-frecuentes">Preguntas frecuentes</h2>
+<div class="ct-faq">
+<details>
+<summary>¿Qué velocidad de internet necesito para transmitir pádel en vivo?</summary>
+<div class="ct-faq-a">
+<p>Depende de la calidad. YouTube recomienda 4 Mbps de subida para 720p a 30 cuadros por segundo, 6 Mbps para 720p a 60 y 10 Mbps para 1080p a 30, por cada transmisión. Mide tu subida a la hora del torneo, con el club lleno, y deja margen: si apenas alcanzas el número, la transmisión se va a trabar.</p>
+</div>
+</details>
+<details>
+<summary>¿Puedo usar las cámaras de seguridad del club para transmitir?</summary>
+<div class="ct-faq-a">
+<p>Muchas veces sí. Si son cámaras IP y alguna ve la cancha completa desde atrás y en alto, OBS puede tomar su señal por la red. Revisa la resolución y los cuadros por segundo de esa cámara: una cámara pensada solo para vigilancia puede verse pobre en pantalla completa.</p>
+</div>
+</details>
+<details>
+<summary>¿Cuánto tarda YouTube en habilitar la transmisión en vivo?</summary>
+<div class="ct-faq-a">
+<p>La primera vez puede tardar hasta 24 horas, según la ayuda de YouTube, y el canal tiene que estar verificado con un número de teléfono. Hazlo al menos una semana antes del torneo para tener tiempo de hacer una prueba completa.</p>
+</div>
+</details>
+<details>
+<summary>¿Necesito permiso de los jugadores para transmitir el torneo?</summary>
+<div class="ct-faq-a">
+<p>Conviene tenerlo siempre. Pon en la inscripción que el torneo se transmite, coloca letreros en las canchas y ofrece una alternativa a quien no quiera salir. Para categorías infantiles o juveniles, pide autorización por escrito a los padres.</p>
+</div>
+</details>
+<details>
+<summary>¿Cuántas cámaras necesito para transmitir un torneo de pádel?</summary>
+<div class="ct-faq-a">
+<p>Una por cancha que quieras mostrar. Para la mayoría de los torneos de club basta con las cámaras de las canchas principales y una sola transmisión en la que un operador va cambiando de cancha. Una segunda cámara lateral en la cancha central se ve bien en la final, pero no es indispensable.</p>
+</div>
+</details>
+</div>
+</div>
+<section class="ct-band">
+  <h2>¿Tienes un club de pádel?</h2>
+  <p>Cuéntanos cuántas canchas tienes y en qué ciudad estás. Te explicamos cómo quedaría Puntazo en tu club y te pasamos una propuesta.</p>
+  <div class="ct-actions"><a class="ct-btn ct-btn--wa" href="https://wa.me/522206804856?text=Hola%20equipo%20Puntazo%21%20Tengo%20un%20club%20de%20p%C3%A1del%20y%20me%20interesa%20instalar%20Puntazo." rel="noopener">Escríbenos por WhatsApp</a>
+  <a class="ct-btn ct-btn--ghost" href="/para-clubes/">Ver Puntazo para clubes</a></div>
+</section>
+<section class="ct-related"><h2>Sigue leyendo</h2><div class="ct-grid">
+<a class="ct-card" href="/para-clubes/"><b>Puntazo para clubes</b><span>Qué instalamos, qué necesita tu club y cómo empezar.</span></a>
+<a class="ct-card" href="/guias/patrocinios-para-clubes-de-padel/"><b>Patrocinios para clubes de pádel</b><span>Qué vender a las marcas, cómo armar la propuesta y cómo medir resultados.</span><small>Guía</small></a>
+<a class="ct-card" href="/guias/tecnologia-para-clubes-de-padel/"><b>Tecnología para clubes de pádel</b><span>Las cinco capas de tecnología de un club y por dónde empezar.</span><small>Guía</small></a>
+</div></section>
+<aside class="ct-author">
+  <img src="/assets/icons/android-icon-96x96.png" alt="" width="44" height="44">
+  <div>Escrito por <b>Shmalti K.</b>, fundador de Puntazo, con datos de la operación en clubes de pádel en México.
+  Actualizado el 22 de septiembre de 2026. <a href="/quienes-somos/">Quiénes somos</a></div>
+</aside>
+</article>
+</main>
+<footer class="ct-footer">
+  <div class="ct-footer-in">
+    <div>
+      <a href="/"><img src="/assets/logo.png" alt="Puntazo" width="47" height="26"></a>
+      <p>Clips de pádel y pickleball con un botón en la cancha. Gratis para jugadores; los clubes lo contratan.</p>
+      <p><a href="https://wa.me/522206804856?text=Hola%20Puntazo%21%20Quiero%20informaci%C3%B3n%20para%20mi%20club." rel="noopener">WhatsApp +52 220 680 4856</a><br>
+         <a href="mailto:puntazoclips@gmail.com">puntazoclips@gmail.com</a></p>
+    </div>
+    <div>
+      <h3>Puntazo</h3>
+      <ul>
+          <li><a href="/como-funciona/">Cómo funciona</a></li>
+          <li><a href="/para-clubes/">Para clubes</a></li>
+          <li><a href="/clubes/">Clubes con Puntazo</a></li>
+          <li><a href="/preguntas-frecuentes/">Preguntas frecuentes</a></li>
+          <li><a href="/quienes-somos/">Quiénes somos</a></li>
+          <li><a href="/privacidad.html">Aviso de privacidad</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Jugadores</h3>
+      <ul>
+          <li><a href="/entrada.html">Ver mis clips</a></li>
+          <li><a href="/recuperar.html">Recuperar un clip</a></li>
+          <li><a href="/vivo.html">Transmisión en vivo</a></li>
+          <li><a href="/herramientas.html">Herramientas gratis</a></li>
+          <li><a href="https://www.instagram.com/puntazoclips/" rel="noopener">Instagram</a></li>
+          <li><a href="https://www.tiktok.com/@puntazoclips" rel="noopener">TikTok</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Guías</h3>
+      <ul>
+          <li><a href="/guias/como-atraer-mas-jugadores-a-tu-club-de-padel/">Cómo atraer más jugadores a tu club</a></li>
+          <li><a href="/guias/tecnologia-para-clubes-de-padel/">Tecnología para clubes de pádel</a></li>
+          <li><a href="/guias/sistemas-de-camaras-para-canchas-de-padel/">Sistemas de cámaras para pádel: comparativa</a></li>
+          <li><a href="/guias/vale-la-pena-poner-camaras-en-tu-club-de-padel/">¿Vale la pena poner cámaras?</a></li>
+          <li><a href="/guias/patrocinios-para-clubes-de-padel/">Patrocinios para clubes de pádel</a></li>
+          <li><a href="/guias/como-transmitir-un-torneo-de-padel-en-vivo/">Transmitir un torneo en vivo</a></li>
+          <li><a href="/guias/">Todas las guías</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="ct-footer-in" style="margin-top:22px">
+    <div style="grid-column:1/-1">
+      <h3>Ciudades</h3>
+      <ul style="display:flex;flex-wrap:wrap;gap:6px 16px">
+          <li><a href="/ciudades/acapulco/">Acapulco</a></li>
+          <li><a href="/ciudades/cdmx/">Ciudad de México</a></li>
+          <li><a href="/ciudades/cuernavaca/">Cuernavaca</a></li>
+          <li><a href="/ciudades/estado-de-mexico/">Estado de México</a></li>
+          <li><a href="/ciudades/guadalajara/">Guadalajara</a></li>
+          <li><a href="/ciudades/merida/">Mérida</a></li>
+          <li><a href="/ciudades/monterrey/">Monterrey</a></li>
+          <li><a href="/ciudades/toluca/">Toluca</a></li>
+      </ul>
+    </div>
+  </div>
+  <p class="ct-footer-copy">© 2026 Puntazo · puntazoclips.com</p>
+</footer>
+</body>
+</html>
