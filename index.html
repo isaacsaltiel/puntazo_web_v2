@@ -65,7 +65,10 @@
         if (k && k.indexOf("firebase:authUser:") === 0) {
           var qs = window.location.search || "";
           var hash = window.location.hash || "";
-          window.location.replace("/entrada.html" + qs + hash);
+          // (2026-09-28) Con cancha ya elegida → Inicio de la app; si no, al selector.
+          var hasCtx = false;
+          try { hasCtx = !!JSON.parse(localStorage.getItem("pz_ctx_v1") || "null"); } catch (e2) {}
+          window.location.replace((hasCtx && !qs ? "/inicio.html" : "/entrada.html") + qs + hash);
           return;
         }
       }

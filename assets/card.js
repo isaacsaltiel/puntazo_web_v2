@@ -335,7 +335,7 @@ window.PuntazoCard = (function () {
 
     btn.addEventListener('click', async () => {
       const auth = window.PuntazoAuth;
-      if (!auth?.currentUser) { if (auth?.requireAuth) auth.requireAuth(()=>sync()); return; }
+      if (!auth?.currentUser) { if (auth?.requireAuth) auth.requireAuth(()=>sync(), { title: "Guarda tus clips y encuéntralos después.", text: "Inicia sesión y tus clips guardados te esperan en Guardados, desde cualquier dispositivo.", cta: "Continuar con Google" }); return; }
       if (btn.dataset.loading==='1') return;
       btn.dataset.loading='1'; btn.disabled=true;
       try {
@@ -485,6 +485,7 @@ window.PuntazoCard = (function () {
     const grupo = document.createElement('div');
     grupo.className = 'acciones-clip';
     if (opts.showShare) grupo.appendChild(buildSharePill(entry, { shareMessage: opts.shareMessage, video }));
+    if (opts.showShare && window.PuntazoContext && PuntazoContext.linkPill) grupo.appendChild(PuntazoContext.linkPill(entry.nombre));
     if (opts.showSave)  grupo.appendChild(buildSavePill(entry, { onUnsave: opts.onUnsave }));
     if (opts.showFullscreen) grupo.appendChild(buildFullscreenPill(video));
     // Vertical 9:16 (assets/vertical.js): aparece solo si la NUC ya lo generó.

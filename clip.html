@@ -9,7 +9,7 @@
      un aviso con boton de reintento. Va inline y antes que todo lo demas. -->
 <script id="pz-boot-guard">
 (function () {
-  var TIMEOUT_MS = 12000;
+  var TIMEOUT_MS = 20000;
   var shown = false;
   function box() {
     if (shown || window.__pzBooted) return;
@@ -90,7 +90,7 @@
 <script src="/assets/metricas.js"></script>
 <script src="/assets/musica.js"></script>
 <script src="/assets/vertical.js?v=20260923b"></script>
-<script src="/assets/card.js"></script>
+<script src="/assets/card.js?v=20260929"></script>
 <script src="/assets/sponsor.js"></script>
 <script src="/assets/pulses.js"></script>
 
@@ -137,18 +137,50 @@
   .btn-more-clips:hover { background:rgba(0,79,200,.28); transform:translateY(-1px); }
 
   @media(max-width:480px) { .clip-footer{flex-direction:column;} .btn-more-clips{width:100%;justify-content:center;} }
+
+  /* (2026-09-28) Detalle de clip en el shell de app */
+  body.pz-app .clip-wrap { padding-top:0; }
+  .clip-head { margin:0 0 14px; }
+  .clip-where { font-size:.86rem; font-weight:700; color:rgba(234,242,255,.6); }
+  .clip-when { font-size:clamp(1.6rem,6vw,2.1rem); font-weight:900; letter-spacing:-.8px; line-height:1.1; margin-top:2px; }
+  .clip-when span { color:rgba(234,242,255,.55); font-weight:700; font-size:.6em; letter-spacing:0; margin-right:6px; }
+  .more-title { font-size:.78rem; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:rgba(234,242,255,.5); margin:28px 0 12px; display:flex; justify-content:space-between; align-items:center; }
+  .more-title a { color:#3395FF; text-transform:none; letter-spacing:0; font-size:.84rem; text-decoration:none; }
+  .more-list { display:flex; flex-direction:column; gap:8px; }
+  .more-item { display:flex; align-items:center; gap:12px; padding:8px; border-radius:14px; text-decoration:none; color:#fff; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.07); }
+  .more-item:hover { background:rgba(11,124,255,.10); border-color:rgba(11,124,255,.35); }
+  .more-item.is-current { border-color:rgba(200,232,53,.55); background:rgba(200,232,53,.07); }
+  .more-thumb { width:112px; aspect-ratio:16/9; border-radius:10px; background:#0b1428 center/cover no-repeat; flex-shrink:0; }
+  .more-time { font-size:1.1rem; font-weight:900; letter-spacing:-.3px; }
+  .more-day { font-size:.76rem; color:rgba(234,242,255,.55); font-weight:700; }
+  .more-now { font-size:.7rem; color:#c8e835; font-weight:800; }
+  #clipCard .card-top:has(.card-time:empty) { display:none; }
+  @media (min-width:1180px) {
+    body.pz-app main.site-content { max-width:1180px; }
+    body.pz-app .clip-wrap { max-width:1120px; display:grid; grid-template-columns:minmax(0,1fr) 320px; column-gap:28px; align-items:start; }
+    body.pz-app .clip-wrap > * { grid-column:1; min-width:0; }
+    body.pz-app .clip-wrap > #moreClips { grid-column:2; grid-row:1 / span 10; position:sticky; top:78px; }
+    body.pz-app #moreClips .more-title { margin-top:0; }
+  }
 </style>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260929" />
+<script src="/assets/app-context.js?v=20260929"></script>
+<script src="/assets/app-shell.js?v=20260929" defer></script>
 </head>
-<body>
+<body class="pz-app">
 
 <div class="page-bg"></div>
-<div id="nav-root" data-nav-variant="internal"></div>
-<script src="/assets/header.js"></script>
+<div id="nav-root" data-nav-variant="app"></div>
+<script src="/assets/header.js?v=20260929"></script>
 
 <main class="site-content fade-in">
   <div class="clip-wrap">
 
     <div id="clipBreadcrumb" class="clip-breadcrumb" style="display:none"></div>
+    <div id="clipHead" class="clip-head" style="display:none">
+      <div class="clip-where" id="clipWhere"></div>
+      <div class="clip-when" id="clipWhen"></div>
+    </div>
 
     <div id="clipLoading" class="clip-loading">
       <div style="font-size:32px;margin-bottom:12px">🎾</div>
@@ -162,6 +194,11 @@
       <h2>Este clip ya expiró</h2>
       <p>Los clips de los últimos días están disponibles en la cancha.</p>
     </div>
+
+    <section id="moreClips" style="display:none">
+      <div class="more-title">Más clips de esta cancha <a id="moreAll" href="#">Ver todos ›</a></div>
+      <div class="more-list" id="moreList"></div>
+    </section>
 
     <div id="clipFooter" class="clip-footer" style="display:none">
       <div class="clip-footer-text">
@@ -245,24 +282,47 @@
     console.warn('[clip] videos_index.json no disponible:', e);
   }
 
+  // (2026-09-28) Respaldo: el índice global solo guarda 14 días y se regenera
+  // por CI; si el clip no está, lo buscamos en el índice de su cancha (el
+  // mismo que usa lado.html), sacando club/cancha/lado del nombre del archivo.
+  const _m = PuntazoCard.parseFromName(videoId);
+  const _ctxClip = _m ? { loc: _m.loc, can: _m.can, lado: _m.lado || 'LadoA' } : null;
+  if ((!entry || !entry.url) && _ctxClip && window.PuntazoContext) {
+    try {
+      const lista = await PuntazoContext.fetchClips(_ctxClip);
+      const hit = lista.find(x => x.nombre === videoId);
+      if (hit) {
+        const n = await PuntazoContext.names(_ctxClip);
+        entry = {
+          nombre: videoId, url: hit.url, club: n.club, cancha: n.cancha, lado: _ctxClip.lado, fecha: '',
+          _meta: _m,
+          _ladoHref: `/lado.html?loc=${encodeURIComponent(_ctxClip.loc)}&can=${encodeURIComponent(_ctxClip.can)}&lado=${encodeURIComponent(_ctxClip.lado)}`,
+          _canchaHref: null,
+        };
+      }
+    } catch (e) { console.warn('[clip] respaldo por cancha:', e); }
+  }
+
   // ── 2. No encontrado ────────────────────────────────────────
   if (!entry || !entry.url) { showError(); return; }
 
   // ── 3. Render ────────────────────────────────────────────────
   document.title = `${entry.club || 'Puntazo'} · Clip`;
 
-  if (entry.club) {
-    const lnk = document.createElement('a');
-    lnk.className = 'clip-club-link';
-    lnk.href      = entry._ladoHref || entry._canchaHref || '#';
-    lnk.textContent = entry.club;
-    $breadcrumb.appendChild(lnk);
-    $breadcrumb.style.display = 'flex';
-  }
+  // (2026-09-28) Encabezado: "BreakPoint · Cancha 2" + "Hoy · 9:42 PM".
+  // La hora es lo que identifica el clip, así que manda.
+  const C = window.PuntazoContext;
+  const _date = C && C.dateFromName(videoId);
+  const _names = (C && _ctxClip) ? await C.names(_ctxClip) : { club: entry.club, cancha: entry.cancha };
+  document.getElementById('clipWhere').textContent = [_names.club || entry.club, _names.cancha || entry.cancha].filter(Boolean).join(' · ');
+  if (_date) document.getElementById('clipWhen').innerHTML = '<span>' + C.diaLabel(_date) + ' ·</span>' + C.horaLabel(_date);
+  document.getElementById('clipHead').style.display = 'block';
+  // Si el jugador todavía no tiene cancha elegida, la del clip se vuelve su contexto.
+  if (C && _ctxClip && !C.get()) C.set(_ctxClip.loc, _ctxClip.can, _ctxClip.lado);
 
   const card = PuntazoCard.build(entry, {
     showSave:true, showShare:true, showFullscreen:true,
-    topLabel: entry.club || PuntazoCard.formatDisplayTime(entry.nombre),
+    topLabel: _date ? '' : PuntazoCard.formatDisplayTime(entry.nombre),
     // Esta es la pagina de un clip compartido: un solo video, atencion
     // completa, y suele abrirse desde WhatsApp por gente que no usa Puntazo.
     // Es el mejor lugar del sitio para el patrocinador.
@@ -295,6 +355,39 @@
   if (footerLink && (entry._canchaHref || entry._ladoHref))
     footerLink.href = entry._canchaHref || entry._ladoHref;
   $footer.style.display = 'flex';
+
+  // ── Más clips de esta cancha (seguir navegando sin volver a la lista) ──
+  if (C && _ctxClip && !(await C.isLocked(_ctxClip.loc, _ctxClip.can))) {
+    try {
+      const lista = await C.fetchClips(_ctxClip);
+      const i = lista.findIndex(x => x.nombre === videoId);
+      // Ventana alrededor del clip actual (los más cercanos en el tiempo).
+      const desde = Math.max(0, (i < 0 ? 0 : i) - 3);
+      const vecinos = lista.slice(desde, desde + 8);
+      if (vecinos.length > 1) {
+        const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        document.getElementById('moreList').innerHTML = vecinos.map(x =>
+          `<a class="more-item${x.nombre === videoId ? ' is-current' : ''}" href="/clip.html?v=${encodeURIComponent(x.nombre)}">` +
+            `<span class="more-thumb"${x.poster ? ` style="background-image:url(&quot;${esc(x.poster)}&quot;)"` : ''}></span>` +
+            `<span><span class="more-time">${C.horaLabel(x.date)}</span><br><span class="more-day">${esc(C.diaLabel(x.date))}</span>` +
+            `${x.nombre === videoId ? '<br><span class="more-now">▶ Viendo ahora</span>' : ''}</span></a>`
+        ).join('');
+        document.getElementById('moreAll').href = entry._ladoHref || '#';
+        // Quien abre un clip compartido: puerta directa a los clips de ese club.
+        const _club = _names.club || entry.club;
+        if (_club) {
+          const cta = document.createElement('a');
+          cta.className = 'btn-more-clips';
+          cta.style.cssText = 'display:flex;justify-content:center;margin-top:14px;';
+          cta.href = '/inicio.html?loc=' + encodeURIComponent(_ctxClip.loc);
+          cta.textContent = '¿Juegas en ' + _club + '? Ver los clips del club →';
+          document.getElementById('moreClips').appendChild(cta);
+        }
+        document.getElementById('moreClips').style.display = 'block';
+        $footer.style.display = 'none';
+      }
+    } catch (e) { console.warn('[clip] más clips:', e); }
+  }
 })();
 </script>
 

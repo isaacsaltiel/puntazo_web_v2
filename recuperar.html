@@ -9,7 +9,7 @@
      un aviso con boton de reintento. Va inline y antes que todo lo demas. -->
 <script id="pz-boot-guard">
 (function () {
-  var TIMEOUT_MS = 12000;
+  var TIMEOUT_MS = 20000;
   var shown = false;
   function box() {
     if (shown || window.__pzBooted) return;
@@ -68,7 +68,7 @@
 <script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
-<script src="/assets/auth.js"></script>
+<script src="/assets/auth.js?v=20260929"></script>
 <script src="/assets/clubs-catalog.js"></script>
 <script src="/assets/pulses.js"></script>
 <!-- F129: heartbeat-watcher para banner pasivo "cámaras del club fuera
@@ -98,6 +98,44 @@
     margin: 0 auto;
     padding: 18px 16px 60px;
   }
+
+  /* (2026-09-28) Tamaños más parejos con el resto de la app (Isaac). */
+  body.pz-app .rec-hero { text-align: left; margin: 0 0 16px; }
+  body.pz-app .rec-hero h1 { font-size: clamp(1.45rem, 4.6vw, 1.9rem); letter-spacing: -.5px; margin-bottom: 4px; }
+  body.pz-app .rec-hero p { font-size: .88rem; }
+  body.pz-app .rec-form { padding: 16px 14px; border-radius: 18px; margin-top: 0; }
+  body.pz-app .rec-form-context { display: none; }
+  body.pz-app #recFormBack { display: none; }
+  body.pz-app .rec-day-stepper { padding: 8px; margin-bottom: 12px; border-radius: 14px; }
+  body.pz-app .rec-day-arrow { width: 42px; height: 42px; font-size: 1.1rem; }
+  body.pz-app .rec-day-text { font-size: 1rem; }
+  body.pz-app .rec-day-sub { font-size: .74rem; }
+  body.pz-app .rec-time-grid { margin-bottom: 12px; }
+  body.pz-app .rec-duration-stepper > label,
+  body.pz-app .rec-time-grid label { font-size: .7rem; letter-spacing: .6px; color: rgba(234,242,255,.6); margin-bottom: 6px; }
+  body.pz-app .rec-time-box { min-height: 58px; padding: 8px; border-radius: 14px; }
+  body.pz-app .rec-time-box input[type="time"] { font-size: 1.2rem; }
+  body.pz-app .rec-duration-row { padding: 8px; border-radius: 14px; }
+  body.pz-app .rec-duration-value { font-size: 1.2rem; }
+  body.pz-app .rec-computed-range { margin-top: 10px; padding: 0; font-size: .8rem; background: none; border: 0; color: rgba(234,242,255,.7); font-weight: 600; }
+  body.pz-app #recFullHint { font-size: .78rem; line-height: 1.45; color: rgba(234,242,255,.52); margin: 10px 2px 16px; }
+  body.pz-app .rec-submit { min-height: 52px; font-size: .95rem; text-transform: none; letter-spacing: 0; }
+  @media (min-width: 1024px) { body.pz-app .rec-wrap { max-width: 520px; } }
+
+  /* (2026-09-28) Shell de app */
+  body.pz-app .rec-wrap { padding-top: calc(var(--pz-hdr-h, 60px) + var(--pz-safe-top, 0px) + 18px); }
+  .rec-hist { margin-top: 28px; }
+  .rec-hist-title { font-size: .78rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(234,242,255,.5); margin: 0 0 10px; }
+  .rec-hist-list { display: flex; flex-direction: column; gap: 8px; }
+  .rec-hist-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); color: #fff; text-decoration: none; }
+  a.rec-hist-item:hover { border-color: rgba(11,124,255,.4); background: rgba(11,124,255,.08); }
+  .rec-hist-main { flex: 1; min-width: 0; }
+  .rec-hist-when { font-weight: 900; font-size: 1rem; }
+  .rec-hist-where { font-size: .78rem; color: rgba(234,242,255,.6); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rec-hist-st { flex-shrink: 0; font-size: .72rem; font-weight: 900; padding: 5px 10px; border-radius: 999px; }
+  .rec-hist-st.buscando { background: rgba(255,200,90,.12); color: #ffd497; border: 1px solid rgba(255,200,90,.35); }
+  .rec-hist-st.listo { background: rgba(34,197,94,.14); color: #9af2c0; border: 1px solid rgba(34,197,94,.4); }
+  .rec-hist-st.nada { background: rgba(239,68,68,.12); color: #ff9a9a; border: 1px solid rgba(239,68,68,.35); }
 
   /* Header del card */
   .rec-hero {
@@ -552,11 +590,14 @@
     border-color: rgba(11,124,255,.45);
   }
 </style>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260929" />
+<script src="/assets/app-context.js?v=20260929"></script>
+<script src="/assets/app-shell.js?v=20260929" defer></script>
 </head>
 
-<body>
+<body class="pz-app">
 
-<div id="nav-root" data-nav-variant="embedded"></div>
+<div id="nav-root" data-nav-variant="app"></div>
 <script>
 // (2026-08-23) header variant "embedded" necesita data-back-to ANTES de que
 // header.js renderice. Isaac: "una vez que entras a recuperar, está muy
@@ -573,13 +614,13 @@
   document.getElementById("nav-root").setAttribute("data-back-to", backTo);
 })();
 </script>
-<script src="/assets/header.js"></script>
+<script src="/assets/header.js?v=20260929"></script>
 
 <main class="rec-wrap">
 
   <div class="rec-hero">
-    <h1>Recupera tu puntazo</h1>
-    <p>¿Se te escapó? Dinos cuándo y en qué cancha, lo buscamos en la grabación.</p>
+    <h1>Recuperar puntazo</h1>
+    <p id="recHeroSub">¿A qué hora ocurrió? Lo buscamos en la grabación.</p>
   </div>
 
   <!-- Selector de club / cancha (reusa patron entrada.html) -->
@@ -660,7 +701,7 @@
       </button>
     </div>
 
-    <button id="recSubmit" class="rec-submit" type="button">Pedir recuperación</button>
+    <button id="recSubmit" class="rec-submit" type="button">Buscar mi puntazo</button>
 
     <div id="recFeedback" class="rec-feedback"></div>
 
@@ -686,6 +727,13 @@
       <button id="recAnother" type="button">Pedir otro</button>
     </div>
   </div>
+
+  <!-- (2026-09-28) Historial de este teléfono: cada solicitud con su club,
+       cancha, hora aproximada y estado real (se lee el doc de pending_pulses). -->
+  <section id="recHist" class="rec-hist" style="display:none">
+    <div class="rec-hist-title">Mis recuperaciones</div>
+    <div id="recHistList" class="rec-hist-list"></div>
+  </section>
 
 </main>
 
@@ -1062,6 +1110,9 @@
   });
 
   $formBack.addEventListener("click", function () {
+    // (2026-09-28) En el shell de app, cambiar de cancha es el mismo selector
+    // global (chip del header); al elegir, la página recarga en esa cancha.
+    if (window.PuntazoAppShell && window.PuntazoContext) { window.PuntazoAppShell.openLocation(); return; }
     state.step = "canchas";
     clearFeedback();
     $after.style.display = "none";
@@ -1089,6 +1140,8 @@
 
     const club = state.selectedClub;
     const cancha = state.selectedCancha;
+    // (2026-09-28) La cancha elegida aquí queda como la de hoy en toda la app.
+    try { if (window.PuntazoContext) PuntazoContext.set(club.id, cancha.id, ladoIdOf(cancha)); } catch (_) {}
 
     state.fullMatchMode = !!(window.PuntazoPulses
       && typeof window.PuntazoPulses.canRequestFullMatchRecovery === "function"
@@ -1102,7 +1155,7 @@
         "</strong> · <strong>" + escapeHtml(cancha.nombre) + "</strong>";
     }
     $authGate.style.display = "none"; // refreshFullMatchGate() decide si aplica
-    $submit.textContent = state.fullMatchMode ? "Pedir partido completo" : "Pedir recuperación";
+    $submit.textContent = state.fullMatchMode ? "Pedir partido completo" : "Buscar mi puntazo";
 
     // F129: si las cámaras del club están temporalmente fuera de línea,
     // mostrar banner pasivo arriba del form. El user igual puede pedir
@@ -1141,8 +1194,8 @@
         " partidos de esta cancha por hora.";
     } else {
       $fullBanner.style.display = "none";
-      $timeLabel.textContent = "¿A qué hora fue el puntazo?";
-      $amountLabel.textContent = "Margen (antes y después)";
+      $timeLabel.textContent = "¿A qué hora ocurrió?";
+      $amountLabel.textContent = "Buscar ± minutos";
       $amountUnit.textContent = "min";
       state.amountMin = POINT_MARGIN_DEFAULT_MIN;
       $fullHint.textContent = "Si no recuerdas la hora exacta, sube el margen: buscamos esos minutos " +
@@ -1243,6 +1296,17 @@
     setTrack("", "⏳", "En cola",
       "Tu pedido llegó. En cuanto la cámara del club lo procese, aquí mismo te aviso.", 12);
 
+    // Sin sesión no se puede leer el pedido (reglas: solo su creador). En vez
+    // de un seguimiento que va a fallar, se dice qué esperar y dónde buscarlo.
+    const _u = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
+    if (!_u || !docId) {
+      stopTracking();
+      setTrack("", "✅", "Listo, lo estamos buscando",
+        "En unos minutos aparece en los clips de esta cancha, cerca de la hora que elegiste.", 40);
+      $trackBrowse.href = ladoUrl(club, cancha, anchorDate ? ("&pt=" + anchorDate.getTime()) : "");
+      $trackBrowse.style.display = "block";
+      return;
+    }
     if (!window.PuntazoFirebase || typeof window.PuntazoFirebase.db !== "function") return;
     const db = window.PuntazoFirebase.db();
     const ref = db.collection("pending_pulses").doc(docId);
@@ -1383,11 +1447,14 @@
 
     // Re-check auth + throttle justo antes de enviar
     const user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
-    if (!user) {
-      setFeedback("No se pudo iniciar sesión. Recarga e intenta de nuevo.", "bad");
+    // (2026-09-29) Sin sesión (p. ej. si el acceso de invitado de Firebase está
+    // apagado) también se puede pedir: las reglas permiten crear el pulso sin
+    // auth. Se trata como invitado (mismo límite de 1 cada 24 h en el teléfono).
+    if (!user && state.fullMatchMode) {
+      setFeedback("Inicia sesión para pedir tu partido completo.", "bad");
       return;
     }
-    if (isAnonUser(user)) {
+    if (!user || isAnonUser(user)) {
       const status = canSendAnon();
       if (!status.allowed) {
         setFeedback("Como invitado ya pediste una recuperación. Vuelve en ~" + status.hoursLeft + "h o inicia sesión.", "bad");
@@ -1422,7 +1489,7 @@
           start_at: rangeStart,
           end_at: rangeEnd,
         });
-        if (isAnonUser(user)) markAnonSent();
+        if (!user || isAnonUser(user)) markAnonSent();
       }
 
       // El estado real lo cuenta el panel de seguimiento, no un texto fijo:
@@ -1434,6 +1501,9 @@
       // El form queda visible pero ya no se puede re-enviar sin tocar "Pedir otro".
       $submit.style.display = "none";
       $fieldsCommon.style.display = "none";
+      recHistAdd({ id: res && res.docId, loc: club.id, can: cancha.id, club: club.nombre, cancha: cancha.nombre,
+        lado: ladoIdOf(cancha), at: (eventAt || rangeStart || new Date()).getTime(), start: rangeStart ? rangeStart.getTime() : null,
+        full: !!state.fullMatchMode, ts: Date.now() });
       startTracking(res && res.docId, club, cancha,
         // Ancla = INICIO de la ventana, que es lo que codifica el HHMMSS del
         // nombre del archivo en ambos modos. Antes se mandaba eventAt en el
@@ -1474,6 +1544,80 @@
     return params;
   }
 
+  // ── (2026-09-28) Mis recuperaciones (historial en este teléfono) ──
+  const REC_HIST_KEY = "pz_recuperaciones_v1";
+  const REC_HIST_TTL = 7 * 24 * 3600 * 1000;
+  function recHistLoad() {
+    try {
+      const arr = JSON.parse(localStorage.getItem(REC_HIST_KEY) || "[]");
+      return Array.isArray(arr) ? arr.filter(function (x) { return x && x.ts > Date.now() - REC_HIST_TTL; }) : [];
+    } catch (_) { return []; }
+  }
+  function recHistAdd(item) {
+    if (!item || !item.id) return;
+    try {
+      const arr = recHistLoad().filter(function (x) { return x.id !== item.id; });
+      arr.unshift(item);
+      localStorage.setItem(REC_HIST_KEY, JSON.stringify(arr.slice(0, 15)));
+    } catch (_) {}
+    recHistRender();
+  }
+  let _recHistUnsubs = [];
+  function recHistRender() {
+    const box = document.getElementById("recHist");
+    const list = document.getElementById("recHistList");
+    if (!box || !list) return;
+    _recHistUnsubs.forEach(function (u) { try { u(); } catch (_) {} });
+    _recHistUnsubs = [];
+    const items = recHistLoad();
+    if (!items.length) { box.style.display = "none"; return; }
+    box.style.display = "block";
+    function hora(ms) { const d = new Date(ms); const h = d.getHours(); return (h % 12 || 12) + ":" + String(d.getMinutes()).padStart(2, "0") + " " + (h >= 12 ? "PM" : "AM"); }
+    function dia(ms) {
+      const t = new Date(); t.setHours(0, 0, 0, 0);
+      const x = new Date(ms); x.setHours(0, 0, 0, 0);
+      const diff = Math.round((t - x) / 864e5);
+      return diff === 0 ? "Hoy" : diff === 1 ? "Ayer" : x.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+    }
+    list.innerHTML = items.map(function (it, i) {
+      return '<div class="rec-hist-item" data-i="' + i + '"><div class="rec-hist-main">' +
+        '<div class="rec-hist-when">' + (it.full ? "Partido · " : "") + dia(it.at) + " · ~" + hora(it.at) + "</div>" +
+        '<div class="rec-hist-where">' + escapeHtml(it.club || it.loc) + " · " + escapeHtml(it.cancha || it.can) + "</div></div>" +
+        '<span class="rec-hist-st buscando">Buscando</span></div>';
+    }).join("");
+    let db = null;
+    try { db = window.PuntazoFirebase && PuntazoFirebase.db(); } catch (_) {}
+    items.forEach(function (it, i) {
+      const row = list.querySelector('[data-i="' + i + '"]');
+      const st = row && row.querySelector(".rec-hist-st");
+      if (!row || !st || !db) return;
+      const base = "/lado.html?loc=" + encodeURIComponent(it.loc) + "&can=" + encodeURIComponent(it.can) + "&lado=" + encodeURIComponent(it.lado || "LadoA");
+      function listo(href, txt) {
+        st.className = "rec-hist-st listo"; st.textContent = txt || "Listo";
+        const a = document.createElement("a");
+        a.className = row.className; a.innerHTML = row.innerHTML; a.href = href;
+        row.replaceWith(a);
+      }
+      try {
+        const unsub = db.collection("pending_pulses").doc(it.id).onSnapshot(function (snap) {
+          if (!snap.exists) {
+            // El doc ya se limpió: se procesó, pero sin nombre exacto → a la cancha, cerca de esa hora.
+            if (Date.now() - it.ts > 3 * 60 * 1000) listo(base + (it.start ? "&pt=" + it.start : ""));
+            return;
+          }
+          const d = snap.data() || {};
+          if (d.error_reason) { st.className = "rec-hist-st nada"; st.textContent = "No encontrado"; return; }
+          if (d.resolved_video) listo(base + "&video=" + encodeURIComponent(d.resolved_video));
+        }, function () {
+          // Sin permiso de lectura (sesión expirada/otro dispositivo): no
+          // podemos confirmar el estado; llevamos a la cancha cerca de esa hora.
+          if (Date.now() - it.ts > 3 * 60 * 1000) listo(base + (it.start ? "&pt=" + it.start : ""), "Ver clips");
+        });
+        _recHistUnsubs.push(unsub);
+      } catch (_) {}
+    });
+  }
+
   // ── Init ───────────────────────────────────────────────────────
   (async function init() {
     await Promise.all([
@@ -1481,13 +1625,29 @@
       ensureAuthReady(),
     ]);
 
+    recHistRender();
     const qp = getQueryParams();
+    // (2026-09-28) Sin ?loc&can en la URL → club/cancha del contexto global de
+    // la app (no volver a preguntar lo que el jugador ya eligió).
+    if (!qp.can && window.PuntazoContext && PuntazoContext.get()) {
+      const _c = PuntazoContext.get();
+      if (!qp.loc || qp.loc === _c.loc) {
+        qp.loc = _c.loc;
+        if (_c.can) { qp.can = _c.can; qp.lado = qp.lado || _c.lado; }
+      }
+    }
     const clubs = (state.catalog && state.catalog.clubs) || [];
     const preClub = qp.loc ? clubs.find(function (c) { return c.id === qp.loc; }) : null;
     const preCancha = (preClub && qp.can)
       ? (preClub.canchas || []).find(function (c) { return c.id === qp.can; })
       : null;
 
+    if (preClub && !preCancha) {
+      // (2026-09-28) Club conocido, cancha no (o no es de hoy): directo a
+      // canchas. Sin return: cae al final, que pinta y registra el listener de auth.
+      state.selectedClub = preClub;
+      state.step = "canchas";
+    }
     if (preClub && preCancha) {
       state.selectedClub = preClub;
       state.selectedCancha = preCancha;

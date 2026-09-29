@@ -884,7 +884,7 @@ function crearSavePill(entry, loc, can, lado) {
   btn._syncSavedState = syncState;
 
   btn.addEventListener("click", async () => {
-    if (!window.PuntazoAuth?.currentUser) { if (window.PuntazoAuth?.requireAuth) window.PuntazoAuth.requireAuth(() => syncState()); return; }
+    if (!window.PuntazoAuth?.currentUser) { if (window.PuntazoAuth?.requireAuth) window.PuntazoAuth.requireAuth(() => syncState(), { title: "Guarda tus clips y encuéntralos después.", text: "Inicia sesión y tus clips guardados te esperan en Guardados, desde cualquier dispositivo.", cta: "Continuar con Google" }); return; }
     if (btn.dataset.loading === "1") return;
     btn.dataset.loading = "1"; btn.disabled = true;
     try {
@@ -1044,6 +1044,7 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     const actionPills = document.createElement("div"); actionPills.className = "action-pills";
     const accionesClip = document.createElement("div"); accionesClip.className = "acciones-clip";
     accionesClip.appendChild(crearSharePill(entry, real));
+    if (window.PuntazoContext && PuntazoContext.linkPill) accionesClip.appendChild(PuntazoContext.linkPill(entry.nombre));
     accionesClip.appendChild(crearSavePill(entry, loc, can, lado));
     accionesClip.appendChild(crearFullscreenPill(real, card, entry));
     // Vertical 9:16 (assets/vertical.js): aparece solo si la NUC ya lo generó.
@@ -1115,6 +1116,7 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
 async function populateVideos() {
   const params = getQueryParams();
   const { loc, can, lado, filtro, video: targetId } = params;
+  let dia = params.dia || "";
   // Mientras carga, assets/clips-en-vivo.js no toca el feed (ver PuntazoLado).
   ladoCargando = true;
 
@@ -1194,9 +1196,15 @@ async function populateVideos() {
     // ── 4. Filtro de hora: solo si recientes > MAX ─────────────
     const showHourFilter = recientes.length > MAX_VIDEOS_SIN_FILTRO_HORA;
 
-    // Ocultar filtro de día (eliminado)
-    const diaContainer = document.getElementById("filtro-dia");
-    if (diaContainer) { diaContainer.innerHTML = ""; diaContainer.style.display = "none"; }
+    // (2026-09-28) Filtro de día: Todos · Hoy · Ayer · Fecha (?dia=hoy|ayer|AAAAMMDD).
+    // Sin elegir nada se ven TODOS los clips, más reciente primero.
+    // (2026-09-29) Sin elección explícita (?dia=) y sin deep-link a un clip,
+    // si hay clips de HOY se abre en "Hoy": el jugador busca lo de hoy.
+    if (!("dia" in params) && !targetId && !params.pt) {
+      const hoyYmd = diaToYmd("hoy");
+      if (combined.some(v => v._meta && v._meta.ymd === hoyYmd)) dia = "hoy";
+    }
+    renderDayFilter(combined, dia);
 
     if (showHourFilter) {
       createHourFilterUI(recientes);
@@ -1207,8 +1215,11 @@ async function populateVideos() {
       if (contFiltroAbajo) { contFiltroAbajo.innerHTML = ""; contFiltroAbajo.style.display = "none"; }
     }
 
-    // ── 5. Aplicar filtro de hora si aplica ────────────────────
+    // ── 5. Aplicar filtro de día y de hora si aplica ──────────
     let list = [...combined];
+    const diaYmd = diaToYmd(dia);
+    if (diaYmd) list = list.filter(v => v._meta && v._meta.ymd === diaYmd);
+    ultimoDiaActivo = dia || null;
     if (showHourFilter && filtro) {
       list = list.filter(v => { const mh = v.nombre.match(/_(\d{2})(\d{2})(\d{2})\.mp4$/); return mh && mh[1] === filtro; });
     }
@@ -1248,6 +1259,14 @@ async function populateVideos() {
     setQueryParams({ pg: paginaActual }, !("pg" in params));
 
     await renderPaginaActual({ fueCambioDePagina: false });
+    if (!list.length && diaYmd) {
+      const _esHoy = dia === "hoy";
+      contenedorVideos.innerHTML = `<div class="dia-vacio">No hay clips de ${_esHoy ? "hoy" : dia === "ayer" ? "ayer" : "ese día"} en esta cancha.` +
+        (_esHoy ? `<br><span style="font-size:.85rem;opacity:.8">Si acabas de presionar el botón, tu clip tarda unos 2 minutos en aparecer.</span>` : "") +
+        `<br><button type="button" class="dia-chip" id="dia-ver-todos">Ver todos los clips</button>` +
+        `<br><a class="dia-chip" style="margin-top:8px;text-decoration:none" href="/recuperar.html?loc=${encodeURIComponent(loc)}&can=${encodeURIComponent(can)}">¿No salió? Recupéralo</a></div>`;
+      document.getElementById("dia-ver-todos")?.addEventListener("click", () => { setQueryParams({ dia: "todos", pg: 0, pt: "" }); populateVideos(); });
+    }
     if (loading) loading.style.display = "none";
     if (targetIdResolved) scrollToVideoById(targetIdResolved);
     ladoListo = true;
@@ -1261,6 +1280,52 @@ async function populateVideos() {
     ladoCargando = false;
     // assets/clips-en-vivo.js entrega aquí los clips que llegaron mientras cargaba.
     if (ladoListo) { try { window.dispatchEvent(new Event("pz:lado-cargado")); } catch {} }
+  }
+}
+
+// ── Filtro de día (2026-09-28) ───────────────────────────────────
+let ultimoDiaActivo = null;
+function ymdOf(d) { return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`; }
+function diaToYmd(dia) {
+  if (!dia) return "";
+  const t = new Date();
+  if (dia === "todos") return "";
+  if (dia === "hoy") return ymdOf(t);
+  if (dia === "ayer") { t.setDate(t.getDate() - 1); return ymdOf(t); }
+  return /^\d{8}$/.test(dia) ? dia : "";
+}
+function renderDayFilter(videos, dia) {
+  const cont = document.getElementById("filtro-dia");
+  if (!cont) return;
+  const dias = new Set(videos.map(v => v._meta && v._meta.ymd).filter(Boolean));
+  const hoy = diaToYmd("hoy"), ayer = diaToYmd("ayer");
+  const sorted = [...dias].sort();
+  const toIso = y => `${y.slice(0,4)}-${y.slice(4,6)}-${y.slice(6,8)}`;
+  const activo = (dia && dia !== "todos") ? dia : "";
+  const esFecha = /^\d{8}$/.test(activo);
+  const chip = (val, label, extra = "") =>
+    `<button type="button" class="dia-chip${activo === val ? " activo" : ""}" data-dia="${val}"${extra}>${label}</button>`;
+  cont.style.display = "";
+  cont.innerHTML =
+    `<button type="button" class="dia-chip${activo ? "" : " activo"}" data-dia="todos">Todos</button>` +
+    chip("hoy", "Hoy", dias.has(hoy) ? "" : ' data-vacio="1"') +
+    chip("ayer", "Ayer", dias.has(ayer) ? "" : ' data-vacio="1"') +
+    `<label class="dia-chip dia-fecha${esFecha ? " activo" : ""}">` +
+      `<span>${esFecha ? new Date(+activo.slice(0,4), +activo.slice(4,6)-1, +activo.slice(6,8)).toLocaleDateString("es-MX",{day:"numeric",month:"short"}) : "Fecha"}</span>` +
+      `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>` +
+      `<input type="date" aria-label="Elegir fecha"${sorted.length ? ` min="${toIso(sorted[0])}" max="${toIso(sorted[sorted.length-1])}"` : ""}${esFecha ? ` value="${toIso(activo)}"` : ""}>` +
+    `</label>`;
+  const aplicar = (val) => {
+    trackEvent("filter_day", gaCtx({ dia: val || "todos" }));
+    setQueryParams({ dia: val, filtro: "", pg: 0, video: "", pt: "" });
+    populateVideos(); scrollToTop();
+  };
+  cont.querySelectorAll("button[data-dia]").forEach(b => b.addEventListener("click", () => aplicar(b.dataset.dia)));
+  const inp = cont.querySelector("input[type=date]");
+  if (inp) {
+    inp.addEventListener("change", () => { if (inp.value) aplicar(inp.value.replace(/-/g, "")); });
+    // En desktop el <input> invisible no abre solo: showPicker() cuando existe.
+    inp.closest("label").addEventListener("click", (e) => { if (e.target !== inp && inp.showPicker) { e.preventDefault(); try { inp.showPicker(); } catch {} } });
   }
 }
 
@@ -1283,6 +1348,7 @@ function sumarClipsEnVivo(entradas) {
     v._meta = parseFromName(v.nombre);
     if (!v._meta) continue;
     if (ultimoFiltroActivo && v._meta.h !== ultimoFiltroActivo) continue;   // respeta ?filtro=HH
+    if (ultimoDiaActivo && v._meta.ymd !== diaToYmd(ultimoDiaActivo)) continue; // respeta ?dia=
     v._dateLabel = getDateLabel(v._meta);
     nuevas.push(v); ya.add(v.nombre);
   }
@@ -1393,7 +1459,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.addEventListener("popstate", () => {
   const p = getQueryParams();
-  if ((p.filtro || null) !== ultimoFiltroActivo) { populateVideos(); }
+  if ((p.filtro || null) !== ultimoFiltroActivo || (p.dia || null) !== ultimoDiaActivo) { populateVideos(); }
   else {
     const totalPages = Math.max(1, paginasPorDia.length);
     let desiredPg = parseInt(p.pg || "0", 10); if (Number.isNaN(desiredPg)) desiredPg = 0;

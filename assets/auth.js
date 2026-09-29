@@ -216,7 +216,7 @@
     const btn = modal.querySelector("[data-auth-google]");
     if (!btn) return;
     btn.disabled = !!isLoading;
-    btn.querySelector("span").textContent = isLoading ? "Entrando..." : "Entrar con Google";
+    btn.querySelector("span").textContent = isLoading ? "Entrando..." : (_modalCopy && _modalCopy.cta) || "Entrar con Google";
   }
 
   function setModalError(message) {
@@ -234,8 +234,21 @@
     el.classList.add("is-visible");
   }
 
-  function openModal() {
+  // (2026-09-28) copy opcional por acción, ej. guardar clip:
+  // { title: "Guarda tus clips y encuéntralos después.", text, cta }.
+  const MODAL_DEFAULT = {
+    title: "Para hacer esto necesitas una cuenta gratuita",
+    text: "Entra con Google para continuar.",
+    cta: "Entrar con Google",
+  };
+  let _modalCopy = MODAL_DEFAULT;
+  function openModal(copy) {
     const modal = ensureModal();
+    _modalCopy = Object.assign({}, MODAL_DEFAULT, copy || {});
+    const t = modal.querySelector("#pz-auth-title");
+    if (t) t.textContent = _modalCopy.title;
+    const p = t && t.nextElementSibling;
+    if (p && p.tagName === "P") p.textContent = _modalCopy.text;
     setModalError("");
     setModalLoading(false);
     modal.classList.add("is-open");
@@ -379,14 +392,14 @@
     await auth.signOut();
   }
 
-  function requireAuth(callback) {
+  function requireAuth(callback, copy) {
     if (state.currentUser) {
       if (typeof callback === "function") callback();
       return true;
     }
 
     state.pendingAction = typeof callback === "function" ? callback : null;
-    openModal();
+    openModal(copy);
     return false;
   }
 

@@ -268,6 +268,48 @@
       return;
     }
 
+    // (2026-09-28) Variant "app" — shell de app (rediseño responsive):
+    // logo · chip "Club · Cancha ▾" · cuenta. La navegación principal (barra
+    // inferior en móvil / lateral en desktop), el selector de cancha y el
+    // menú de cuenta los pinta app-shell.js. Sin ☰: los destinos viven en la
+    // barra y lo secundario (vivo, herramientas, ayuda…) en el menú de cuenta.
+    if (variant === "app") {
+      ensureStyle("/assets/app-shell.css?v=20260929");
+      root.innerHTML = `
+        <header class="site-header site-header--app">
+          <a href="/inicio.html" class="logo-link" aria-label="Puntazo — Inicio">
+            <img src="/assets/img/P_blanca_transparente.png" alt="Puntazo" onerror="this.style.display='none'">
+          </a>
+          <button type="button" class="pz-ctx-chip" data-ctx-chip aria-haspopup="dialog" aria-expanded="false">
+            <span class="pz-ctx-dot"></span><span class="pz-ctx-txt">&nbsp;</span>
+          </button>
+          <div class="pz-nav-right pz-nav-right--internal pz-nav-right--app">
+            <div class="pz-auth-slot" data-auth-slot></div>
+          </div>
+        </header>`;
+      (async function () {
+        // El catálogo es opcional para el shell (nombres/íconos): se carga en
+        // paralelo y, cuando llega, se repinta el chip. La navegación no lo espera.
+        ensureScript("/assets/clubs-catalog.js", () => !!window.PuntazoClubs)
+          .then(() => { try { window.PuntazoAppShell && window.PuntazoAppShell.refresh(); } catch (_) {} })
+          .catch((e) => console.warn("[Puntazo Header] clubs-catalog:", e));
+        try {
+          await ensureScript("/assets/app-context.js?v=20260929", () => !!window.PuntazoContext);
+          await ensureScript("/assets/app-shell.js?v=20260929", () => !!window.PuntazoAppShell);
+        } catch (e) {
+          console.error("[Puntazo Header] app shell:", e);
+          // Sin shell: el chip al menos lleva al selector (nunca un botón muerto).
+          const chip = root.querySelector("[data-ctx-chip]");
+          if (chip) {
+            chip.querySelector(".pz-ctx-txt").textContent = "Elegir club";
+            chip.addEventListener("click", () => { location.href = "/entrada.html"; });
+          }
+        }
+        try { window.dispatchEvent(new CustomEvent("puntazo:header-rendered")); } catch {}
+      })();
+      return;
+    }
+
     // Internal
     root.innerHTML = `
       <header class="site-header">
@@ -394,6 +436,11 @@
   }
 
   window.updateNavUI = function (user) {
+    // (2026-09-28) En el shell de app la cuenta la pinta app-shell.js.
+    if (variant === "app") {
+      if (window.PuntazoAppShell) window.PuntazoAppShell.renderAuth(user || null);
+      return;
+    }
     const slot = document.querySelector("[data-auth-slot]");
     if (!slot) return;
 
@@ -579,6 +626,14 @@
         if (window.PuntazoAuth && typeof window.PuntazoAuth.signIn === "function") window.PuntazoAuth.signIn();
       } catch {}
     }, false);
+  }
+
+  function ensureStyle(href) {
+    const base = href.split("?")[0];
+    if (Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(l => (l.getAttribute("href") || "").split("?")[0] === base)) return;
+    const l = document.createElement("link");
+    l.rel = "stylesheet"; l.href = href;
+    document.head.appendChild(l);
   }
 
   function ensureScript(src, readyCheck) {

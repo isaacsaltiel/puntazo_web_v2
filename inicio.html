@@ -1,15 +1,315 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="0; url=/entrada.html" />
-  <meta name="robots" content="noindex" />
-  <title>Redirigiendo...</title>
-  <script>
-    window.location.replace('/entrada.html');
-  </script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover" />
+<title>Inicio · Puntazo</title>
+<meta name="robots" content="noindex" />
+<meta name="theme-color" content="#050914" />
+<link rel="manifest" href="/manifest.json" />
+<link rel="icon" href="/favicon.ico" />
+<script id="pz-boot-guard">
+(function () {
+  var TIMEOUT_MS = 20000;
+  var shown = false;
+  function box() {
+    if (shown || window.__pzBooted) return;
+    shown = true;
+    var root = document.body || document.documentElement;
+    if (!root) return;
+    var d = document.createElement("div");
+    d.id = "pz-boot-guard-box";
+    d.setAttribute("style", [
+      "position:fixed", "inset:0", "z-index:2147483647",
+      "background:#050914", "color:#fff",
+      "font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif",
+      "display:flex", "flex-direction:column",
+      "align-items:center", "justify-content:center",
+      "text-align:center", "padding:24px", "gap:14px"
+    ].join(";"));
+    d.innerHTML =
+      '<div style="font-size:44px;line-height:1">\uD83C\uDFBE</div>' +
+      '<div style="font-size:19px;font-weight:800">La conexi\u00F3n est\u00E1 tardando</div>' +
+      '<div style="font-size:14px;opacity:.75;max-width:22em;line-height:1.5">' +
+      'No pudimos cargar Puntazo con esta red. Prueba con datos m\u00F3viles ' +
+      'o con otra red Wi-Fi.</div>' +
+      '<button type="button" id="pz-boot-guard-retry" style="margin-top:6px;' +
+      'background:#0B7CFF;color:#fff;border:0;border-radius:999px;' +
+      'padding:13px 30px;font-size:15px;font-weight:800;cursor:pointer">' +
+      'Reintentar</button>';
+    root.appendChild(d);
+    var b = document.getElementById("pz-boot-guard-retry");
+    if (b) b.addEventListener("click", function () { location.reload(); });
+  }
+  function booted() {
+    window.__pzBooted = true;
+    var d = document.getElementById("pz-boot-guard-box");
+    if (d && d.parentNode) d.parentNode.removeChild(d);
+  }
+  setTimeout(box, TIMEOUT_MS);
+  document.addEventListener("DOMContentLoaded", booted);
+  window.addEventListener("load", booted);
+})();
+</script>
+<link rel="stylesheet" href="/assets/fonts.css" />
+<link rel="stylesheet" href="/assets/estilo.css?v=20260923b" />
+<!--
+  (2026-09-28) Inicio de la app. Antes este archivo solo redirigía a
+  /entrada.html; ahora es la portada del jugador para SU CLUB (Isaac: Inicio
+  es por club, no por cancha): acciones → clips recientes del club → herramientas.
+  Sin club guardado (ni en la URL) → al selector de club (/entrada.html), que
+  es lo mismo que hacía la redirección vieja.
+-->
+<script src="/assets/app-context.js?v=20260929"></script>
+<script>
+  (function () {
+    if (!window.PuntazoContext || !PuntazoContext.get()) {
+      location.replace("/entrada.html" + location.search);
+    }
+  })();
+</script>
+<style>
+  .home{max-width:1080px;}
+  .home-hi{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+  .home-hi .pz-h1 span{color:rgba(234,242,255,.6);font-weight:700;}
+  #hbPill:empty{display:none;}
+  .home-can{font-size:.84rem;font-weight:700;color:rgba(234,242,255,.6);margin-top:4px;}
+  .home-can:empty{display:none;}
+  .home-can a{color:#3395FF;text-decoration:none;margin-left:6px;}
+  .rc-can{position:absolute;right:10px;bottom:10px;z-index:1;font-size:.68rem;font-weight:800;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.2);}
+
+  /* Acciones principales */
+  .acts{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .act{
+    position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:14px;
+    min-height:128px;padding:16px;border-radius:20px;text-decoration:none;color:#fff;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
+    transition:transform .12s, border-color .15s, background .15s;overflow:hidden;
+  }
+  .act:hover{border-color:rgba(11,124,255,.45);background:rgba(11,124,255,.08);}
+  .act:active{transform:scale(.98);}
+  .act-ico{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(11,124,255,.16);color:#6fb2ff;}
+  .act-ico svg{width:24px;height:24px;}
+  .act-t{font-weight:900;font-size:1.02rem;line-height:1.2;}
+  .act-d{font-size:.78rem;color:rgba(234,242,255,.58);font-weight:600;margin-top:3px;line-height:1.35;}
+  .act--main{grid-column:1 / -1;min-height:auto;flex-direction:row;align-items:center;
+    background:linear-gradient(135deg,#0B7CFF,#004FC8);border-color:rgba(11,124,255,.6);box-shadow:0 14px 40px rgba(0,79,200,.35);}
+  .act--main .act-ico{background:rgba(255,255,255,.18);color:#fff;}
+  .act--main .act-d{color:rgba(255,255,255,.8);}
+  .act--main .act-go{margin-left:auto;font-size:1.4rem;opacity:.9;}
+  .act--boton .act-ico{background:rgba(200,232,53,.14);color:#c8e835;}
+  .act--live .act-ico{background:rgba(239,68,68,.16);color:#ff6b6b;}
+  .act--reels{grid-column:1 / -1;min-height:auto;flex-direction:row;align-items:center;justify-content:flex-start;background:linear-gradient(135deg,rgba(200,232,53,.16),rgba(200,232,53,.04));border-color:rgba(200,232,53,.45);}
+  .act--reels .act-ico{background:rgba(200,232,53,.18);color:#c8e835;}
+  .act--reels .act-go{margin-left:auto;font-size:1.4rem;opacity:.9;}
+  .act--reels[hidden]{display:none;}
+  .act--live{grid-column:1 / -1;min-height:auto;flex-direction:row;align-items:center;justify-content:flex-start;}
+  .act--full{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.08);}
+  .act--full .act-ico{background:rgba(239,68,68,.2);color:#ff6b6b;}
+  .live-badge{position:absolute;top:12px;right:12px;display:none;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:#ef4444;color:#fff;font-size:.66rem;font-weight:900;letter-spacing:.6px;}
+  .live-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:#fff;animation:lb 1.3s infinite;}
+  @keyframes lb{50%{opacity:.35}}
+  .act.is-live .live-badge{display:inline-flex;}
+
+  /* Clips recientes */
+  .recent{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(210px,1fr);gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px;margin:0 -1.25rem;padding-left:1.25rem;padding-right:1.25rem;scrollbar-width:none;}
+  .recent::-webkit-scrollbar{display:none;}
+  .rc{scroll-snap-align:start;display:block;text-decoration:none;color:#fff;border-radius:16px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);}
+  .rc-img{aspect-ratio:16/9;background:#0b1428 center/cover no-repeat;position:relative;}
+  .rc-img::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.65));}
+  .rc-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;z-index:1;}
+  .rc-time{position:absolute;left:10px;bottom:8px;z-index:1;font-size:1.15rem;font-weight:900;letter-spacing:-.3px;}
+  .rc-day{padding:8px 12px;font-size:.76rem;color:rgba(234,242,255,.6);font-weight:700;}
+  .recent-empty{padding:18px;border-radius:16px;border:1px dashed rgba(255,255,255,.14);color:rgba(234,242,255,.6);font-size:.88rem;font-weight:600;text-align:center;}
+  .sk{background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.09),rgba(255,255,255,.04));background-size:200% 100%;animation:sk 1.2s infinite;}
+  @keyframes sk{to{background-position:-200% 0}}
+
+  /* Herramientas (secundarias, compactas) */
+  .tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;}
+  .tool{display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;text-decoration:none;color:rgba(234,242,255,.85);font-size:.84rem;font-weight:700;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);}
+  .tool:hover{background:rgba(255,255,255,.05);color:#fff;}
+  .tool span{font-size:1.15rem;}
+
+  @media (min-width:768px){
+    .acts{grid-template-columns:repeat(3,1fr);}
+    .act--main{grid-column:1 / -1;}
+    .act--live{grid-column:auto;flex-direction:column;align-items:flex-start;}
+    .recent{grid-auto-flow:row;grid-template-columns:repeat(3,1fr);overflow:visible;margin:0;padding:0;}
+    .recent .rc:nth-child(n+7){display:none;}
+  }
+  @media (min-width:1024px){
+    .home{padding-left:2.5rem;padding-right:2.5rem;}
+    .acts{grid-template-columns:repeat(4,1fr);}
+    .act--main{grid-column:auto;flex-direction:column;align-items:flex-start;min-height:150px;}
+    .act--main .act-go{display:none;}
+    .act{min-height:150px;}
+    .recent{grid-template-columns:repeat(4,1fr);}
+    .recent .rc:nth-child(n+7){display:block;}
+    .recent .rc:nth-child(n+9){display:none;}
+  }
+</style>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260929" />
+<script src="/assets/app-shell.js?v=20260929" defer></script>
 </head>
-<body>
-  <p>Redirigiendo a <a href="/entrada.html">entrada.html</a>...</p>
+<body class="pz-app">
+<div class="page-bg"></div>
+<div id="nav-root" data-nav-variant="app"></div>
+<script src="/assets/header.js?v=20260929"></script>
+
+<main class="site-content home">
+  <div class="home-hi">
+    <div>
+      <h1 class="pz-h1" id="homeTitle">Tu club</h1>
+      <div class="home-can" id="homeCan"></div>
+    </div>
+    <div id="hbPill"></div>
+  </div>
+  <div id="hbBanner"></div>
+
+  <div class="acts" id="acts">
+    <a class="act act--main" id="actClips" href="#">
+      <span class="act-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z" fill="currentColor"/></svg></span>
+      <span><span class="act-t">Ver mis clips</span><span class="act-d" id="actClipsD" style="display:block">Todos los de tu cancha</span></span>
+      <span class="act-go">›</span>
+    </a>
+    <a class="act act--reels" id="actReels" href="/feed.html" hidden>
+      <span class="act-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="m10.5 9.5 4 2.5-4 2.5z" fill="currentColor"/></svg></span>
+      <span><span class="act-t">Puntazos en vertical</span><span class="act-d" style="display:block">Los mejores puntos del club, uno tras otro</span></span>
+      <span class="act-go">›</span>
+    </a>
+    <a class="act" id="actRecover" href="#">
+      <span class="act-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></span>
+      <span><span class="act-t" id="actRecoverT">Recuperar puntazo</span><span class="act-d" id="actRecoverD" style="display:block">¿No presionaste el botón?</span></span>
+    </a>
+    <a class="act act--boton" id="actBoton" href="#">
+      <span class="act-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></svg></span>
+      <span><span class="act-t">Botón en tu celular</span><span class="act-d" style="display:block">Guarda la jugada desde aquí</span></span>
+    </a>
+    <a class="act act--live" id="actLive" href="#">
+      <span class="live-badge">EN VIVO</span>
+      <span class="act-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.4" fill="currentColor"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg></span>
+      <span><span class="act-t">Transmisión en vivo</span><span class="act-d" id="actLiveD" style="display:block">Partidos del club</span></span>
+    </a>
+  </div>
+
+  <div class="pz-sec-title">Clips recientes del club <a id="recentAll" href="#">Ver mis clips ›</a></div>
+  <div class="recent" id="recent">
+    <div class="rc"><div class="rc-img sk"></div><div class="rc-day">&nbsp;</div></div>
+    <div class="rc"><div class="rc-img sk"></div><div class="rc-day">&nbsp;</div></div>
+    <div class="rc"><div class="rc-img sk"></div><div class="rc-day">&nbsp;</div></div>
+  </div>
+
+  <div class="pz-sec-title">Herramientas de juego</div>
+  <div class="tools" id="tools">
+    <a class="tool" data-href="/marcador.html"><span>🎯</span>Marcador</a>
+    <a class="tool" data-href="/sortear.html"><span>🎲</span>Sortear parejas</a>
+    <a class="tool" data-href="/torneo5.html"><span>🏆</span>Torneo 5</a>
+    <a class="tool" data-href="/americano.html"><span>🔄</span>Americano</a>
+    <a class="tool" data-href="/king.html"><span>👑</span>King of the Court</a>
+  </div>
+</main>
+
+<script src="/assets/lib/firebase-9.23.0/firebase-app-compat.js" defer></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js" defer></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js" defer></script>
+<script src="/assets/firebase-core.js" defer></script>
+<script src="/assets/auth.js?v=20260929" defer></script>
+<script src="/assets/clubs-catalog.js" defer></script>
+<script src="/assets/pulses.js" defer></script>
+<script src="/assets/heartbeat-watcher.js" defer></script>
+<script>
+(function () {
+  "use strict";
+  var C = window.PuntazoContext;
+  var ctx = C && C.get();
+  if (!ctx) return;
+  var e = encodeURIComponent;
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+
+  // ── Acciones ──
+  document.getElementById("actClips").href = C.url("clips");
+  document.getElementById("recentAll").href = C.url("clips");
+  // La cancha solo vale el día que la eligió: si ya hay, se muestra y se puede cambiar.
+  if (ctx.can) {
+    document.getElementById("actClipsD").textContent = C.canchaLabel(ctx.can) + " · hoy";
+    document.getElementById("homeCan").innerHTML = "Hoy en " + esc(C.canchaLabel(ctx.can)) +
+      ' <a href="' + esc(C.url("canchas")) + '">Cambiar</a>';
+  }
+  document.getElementById("actBoton").href = C.url("boton");
+  document.getElementById("actLive").href = "/vivo.html?club=" + e(ctx.loc);
+  var $rec = document.getElementById("actRecover");
+  $rec.href = C.url("recuperar") + (ctx.can ? "&lado=" + e(ctx.lado || "LadoA") : "");
+  document.querySelectorAll("#tools a[data-href]").forEach(function (a) {
+    a.href = a.getAttribute("data-href") + "?loc=" + e(ctx.loc) + (ctx.can ? "&can=" + e(ctx.can) : "");
+  });
+
+  C.names(ctx).then(function (n) {
+    document.getElementById("homeTitle").textContent = n.club;
+    document.title = n.club + " — Puntazo";
+  });
+
+  // (2026-09-29) Los enlaces de arriba quedan listos al instante (antes esperaban
+  // a Firebase: en 3G eran botones muertos varios segundos). Lo que necesita
+  // Firebase / pulses / heartbeat corre al terminar de cargar esos scripts (defer).
+  document.addEventListener("DOMContentLoaded", function () {
+  // WellStreet recupera el PARTIDO COMPLETO (mismo criterio que entrada.html R9).
+  var fullClubs = (window.PuntazoPulses && PuntazoPulses.FULL_MATCH_RECOVERY_CLUBS) || [];
+  if (fullClubs.indexOf(ctx.loc) >= 0) {
+    $rec.classList.add("act--full");
+    document.getElementById("actRecoverT").textContent = "Consigue tu partido completo";
+    document.getElementById("actRecoverD").textContent = "Hasta 20 min de lo que ya jugaste";
+  }
+
+  // ── ¿El club tiene verticales? → acceso al feed ──
+  try {
+    PuntazoFirebase.db().collection("clip_verticals").where("club", "==", ctx.loc).limit(1).get()
+      .then(function (s) { if (!s.empty) document.getElementById("actReels").hidden = false; })
+      .catch(function () {});
+  } catch (_) {}
+
+  // ── Estado de las cámaras del club ──
+  try {
+    if (window.PuntazoHeartbeatWatcher) {
+      PuntazoHeartbeatWatcher.watch(ctx.loc, document.getElementById("hbBanner"));
+      if (PuntazoHeartbeatWatcher.statusPill) PuntazoHeartbeatWatcher.statusPill(ctx.loc, document.getElementById("hbPill"));
+    }
+  } catch (_) {}
+
+  // ── ¿Transmisión en vivo ahora? (stream_public/{club}, público) ──
+  try {
+    PuntazoFirebase.db().collection("stream_public").doc(ctx.loc).onSnapshot(function (snap) {
+      var d = snap.exists ? snap.data() : null;
+      var on = !!(d && d.live === true && (d.youtube_url || d.youtube_id || d.channel_id));
+      var $l = document.getElementById("actLive");
+      $l.classList.toggle("is-live", on);
+      document.getElementById("actLiveD").textContent = on ? (d.titulo || "Transmitiendo ahora") : "Partidos del club";
+    }, function () {});
+  } catch (_) {}
+  });
+
+  (async function loadRecent() {
+    var $r = document.getElementById("recent");
+    function empty(msg) { $r.innerHTML = '<div class="recent-empty">' + msg + "</div>"; $r.style.display = "block"; }
+    if (await C.isLocked(ctx.loc)) return empty("Este club pide contraseña. Entra a <b>Ver mis clips</b> para verlos.");
+    try {
+      // Recientes de TODAS las canchas del club.
+      var all = await C.fetchClubClips(ctx.loc, 8);
+      if (!all.length) return empty("Aún no hay clips en este club. Cuando piquen el botón, aparecen aquí.");
+      $r.innerHTML = all.map(function (x) {
+        var poster = x.poster ? "background-image:url('" + esc(x.poster) + "')" : "";
+        return '<a class="rc" href="' + esc("/clip.html?v=" + e(x.nombre)) + '">' +
+          '<div class="rc-img" style="' + poster + '"><span class="rc-play"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 5v14l11-7z" fill="#fff"/></svg></span>' +
+          '<span class="rc-time">' + C.horaLabel(x.date) + "</span>" +
+          '<span class="rc-can">' + esc(C.canchaLabel(x.can)) + "</span></div>" +
+          '<div class="rc-day">' + esc(C.diaLabel(x.date)) + "</div></a>";
+      }).join("");
+    } catch (err) {
+      console.warn("[inicio] recientes", err);
+      empty("No pudimos cargar los clips. Entra a <b>Ver mis clips</b>.");
+    }
+  })();
+})();
+</script>
 </body>
 </html>

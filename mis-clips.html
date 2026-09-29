@@ -9,7 +9,7 @@
      un aviso con boton de reintento. Va inline y antes que todo lo demas. -->
 <script id="pz-boot-guard">
 (function () {
-  var TIMEOUT_MS = 12000;
+  var TIMEOUT_MS = 20000;
   var shown = false;
   function box() {
     if (shown || window.__pzBooted) return;
@@ -61,10 +61,10 @@
 <script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/util.js"></script>
-<script src="/assets/auth.js"></script>
+<script src="/assets/auth.js?v=20260929"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/clubs-catalog.js"></script>
-<script src="/assets/header.js"></script>
+<script src="/assets/header.js?v=20260929"></script>
 
 <style>
   html, body {
@@ -269,10 +269,13 @@
     flex-shrink: 0; color: rgba(11,124,255,0.85); font-size: 1.1rem;
   }
 </style>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260929" />
+<script src="/assets/app-context.js?v=20260929"></script>
+<script src="/assets/app-shell.js?v=20260929" defer></script>
 </head>
-<body>
+<body class="pz-app">
 <div class="page-bg"></div>
-<div id="nav-root" data-nav-variant="internal"></div>
+<div id="nav-root" data-nav-variant="app"></div>
 
 <main class="site-content fade-in">
   <div class="pz-clips-wrap">

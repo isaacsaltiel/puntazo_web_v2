@@ -9,7 +9,7 @@
      un aviso con boton de reintento. Va inline y antes que todo lo demas. -->
 <script id="pz-boot-guard">
 (function () {
-  var TIMEOUT_MS = 12000;
+  var TIMEOUT_MS = 20000;
   var shown = false;
   function box() {
     if (shown || window.__pzBooted) return;
@@ -98,7 +98,7 @@
 <!-- F122: watcher "puntazo listo" cuando un pending del user pasa a ready.
      Requiere PuntazoAuth (no cargado en lado por default) — pero el módulo
      auto-skipea si no hay PuntazoAuth/PuntazoFirebase disponibles. -->
-<script src="/assets/auth.js"></script>
+<script src="/assets/auth.js?v=20260929"></script>
 <script src="/assets/pending-pulse-watcher.js"></script>
 <script src="/assets/match-confirm-watcher.js"></script>
 <!-- F126: refresh-bar reutilizable. La inicialización vive más abajo en
@@ -404,14 +404,110 @@ video.video-preview {
   font-size: 0.90rem;
 }
 
+/* ── (2026-09-28) Shell de app ── */
+body.pz-app .lado-head-row { flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 14px; }
+body.pz-app #btn-volver { display: none !important; }
+body.pz-app #btn-opposite-top { margin-left: 0 !important; }
+body.pz-app .page-title { display: none; }
+body.pz-app #link-club { padding: 0; background: none; border: none; font-size: .88rem; color: rgba(234,242,255,.6) !important; }
+body.pz-app #link-club:hover { transform: none; }
+body.pz-app #link-cancha { font-size: .88rem; font-weight: 700; color: rgba(234,242,255,.6); letter-spacing: 0; }
+body.pz-app .breadcrumb-sep { font-size: .85rem; margin: 0 2px; }
+.lado-h1 { margin: 0; }
+body:not(.pz-app) .lado-h1 { display: none; }
+
+/* (2026-09-29) Patrocinio de arriba en versión compacta en móvil: sigue
+   primero (lo pactado con Loka) pero deja ver el primer clip sin scroll. */
+@media (max-width: 767px) {
+  body.pz-app #pz-sponsor-top .pz-sponsor-hero-foto { height: 84px; width: 100%; object-fit: cover; }
+  body.pz-app #pz-sponsor-top .pz-sponsor-beneficios,
+  body.pz-app #pz-sponsor-top .pz-sponsor-detalle { display: none; }
+  body.pz-app #pz-sponsor-top .pz-sponsor-hero-cuerpo { padding: 10px 12px 12px; }
+  body.pz-app #pz-sponsor-top .pz-sponsor-hero-cuerpo { gap: 8px; }
+  body.pz-app #pz-sponsor-top .pz-sponsor-acciones { display: flex; flex-wrap: nowrap; gap: 8px; margin-top: 2px; }
+  body.pz-app #pz-sponsor-top .pz-sponsor-acciones > * { flex: 1 1 0; width: auto; min-width: 0; min-height: 40px; font-size: .78rem; padding: 8px 10px; }
+  body.pz-app #pz-sponsor-top .pz-sponsor-acciones > :first-child { flex: 1.6 1 0; }
+  body.pz-app #pz-sponsor-top .pz-sponsor-acciones > * { font-size: .74rem; padding: 8px 8px; overflow: hidden; text-overflow: ellipsis; }
+  body.pz-app #pz-sponsor-top .pz-sponsor-claim { font-size: .95rem; }
+}
+
+/* "Acabo de picar el botón" */
+.esperar-btn {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; margin: 0 0 14px;
+  border-radius: 999px; border: 1px solid rgba(200,232,53,.45); background: rgba(200,232,53,.08);
+  color: #e6f59a; font-family: inherit; font-size: .86rem; font-weight: 800; cursor: pointer;
+}
+.esperar-btn[hidden], .esperar-card[hidden] { display: none !important; }
+.esperar-card { margin: 0 0 14px; padding: 14px; border-radius: 16px; background: rgba(11,124,255,.10); border: 1px solid rgba(11,124,255,.35); }
+.esperar-card.ok { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.45); }
+.esperar-row { display: flex; align-items: center; gap: 12px; }
+.esperar-dot { width: 10px; height: 10px; border-radius: 50%; background: #0B7CFF; box-shadow: 0 0 12px rgba(11,124,255,.8); animation: espPulse 1.2s infinite; flex-shrink: 0; }
+.esperar-card.ok .esperar-dot { background: #22c55e; animation: none; }
+@keyframes espPulse { 50% { opacity: .3; } }
+.esperar-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: .8rem; color: rgba(234,242,255,.7); }
+.esperar-txt strong { font-size: .98rem; color: #fff; }
+.esperar-txt a { color: #3395FF; }
+.esperar-x { appearance: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,.06); color: #eaf2ff; cursor: pointer; flex-shrink: 0; }
+.esperar-bar { height: 3px; border-radius: 3px; background: rgba(255,255,255,.08); margin-top: 12px; overflow: hidden; }
+.esperar-bar div { height: 100%; width: 0; background: #0B7CFF; transition: width 1s linear; }
+
+/* Filtro de día: Todos · Hoy · Ayer · Fecha */
+#filtro-dia { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 0 14px; padding-bottom: 2px; }
+#filtro-dia::-webkit-scrollbar { display: none; }
+.dia-chip {
+  position: relative; flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
+  min-height: 44px; padding: 0 16px; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05);
+  color: rgba(234,242,255,.85); font-family: inherit; font-size: .86rem; font-weight: 800;
+}
+.dia-chip.activo { background: #fff; color: #0b1018; border-color: #fff; }
+.dia-chip[data-vacio] { opacity: .45; }
+.dia-fecha input[type=date] { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; border: 0; }
+.dia-vacio { text-align: center; padding: 34px 16px; color: rgba(234,242,255,.65); font-weight: 600; line-height: 1.7; }
+.dia-vacio .dia-chip { margin-top: 12px; }
+
+/* Desktop: feed + lista lateral de horas */
+.clip-index { display: none; }
+@media (min-width: 1180px) {
+  body.pz-app main.site-content {
+    max-width: 1120px; display: grid; grid-template-columns: minmax(0, 1fr) 280px;
+    column-gap: 28px; align-items: start;
+  }
+  body.pz-app main.site-content > * { grid-column: 1; min-width: 0; }
+  body.pz-app main.site-content > .clip-index:not([hidden]) {
+    grid-column: 2; grid-row: 1 / span 40; display: block;
+    position: sticky; top: calc(var(--pz-hdr-h, 60px) + 18px);
+    max-height: calc(100vh - var(--pz-hdr-h, 60px) - 36px); overflow: auto;
+    padding: 14px; border-radius: 18px;
+    background: rgba(5,9,20,.72); border: 1px solid rgba(255,255,255,.09);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  }
+}
+.ci-title { font-size: .72rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(234,242,255,.5); margin: 2px 4px 10px; }
+.ci-day { font-size: .72rem; font-weight: 800; color: rgba(234,242,255,.45); margin: 12px 4px 6px; text-transform: uppercase; letter-spacing: .8px; }
+.ci-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; appearance: none; cursor: pointer;
+  border: 1px solid transparent; background: transparent; color: #fff; font-family: inherit;
+  padding: 6px; border-radius: 12px; text-align: left;
+}
+.ci-item:hover { background: rgba(255,255,255,.05); }
+.ci-item.is-current { background: rgba(11,124,255,.14); border-color: rgba(11,124,255,.4); }
+.ci-thumb { width: 78px; aspect-ratio: 16/9; border-radius: 8px; background: #0b1428 center/cover no-repeat; flex-shrink: 0; }
+.ci-time { font-size: 1rem; font-weight: 900; letter-spacing: -.3px; }
+.ci-badge { display: block; font-size: .64rem; font-weight: 800; color: #6fb2ff; letter-spacing: .4px; }
+.video-card.ci-flash { outline: 2px solid rgba(11,124,255,.75); outline-offset: 3px; transition: outline-color .6s; }
+
 /* ── Responsive ── */
 @media (max-width: 480px) {
   #link-cancha { font-size: 1.3rem; }
   .card-time { font-size: 1.4rem; }
 }
 </style>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260929" />
+<script src="/assets/app-context.js?v=20260929"></script>
+<script src="/assets/app-shell.js?v=20260929" defer></script>
 </head>
-<body>
+<body class="pz-app">
 
 <div class="page-bg"></div>
 <!-- F122: fondo dinámico con el ícono de la cancha (B{n}.webp). Se activa
@@ -449,8 +545,8 @@ video.video-preview {
 </script>
 
 <!-- ── NAV ── -->
-<div id="nav-root" data-nav-variant="internal"></div>
-<script src="/assets/header.js"></script>
+<div id="nav-root" data-nav-variant="app"></div>
+<script src="/assets/header.js?v=20260929"></script>
 
 <!-- ── Banner CTA de partido (Etapa 4) — totalmente aditivo, render desde IIFE al final del body ── -->
 <div id="pz-match-banner"></div>
@@ -463,7 +559,11 @@ video.video-preview {
 
   <!-- (2026-07-13) Regresar + título (Club › Cancha) en el MISMO renglón
        (misma altura) en lugar de apilados. -->
+  <!-- (2026-09-28) Shell de app: "Clips" + Club › Cancha como subtítulo. El
+       cambio de cancha vive en el chip del header; "← Regresar" queda oculto
+       (la barra de navegación lo reemplaza) pero script.js lo sigue usando. -->
   <div class="lado-head-row">
+    <h1 class="pz-h1 lado-h1">Clips</h1>
     <!-- Botón volver -->
     <div class="btn-volver-container">
       <a href="#" id="btn-volver" class="btn-volver">← Regresar</a>
@@ -488,6 +588,21 @@ video.video-preview {
   <div id="pz-live-host"></div>
 
   <!-- Filtros de día (generados por script.js en #filtro-dia) -->
+  <div id="filtro-dia"></div>
+  <!-- (2026-09-29) "Acabo de picar el botón": espera en vivo a que llegue el
+       clip de esta cancha (clips-en-vivo.js) y lleva directo a él. -->
+  <button type="button" id="pzEsperarBtn" class="esperar-btn">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
+    Acabo de jugar en esta cancha
+  </button>
+  <div id="pzEsperar" class="esperar-card" hidden>
+    <div class="esperar-row">
+      <span class="esperar-dot"></span>
+      <div class="esperar-txt"><strong id="pzEsperarT">Esperando tus clips…</strong><span id="pzEsperarD">Si picaste el botón, tu clip tarda unos 2 minutos. Te llevamos a él en cuanto llegue.</span></div>
+      <button type="button" id="pzEsperarX" class="esperar-x" aria-label="Dejar de esperar">✕</button>
+    </div>
+    <div class="esperar-bar"><div id="pzEsperarFill"></div></div>
+  </div>
   <!-- Filtros de hora (generados por script.js en #filtro-horario) -->
   <div id="filtro-horario"></div>
 
@@ -511,6 +626,9 @@ video.video-preview {
        cada recarga y este bloque debe quedarse quieto, sin parpadear. -->
   <div id="pz-sponsor-top"></div>
   <section id="videos-container" class="video-grid"></section>
+
+  <!-- (2026-09-28) Desktop: lista de horas al lado del feed (clic → ese clip). -->
+  <aside id="clip-index" class="clip-index" aria-label="Clips de esta página" hidden></aside>
 
 </main>
 
@@ -540,7 +658,7 @@ video.video-preview {
 <!-- Botón de Spotify en los clips con música (va antes de script.js, que lo usa al pintar). -->
 <script src="assets/musica.js?v=20260911"></script>
 <script src="assets/vertical.js?v=20260923b"></script>
-<script src="assets/script.js?v=20260923a"></script>
+<script src="assets/script.js?v=20260929"></script>
 <!-- Clips en vivo: la NUC publica cada clip en Firestore (clip_states) en cuanto
      lo sube a Dropbox; este módulo lo suma al feed sin esperar al índice del CI. -->
 <script src="assets/clips-en-vivo.js?v=20260911"></script>
@@ -1234,5 +1352,133 @@ video.video-preview {
 </script>
 
 
+<script>
+/* (2026-09-29) Modo "Acabo de picar el botón".
+   No consulta nada nuevo: se engancha a clips-en-vivo.js, que ya escucha los
+   clips que publica la NUC de esta cancha. Cuando llega uno nuevo (tarjeta
+   resaltada o aviso "↑ clip nuevo"), vibra y lleva a él. */
+(function () {
+  var btn = document.getElementById("pzEsperarBtn");
+  var card = document.getElementById("pzEsperar");
+  if (!btn || !card) return;
+  var T = document.getElementById("pzEsperarT"), D = document.getElementById("pzEsperarD");
+  var fill = document.getElementById("pzEsperarFill");
+  var LIMITE = 5 * 60 * 1000, ESPERADO = 2.5 * 60 * 1000;
+  var t0 = 0, tick = null, obs = null;
+
+  function fin() {
+    if (tick) clearInterval(tick); tick = null;
+    if (obs) obs.disconnect(); obs = null;
+  }
+  function cerrar() { fin(); card.hidden = true; card.classList.remove("ok"); btn.hidden = false; }
+  function llego() {
+    fin();
+    card.classList.add("ok");
+    T.textContent = "¡Llegó tu clip!";
+    D.textContent = "Aquí abajo, resaltado.";
+    fill.style.width = "100%";
+    try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch (_) {}
+    try { window.gtag && gtag("event", "esperar_clip_llego", { segundos: Math.round((Date.now() - t0) / 1000) }); } catch (_) {}
+    setTimeout(cerrar, 6000);
+  }
+  function empezar() {
+    t0 = Date.now();
+    btn.hidden = true; card.hidden = false; card.classList.remove("ok");
+    T.textContent = "Esperando tus clips…";
+    D.textContent = "Si picaste el botón, tu clip tarda unos 2 minutos. Te llevamos a él en cuanto llegue.";
+    try { window.gtag && gtag("event", "esperar_clip_inicio"); } catch (_) {}
+    // Si estaba viendo otro día, se pasa a "Hoy" para que el clip nuevo se vea.
+    try {
+      var d = new URLSearchParams(location.search).get("dia");
+      if (d && d !== "hoy" && d !== "todos" && typeof setQueryParams === "function") { setQueryParams({ dia: "hoy", pg: 0, pt: "" }); populateVideos(); }
+    } catch (_) {}
+    tick = setInterval(function () {
+      var e = Date.now() - t0;
+      fill.style.width = Math.min(100, e / ESPERADO * 100) + "%";
+      if (e > LIMITE) {
+        fin();
+        T.textContent = "Todavía no llega";
+        var q = location.search.replace(/[?&](dia|pg|pt|video|esperar)=[^&]*/g, "");
+        D.innerHTML = 'A veces tarda un poco más. Si no aparece, <a href="/recuperar.html?' + q.replace(/^[?&]/, "") + '">recupéralo aquí</a>.';
+      }
+    }, 1000);
+    obs = new MutationObserver(function (muts) {
+      for (var i = 0; i < muts.length; i++) {
+        var m = muts[i];
+        if (m.type === "attributes" && m.target.classList && m.target.classList.contains("pz-clip-nuevo")) return llego();
+        for (var j = 0; j < (m.addedNodes || []).length; j++) {
+          var n = m.addedNodes[j];
+          // Aviso "↑ clip nuevo" (cuando no puede pintarlo directo): lo abrimos solos.
+          if (n.classList && n.classList.contains("pz-vivo-aviso")) { setTimeout(function () { n.click(); }, 50); }
+        }
+      }
+    });
+    obs.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["class"] });
+  }
+  btn.addEventListener("click", empezar);
+  document.getElementById("pzEsperarX").addEventListener("click", cerrar);
+  // Desde el botón digital ("Ver mis clips" tras guardar): ya llega esperando.
+  if (new URLSearchParams(location.search).get("esperar") === "1") empezar();
+})();
+</script>
+<script>
+/* (2026-09-28) Lista lateral de clips (desktop ≥1180px). Se reconstruye cada
+   vez que script.js repinta #videos-container; no toca su lógica. */
+(function () {
+  var cont = document.getElementById("videos-container");
+  var aside = document.getElementById("clip-index");
+  if (!cont || !aside) return;
+  var mq = window.matchMedia("(min-width: 1180px)");
+  var pending = null;
+  function build() {
+    pending = null;
+    var cards = cont.querySelectorAll(".video-card");
+    if (!mq.matches || !cards.length) { aside.hidden = true; return; }
+    var html = '<div class="ci-title">En esta página</div>';
+    var node = cont.firstElementChild;
+    for (; node; node = node.nextElementSibling) {
+      if (node.classList.contains("date-separator")) {
+        var lbl = node.querySelector(".date-sep-label");
+        html += '<div class="ci-day">' + (lbl ? lbl.textContent : "") + "</div>";
+      } else if (node.classList.contains("video-card")) {
+        var t = node.querySelector(".card-time");
+        var v = node.querySelector("video.video-preview") || node.querySelector("video");
+        var poster = v && v.getAttribute("poster");
+        var partido = node.classList.contains("is-partido-completo");
+        html += '<button type="button" class="ci-item" data-id="' + String(node.id).replace(/"/g, "&quot;") + '">' +
+          '<span class="ci-thumb"' + (poster ? ' style="background-image:url(&quot;' + poster.replace(/"/g, "%22") + '&quot;)"' : "") + "></span>" +
+          '<span><span class="ci-time">' + (t ? t.textContent : "") + "</span>" + (partido ? '<span class="ci-badge">PARTIDO COMPLETO</span>' : "") + "</span></button>";
+      }
+    }
+    aside.innerHTML = html;
+    aside.hidden = false;
+  }
+  function schedule() { if (!pending) pending = setTimeout(build, 250); }
+  new MutationObserver(schedule).observe(cont, { childList: true });
+  if (mq.addEventListener) mq.addEventListener("change", schedule);
+  aside.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest(".ci-item");
+    if (!b) return;
+    var card = document.getElementById(b.dataset.id);
+    if (!card) return;
+    aside.querySelectorAll(".ci-item.is-current").forEach(function (x) { x.classList.remove("is-current"); });
+    b.classList.add("is-current");
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.classList.add("ci-flash");
+    setTimeout(function () { card.classList.remove("ci-flash"); }, 1400);
+  });
+  // Marca en la lista el clip que está a la vista.
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (!en.isIntersecting || aside.hidden) return;
+      var b = aside.querySelector('.ci-item[data-id="' + CSS.escape(en.target.id) + '"]');
+      if (!b) return;
+      aside.querySelectorAll(".ci-item.is-current").forEach(function (x) { x.classList.remove("is-current"); });
+      b.classList.add("is-current");
+    });
+  }, { rootMargin: "-45% 0px -45% 0px" });
+  new MutationObserver(function () { cont.querySelectorAll(".video-card").forEach(function (c) { io.observe(c); }); }).observe(cont, { childList: true });
+})();
+</script>
 </body>
 </html>

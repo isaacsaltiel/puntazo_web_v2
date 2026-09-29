@@ -9,7 +9,7 @@
      un aviso con boton de reintento. Va inline y antes que todo lo demas. -->
 <script id="pz-boot-guard">
 (function () {
-  var TIMEOUT_MS = 12000;
+  var TIMEOUT_MS = 20000;
   var shown = false;
   function box() {
     if (shown || window.__pzBooted) return;
@@ -62,12 +62,12 @@
 <script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/util.js"></script>
-<script src="/assets/auth.js"></script>
+<script src="/assets/auth.js?v=20260929"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/metricas.js"></script>
 <script src="/assets/musica.js"></script>
 <script src="/assets/vertical.js?v=20260923b"></script>
-<script src="/assets/card.js"></script>
+<script src="/assets/card.js?v=20260929"></script>
 <style>
   .gd-wrap { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
   .gd-head { margin-bottom:18px; }
@@ -138,20 +138,80 @@
   }
   .gd-more-btn:hover { background:rgba(11,124,255,0.22); border-color:rgba(11,124,255,0.6); }
   .gd-more-btn:active { transform:scale(0.96); }
+
+  /* (2026-09-28) Rediseño app: lista compacta agrupada por fecha */
+  body.pz-app .gd-wrap { padding-top:0; }
+  .gd-tools { display:flex; flex-direction:column; gap:10px; margin:4px 0 8px; }
+  .gd-search {
+    display:flex; align-items:center; gap:10px; min-height:46px; padding:0 14px; border-radius:14px;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.10);
+  }
+  .gd-search:focus-within { border-color:rgba(11,124,255,.55); }
+  .gd-search input { flex:1; min-width:0; background:none; border:0; outline:0; color:#fff; font:inherit; font-size:.95rem; font-weight:600; }
+  .gd-search input::placeholder { color:rgba(234,242,255,.45); }
+  .gd-chips { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+  .gd-chips::-webkit-scrollbar { display:none; }
+  .gd-chip {
+    flex-shrink:0; min-height:38px; padding:0 15px; border-radius:999px; cursor:pointer;
+    border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.05);
+    color:rgba(234,242,255,.85); font-family:inherit; font-size:.84rem; font-weight:800;
+  }
+  .gd-chip.activo { background:#fff; color:#0b1018; border-color:#fff; }
+  .gd-group { font-size:.78rem; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:rgba(234,242,255,.5); margin:22px 0 10px; }
+  .gd-rows { display:flex; flex-direction:column; gap:8px; }
+  .gd-row {
+    display:flex; align-items:center; gap:12px; padding:8px; border-radius:16px; cursor:pointer;
+    background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.07); color:#fff;
+    width:100%; text-align:left; font-family:inherit;
+  }
+  .gd-row:hover { background:rgba(11,124,255,.08); border-color:rgba(11,124,255,.3); }
+  .gd-thumb { position:relative; width:118px; aspect-ratio:16/9; border-radius:10px; background:#0b1428 center/cover no-repeat; flex-shrink:0; overflow:hidden; }
+  .gd-thumb::after { content:"▶"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.9rem; color:#fff; background:rgba(0,0,0,.25); }
+  .gd-row-main { min-width:0; flex:1; overflow:hidden; }
+  .gd-time { display:block; font-size:1.12rem; font-weight:900; letter-spacing:-.3px; line-height:1.15; }
+  .gd-where { display:block; font-size:.8rem; font-weight:700; color:rgba(234,242,255,.62); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gd-tag { display:inline-block; margin-top:4px; font-size:.66rem; font-weight:800; padding:2px 8px; border-radius:999px; background:rgba(255,200,90,.10); border:1px solid rgba(255,200,90,.3); color:#ffd497; }
+  .gd-tag.match { background:rgba(11,124,255,.12); border-color:rgba(11,124,255,.35); color:#cfe2ff; }
+  .gd-open { margin:4px 0 6px; scroll-margin-top:calc(var(--pz-hdr-h, 60px) + 14px); }
+  .gd-open .mc-go { margin-top:8px; }
+  .gd-none { text-align:center; padding:26px 10px; color:rgba(234,242,255,.6); font-weight:600; }
+  .gd-google {
+    display:inline-flex !important; align-items:center; gap:10px; background:#fff !important; color:#1f2430 !important;
+    border:0 !important; min-height:50px; padding:0 22px !important;
+  }
+  @media (min-width:768px) {
+    .gd-tools { flex-direction:row; align-items:center; }
+    .gd-search { flex:0 0 320px; }
+  }
+  @media (min-width:1024px) {
+    .gd-rows { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); }
+    .gd-open { grid-column:1 / -1; }
+  }
 </style>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260929" />
+<script src="/assets/app-context.js?v=20260929"></script>
+<script src="/assets/app-shell.js?v=20260929" defer></script>
 </head>
-<body>
+<body class="pz-app">
 <div class="page-bg"></div>
-<div id="nav-root" data-nav-variant="internal"></div>
-<script src="/assets/header.js"></script>
+<div id="nav-root" data-nav-variant="app"></div>
+<script src="/assets/header.js?v=20260929"></script>
 
 <main class="site-content fade-in">
   <div class="gd-wrap">
-    <a class="gd-back" href="/perfil.html">← Mi perfil</a>
-
+    <!-- (2026-09-28) Sin "← Mi perfil" (perfil retirado) ni conteos: el
+         contenido manda. Buscador + filtro por club. -->
     <div class="gd-head">
-      <h1 class="gd-title">🎬 Mis clips</h1>
-      <div class="gd-sub" id="gdSub">Tus clips guardados, los que pediste con tu botón y los de tus partidos</div>
+      <h1 class="pz-h1">Mis clips</h1>
+      <div class="gd-sub" id="gdSub" style="display:none"></div>
+    </div>
+
+    <div class="gd-tools" id="gdTools" style="display:none">
+      <label class="gd-search">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="opacity:.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="gdQ" placeholder="Buscar clips…" autocomplete="off" aria-label="Buscar clips">
+      </label>
+      <div class="gd-chips" id="gdClubs"></div>
     </div>
 
     <div id="gdLoading" class="gd-state">
@@ -160,17 +220,17 @@
     </div>
 
     <div id="gdLogin" class="gd-state" style="display:none">
-      <div class="icon">🔐</div>
-      <h3>Inicia sesión para ver tus clips</h3>
-      <p>Aquí se juntan los clips que guardas con 💾 y los que pides con tu botón.</p>
-      <button id="gdLoginBtn">Iniciar sesión</button>
+      <div class="icon">🔖</div>
+      <h3>Guarda tus clips y encuéntralos después.</h3>
+      <p>Aquí se juntan los clips que guardas y los que pides con el botón digital.</p>
+      <button id="gdLoginBtn" class="gd-google"><svg viewBox="0 0 48 48" width="20" height="20"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continuar con Google</button>
     </div>
 
     <div id="gdEmpty" class="gd-state" style="display:none">
       <div class="icon">📂</div>
       <h3>Todavía no tienes clips</h3>
-      <p>Guarda un clip con 💾 (en la cancha o dentro de un partido) o pide uno con tu botón, y aparecerá aquí.</p>
-      <a class="btn" href="/entrada.html">Ir a mi cancha →</a>
+      <p>Guarda un clip con 🔖 desde la cancha o pide uno con el botón digital, y aparecerá aquí.</p>
+      <a class="btn" id="gdEmptyGo" href="/entrada.html">Ver clips de mi cancha →</a>
     </div>
 
     <div id="gdError" class="gd-state" style="display:none">
@@ -222,9 +282,13 @@
     $login.style.display   = (which === 'login')   ? 'block' : 'none';
     $empty.style.display   = (which === 'empty')   ? 'block' : 'none';
     $error.style.display   = (which === 'error')   ? 'block' : 'none';
-    $list.style.display    = (which === 'list')    ? 'flex'  : 'none';
+    $list.style.display    = (which === 'list')    ? 'block' : 'none';
+    const $tools = document.getElementById('gdTools');
+    if ($tools) $tools.style.display = (which === 'list') ? '' : 'none';
     if (which !== 'list' && $moreWrap) $moreWrap.style.display = 'none';
   }
+
+  try { if (window.PuntazoContext) document.getElementById('gdEmptyGo').href = PuntazoContext.url('clips'); } catch (_) {}
 
   if ($loginBtn) {
     $loginBtn.addEventListener('click', function () {
@@ -305,6 +369,12 @@
   async function loadLadoJson(loc, can, lado) {
     const key = loc + '|' + can + '|' + lado;
     if (_ladoJsonCache.has(key)) return _ladoJsonCache.get(key);
+    // Se guarda la PROMESA: filas pintadas a la vez comparten una sola descarga.
+    const pr = loadLadoJsonRaw(loc, can, lado);
+    _ladoJsonCache.set(key, pr);
+    return pr;
+  }
+  async function loadLadoJsonRaw(loc, can, lado) {
     let url = null;
     try { if (window.PuntazoMatches && PuntazoMatches.findJsonUrl) url = await PuntazoMatches.findJsonUrl(loc, can, lado); } catch (_) {}
     let json = null;
@@ -314,7 +384,6 @@
         if (r.ok) json = await r.json();
       } catch (_) {}
     }
-    _ladoJsonCache.set(key, json);
     return json;
   }
 
@@ -415,7 +484,10 @@
       onUnsave: function () {
         if (entry.origin === 'boton') addDismissed(uid, entry.nombre); // no reaparecer
         wrap.style.opacity = '0.4';
-        setTimeout(function () { wrap.remove(); if ($list && !$list.children.length) show('empty'); }, 300);
+        // (2026-09-28) En la lista compacta, quitar también la fila del clip abierto.
+        _removed.add(entry.nombre);
+        if (_open && _open.el === wrap) { _open = null; setTimeout(function () { if (_repaint) _repaint(); }, 320); }
+        setTimeout(function () { wrap.remove(); if ($list && !$list.querySelector('.gd-row')) show('empty'); }, 300);
         if (window.PuntazoCard && window.PuntazoCard.toast) window.PuntazoCard.toast('Quitado de Mis clips');
       },
     });
@@ -431,6 +503,137 @@
       wrap.appendChild(go);
     }
     return card ? wrap : null;
+  }
+
+  // ── (2026-09-28) Lista compacta ──────────────────────────
+  const _removed = new Set();   // des-guardados en esta visita (no vuelven al repintar)
+  let _repaint = null;
+  function locOf(c) { return (c._match && c._match.loc) || c.club || ''; }
+  const _names = {};
+  async function nameOf(c) {
+    const loc = locOf(c), can = canStr(c.cancha || (c._match && c._match.can) || '');
+    const key = loc + '|' + can;
+    if (!_names[key]) {
+      _names[key] = (window.PuntazoContext && loc)
+        ? await PuntazoContext.names({ loc: loc, can: can, lado: c.lado || 'LadoA' })
+        : { club: loc, cancha: can };
+    }
+    return _names[key];
+  }
+  async function posterOf(c) {
+    const can = canStr(c.cancha);
+    const json = locOf(c) ? await loadLadoJson(locOf(c), can, c.lado || 'LadoA') : null;
+    const hit = json && Array.isArray(json.videos) ? json.videos.find(function (v) { return v.nombre === c.nombre; }) : null;
+    if (hit && hit.poster_url) return window.PuntazoContext ? PuntazoContext.directUrl(hit.poster_url) : hit.poster_url;
+    if (window.PuntazoClubs && PuntazoClubs.courtIconUrls) return PuntazoClubs.courtIconUrls(locOf(c), can).globalUrl;
+    return '';
+  }
+  function horaDe(c) {
+    const d = c.ts ? new Date(c.ts) : null;
+    if (!d) return '';
+    const h = d.getHours();
+    return (h % 12 || 12) + ':' + String(d.getMinutes()).padStart(2, '0') + ' ' + (h >= 12 ? 'PM' : 'AM');
+  }
+  function fechaCorta(c) { return c.ts ? new Date(c.ts).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }) : ''; }
+
+  async function renderCompact(list, uid) {
+    // Datos para mostrar y buscar
+    for (const c of list) {
+      const n = await nameOf(c);
+      c._club = n.club; c._cancha = n.cancha; c._hora = horaDe(c); c._fecha = fechaCorta(c);
+      c._bucket = dateBucket(c.ts) || 'Antes';
+      c._q = [c._club, c._cancha, c._hora, c._fecha, c._bucket].join(' ').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+    const $q = document.getElementById('gdQ');
+    const $clubs = document.getElementById('gdClubs');
+    let club = '', shown = 30;
+
+    const clubs = [];
+    list.forEach(function (c) { const l = locOf(c); if (l && !clubs.some(function (x) { return x.id === l; })) clubs.push({ id: l, name: c._club || l }); });
+    function paintChips() {
+      $clubs.innerHTML = clubs.length > 1
+        ? ['<button type="button" class="gd-chip' + (club ? '' : ' activo') + '" data-club="">Todos</button>']
+            .concat(clubs.map(function (x) { return '<button type="button" class="gd-chip' + (club === x.id ? ' activo' : '') + '" data-club="' + esc(x.id) + '">' + esc(x.name) + '</button>'; })).join('')
+        : '';
+    }
+    $clubs.onclick = function (e) {
+      const b = e.target.closest('[data-club]');
+      if (!b) return;
+      club = b.dataset.club; shown = 30; paintChips(); paint();
+    };
+    let t = null;
+    $q.oninput = function () { clearTimeout(t); t = setTimeout(function () { shown = 30; paint(); }, 120); };
+
+    function paint() {
+      const q = ($q.value || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const vis = list.filter(function (c) {
+        if (_removed.has(c.nombre)) return false;
+        if (club && locOf(c) !== club) return false;
+        return !q || q.split(/\s+/).every(function (w) { return c._q.indexOf(w) >= 0; });
+      });
+      $list.innerHTML = '';
+      if (!list.some(function (c) { return !_removed.has(c.nombre); })) { show('empty'); return; }
+      if (!vis.length) { $list.innerHTML = '<div class="gd-none">No encontramos clips con ese filtro.</div>'; $moreWrap.style.display = 'none'; return; }
+      let lastBucket = null, $rows = null;
+      vis.slice(0, shown).forEach(function (c) {
+        if (c._bucket !== lastBucket) {
+          lastBucket = c._bucket;
+          const h = document.createElement('div'); h.className = 'gd-group'; h.textContent = c._bucket;
+          $list.appendChild(h);
+          $rows = document.createElement('div'); $rows.className = 'gd-rows';
+          $list.appendChild($rows);
+        }
+        $rows.appendChild(buildRow(c, uid));
+      });
+      $moreWrap.style.display = vis.length > shown ? 'block' : 'none';
+      $more.onclick = function () { shown += 30; paint(); };
+    }
+    _repaint = paint;
+    paintChips();
+    paint();
+  }
+
+  function buildRow(c, uid) {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'gd-row';
+    const tag = c._match ? '<span class="gd-tag match">🎾 De tu partido</span>'
+      : (c.origin === 'boton' ? '<span class="gd-tag">📲 Botón digital</span>' : '');
+    row.innerHTML =
+      '<span class="gd-thumb"></span>' +
+      '<span class="gd-row-main"><span class="gd-time">' + esc(c._hora || c._fecha || 'Clip') + '</span>' +
+      '<span class="gd-where">' + esc([c._club, c._cancha].filter(Boolean).join(' · ')) + (c._bucket !== 'Hoy' && c._bucket !== 'Ayer' && c._fecha ? ' · ' + esc(c._fecha) : '') + '</span>' +
+      tag + '</span>';
+    posterOf(c).then(function (u) { if (u) row.querySelector('.gd-thumb').style.backgroundImage = 'url("' + u + '")'; }).catch(function () {});
+    row.addEventListener('click', function () { toggleOpen(row, c, uid); });
+    return row;
+  }
+
+  // Abre el clip en su lugar (una card completa con Descargar, Compartir,
+  // Guardar/Quitar y pantalla completa). Solo uno abierto a la vez.
+  let _open = null;
+  function toggleOpen(row, c, uid) {
+    if (_open) {
+      const wasSame = _open.row === row;
+      try { _open.el.querySelectorAll('video').forEach(function (v) { v.pause(); }); } catch (_) {}
+      _open.el.remove(); _open.row.style.display = ''; _open = null;
+      if (wasSame) return;
+    }
+    const el = buildItem(c, uid);
+    if (!el) return;
+    el.classList.add('gd-open');
+    const head = el.querySelector('.mc-head');
+    if (head) head.innerHTML = '<div class="mc-head-main"><span class="mc-club">' + esc(c._hora ? (c._bucket + ' · ' + c._hora) : c._bucket) + '</span>' +
+      '<span class="mc-names">' + esc([c._club, c._cancha].filter(Boolean).join(' · ')) + '</span></div>' +
+      '<button type="button" class="gd-chip" data-close>Cerrar</button>';
+    const badge = el.querySelector('.mc-origin'); if (badge) badge.remove();
+    row.parentNode.insertBefore(el, row);
+    row.style.display = 'none';
+    _open = { row: row, el: el };
+    const cl = el.querySelector('[data-close]');
+    if (cl) cl.addEventListener('click', function () { toggleOpen(row, c, uid); });
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   // ── carga principal ──
@@ -467,9 +670,13 @@
         if (!d.videoId) return;
         let url = d.videoUrl || '';
         if (!url) { const hit = _videoIndex[d.videoId]; if (hit && hit.url) url = hit.url; else return; }
+        // (2026-09-28) lado.html (script.js) guarda locId/canId/ladoId en vez de
+        // club/cancha/lado; se aceptan ambos y, si faltan, salen del nombre.
+        const pn = (window.PuntazoCard && PuntazoCard.parseFromName) ? PuntazoCard.parseFromName(d.videoId) : null;
         byVideoId.set(d.videoId, {
           nombre: d.videoId, url: url, videoUrl: url,
-          club: d.club || '', cancha: d.cancha || '', lado: d.lado || '', fecha: d.fecha || '',
+          club: d.club || d.locId || (pn && pn.loc) || '', cancha: d.cancha || d.canId || (pn && pn.can) || '',
+          lado: d.lado || d.ladoId || (pn && pn.lado) || '', fecha: d.fecha || '',
           origin: d.origin || 'manual', matchId: d.matchId || null,
           ts: tsFromNombre(d.videoId) || tsToMillis(d.savedAt) || 0,
         });
@@ -527,12 +734,9 @@
       list.forEach(function (c) { if (c.matchId && matchById.has(c.matchId)) c._match = matchById.get(c.matchId); });
       list.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
 
-      // 7) render
-      $list.innerHTML = '';
+      // 7) render (2026-09-28): lista compacta agrupada por fecha + buscador
       show('list');
-      $sub.textContent = (list.length === 1 ? '1 clip' : (list.length + ' clips')) +
-        ' · guardados, de botón y de tus partidos';
-      makePager(list, $list, $moreWrap, $more, function (entry) { return buildItem(entry, uid); });
+      await renderCompact(list, uid);
     } catch (e) {
       console.error('[mis-clips]', e);
       show('error');

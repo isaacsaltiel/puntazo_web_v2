@@ -63,6 +63,9 @@
 <!-- Analítica (GA4+Clarity) y PWA: boton.html no usa header.js, se cargan directo. -->
 <script src="/assets/analytics.js" async></script>
 <script src="/assets/pwa.js" async></script>
+<!-- (2026-09-28) Shell de app: contexto club/cancha + barra de navegación. -->
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260929" />
+<script src="/assets/app-context.js?v=20260929"></script>
 
 
 <!-- R4 + R6: Firebase compat SDK + helpers Puntazo (BreakPoint → Firestore directo) -->
@@ -76,7 +79,7 @@
 <script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/util.js"></script>
-<script src="/assets/auth.js"></script>
+<script src="/assets/auth.js?v=20260929"></script>
 <script src="/assets/clubs-catalog.js"></script>
 <script src="/assets/pulses.js"></script>
 <!-- F129: heartbeat-watcher para banner "cámaras fuera de línea". -->
@@ -347,6 +350,32 @@ html, body {
 }
 .btn-see-videos:active { transform:scale(.98); }
 
+/* ── (2026-09-28) Rediseño app: la pantalla más simple ── */
+.hud { display:grid; grid-template-columns:40px minmax(0,1fr) 40px; }
+.hud .pz-ctx-chip { justify-self:center; }
+.hud-logo img { height:28px; }
+#hudWhere, #btnEdit { display:none; }
+.btn-title {
+  text-align:center; font-weight:900; letter-spacing:3px; font-size:.95rem;
+  color:rgba(234,242,255,.9); margin-top:6px;
+}
+.btn-help { text-align:center; font-size:.9rem; line-height:1.5; color:var(--muted); font-weight:600; }
+.confirm-text.ok { font-size:1.25rem; font-weight:900; }
+.confirm-sub { display:none; text-align:center; font-size:.9rem; color:rgba(234,242,255,.75); font-weight:600; line-height:1.45; }
+.confirm-sub.on { display:block; }
+.app.is-success .btn-help { display:none; }
+.btn-see-videos.is-hot {
+  background:linear-gradient(135deg,#0B7CFF,#004FC8); border-color:rgba(11,124,255,.7);
+  box-shadow:0 12px 34px rgba(0,79,200,.45);
+}
+/* Barra de navegación (app-shell): el botón no queda debajo de ella. */
+@media (max-width:1023px){
+  body.pz-app .app { bottom:calc(var(--pz-tab-h) + var(--pz-safe-bottom)); padding-bottom:12px; }
+}
+@media (min-width:1024px){
+  body.pz-app .app { left:var(--pz-side-w); }
+}
+
 /* ── Loader simple mientras resolvemos contexto/redirect ── */
 .boot-loader {
   position:fixed; inset:0; z-index:5;
@@ -371,12 +400,15 @@ html, body {
 
   <!-- HUD top -->
   <div class="hud">
-    <a class="hud-logo" href="/entrada.html">
-      <img src="/assets/logo.png" alt="Puntazo" onerror="this.style.display='none'" />
-      <div class="hud-context">
-        <div id="hudWhere" class="hud-where">—</div>
-      </div>
+    <a class="hud-logo" href="/inicio.html" aria-label="Puntazo — Inicio">
+      <img src="/assets/img/P_blanca_transparente.png" alt="Puntazo" onerror="this.style.display='none'" />
     </a>
+    <!-- (2026-09-28) Chip de contexto del shell de app: cambia club/cancha
+         en una hoja inferior sin salir del botón. -->
+    <button type="button" class="pz-ctx-chip" data-ctx-chip aria-haspopup="dialog" aria-expanded="false"><span class="pz-ctx-dot"></span><span class="pz-ctx-txt">&nbsp;</span></button>
+    <div class="hud-context">
+      <div id="hudWhere" class="hud-where">—</div>
+    </div>
     <!-- F127: copy más explícito (era "Cambiar"). El user en boton.html
          ya seleccionó club + cancha; este botón sirve para volver al
          selector si está en la cancha equivocada o quiere otra. -->
@@ -389,6 +421,8 @@ html, body {
 
   <!-- F145: pill de estado positivo del club (verde "en línea" / ámbar). -->
   <div id="pz-hb-pill-host" style="display:flex; justify-content:center; padding: 4px 16px 0;"></div>
+
+  <div class="btn-title">GUARDAR PUNTAZO</div>
 
   <!-- Botón grande -->
   <div class="btn-center">
@@ -412,9 +446,11 @@ html, body {
 
   <!-- Bottom -->
   <div class="btn-bottom">
-    <div id="confirmText" class="confirm-text">Toca el botón para registrar tu Puntazo</div>
+    <div class="btn-help" id="btnHelp">Presiona después de una buena jugada.<br>Guardaremos el último minuto.</div>
+    <div id="confirmText" class="confirm-text"></div>
+    <div id="confirmSub" class="confirm-sub">Estará disponible en unos minutos<br>(normalmente 2 a 5).</div>
     <div id="puntazosLog" class="puntazos-log"></div>
-    <a id="btnSeeVideos" class="btn-see-videos" href="#">▶ Ver mis puntazos en esta cancha</a>
+    <a id="btnSeeVideos" class="btn-see-videos" href="#">▶ Ver mis clips</a>
   </div>
 
 </div>
@@ -449,8 +485,10 @@ html, body {
   const CAN = (getQueryParam('can') || '').trim();
 
   if (!LOC || !CAN) {
-    // Sin contexto → al selector que SÍ sabe pre-llenar.
-    window.location.replace('/entrada.html?modo=boton');
+    // (2026-09-28) Sin params: si ya hay club+cancha guardados (contexto de
+    // la app), úsalos; si no, al selector que SÍ sabe pre-llenar.
+    const _ctx = window.PuntazoContext && PuntazoContext.get();
+    window.location.replace(_ctx ? PuntazoContext.url('boton', _ctx) : '/entrada.html?modo=boton');
     return;
   }
 
@@ -508,17 +546,23 @@ html, body {
     $confirm.textContent = msg || '';
   }
 
+  const $confirmSub = document.getElementById('confirmSub');
   function setState(state) {
     $bigBtn.classList.remove('pressed', 'success', 'disabled-cooldown');
     $btnCountdown.style.display = 'none';
+    // El "✓ Puntazo guardado" se queda visible durante el cooldown.
+    const showSaved = state === 'success' || (state === 'cooldown' && $app.classList.contains('is-success'));
+    $app.classList.toggle('is-success', showSaved);
+    if ($confirmSub) $confirmSub.classList.toggle('on', showSaved);
+    $btnSeeVideos.classList.toggle('is-hot', showSaved);
 
     if (state === 'idle') {
-      setConfirm('Toca el botón para registrar tu Puntazo', '');
+      setConfirm('', '');
     } else if (state === 'loading') {
       setConfirm('Guardando…', '');
     } else if (state === 'success') {
       $bigBtn.classList.add('success');
-      setConfirm('¡Puntazo guardado!', 'ok');
+      setConfirm('✓ Puntazo guardado', 'ok');
     } else if (state === 'error') {
       setConfirm('No se pudo guardar. Intenta otra vez.', 'bad');
     } else if (state === 'cooldown') {
@@ -779,7 +823,9 @@ html, body {
     const canFull = /^Cancha/i.test(CAN) ? CAN : 'Cancha' + CAN.replace(/^\D+/, '');
     const qs = '?loc=' + encodeURIComponent(LOC)
              + '&can=' + encodeURIComponent(canFull)
-             + '&lado=LadoA&pg=0';
+             + '&lado=LadoA&pg=0'
+             // Recién guardado → la lista llega esperando el clip (lado.html).
+             + ($app.classList.contains('is-success') || $bigBtn.disabled ? '&esperar=1' : '');
     window.location.href = '/lado.html' + qs;
   });
 
@@ -835,5 +881,6 @@ html, body {
   })();
 })();
 </script>
+<script src="/assets/app-shell.js?v=20260929"></script>
 </body>
 </html>

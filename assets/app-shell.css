@@ -1,0 +1,244 @@
+/* ══════════════════════════════════════════════════════════════
+   PUNTAZO — app-shell.css  (2026-09-28, rediseño app shell)
+   Header de app + navegación principal (misma DOM para todos los tamaños):
+     < 1024px  → barra inferior fija (móvil y tablet)
+     ≥ 1024px  → barra lateral izquierda (desktop)
+   + selector de club/cancha (bottom sheet en móvil, popover en desktop)
+   + menú de cuenta.
+   Lo carga header.js cuando #nav-root trae data-nav-variant="app".
+══════════════════════════════════════════════════════════════ */
+:root{
+  --pz-hdr-h:60px;
+  --pz-tab-h:64px;
+  --pz-side-w:228px;
+  --pz-safe-top:env(safe-area-inset-top,0px);
+  --pz-safe-bottom:env(safe-area-inset-bottom,0px);
+  --pz-ball:#c8e835;
+  --pz-surface:rgba(10,17,34,.96);
+  --pz-line:rgba(255,255,255,.08);
+}
+
+/* ── Espacios del contenido para no quedar debajo del shell ── */
+body.pz-app{padding-bottom:calc(var(--pz-tab-h) + var(--pz-safe-bottom) + 28px);}
+body.pz-app .site-content{padding-top:calc(var(--pz-hdr-h) + var(--pz-safe-top) + 18px);}
+
+/* ── Header ── */
+.site-header.site-header--app{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  height:calc(var(--pz-hdr-h) + var(--pz-safe-top));
+  padding:var(--pz-safe-top) 14px 0;
+  gap:10px;
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;
+}
+.site-header--app .logo-link img{height:28px;}
+.site-header--app .pz-nav-right--app{
+  position:static !important;transform:none !important;
+  display:flex;align-items:center;gap:.5rem;justify-content:flex-end;
+}
+.site-header--app .pz-auth-slot{margin-left:0 !important;}
+.site-header--app .menu-toggle{display:none !important;}
+
+/* Chip de contexto: "BreakPoint · Cancha 2 ▾" */
+.pz-ctx-chip{
+  appearance:none;border:1px solid rgba(255,255,255,.14);cursor:pointer;
+  justify-self:center;max-width:100%;min-width:0;
+  display:inline-flex;align-items:center;gap:8px;
+  padding:0 14px;height:44px;border-radius:999px;
+  background:rgba(255,255,255,.06);color:#fff;font:inherit;
+  font-size:.86rem;font-weight:800;line-height:1;
+  transition:background .15s,border-color .15s;
+}
+.pz-ctx-chip:hover{background:rgba(11,124,255,.16);border-color:rgba(11,124,255,.45);}
+.pz-ctx-chip .pz-ctx-dot{width:8px;height:8px;border-radius:50%;background:var(--pz-ball);box-shadow:0 0 10px rgba(200,232,53,.7);flex-shrink:0;}
+.pz-ctx-chip .pz-ctx-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.pz-ctx-chip .pz-ctx-sep{color:rgba(234,242,255,.4);font-weight:500;margin:0 2px;}
+.pz-ctx-chip .pz-ctx-can{color:rgba(234,242,255,.78);font-weight:700;white-space:nowrap;flex-shrink:0;}
+.pz-ctx-chip .pz-ctx-sep{flex-shrink:0;}
+.pz-ctx-chip{gap:6px;}
+.pz-ctx-chip .pz-ctx-caret{opacity:.7;flex-shrink:0;transition:transform .2s;}
+.pz-ctx-chip[aria-expanded="true"] .pz-ctx-caret{transform:rotate(180deg);}
+.pz-ctx-chip.is-empty{border-style:dashed;color:rgba(234,242,255,.85);}
+.pz-ctx-chip.is-empty .pz-ctx-dot{background:rgba(234,242,255,.35);box-shadow:none;}
+
+/* Botón de cuenta (invitado) */
+.pz-acct-btn{
+  appearance:none;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);
+  width:44px;height:44px;border-radius:50%;cursor:pointer;color:#eaf2ff;
+  display:inline-flex;align-items:center;justify-content:center;padding:0;
+}
+.pz-acct-btn:hover{border-color:rgba(11,124,255,.45);background:rgba(0,79,200,.16);}
+
+/* ── Navegación principal ── */
+.pz-tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:900;
+  height:calc(var(--pz-tab-h) + var(--pz-safe-bottom));
+  padding:0 6px var(--pz-safe-bottom);
+  display:grid;grid-template-columns:repeat(5,1fr);align-items:stretch;
+  background:rgba(5,9,20,.94);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-top:1px solid var(--pz-line);
+  font-family:'Montserrat',system-ui,sans-serif;
+}
+.pz-tab{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  color:rgba(234,242,255,.55);text-decoration:none;
+  font-size:.68rem;font-weight:700;letter-spacing:.1px;
+  -webkit-tap-highlight-color:transparent;min-width:0;
+  transition:color .15s;
+}
+.pz-tab svg{width:24px;height:24px;display:block;}
+.pz-tab .pz-tab-lbl{white-space:nowrap;}
+.pz-tab{font-size:.72rem;color:rgba(234,242,255,.72);}
+.pz-tab.is-active{color:#3395FF;}
+.pz-tab.is-active svg{color:var(--blue2,#0B7CFF);filter:drop-shadow(0 0 8px rgba(11,124,255,.55));}
+.pz-tab:active{transform:scale(.96);}
+
+/* Pestaña central "Puntazo": el botón P, elevado */
+.pz-tab--puntazo{position:relative;color:#fff;}
+.pz-tab--puntazo .pz-tab-p{
+  width:58px;height:58px;margin-top:-26px;border-radius:50%;
+  background:#050914 url('/assets/img/puntazo_boton_redondo.webp') center/cover no-repeat;
+  box-shadow:0 0 0 4px rgba(5,9,20,.94),0 0 22px rgba(11,124,255,.55);
+  transition:transform .15s, box-shadow .15s;
+}
+.pz-tab--puntazo.is-active .pz-tab-p{box-shadow:0 0 0 4px rgba(5,9,20,.94),0 0 0 6px var(--pz-ball),0 0 26px rgba(200,232,53,.55);}
+.pz-tab--puntazo .pz-tab-lbl{color:#fff;font-weight:900;}
+
+/* ── Desktop: barra lateral ── */
+@media (min-width:1024px){
+  body.pz-app{padding-bottom:0;padding-left:var(--pz-side-w);}
+  .site-header.site-header--app{padding:0 22px 0 26px;grid-template-columns:calc(var(--pz-side-w) - 26px) minmax(0,1fr) auto;}
+  .site-header--app .pz-ctx-chip{justify-self:start;height:42px;font-size:.9rem;}
+  .pz-tabbar{
+    top:calc(var(--pz-hdr-h) + var(--pz-safe-top));right:auto;bottom:0;width:var(--pz-side-w);height:auto;
+    display:flex;flex-direction:column;gap:4px;padding:18px 12px;
+    border-top:none;border-right:1px solid var(--pz-line);background:rgba(5,9,20,.72);
+  }
+  .pz-tab{flex-direction:row;justify-content:flex-start;gap:12px;padding:0 14px;height:46px;border-radius:12px;font-size:.92rem;color:rgba(234,242,255,.7);}
+  .pz-tab:hover{background:rgba(255,255,255,.05);color:#fff;}
+  .pz-tab.is-active{background:rgba(11,124,255,.14);color:#fff;}
+  .pz-tab{color:rgba(234,242,255,.7);}
+  .pz-tab svg{width:22px;height:22px;}
+  .pz-tab--puntazo{order:-1;margin-bottom:10px;height:52px;background:linear-gradient(135deg,#d9f25a,#c8e835);color:#0b1018;}
+  .pz-tab--puntazo.is-active{background:linear-gradient(135deg,#d9f25a,#c8e835);color:#0b1018;box-shadow:0 0 0 2px rgba(200,232,53,.35),0 0 22px rgba(200,232,53,.25);}
+  .pz-tab--puntazo:hover{background:linear-gradient(135deg,#e3f77a,#d0ec4a);color:#0b1018;}
+  .pz-tab--puntazo .pz-tab-p{width:32px;height:32px;margin:0;box-shadow:none;}
+  .pz-tab--puntazo.is-active .pz-tab-p{box-shadow:0 0 0 2px #0b1018;}
+  .pz-tab--puntazo .pz-tab-lbl{color:#0b1018;}
+  body.pz-no-hdr .pz-tabbar{top:0;padding-top:22px;}
+  .pz-side-foot{margin-top:auto;padding:10px 14px 0;border-top:1px solid var(--pz-line);display:flex;flex-direction:column;gap:2px;}
+  .pz-side-foot a{color:rgba(234,242,255,.5);text-decoration:none;font-size:.78rem;font-weight:600;padding:5px 0;}
+  .pz-side-foot a:hover{color:#fff;}
+}
+@media (max-width:1023px){ .pz-side-foot{display:none;} }
+
+/* ── Hoja inferior / popover (selector de cancha y cuenta) ── */
+.pz-sheet-backdrop{
+  position:fixed;inset:0;z-index:1990;background:rgba(0,0,0,.55);
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.pz-sheet-backdrop.is-open{opacity:1;pointer-events:auto;}
+.pz-sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:2000;
+  max-height:86vh;overflow:auto;overscroll-behavior:contain;
+  background:var(--pz-surface);border-top:1px solid rgba(255,255,255,.12);
+  border-radius:22px 22px 0 0;
+  padding:8px 18px calc(22px + var(--pz-safe-bottom));
+  transform:translateY(105%);transition:transform .26s cubic-bezier(.2,.8,.2,1);
+  box-shadow:0 -20px 50px rgba(0,0,0,.5);
+  font-family:'Montserrat',system-ui,sans-serif;color:#eaf2ff;
+}
+.pz-sheet.is-open{transform:translateY(0);}
+.pz-sheet-grab{width:42px;height:5px;border-radius:5px;background:rgba(255,255,255,.22);margin:4px auto 12px;}
+.pz-sheet-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.pz-sheet-title{font-size:1.1rem;font-weight:900;flex:1;min-width:0;}
+.pz-sheet-sub{font-size:.8rem;color:rgba(234,242,255,.55);font-weight:600;margin-top:2px;}
+.pz-sheet-back,.pz-sheet-x{
+  appearance:none;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#eaf2ff;
+  width:44px;height:44px;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+@media (min-width:1024px){
+  .pz-sheet{
+    left:auto;right:auto;bottom:auto;top:calc(var(--pz-hdr-h) + 8px);
+    width:400px;max-height:72vh;border-radius:18px;border:1px solid rgba(255,255,255,.12);
+    padding:14px 16px 16px;transform:translateY(-8px);opacity:0;pointer-events:none;
+    transition:opacity .16s, transform .16s;
+    box-shadow:0 24px 60px rgba(0,0,0,.55);
+  }
+  .pz-sheet.is-open{transform:translateY(0);opacity:1;pointer-events:auto;}
+  .pz-sheet-grab{display:none;}
+  .pz-sheet[data-kind="ctx"]{left:calc(var(--pz-side-w) + 8px);}
+  .pz-sheet[data-kind="acct"]{right:16px;width:300px;}
+  .pz-sheet-backdrop{background:transparent;}
+}
+
+/* Lista de clubes */
+.pz-club-list{display:flex;flex-direction:column;gap:8px;}
+.pz-club-row{
+  appearance:none;width:100%;text-align:left;cursor:pointer;font:inherit;color:#fff;
+  display:flex;align-items:center;gap:12px;padding:10px 12px;min-height:60px;
+  border-radius:14px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.035);
+}
+.pz-club-row:hover,.pz-club-row.is-current{border-color:rgba(11,124,255,.5);background:rgba(11,124,255,.10);}
+.pz-club-logo{width:40px;height:40px;border-radius:10px;object-fit:contain;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
+.pz-club-name{font-weight:800;font-size:.98rem;}
+.pz-club-meta{font-size:.76rem;color:rgba(234,242,255,.55);font-weight:600;}
+.pz-club-row .pz-chev{margin-left:auto;opacity:.5;}
+
+/* Grid de canchas */
+.pz-court-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.pz-court-btn{
+  appearance:none;cursor:pointer;font:inherit;color:#fff;
+  min-height:72px;border-radius:14px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  font-weight:800;font-size:.92rem;
+}
+.pz-court-btn b{font-size:1.5rem;line-height:1;font-weight:900;}
+.pz-court-btn{padding:10px 6px 8px;gap:6px;font-size:.82rem;}
+.pz-court-ico{width:64px;height:64px;object-fit:contain;display:block;filter:drop-shadow(0 4px 10px rgba(0,0,0,.35));}
+.pz-court-btn:hover{border-color:rgba(11,124,255,.5);background:rgba(11,124,255,.12);}
+.pz-court-btn.is-current{border-color:var(--pz-ball);background:rgba(200,232,53,.12);}
+.pz-sheet-link{display:block;text-align:center;margin-top:14px;color:rgba(234,242,255,.6);font-size:.82rem;font-weight:700;text-decoration:none;}
+
+/* Menú de cuenta */
+.pz-acct-head{display:flex;align-items:center;gap:12px;padding:4px 2px 14px;border-bottom:1px solid var(--pz-line);margin-bottom:6px;}
+.pz-acct-head img,.pz-acct-ini{width:46px;height:46px;border-radius:50%;object-fit:cover;background:rgba(11,124,255,.25);display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;}
+.pz-acct-name{font-weight:900;font-size:1rem;}
+.pz-acct-mail{font-size:.78rem;color:rgba(234,242,255,.55);word-break:break-word;}
+.pz-acct-login{
+  width:100%;appearance:none;border:none;cursor:pointer;font:inherit;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  min-height:50px;border-radius:999px;margin:4px 0 10px;
+  background:#fff;color:#1f2430;font-weight:800;font-size:.95rem;
+}
+.pz-acct-list a,.pz-acct-list button{
+  width:100%;appearance:none;border:none;background:transparent;cursor:pointer;font:inherit;
+  display:flex;align-items:center;gap:12px;padding:0 6px;min-height:48px;
+  color:#eaf2ff;text-decoration:none;font-size:.94rem;font-weight:700;text-align:left;border-radius:10px;
+}
+.pz-acct-list a:hover,.pz-acct-list button:hover{background:rgba(255,255,255,.05);}
+.pz-acct-list .pz-ico{width:22px;text-align:center;opacity:.85;}
+.pz-acct-sep{height:1px;background:var(--pz-line);margin:6px 0;}
+.pz-acct-list .pz-muted{color:rgba(234,242,255,.6);font-weight:600;font-size:.86rem;min-height:42px;}
+
+/* ── Bloques de UI reutilizables en páginas de la app ── */
+.pz-h1{font-size:clamp(1.45rem,4.6vw,1.9rem);font-weight:900;letter-spacing:-.5px;line-height:1.15;}
+.pz-sec-title{font-size:.78rem;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:rgba(234,242,255,.5);margin:26px 0 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.pz-sec-title a{color:var(--blue3,#3395FF);text-transform:none;letter-spacing:0;font-size:.84rem;text-decoration:none;padding:12px 0;}
+
+/* Sin scroll horizontal, pero con "clip" (no "hidden"): hidden convierte a
+   body en contenedor de scroll y rompe position:sticky (lista de Clips). */
+body.pz-app{overflow-x:hidden;}
+@supports (overflow-x:clip){ html,body.pz-app{overflow-x:clip;} }
+
+/* Elementos flotantes de abajo: por encima de la barra inferior (móvil/tablet) */
+@media (max-width:1023px){
+  body.pz-app .scroll-top{bottom:calc(var(--pz-tab-h) + var(--pz-safe-bottom) + 14px) !important;}
+  body.pz-app #pz-pwa-banner,
+  body.pz-app .pz-toast,
+  body.pz-app .pz-vertical-toast,
+  body.pz-app .pz-ppw-bar{bottom:calc(var(--pz-tab-h) + var(--pz-safe-bottom) + 12px) !important;}
+}
+
+/* Botón "compartir link" de los clips (PuntazoContext.linkPill): ícono de cadena. */
+.action-pill[data-ico="link"]{ --ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1'/%3E%3Cpath d='M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1'/%3E%3C/svg%3E"); }

@@ -9,7 +9,7 @@
      un aviso con boton de reintento. Va inline y antes que todo lo demas. -->
 <script id="pz-boot-guard">
 (function () {
-  var TIMEOUT_MS = 12000;
+  var TIMEOUT_MS = 20000;
   var shown = false;
   function box() {
     if (shown || window.__pzBooted) return;
@@ -71,7 +71,7 @@
 
 <!-- Módulos Puntazo -->
 <script src="/assets/firebase-core.js"></script>
-<script src="/assets/auth.js"></script>
+<script src="/assets/auth.js?v=20260929"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/match-expiration.js"></script>
 <!-- F122: aviso "tu puntazo ya está listo" cuando uno o más pulsos del
@@ -688,6 +688,17 @@
     line-height: 1.55;
   }
 
+  /* (2026-09-28) Cancha usada la última vez */
+  .sel-card.is-last { border-color: rgba(200,232,53,.55) !important; position: relative; }
+  .sel-last { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); font-size: .62rem; font-weight: 900; letter-spacing: .4px; color: #0b1018; background: #c8e835; border-radius: 999px; padding: 2px 8px; white-space: nowrap; z-index: 1; }
+
+  /* (2026-09-29) En la app, el selector no repite el logo grande (ya está en el header). */
+  body.pz-app .entrada-logo { display: none !important; }
+
+  /* (2026-09-28) Shell de app: header fijo de 60px + barra inferior. */
+  body.pz-app .entrada-wrap { padding-top: calc(76px + env(safe-area-inset-top, 0px)) !important; min-height: calc(100vh - 72px); justify-content: flex-start; }
+  body.pz-app .entrada-logo { width: 140px !important; max-height: 64px !important; margin-bottom: 10px; }
+
   @media (max-width: 480px) {
     .entrada-wrap { padding-top: 50px; }
     .entrada-loc-name { font-size: 1.85rem; }
@@ -695,8 +706,11 @@
     .entrada-header { padding: 22px 18px 20px; }
   }
 </style>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260929" />
+<script src="/assets/app-context.js?v=20260929"></script>
+<script src="/assets/app-shell.js?v=20260929" defer></script>
 </head>
-<body>
+<body class="pz-app">
 
 <div class="page-bg"></div>
 
@@ -705,8 +719,8 @@
 <div id="entradaCourtBg" class="entrada-court-bg" aria-hidden="true"></div>
 
 <!-- Etapa 16.4 F49: header consistente con mi-partido (header.js variant internal) -->
-<div id="nav-root" data-nav-variant="internal"></div>
-<script src="/assets/header.js"></script>
+<div id="nav-root" data-nav-variant="app"></div>
+<script src="/assets/header.js?v=20260929"></script>
 
 <main class="entrada-wrap">
 
@@ -1000,12 +1014,10 @@
       if (modoBoton) {
         $selTitle.textContent = "Elige tu club";
         $selSub.textContent = "Para registrar puntazos sin crear partido";
-      } else if (modoClips) {
-        $selTitle.textContent = "¿Dónde están tus clips?";
-        $selSub.textContent = "Elige el club donde jugaste";
       } else {
-        $selTitle.textContent = "Elige tu club";
-        $selSub.textContent = "Toca el club donde estás jugando";
+        // (2026-09-28) Rediseño app: una sola pregunta para todos los modos.
+        $selTitle.textContent = "¿Dónde jugaste?";
+        $selSub.textContent = "Elige tu club";
       }
 
       const clubs = (selectorState.catalog && selectorState.catalog.clubs) || [];
@@ -1045,6 +1057,13 @@
           card.addEventListener("click", async function () {
             // Gate de club (ej. Scorpion): pide contraseña antes de entrar.
             if (!(await pzClubGate(club.id))) return;
+            // (2026-09-28) Isaac: Inicio es por CLUB. En el flujo normal solo se
+            // pide el club (queda como preferido en este teléfono) y se entra a
+            // Inicio; la cancha se pide hasta que vaya a Clips / Puntazo.
+            if (!modoBoton && !modoClips && !modoCanchas) {
+              goInicioClub(club.id);
+              return;
+            }
             selectorState.selectedClub = club;
             selectorState.step = "canchas";
             setSelMsg("");
@@ -1083,8 +1102,9 @@
     if (selectorState.step === "canchas") {
       const club = selectorState.selectedClub;
       $selBack.style.display = "inline-flex";
-      $selTitle.textContent = club.nombre;
-      $selSub.textContent = "Elige tu cancha";
+      $selTitle.textContent = modoBoton ? "¿En qué cancha estás?" : "¿En qué cancha jugaste?";
+      $selSub.textContent = club.nombre;
+      const _last = window.PuntazoContext && PuntazoContext.lastCan && PuntazoContext.lastCan();
 
       const canchas = club.canchas || [];
       if (canchas.length === 0) {
@@ -1113,7 +1133,10 @@
           ? PuntazoClubs.courtIconUrls(club && club.id, cancha.id)
           : { clubUrl: "/assets/court-icons/B" + iconNum + ".webp", globalUrl: "/assets/court-icons/B" + iconNum + ".webp" };
         const iconSrc = _icons.globalUrl;
+        const _isLast = !!(_last && _last.loc === club.id && _last.can === cancha.id);
+        if (_isLast) card.classList.add("is-last");
         card.innerHTML =
+          (_isLast ? '<div class="sel-last">Tu última cancha</div>' : '') +
           '<img class="court-icon" src="' + iconSrc + '" alt="' + escapeHtml(cancha.nombre) + '" onerror="this.outerHTML=\'<div class=&quot;emoji&quot;>🎾</div>\'">' +
           '<div class="name">' + escapeHtml(cancha.nombre) + '</div>';
         if (_icons.clubUrl !== _icons.globalUrl) {
@@ -1184,11 +1207,14 @@
     // /lado.html (clips) y el usuario quedaba atrapado: nunca volvía a la
     // pantalla con las 3 opciones. Ahora aterriza en la vista READY de entrada
     // (Ir al botón / Ver clips / Configurar partido) para la cancha elegida.
-    if (modoCanchas) {
-      const qs = "?loc=" + encodeURIComponent(club.id) +
-                 "&can=" + encodeURIComponent(cancha.id) +
-                 "&lado=" + encodeURIComponent(ld.id);
-      window.location.href = "/entrada.html" + qs;
+    // (2026-09-28) Rediseño app: la "pantalla de opciones" de la cancha
+    // ahora es /inicio.html (Inicio de la app). Ahí aterrizan tanto el flujo
+    // normal como "cambiar cancha"; inicio guarda club+cancha como contexto.
+    // (2026-09-28) El selector de cancha solo aparece para ir a Clips: al
+    // elegir, directo a los clips de esa cancha (queda guardada por hoy).
+    if (modoCanchas || modoClips) {
+      window.location.href = "/lado.html?loc=" + encodeURIComponent(club.id) +
+        "&can=" + encodeURIComponent(cancha.id) + "&lado=" + encodeURIComponent(ld.id) + "&pg=0";
       return;
     }
     // (2026-08-23) modoClips (botón "Encuentra tus clips" de la portada, QR /
@@ -1198,10 +1224,18 @@
     // entrada. modoClips solo cambia el copy del selector ("¿Dónde están tus
     // clips?"); el destino final es el mismo que el flujo normal.
     // Flow normal: URL canónica para entrada.html.
-    const qs = "?loc=" + encodeURIComponent(club.id) +
-               "&can=" + encodeURIComponent(cancha.id) +
-               "&lado=" + encodeURIComponent(ld.id);
-    window.location.href = "/entrada.html" + qs;
+    window.location.href = inicioUrl(club.id, cancha.id, ld.id);
+  }
+
+  function goInicioClub(locId) {
+    try { if (window.PuntazoContext) PuntazoContext.setClub(locId); } catch (_) {}
+    window.location.href = "/inicio.html?loc=" + encodeURIComponent(locId);
+  }
+
+  function inicioUrl(locId, canId, ladoId) {
+    return "/inicio.html?loc=" + encodeURIComponent(locId) +
+           "&can=" + encodeURIComponent(canId) +
+           "&lado=" + encodeURIComponent(ladoId || "LadoA");
   }
 
   $selBack.addEventListener("click", function () {
@@ -1562,6 +1596,11 @@
         // Buscar el club en el catálogo
         const cat = selectorState.catalog || { clubs: [] };
         const club = cat.clubs.find(c => c.id === resolved.locId);
+        if (club && club.status !== "soon" && !modoBoton && !modoClips) {
+          // (2026-09-28) QR de club → Inicio del club (solo se pide el club).
+          goInicioClub(club.id);
+          return;
+        }
         if (club && club.status !== "soon") {
           selectorState.selectedClub = club;
           selectorState.step = "canchas";
@@ -1628,8 +1667,14 @@
     // se gatea en el click del club.
     if (loc && !(await pzClubGate(loc))) { window.location.href = "/index.html"; return; }
     if (hasFullParams) {
+      // (2026-09-28) QR de cancha (entrada.html?loc=&can=&lado=) → directo al
+      // Inicio de esa cancha, sin selección. startReadyFlow (la pantalla de
+      // opciones vieja) queda como respaldo si la redirección no ocurre.
+      // (2026-09-29) Isaac: el QR impreso está EN la cancha → directo a sus
+      // clips (abre en "Hoy" si hay). La cancha queda guardada por hoy.
+      try { window.location.replace("/lado.html?loc=" + encodeURIComponent(loc) + "&can=" + encodeURIComponent(can) + "&lado=" + encodeURIComponent(lado) + "&pg=0"); return; } catch (_) {}
       startReadyFlow();
-    } else if (modoCanchas && loc) {
+    } else if ((modoCanchas || modoClips || modoBoton) && loc) {
       // F135 (Fix 4): "cambiar cancha" → directo al paso de canchas del club.
       startSelectorFlow({ directLoc: loc });
     } else if (qrCode) {
@@ -1654,6 +1699,11 @@
     try {
       var _m = (new URLSearchParams(window.location.search).get("modo") || "").toLowerCase();
       if (_m === "boton") return;
+      // (2026-09-28) Desde la app (Clips/Puntazo sin cancha de hoy): sin intro.
+      if (_m && new URLSearchParams(window.location.search).get("loc")) return;
+      // (2026-09-28) Con loc+can+lado la página redirige al Inicio: sin intro.
+      var _q = new URLSearchParams(window.location.search);
+      if (!_m && _q.get("loc") && _q.get("can") && _q.get("lado")) return;
     } catch (_) {}
     try {
       if (sessionStorage.getItem("pz_intro_seen") === "1") return;

@@ -9,7 +9,7 @@
      un aviso con boton de reintento. Va inline y antes que todo lo demas. -->
 <script id="pz-boot-guard">
 (function () {
-  var TIMEOUT_MS = 12000;
+  var TIMEOUT_MS = 20000;
   var shown = false;
   function box() {
     if (shown || window.__pzBooted) return;
@@ -74,7 +74,7 @@
 <script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
-<script src="/assets/auth.js"></script>
+<script src="/assets/auth.js?v=20260929"></script>
 
 <style>
   body {
@@ -225,11 +225,16 @@
   .past-date { font-size: .72rem; color: rgba(234,242,255,.5); margin-top: 4px; font-weight: 600; }
 
   .hidden { display: none !important; }
+  /* (2026-09-28) Shell de app: header fijo de 60px. */
+  body.pz-app .live-wrap { padding-top: calc(var(--pz-hdr-h, 60px) + 20px) !important; }
 </style>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260929" />
+<script src="/assets/app-context.js?v=20260929"></script>
+<script src="/assets/app-shell.js?v=20260929" defer></script>
 </head>
-<body>
+<body class="pz-app">
 <div class="page-bg"></div>
-<div id="nav-root" data-nav-variant="internal"></div>
+<div id="nav-root" data-nav-variant="app"></div>
 
 <main class="live-wrap">
 
@@ -283,7 +288,7 @@
 
 </main>
 
-<script src="/assets/header.js"></script>
+<script src="/assets/header.js?v=20260929"></script>
 <script>
 (function () {
   "use strict";
@@ -493,7 +498,7 @@
       el("offBox").classList.remove("hidden");
       var hayEscaparate = Array.isArray(d.past_streams) && d.past_streams.length > 0;
       el("offTitle").textContent = hayEscaparate
-        ? "Ahorita no hay transmisión en vivo"
+        ? "No hay transmisión ahora"
         : "Ahorita no hay transmisión";
       el("offMsg").textContent = hayEscaparate
         ? "Pero puedes revivir el torneo completo aquí abajo ⬇"

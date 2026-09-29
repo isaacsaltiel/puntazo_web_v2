@@ -51,7 +51,11 @@
   async function _loadConfig() {
     if (_configCache) return _configCache;
     try {
-      const res = await fetch("/data/config_locations.json?cb=" + Date.now(), { cache: "no-store" });
+      // (2026-09-29) Tope de 8 s: sin esto una red atorada dejaba chip y selectores vacíos.
+      const ctl = typeof AbortController === "function" ? new AbortController() : null;
+      const tm = ctl ? setTimeout(() => ctl.abort(), 8000) : null;
+      const res = await fetch("/data/config_locations.json?cb=" + Date.now(), { cache: "no-store", signal: ctl ? ctl.signal : undefined });
+      if (tm) clearTimeout(tm);
       if (!res.ok) return null;
       _configCache = await res.json();
       return _configCache;
@@ -175,6 +179,7 @@
 
   window.PuntazoClubs = {
     getCatalog: getCatalog,
+    loadConfig: _loadConfig,
     resolveQrCode: resolveQrCode,
     getClubByLocId: getClubByLocId,
     clearCache: clearCache,
