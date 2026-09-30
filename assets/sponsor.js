@@ -418,12 +418,13 @@
    *  foto del producto, claim, detalle, beneficios y las acciones completas.
    *  Todo sale de la campana; si falta un campo, esa pieza no se pinta (un
    *  patrocinador sin foto se sigue viendo bien). */
-  function construirHero(campana) {
+  function construirHero(campana, slot) {
+    slot = slot || SLOTS.TOP;
     var cr = campana.creativo;
     var box = el("div", "pz-sponsor-hero" + (cr.imagen ? "" : " sin-foto"));
     box.dataset.sponsor = campana.sponsorId || "";
     box.dataset.campana = campana.id || "";
-    box.dataset.slot = SLOTS.TOP;
+    box.dataset.slot = slot;
     pintarColores(box, cr);
 
     // Es publicidad y se declara, como en las fotos patrocinadas de cualquier red.
@@ -464,11 +465,38 @@
     }
 
     var acc = el("div", "pz-sponsor-acciones");
-    cr.acciones.forEach(function (a) { acc.appendChild(accionEl(a, campana, SLOTS.TOP, false)); });
+    cr.acciones.forEach(function (a) { acc.appendChild(accionEl(a, campana, slot, false)); });
     cuerpo.appendChild(acc);
     box.appendChild(cuerpo);
 
-    impresionAlVerse(box, campana, SLOTS.TOP);
+    impresionAlVerse(box, campana, slot);
+    return box;
+  }
+
+  /** (2026-09-30) Franja delgada (Isaac): moneda + claim en una línea + la
+   *  acción principal. Va arriba del feed de lado sin tapar el primer clip.
+   *  Mismo espacio (slot) y misma impresión vista que el bloque grande. */
+  function construirFranja(campana, slot) {
+    var cr = campana.creativo;
+    var box = el("div", "pz-sponsor-franja");
+    box.dataset.sponsor = campana.sponsorId || "";
+    box.dataset.campana = campana.id || "";
+    box.dataset.slot = slot;
+    box.title = cr.kickerCta || ("Patrocinado por " + campana.nombre);
+    pintarColores(box, cr);
+    var logo = logoEl(cr, "pz-sponsor-coin");
+    if (logo) { logo.width = 30; logo.height = 30; box.appendChild(logo); }
+    var txt = el("div", "pz-sponsor-franja-txt");
+    var k = el("span", "pz-sponsor-franja-kicker"); k.textContent = "Patrocinado";
+    var c = el("strong", "pz-sponsor-franja-claim"); c.textContent = cr.claim || campana.nombre;
+    txt.appendChild(k); txt.appendChild(c);
+    box.appendChild(txt);
+    if (cr.acciones && cr.acciones[0]) {
+      var a = enlaceBase(cr.acciones[0], campana, slot, "pz-sponsor-btn is-primary pz-sponsor-franja-btn");
+      a.textContent = cr.acciones[0].textoCorto || cr.acciones[0].texto;
+      box.appendChild(a);
+    }
+    impresionAlVerse(box, campana, slot);
     return box;
   }
 
@@ -519,9 +547,13 @@
     return d;
   }
 
-  function construir(campana, slot) {
+  function construir(campana, slot, estilo) {
+    // (2026-09-30) estilo opcional: "franja" (delgada) o "hero" (bloque grande),
+    // sin cambiar el espacio (slot) que se cuenta en las métricas.
+    if (estilo === "franja") return construirFranja(campana, slot);
+    if (estilo === "hero") return construirHero(campana, slot);
     if (slot === SLOTS.INLINE) return construirInline(campana);
-    if (slot === SLOTS.TOP) return construirHero(campana);
+    if (slot === SLOTS.TOP) return construirHero(campana, slot);
     var cr = campana.creativo;
     var esFeed = slot === SLOTS.FEED;
     var box = el("div", esFeed ? "pz-sponsor-banner" : "pz-sponsor-cta");
@@ -578,7 +610,7 @@
     cargar().then(function () {
       var c = elegirPara(slot, club);
       if (!c) return;
-      try { hueco.appendChild(construir(c, slot)); }
+      try { hueco.appendChild(construir(c, slot, ctx && ctx.estilo)); }
       catch (e) { console.warn("[pz-sponsor] construir", e); }
     });
     return hueco;
@@ -619,7 +651,8 @@
         // pastillas de card_inline viven DENTRO de cada tarjeta y tambien son
         // .pz-sponsor-hueco: limpiar con un selector de descendientes las
         // borraba todas (bug real, cazado el 10-sep-2026 con el constructor real).
-        var MIOS = ":scope > .pz-sponsor-banner, :scope > .pz-sponsor-hueco";
+        var MIOS = ":scope > .pz-sponsor-banner, :scope > .pz-sponsor-hero, :scope > .pz-sponsor-hueco";
+        var esMio = function (n) { return !!(n && n.classList && (n.classList.contains("pz-sponsor-banner") || n.classList.contains("pz-sponsor-hero"))); };
         var c = elegirPara(SLOTS.FEED, club);
         var tarjetas = Array.prototype.filter.call(
           contenedor.querySelectorAll(":scope > " + selector), esVisible);
@@ -635,15 +668,14 @@
         // segundo en pantalla que exige la impresion vista. Si ya esta en su lugar,
         // no se toca nada y el ciclo se corta solo.
         Array.prototype.forEach.call(contenedor.querySelectorAll(MIOS), function (n) {
-          var enSuLugar = n.classList.contains("pz-sponsor-banner") &&
-            anclas.indexOf(n.previousElementSibling) !== -1;
+          var enSuLugar = esMio(n) && anclas.indexOf(n.previousElementSibling) !== -1;
           if (!enSuLugar) n.remove();
         });
         var puestos = 0;
         anclas.forEach(function (t) {
           var sig = t.nextElementSibling;
-          if (!(sig && sig.classList.contains("pz-sponsor-banner"))) {
-            t.insertAdjacentElement("afterend", construir(c, SLOTS.FEED));
+          if (!esMio(sig)) {
+            t.insertAdjacentElement("afterend", construir(c, SLOTS.FEED, opts.estilo));
           }
           puestos++;
         });

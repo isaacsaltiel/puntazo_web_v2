@@ -62,8 +62,22 @@
   // chip es "Club · Cancha" y abre las canchas.
   function clubLevelPage() {
     var p = (location.pathname || "").toLowerCase();
-    if (/inicio\.html|vivo\.html|herramientas\.html|feed\.html/.test(p)) return true;
+    // (2026-09-30) Si la pantalla YA está preguntando la cancha (selector a
+    // pantalla completa), el chip muestra solo el club: no repetir la pregunta.
+    if (document.body && document.body.dataset.pzSelector === "cancha") return true;
+    if (/inicio\.html|vivo\.html|herramientas\.html/.test(p)) return true;
+    if (/feed\.html/.test(p)) return !new URLSearchParams(location.search).get("can");
     return /entrada\.html/.test(p) && activeTab() === "inicio";
+  }
+
+  // (2026-09-30) Enlaces que dependen de lo que el club tiene (data-cap="vivo"):
+  // nacen ocultos y se muestran solo si PuntazoContext.capacidades lo confirma.
+  function aplicarCaps(root) {
+    var els = (root || document).querySelectorAll("[data-cap]");
+    if (!els.length || !Ctx.capacidades) return;
+    Ctx.capacidades(Ctx.club()).then(function (cap) {
+      els.forEach(function (el) { el.hidden = !cap[el.dataset.cap]; });
+    });
   }
 
   // ── Barra de navegación ──
@@ -80,7 +94,7 @@
       tab("guardados", "/guardados.html", "Guardados", ICON.saved) +
       tab("recuperar", Ctx.url("recuperar"), "Recuperar", ICON.recover) +
       '<div class="pz-side-foot">' +
-        '<a href="/vivo.html' + (Ctx.club() ? "?club=" + encodeURIComponent(Ctx.club()) : "") + '">Transmisión en vivo</a>' +
+        '<a href="/vivo.html' + (Ctx.club() ? "?club=" + encodeURIComponent(Ctx.club()) : "") + '" data-cap="vivo" hidden>Transmisión en vivo</a>' +
         '<a href="' + esc(toolsUrl()) + '">Herramientas de juego</a>' +
         '<a href="/preguntas-frecuentes/">Ayuda</a>' +
         '<a href="/privacidad.html">Privacidad</a>' +
@@ -105,6 +119,7 @@
     document.body.classList.add("pz-app");
     // Páginas sin header de app (boton.html): la barra lateral sube hasta arriba.
     if (!document.querySelector(".site-header")) document.body.classList.add("pz-no-hdr");
+    aplicarCaps($bar);
     $bar.addEventListener("click", function (e) {
       var a = e.target.closest && e.target.closest("a.pz-tab");
       if (a) track("app_tab_click", { tab: a.dataset.tab });
@@ -133,6 +148,11 @@
   async function renderChip() {
     var chips = document.querySelectorAll("[data-ctx-chip]");
     if (!chips.length) return;
+    // (2026-09-30) Pantalla que ya pregunta el club (selector a pantalla
+    // completa): el chip no repite "Elige tu club".
+    var oculto = !!(document.body && document.body.dataset.pzSelector === "club");
+    chips.forEach(function (ch) { ch.style.visibility = oculto ? "hidden" : ""; });
+    if (oculto) return;
     var c = Ctx.get();
     var clubOnly = clubLevelPage();
     if (!c) { paintChips(chips, null, clubOnly, null); return; }
@@ -321,7 +341,7 @@
       u ? '<a href="/mis-clips.html"><span class="pz-ico"><span class="pz-i pz-i--solicitudes" aria-hidden="true"></span></span>Mis solicitudes del botón</a>' : "",
       '<button type="button" data-acct-ctx><span class="pz-ico"><span class="pz-i pz-i--club-cancha" aria-hidden="true"></span></span>Mi club y cancha' + (c ? "" : "") + "</button>",
       '<a href="' + esc(toolsUrl()) + '"><span class="pz-ico"><span class="pz-i pz-i--marcador" aria-hidden="true"></span></span>Herramientas de juego</a>',
-      '<a href="/vivo.html' + (c ? "?club=" + encodeURIComponent(c.loc) : "") + '"><span class="pz-ico"><span class="pz-i pz-i--vivo" aria-hidden="true"></span></span>Transmisión en vivo</a>',
+      '<a href="/vivo.html' + (c ? "?club=" + encodeURIComponent(c.loc) : "") + '" data-cap="vivo" hidden><span class="pz-ico"><span class="pz-i pz-i--vivo" aria-hidden="true"></span></span>Transmisión en vivo</a>',
       '<div class="pz-acct-sep"></div>',
       '<a class="pz-muted" href="/preguntas-frecuentes/"><span class="pz-ico"><span class="pz-i pz-i--ayuda" aria-hidden="true"></span></span>Ayuda</a>',
       '<a class="pz-muted" href="/privacidad.html"><span class="pz-ico"><span class="pz-i pz-i--privacidad" aria-hidden="true"></span></span>Privacidad</a>',
@@ -330,6 +350,7 @@
       u ? '<div class="pz-acct-sep"></div><button type="button" data-acct-logout><span class="pz-ico"><span class="pz-i pz-i--cerrar-sesion" aria-hidden="true"></span></span>Cerrar sesión</button>' : ""
     ].join("");
     openSheet("acct", sheetHead(u ? "Mi cuenta" : "Cuenta", "") + head + '<div class="pz-acct-list">' + items + "</div>");
+    aplicarCaps($sheet);
     bindSheet();
     var login = $sheet.querySelector("[data-acct-login]");
     if (login) login.addEventListener("click", function () {
@@ -348,6 +369,7 @@
   function refresh() {
     renderChip();
     if ($bar) $bar.innerHTML = tabsHTML();
+    if ($bar) aplicarCaps($bar);
   }
 
   function boot() {

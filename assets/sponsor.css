@@ -299,3 +299,19 @@
   .pz-sponsor-hero .pz-sponsor-claim { font-size: 16.5px; }
   .pz-sponsor-coin.is-hero { width: 54px; height: 54px; margin-top: -22px; }
 }
+
+
+/* (2026-09-30) Franja delgada arriba del feed de lado (estilo "franja"). */
+.pz-sponsor-franja {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 52px; padding: 7px 8px 7px 10px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--pz-sp-bg, #1f3a2c), var(--pz-sp-bg2, var(--pz-sp-bg, #1f3a2c)));
+  color: var(--pz-sp-texto, #fff); border: 1px solid var(--pz-sp-borde, rgba(255,255,255,.12));
+}
+.pz-sponsor-franja .pz-sponsor-coin { width: 30px; height: 30px; flex-shrink: 0; }
+.pz-sponsor-franja-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.pz-sponsor-franja-kicker { font-size: .6rem; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; opacity: .65; }
+.pz-sponsor-franja-claim { font-size: .82rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pz-sponsor-franja-btn { flex-shrink: 0; padding: 8px 14px; font-size: 12px; }
+/* En el feed, el bloque grande va entre clips con el mismo aire que una tarjeta. */
+#videos-container > .pz-sponsor-hero { margin: 4px 0 20px; }

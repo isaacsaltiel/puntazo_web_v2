@@ -260,6 +260,61 @@
     return x.toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" });
   }
 
+  // ── Qué tiene cada club (2026-09-30, Isaac: "no prometer cosas en vano") ──
+  // Solo se ofrece lo que el club de verdad tiene, según los DATOS:
+  //   verticales     → hay docs en clip_verticals de ese club
+  //   vivo           → stream_public/{club} existe y está en vivo o tiene
+  //                    transmisiones anteriores que se pueden ver
+  //   vivoAhora      → está transmitiendo en este momento
+  //   partidoCompleto→ el club recupera el partido completo (WellStreet)
+  // Se guarda 10 min en sessionStorage para no repetir consultas al navegar.
+  var CAPS_TTL = 10 * 60 * 1000;
+  var PARTIDO_COMPLETO = ["WellStreet-Pickleball", "WellStreet-Padel"];
+  var _capsP = {};
+  function esperarDb(ms) {
+    return new Promise(function (res) {
+      var t0 = Date.now();
+      (function mirar() {
+        try { if (window.PuntazoFirebase && PuntazoFirebase.db && window.firebase && firebase.apps) return res(PuntazoFirebase.db()); } catch (e) {}
+        if (Date.now() - t0 > (ms || 8000)) return res(null);
+        setTimeout(mirar, 120);
+      })();
+    });
+  }
+  function conTope(p, ms, porDefecto) {
+    return Promise.race([p, new Promise(function (r) { setTimeout(function () { r(porDefecto); }, ms); })]);
+  }
+  function capacidades(loc) {
+    loc = loc || club();
+    var base = { verticales: false, vivo: false, vivoAhora: false,
+      partidoCompleto: PARTIDO_COMPLETO.indexOf(loc) >= 0 };
+    if (!loc) return Promise.resolve(base);
+    var k = "pz_caps_v1_" + loc;
+    try {
+      var c = JSON.parse(sessionStorage.getItem(k) || "null");
+      if (c && Date.now() - c.ts < CAPS_TTL) return Promise.resolve(Object.assign(base, c.v));
+    } catch (e) {}
+    if (_capsP[loc]) return _capsP[loc];
+    _capsP[loc] = (async function () {
+      var db = await esperarDb(8000);
+      if (!db) return base;
+      var r = await Promise.all([
+        conTope(db.collection("clip_verticals").where("club", "==", loc).limit(1).get()
+          .then(function (s) { return !s.empty; }).catch(function () { return false; }), 6000, false),
+        conTope(db.collection("stream_public").doc(loc).get()
+          .then(function (d) { return d.exists ? d.data() : null; }).catch(function () { return null; }), 6000, null)
+      ]);
+      var st = r[1] || null;
+      var anteriores = st && Array.isArray(st.past_streams)
+        ? st.past_streams.filter(function (p) { return p && p.url && p.disponible !== false; }).length : 0;
+      var enVivo = !!(st && st.live === true && (st.youtube_url || st.youtube_id || st.channel_id));
+      var v = { verticales: r[0], vivo: enVivo || anteriores > 0, vivoAhora: enVivo };
+      try { sessionStorage.setItem(k, JSON.stringify({ ts: Date.now(), v: v })); } catch (e) {}
+      return Object.assign(base, v);
+    })();
+    return _capsP[loc];
+  }
+
   // Botón "compartir link" de un clip: comparte clip.html?v= (con vista previa
   // en WhatsApp) en vez del archivo; así quien lo recibe llega a Puntazo.
   function linkPill(nombre) {
@@ -286,5 +341,5 @@
   }
 
   window.PuntazoContext = { get: get, club: club, lastCan: lastCan, set: set, setClub: setClub, clear: clear, names: names, url: url,
-    normCan: normCan, canchaLabel: canchaLabel, fetchClips: fetchClips, fetchClubClips: fetchClubClips, isLocked: isLocked, directUrl: directUrl, linkPill: linkPill, dateFromName: dateFromName, horaLabel: horaLabel, diaLabel: diaLabel };
+    normCan: normCan, canchaLabel: canchaLabel, fetchClips: fetchClips, fetchClubClips: fetchClubClips, isLocked: isLocked, directUrl: directUrl, linkPill: linkPill, capacidades: capacidades, dateFromName: dateFromName, horaLabel: horaLabel, diaLabel: diaLabel };
 })();

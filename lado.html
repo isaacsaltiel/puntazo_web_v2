@@ -85,7 +85,7 @@
 <link rel="stylesheet" href="/assets/fonts.css" />
 <link rel="stylesheet" href="assets/estilo.css?v=20260923b" />
 <link rel="stylesheet" href="/assets/vitrina.css" />
-<link rel="stylesheet" href="/assets/sponsor.css" />
+<link rel="stylesheet" href="/assets/sponsor.css?v=20260930b" />
 
 <script src="/assets/lib/firebase-9.23.0/firebase-app-compat.js"></script>
 <script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
@@ -98,7 +98,7 @@
 <!-- F122: watcher "puntazo listo" cuando un pending del user pasa a ready.
      Requiere PuntazoAuth (no cargado en lado por default) — pero el módulo
      auto-skipea si no hay PuntazoAuth/PuntazoFirebase disponibles. -->
-<script src="/assets/auth.js?v=20260930"></script>
+<script src="/assets/auth.js?v=20260930b"></script>
 <script src="/assets/pending-pulse-watcher.js"></script>
 <script src="/assets/match-confirm-watcher.js"></script>
 <!-- F126: refresh-bar reutilizable. La inicialización vive más abajo en
@@ -109,7 +109,7 @@
      si nuc_heartbeat/{clubId} no se actualiza en >5 min. -->
 <script src="/assets/heartbeat-watcher.js"></script>
 <script src="/assets/metricas.js?v=20260911"></script>
-<script src="/assets/sponsor.js"></script>
+<script src="/assets/sponsor.js?v=20260930b"></script>
 
 <style>
 /* ═══════════════════════════════════════════════════
@@ -416,24 +416,36 @@ body.pz-app .breadcrumb-sep { font-size: .85rem; margin: 0 2px; }
 .lado-h1 { margin: 0; }
 body:not(.pz-app) .lado-h1 { display: none; }
 
-/* (2026-09-29) Patrocinio de arriba en versión compacta en móvil: sigue
-   primero (lo pactado con Loka) pero deja ver el primer clip sin scroll. */
-@media (max-width: 767px) {
-  body.pz-app #pz-sponsor-top .pz-sponsor-hero-foto { height: 84px; width: 100%; object-fit: cover; }
-  body.pz-app #pz-sponsor-top .pz-sponsor-beneficios,
-  body.pz-app #pz-sponsor-top .pz-sponsor-detalle { display: none; }
-  body.pz-app #pz-sponsor-top .pz-sponsor-hero-cuerpo { padding: 10px 12px 12px; }
-  body.pz-app #pz-sponsor-top .pz-sponsor-hero-cuerpo { gap: 8px; }
-  body.pz-app #pz-sponsor-top .pz-sponsor-acciones { display: flex; flex-wrap: nowrap; gap: 8px; margin-top: 2px; }
-  body.pz-app #pz-sponsor-top .pz-sponsor-acciones > * { flex: 1 1 0; width: auto; min-width: 0; min-height: 40px; font-size: .78rem; padding: 8px 10px; }
-  body.pz-app #pz-sponsor-top .pz-sponsor-acciones > :first-child { flex: 1.6 1 0; }
-  body.pz-app #pz-sponsor-top .pz-sponsor-acciones > * { font-size: .74rem; padding: 8px 8px; overflow: hidden; text-overflow: ellipsis; }
-  body.pz-app #pz-sponsor-top .pz-sponsor-claim { font-size: .95rem; }
-}
+/* (2026-09-30) Los banners de partido (legado) traían margen para el header
+   viejo: vacíos no deben ocupar espacio. */
+body.pz-app #pz-match-banner:empty, body.pz-app #pz-match-filter-banner:empty { display: none; }
+body.pz-app main.site-content { padding-top: calc(var(--pz-hdr-h, 60px) + var(--pz-safe-top, 0px) + 12px); }
+/* (2026-09-30) Encabezado compacto de Clips */
+body.pz-app .lado-head-row { flex-direction: row !important; align-items: center !important; justify-content: space-between; gap: 8px !important; margin: 0 0 12px !important; flex-wrap: nowrap; }
+.lado-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lado-filtro-activo { appearance: none; border: 0; cursor: pointer; font-family: inherit; min-height: 30px; padding: 0 10px; border-radius: 999px; background: #fff; color: #0b1018; font-size: .74rem; font-weight: 900; }
+.lado-filtro-activo[hidden] { display: none; }
+.lado-tools { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto; }
+body.pz-app .lado-head-row .btn-volver-container:empty, body.pz-app .lado-head-row .btn-volver-container { flex: 0 0 auto; }
+.esperar-btn { justify-self: start; }
+.lado-hb .pz-hb-pill { margin: 0; font-size: .68rem; padding: 5px 9px; }
+.lado-vista { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); }
+.lado-vista[hidden] { display: none; }
+.lado-vista-op { width: 34px; height: 34px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: rgba(234,242,255,.7); text-decoration: none; }
+.lado-vista-op.is-on { background: #fff; color: #0b1018; }
+.lado-filtro-btn { appearance: none; position: relative; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: #eaf2ff; display: inline-flex; align-items: center; justify-content: center; }
+.lado-filtro-btn[aria-expanded="true"] { background: #fff; color: #0b1018; }
+.lado-filtro-btn.has-filter::after { content: ""; position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: #c8e835; }
+.lado-filtros { margin: 0 0 12px; }
+.lado-filtros[hidden] { display: none; }
+.lado-filtros #filtro-dia { margin-bottom: 8px; }
+.lado-filtros #filtro-horario { margin: 0; }
+#pz-sponsor-top:not(:empty) { margin: 0 0 10px; }
+@media (max-width: 380px) { .lado-hb .pz-hb-pill .txt { display: none; } }
 
 /* "Acabo de picar el botón" */
 .esperar-btn {
-  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; margin: 0 0 14px;
+  display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; margin: 0 0 12px;
   border-radius: 999px; border: 1px solid rgba(200,232,53,.45); background: rgba(200,232,53,.08);
   color: #e6f59a; font-family: inherit; font-size: .86rem; font-weight: 800; cursor: pointer;
 }
@@ -503,9 +515,9 @@ body:not(.pz-app) .lado-h1 { display: none; }
   .card-time { font-size: 1.4rem; }
 }
 </style>
-<link rel="stylesheet" href="/assets/app-shell.css?v=20260930" />
-<script src="/assets/app-context.js?v=20260930"></script>
-<script src="/assets/app-shell.js?v=20260930" defer></script>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260930b" />
+<script src="/assets/app-context.js?v=20260930b"></script>
+<script src="/assets/app-shell.js?v=20260930b" defer></script>
 </head>
 <body class="pz-app">
 
@@ -546,7 +558,7 @@ body:not(.pz-app) .lado-h1 { display: none; }
 
 <!-- ── NAV ── -->
 <div id="nav-root" data-nav-variant="app"></div>
-<script src="/assets/header.js?v=20260930"></script>
+<script src="/assets/header.js?v=20260930b"></script>
 
 <!-- ── Banner CTA de partido (Etapa 4) — totalmente aditivo, render desde IIFE al final del body ── -->
 <div id="pz-match-banner"></div>
@@ -562,13 +574,34 @@ body:not(.pz-app) .lado-h1 { display: none; }
   <!-- (2026-09-28) Shell de app: "Clips" + Club › Cancha como subtítulo. El
        cambio de cancha vive en el chip del header; "← Regresar" queda oculto
        (la barra de navegación lo reemplaza) pero script.js lo sigue usando. -->
+  <!-- (2026-09-30) Encabezado compacto (Isaac): "Clips" + filtro activo a la
+       izquierda; a la derecha el estado de las cámaras, el cambio a vista
+       vertical (solo si el club tiene verticales) y el botón de filtros. Los
+       filtros se despliegan solo al tocarlo. Se quitó la barra "Actualizado /
+       Actualizar": los clips nuevos llegan solos (clips-en-vivo.js). -->
   <div class="lado-head-row">
-    <h1 class="pz-h1 lado-h1">Clips</h1>
-    <!-- Botón volver -->
+    <div class="lado-title">
+      <h1 class="pz-h1 lado-h1">Clips</h1>
+      <button type="button" id="pzFiltroActivo" class="lado-filtro-activo" hidden></button>
+    </div>
+    <div class="lado-tools">
+      <span id="pzHbPill" class="lado-hb"></span>
+      <div id="pzVista" class="lado-vista" role="group" aria-label="Vista" hidden>
+        <span class="lado-vista-op is-on" title="Horizontal" aria-current="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="2.5" y="6.5" width="19" height="11" rx="2.5"/></svg>
+        </span>
+        <a id="pzVistaVertical" class="lado-vista-op" href="#" title="Ver en vertical" aria-label="Ver en vertical">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/></svg>
+        </a>
+      </div>
+      <button type="button" id="pzFiltroBtn" class="lado-filtro-btn" aria-expanded="false" aria-controls="pzFiltros" title="Filtrar por día u hora" aria-label="Filtrar">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+      </button>
+    </div>
+    <!-- Ocultos: script.js los sigue llenando/usando. -->
     <div class="btn-volver-container">
       <a href="#" id="btn-volver" class="btn-volver">← Regresar</a>
     </div>
-    <!-- Título dominante: Club › Cancha -->
     <div class="page-title">
       <a id="link-club" href="#">Club</a>
       <span class="breadcrumb-sep">›</span>
@@ -578,21 +611,26 @@ body:not(.pz-app) .lado-h1 { display: none; }
     </div>
   </div>
 
-  <!-- (2026-07-13) F145: la pill de estado del club ("Cámaras del club en
-       línea" / "fuera de línea") ya NO vive aquí en su propio renglón: ahora
-       se monta DENTRO de la barra "Actualizado hace X" (#pz-rb-host), junto al
-       botón Actualizar / pendientes, para no ocupar espacio propio. -->
+  <!-- Filtros (Todos · Hoy · Ayer · Fecha y horas): solo al tocar el botón. -->
+  <div id="pzFiltros" class="lado-filtros" hidden>
+    <div id="filtro-dia"></div>
+    <div id="filtro-horario"></div>
+  </div>
 
-  <!-- (2026-08-21) Banner EN VIVO del club (torneo CPAM). Aparece solo si
-       stream_public/{club}.live es true; si no, no ocupa nada. -->
+  <!-- (2026-08-21) Banner EN VIVO del club. Solo si está transmitiendo. -->
   <div id="pz-live-host"></div>
 
-  <!-- Filtros de día (generados por script.js en #filtro-dia) -->
-  <div id="filtro-dia"></div>
-  <!-- (2026-09-29) "Acabo de picar el botón": espera en vivo a que llegue el
-       clip de esta cancha (clips-en-vivo.js) y lleva directo a él. -->
+  <!-- F129: aviso "cámaras fuera de línea" (solo cuando pasa). -->
+  <div id="pz-hb-host"></div>
+
+  <!-- Loading -->
+  <div id="loading" style="display:none">Cargando videos…</div>
+
+  <div id="pz-sponsor-top"></div>
+  <!-- (2026-09-29) "Acabo de jugar en esta cancha": espera en vivo a que llegue
+       el clip (clips-en-vivo.js) y lleva directo a él. -->
   <button type="button" id="pzEsperarBtn" class="esperar-btn">
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
     Acabo de jugar en esta cancha
   </button>
   <div id="pzEsperar" class="esperar-card" hidden>
@@ -603,28 +641,6 @@ body:not(.pz-app) .lado-h1 { display: none; }
     </div>
     <div class="esperar-bar"><div id="pzEsperarFill"></div></div>
   </div>
-  <!-- Filtros de hora (generados por script.js en #filtro-horario) -->
-  <div id="filtro-horario"></div>
-
-  <!-- F129: banner "cámaras del club fuera de línea" si nuc_heartbeat
-       lleva >5 min sin actualizar. Solo aparece si pasa el threshold. -->
-  <div id="pz-hb-host"></div>
-
-
-  <!-- F126: barra de refresh con timestamp "Actualizado hace X" + botón
-       "Actualizar" + panel desplegable con los pulsos pendientes del user
-       en esta cancha/lado. Se inicializa al final de la página, cuando
-       PuntazoLadoReload está disponible. -->
-  <div id="pz-rb-host"></div>
-
-  <!-- Loading -->
-  <div id="loading" style="display:none">Cargando videos…</div>
-
-  <!-- Videos -->
-  <!-- Patrocinador fijo arriba del feed (slot feed_top). Va FUERA del
-       contenedor de clips a proposito: script.js vacia #videos-container en
-       cada recarga y este bloque debe quedarse quieto, sin parpadear. -->
-  <div id="pz-sponsor-top"></div>
   <section id="videos-container" class="video-grid"></section>
 
   <!-- (2026-09-28) Desktop: lista de horas al lado del feed (clic → ese clip). -->
@@ -657,8 +673,8 @@ body:not(.pz-app) .lado-h1 { display: none; }
 
 <!-- Botón de Spotify en los clips con música (va antes de script.js, que lo usa al pintar). -->
 <script src="assets/musica.js?v=20260911"></script>
-<script src="assets/vertical.js?v=20260923b"></script>
-<script src="assets/script.js?v=20260930"></script>
+<script src="assets/vertical.js?v=20260930b"></script>
+<script src="assets/script.js?v=20260930b"></script>
 <!-- Clips en vivo: la NUC publica cada clip en Firestore (clip_states) en cuanto
      lo sube a Dropbox; este módulo lo suma al feed sin esperar al índice del CI. -->
 <script src="assets/clips-en-vivo.js?v=20260911"></script>
@@ -679,7 +695,8 @@ body:not(.pz-app) .lado-h1 { display: none; }
   try {
     var arriba = document.getElementById('pz-sponsor-top');
     if (arriba && !arriba.firstChild) {
-      window.PuntazoSponsor.montar(window.PuntazoSponsor.SLOTS.TOP || 'feed_top', arriba);
+      // (2026-09-30) Arriba, franja delgada (Isaac) para que el primer clip se vea.
+      window.PuntazoSponsor.montar(window.PuntazoSponsor.SLOTS.TOP || 'feed_top', arriba, { estilo: 'franja' });
     }
   } catch (e) { console.warn('[pz-sponsor] arriba', e); }
   var cont = document.getElementById('videos-container');
@@ -691,7 +708,10 @@ body:not(.pz-app) .lado-h1 { display: none; }
     t = setTimeout(function () {
       try {
         window.PuntazoSponsor.inyectarEnFeed(cont, {
-          cada: 2,   // lado es lo mas visitado: banner cada 2 clips
+          // (2026-09-30) Entre clips va el bloque GRANDE (antes estaba arriba),
+          // cada 4 clips para no saturar.
+          cada: 4,
+          estilo: 'hero',
           selector: '.video-card',
           // el club sale de ?loc= en la URL; el modulo lo lee solo
         });
@@ -1294,51 +1314,44 @@ body:not(.pz-app) .lado-h1 { display: none; }
 
   try { renderLiveBanner(paramsFromQuery().loc); } catch (e) {}
 
+  // (2026-09-30) Sin la barra "Actualizado / Actualizar" (Isaac): los clips
+  // nuevos ya llegan solos (clips-en-vivo.js). Queda la píldora de cámaras en
+  // el encabezado y el aviso de "fuera de línea" solo si pasa.
   function init() {
-    if (!window.PuntazoRefreshBar) return;
-    var host = document.getElementById("pz-rb-host");
-    if (!host) return;
     var p = paramsFromQuery();
-    if (!p.loc || !p.can || !p.lado) return; // sin contexto, no tiene sentido.
-
-    // F129: heartbeat watcher para mostrar banner si las cámaras del
-    // club están temporalmente fuera de línea.
+    if (!p.loc) return;
     try {
       var hbHost = document.getElementById("pz-hb-host");
-      if (hbHost && window.PuntazoHeartbeatWatcher) {
-        window.PuntazoHeartbeatWatcher.watch(p.loc, hbHost);
+      if (hbHost && window.PuntazoHeartbeatWatcher) window.PuntazoHeartbeatWatcher.watch(p.loc, hbHost);
+      var pill = document.getElementById("pzHbPill");
+      if (pill && window.PuntazoHeartbeatWatcher && window.PuntazoHeartbeatWatcher.statusPill) {
+        window.PuntazoHeartbeatWatcher.statusPill(p.loc, pill, { onlineText: "Cámaras en línea", offlineText: "Cámaras fuera de línea" });
       }
     } catch (_) {}
 
-    // AVISO TEMPORAL DE RECUPERACIÓN (19→26 ago 2026, solo BreakPoint).
+    // Filtros: se despliegan solo al tocar el botón (o la etiqueta del filtro activo).
+    var btn = document.getElementById("pzFiltroBtn");
+    var panel = document.getElementById("pzFiltros");
+    var etiqueta = document.getElementById("pzFiltroActivo");
+    function abrir(v) {
+      if (!btn || !panel) return;
+      panel.hidden = !v;
+      btn.setAttribute("aria-expanded", v ? "true" : "false");
+    }
+    if (btn) btn.addEventListener("click", function () { abrir(panel.hidden); });
+    if (etiqueta) etiqueta.addEventListener("click", function () { abrir(true); });
+    window.addEventListener("pz:filtro-aplicado", function () { abrir(false); });
 
-    window.__pzLadoBar = window.PuntazoRefreshBar.attach(host, {
-      label: "Actualizado",
-      auto: 0, // sin auto-refresh agresivo — solo manual.
-      showPending: true,
-      context: { loc: p.loc, can: p.can, lado: p.lado },
-      refreshOnInit: false, // populateVideos ya corre en page boot; no
-                            // queremos disparar otra vez al milisegundo.
-      onRefresh: async function () {
-        if (typeof window.PuntazoLadoReload === "function") {
-          await window.PuntazoLadoReload();
-        }
-      },
-    });
-
-    // (2026-07-13) F145: la pill de estado del club ("Cámaras del club en
-    // línea" / "fuera de línea") ahora se monta DENTRO de la barra
-    // "Actualizado hace X", en el mismo renglón que el botón Actualizar /
-    // pendientes (como una chip más), para no ocupar su propio espacio.
+    // Vista vertical: solo si este club tiene verticales (no prometer lo que no hay).
     try {
-      var rbEl = host.querySelector(".pz-rb");
-      if (rbEl && window.PuntazoHeartbeatWatcher && window.PuntazoHeartbeatWatcher.statusPill) {
-        window.PuntazoHeartbeatWatcher.statusPill(p.loc, rbEl);
-        var pillEl = rbEl.querySelector(".pz-hb-pill");
-        var rbRefreshBtn = rbEl.querySelector("[data-refresh]");
-        // La ponemos justo antes del botón Actualizar (queda pegada a la
-        // derecha del texto "Actualizado hace X").
-        if (pillEl && rbRefreshBtn) rbEl.insertBefore(pillEl, rbRefreshBtn);
+      if (window.PuntazoContext && PuntazoContext.capacidades) {
+        PuntazoContext.capacidades(p.loc).then(function (cap) {
+          if (!cap.verticales) return;
+          var v = document.getElementById("pzVista");
+          var a = document.getElementById("pzVistaVertical");
+          a.href = "/feed.html?loc=" + encodeURIComponent(p.loc) + "&can=" + encodeURIComponent(p.can || "");
+          v.hidden = false;
+        });
       }
     } catch (_) {}
   }

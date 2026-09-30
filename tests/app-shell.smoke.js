@@ -43,6 +43,8 @@ const noHScroll = (page) => page.evaluate(() => document.documentElement.scrollW
 
   await go(p, "/entrada.html");
   ok((await p.textContent("#selTitle")).includes("¿Dónde jugaste?"), "1. Selector de club: «¿Dónde jugaste?»");
+  ok(await p.evaluate(() => getComputedStyle(document.querySelector("[data-ctx-chip]")).visibility === "hidden"), "   El header no repite «Elige tu club»");
+  ok(!(await p.evaluate(() => document.body.innerText.includes("escapó"))), "   Sin «¿Se te escapó un puntazo?» en el selector de club");
   await p.click(".sel-card:has-text('BreakPoint')");
   await p.waitForURL(/inicio\.html/, { timeout: 10000 }).catch(() => {});
   await p.waitForTimeout(1800);
@@ -59,7 +61,11 @@ const noHScroll = (page) => page.evaluate(() => document.documentElement.scrollW
   await p.waitForURL(/lado\.html/, { timeout: 10000 }).catch(() => {});
   await p.waitForTimeout(2500);
   ok(/lado\.html\?loc=BreakPoint&can=Cancha2/.test(p.url()), "3. Elegir cancha → clips de esa cancha");
-  ok(await p.isVisible("#filtro-dia .dia-chip"), "   Filtro Hoy/Ayer/Fecha visible");
+  ok(!(await p.isVisible("#filtro-dia .dia-chip")), "   Filtros plegados de inicio (primer clip a la vista)");
+  await p.click("#pzFiltroBtn");
+  ok(await p.isVisible("#filtro-dia .dia-chip"), "   Botón de filtros despliega Todos/Hoy/Ayer/Fecha");
+  await p.click("#pzFiltroBtn");
+  ok(!(await p.isVisible(".pz-rb")), "   Sin barra Actualizado/Actualizar");
   ok((await p.textContent("[data-ctx-chip]")).includes("Cancha 2"), "   Chip de Clips muestra club · cancha");
 
   await p.click("[data-ctx-chip]");

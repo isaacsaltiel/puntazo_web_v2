@@ -218,6 +218,7 @@ body.pz-app .site-content{padding-top:calc(var(--pz-hdr-h) + var(--pz-safe-top) 
 }
 .pz-acct-list a:hover,.pz-acct-list button:hover{background:rgba(255,255,255,.05);}
 .pz-acct-list .pz-ico{width:22px;display:inline-flex;justify-content:center;opacity:.85;}
+.pz-acct-list a[hidden],.pz-side-foot a[hidden]{display:none !important;}
 .pz-acct-sep{height:1px;background:var(--pz-line);margin:6px 0;}
 .pz-acct-list .pz-muted{color:rgba(234,242,255,.6);font-weight:600;font-size:.86rem;min-height:42px;}
 

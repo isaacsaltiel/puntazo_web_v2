@@ -10,22 +10,46 @@
 <link rel="icon" href="/favicon.ico" />
 <link rel="stylesheet" href="/assets/fonts.css" />
 <link rel="stylesheet" href="/assets/estilo.css?v=20260923b" />
-<link rel="stylesheet" href="/assets/app-shell.css?v=20260930" />
-<script src="/assets/app-context.js?v=20260930"></script>
-<script src="/assets/app-shell.js?v=20260930" defer></script>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260930b" />
+<script src="/assets/app-context.js?v=20260930b"></script>
+<script src="/assets/app-shell.js?v=20260930b" defer></script>
+<!-- (2026-09-30) Firebase ANTES de header.js: si header.js no ve estas etiquetas
+     inyecta otra copia de firebase-app-compat, que a veces llega tarde, pisa
+     window.firebase y se pierde Firestore ("Firestore SDK no está cargado"). -->
+<script src="/assets/lib/firebase-9.23.0/firebase-app-compat.js" defer></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js" defer></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js" defer></script>
+<script src="/assets/firebase-core.js" defer></script>
+<script src="/assets/auth.js?v=20260930b" defer></script>
+<script src="/assets/clubs-catalog.js" defer></script>
+<script src="/assets/util.js" defer></script>
+<script src="/assets/vertical.js?v=20260930b" defer></script>
 <!--
   (2026-09-29) Feed de VERTICALES estilo Reels, a pedido de Isaac.
   Fuente: Firestore clip_verticals (lo escribe la NUC, hoy solo BreakPoint).
-  - Se desliza hacia arriba, se reproduce solo (sin sonido; un toque lo
-    activa) y al terminar pasa al siguiente.
+  - Se desliza hacia arriba, se reproduce solo (sin sonido) y al terminar
+    pasa al siguiente.
   - Si la NUC marca el inicio del punto (campo `inicio_punto_s`) el video
     arranca ahí; si publica una versión ligera solo del punto (`url_feed`),
-    se usa esa. Mientras no existan, se ve el vertical completo.
+    se usa esa. `fin_punto_s` (opcional) pasa al siguiente al acabar el punto.
   - Los videos solo cargan cerca de la pantalla y se sueltan al alejarse
-    (los verticales completos pesan ~40 MB).
+    (los verticales completos pesan ~40 MB): el visible y el siguiente.
+
+  (2026-09-30) Parámetros y controles tipo TikTok / Reels / Shorts:
+  - ?loc= club (default: el del contexto) · ?can= solo esa cancha
+    · ?v=<nombre.mp4> empieza en ese clip · ?fuente=guardados los guardados
+    del usuario que tengan vertical (pide sesión).
+  - Toque = pausa / reproduce · mantener presionado = 2x · barra de avance
+    arrastrable · botón de sonido (para todos) · teclado en compu
+    (espacio, ←/→ ±5 s, ↑/↓ reel anterior / siguiente, M sonido).
+  - Riel: Guardar · Descargar (Horizontal / Vertical) · Compartir · Horizontal.
+  Consultas sin índices compuestos: where(club) [+ where(cancha)] y se
+  ordena aquí por `creado`.
 -->
 <style>
-  :root { --feed-top: calc(var(--pz-hdr-h, 60px) + var(--pz-safe-top, 0px)); --feed-bot: calc(var(--pz-tab-h, 64px) + var(--pz-safe-bottom, 0px)); }
+  /* (2026-09-30) +30px abajo: el botón central "Puntazo" de la barra inferior
+     sobresale ~30px y tapaba (y robaba toques de) la barra de avance. */
+  :root { --feed-top: calc(var(--pz-hdr-h, 60px) + var(--pz-safe-top, 0px)); --feed-bot: calc(var(--pz-tab-h, 64px) + var(--pz-safe-bottom, 0px) + 30px); }
   html, body { background: #000; }
   body.pz-app { padding-bottom: 0; }
   .feed {
@@ -35,197 +59,909 @@
     padding: 0; margin: 0; max-width: none; /* estilo.css le da padding a todo <main> */
   }
   .feed::-webkit-scrollbar { display: none; }
-  .reel { position: relative; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  .reel video { width: 100%; height: 100%; object-fit: cover; background: #05070d; }
+  .reel {
+    position: relative; height: 100%; scroll-snap-align: start; scroll-snap-stop: always;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+    /* (2026-09-30) mantener presionado = 2x: sin menú contextual ni selección */
+    -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .reel-frame { position: relative; width: 100%; height: 100%; overflow: hidden; background: #05070d; }
+  .reel-frame video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #05070d; pointer-events: none; }
+  /* Capa de gestos encima del video (toque / mantener). pan-y deja deslizar el feed. */
+  .reel-tap { position: absolute; inset: 0; z-index: 1; touch-action: pan-y; cursor: pointer; }
+  .reel-shade { position: absolute; inset: auto 0 0 0; height: 42%; background: linear-gradient(180deg, transparent, rgba(0,0,0,.62)); pointer-events: none; z-index: 2; }
   .reel-info {
-    position: absolute; left: 14px; right: 80px; bottom: 16px; z-index: 2; color: #fff;
-    text-shadow: 0 1px 8px rgba(0,0,0,.7); pointer-events: none;
+    position: absolute; left: 14px; right: 84px; bottom: 34px; z-index: 3; color: #fff;
+    text-shadow: 0 1px 8px rgba(0,0,0,.7); pointer-events: none; transition: opacity .15s;
   }
   .reel-when { font-size: 1.35rem; font-weight: 900; letter-spacing: -.4px; line-height: 1.1; }
   .reel-where { font-size: .82rem; font-weight: 700; opacity: .85; margin-top: 2px; }
   .reel-tag { display: inline-block; margin-top: 8px; font-size: .68rem; font-weight: 900; letter-spacing: .5px; padding: 3px 9px; border-radius: 999px; background: #c8e835; color: #0b1018; text-shadow: none; }
-  .reel-rail { position: absolute; right: 10px; bottom: 16px; z-index: 2; display: flex; flex-direction: column; gap: 14px; align-items: center; }
-  .reel-rail .action-pill { width: 46px; height: 46px; background: rgba(0,0,0,.45); border-color: rgba(255,255,255,.25); color: #fff; }
-  .reel-rail a.rail-full { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.25); color: #fff; }
-  .reel-shade { position: absolute; inset: auto 0 0 0; height: 40%; background: linear-gradient(180deg, transparent, rgba(0,0,0,.65)); pointer-events: none; z-index: 1; }
-  .reel-sound { position: absolute; top: 14px; right: 14px; z-index: 2; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.25); color: #fff; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-  .reel-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.15); z-index: 3; }
-  .reel-bar div { height: 100%; width: 0; background: #c8e835; }
-  .reel-next { position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%); z-index: 3; padding: 8px 14px; border-radius: 999px; background: rgba(0,0,0,.6); color: #fff; font-size: .8rem; font-weight: 800; display: none; }
+
+  /* Sonido (real): debajo del logo del club que trae el video en la esquina. */
+  .reel-sound {
+    position: absolute; top: 11.5%; right: 12px; z-index: 4; width: 44px; height: 44px; padding: 0; border-radius: 50%;
+    background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.25); color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: opacity .15s, transform .15s;
+  }
+  .reel-sound:active { transform: scale(.92); }
+  .reel-sound:focus-visible { outline: 2px solid #0B7CFF; outline-offset: 2px; }
+
+  /* Ícono central: aparece al pausar, se desvanece al reproducir. */
+  .reel-center {
+    position: absolute; left: 50%; top: 50%; width: 78px; height: 78px; margin: -39px 0 0 -39px; z-index: 3;
+    border-radius: 50%; background: rgba(0,0,0,.38); color: #fff; display: flex; align-items: center; justify-content: center;
+    pointer-events: none; opacity: 0; transform: scale(1.25); transition: opacity .22s ease, transform .22s ease;
+  }
+  .reel.is-paused .reel-center { opacity: .92; transform: scale(1); }
+  .reel-speed {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 4; pointer-events: none;
+    padding: 7px 14px; border-radius: 999px; background: rgba(0,0,0,.6); color: #fff; font-weight: 900; font-size: .88rem;
+    letter-spacing: .3px; white-space: nowrap; display: none;
+  }
+  .reel.is-fast .reel-speed { display: flex; align-items: center; gap: 6px; }
+  .reel-speed b { font-weight: 900; }
+  .reel-spin {
+    position: absolute; left: 50%; top: 50%; width: 42px; height: 42px; margin: -21px 0 0 -21px; z-index: 3; pointer-events: none;
+    border-radius: 50%; border: 3px solid rgba(255,255,255,.2); border-top-color: #fff; animation: pz-gira .8s linear infinite; display: none;
+  }
+  .reel.is-wait .reel-spin { display: block; }
+  .reel.is-wait.is-paused .reel-spin, .reel.is-err .reel-spin { display: none; }
+  @keyframes pz-gira { to { transform: rotate(1turn); } }
+  .reel-next { position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%); z-index: 4; padding: 8px 14px; border-radius: 999px; background: rgba(0,0,0,.6); color: #fff; font-size: .8rem; font-weight: 800; display: none; pointer-events: none; }
+
+  /* Barra de avance arrastrable: zona táctil de 28px, barra visual delgada. */
+  .reel-scrub { position: absolute; left: 0; right: 0; bottom: 0; height: 28px; z-index: 5; touch-action: none; cursor: pointer; }
+  .reel-track { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.22); transition: height .12s ease; }
+  .reel-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: #c8e835; transform-origin: 0 50%; transform: scaleX(0); }
+  .reel-knob { position: absolute; top: 50%; left: 0; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(200,232,53,.45); opacity: 0; transition: opacity .12s; }
+  .reel.is-scrub .reel-track { height: 7px; }
+  .reel.is-scrub .reel-knob { opacity: 1; }
+  .reel-bubble {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 6; pointer-events: none;
+    padding: 7px 13px; border-radius: 999px; background: rgba(0,0,0,.75); color: #fff; white-space: nowrap;
+    font-weight: 800; font-size: 1rem; font-variant-numeric: tabular-nums; display: none;
+  }
+  .reel-bubble b { color: #c8e835; font-weight: 900; }
+  .reel.is-scrub .reel-bubble { display: block; }
+  .reel.is-scrub .reel-info, .reel.is-scrub .reel-rail, .reel.is-scrub .reel-sound { opacity: 0; pointer-events: none; }
+
+  /* Riel derecho estilo TikTok: botón de 46px + etiqueta chica debajo. */
+  .reel-rail { position: absolute; right: 6px; bottom: 34px; z-index: 4; display: flex; flex-direction: column; gap: 12px; align-items: center; transition: opacity .15s; }
+  .rail-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; width: 62px; padding: 0; margin: 0;
+    background: none; border: 0; color: #fff; font: inherit; cursor: pointer; text-decoration: none; -webkit-tap-highlight-color: transparent;
+  }
+  .rail-ico, .reel-rail .action-pill {
+    width: 46px; height: 46px; border-radius: 50%; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.25); color: #fff;
+    display: flex; align-items: center; justify-content: center; transition: transform .15s, background .15s, color .15s; flex: 0 0 auto;
+  }
+  .reel-rail .action-pill[data-ico]::before { width: 22px; height: 22px; }
+  .rail-item:active .rail-ico, .reel-rail .action-pill:active { transform: scale(.9); }
+  .rail-item:focus-visible { outline: none; }
+  .rail-item:focus-visible .rail-ico { outline: 2px solid #0B7CFF; outline-offset: 2px; }
+  .rail-lbl { font-size: .68rem; font-weight: 800; line-height: 1.1; text-shadow: 0 1px 4px rgba(0,0,0,.85); white-space: nowrap; }
+  .rail-item.is-on .rail-ico { color: #c8e835; }
+  .rail-item.is-on .rail-ico svg path { fill: currentColor; }
+  .rail-item.is-busy .rail-ico { opacity: .6; }
+  @media (hover: hover) {
+    .rail-item:hover .rail-ico, .reel-rail .action-pill:hover { background: rgba(255,255,255,.16); }
+  }
+
+  /* Error de un video (link caído, sin red) */
+  .reel-err {
+    position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    padding: 24px; text-align: center; background: rgba(5,7,13,.86); color: rgba(234,242,255,.8); font-weight: 600;
+  }
+  .reel-err strong { color: #fff; font-size: 1.05rem; }
+  .reel-err div { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
   .feed-msg { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px; padding: 24px; color: rgba(234,242,255,.75); font-weight: 600; }
-  .feed-msg strong { color: #fff; font-size: 1.15rem; }
-  .feed-msg a { color: #3395FF; text-decoration: none; font-weight: 800; }
+  .feed-msg strong { color: #fff; font-size: 1.15rem; max-width: 22em; }
+  .feed-msg span { max-width: 26em; }
+  .feed-msg a:not(.feed-btn) { color: #3395FF; text-decoration: none; font-weight: 800; }
+  .feed-btn {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 22px; border-radius: 999px;
+    border: 0; background: #0B7CFF; color: #fff; font: inherit; font-weight: 800; font-size: .95rem; text-decoration: none; cursor: pointer;
+  }
+  .feed-btn--sec { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); }
+  .feed-btn:focus-visible { outline: 2px solid #c8e835; outline-offset: 2px; }
   .sk { width: 100%; height: 100%; background: linear-gradient(90deg, #080c16, #111a2e, #080c16); background-size: 200% 100%; animation: sk 1.2s infinite; }
   @keyframes sk { to { background-position: -200% 0; } }
+  /* Avisos (vertical.js / linkPill) arriba de la barra de avance */
+  body.pz-app .pz-vertical-toast { bottom: calc(var(--feed-bot) + 44px); }
+  /* Tarjeta de descarga (vertical.js): en teléfono, a la izquierda del riel y
+     arriba de la barra de avance, para no tapar botones. */
+  body.pz-app .pzv-dl { left: 12px; right: 84px; width: auto; transform: none; bottom: calc(var(--feed-bot) + 40px); }
+
+  /* Pantallas anchas: video 9:16 centrado y el riel a su derecha (como TikTok web). */
+  @media (min-width: 700px) {
+    .reel { padding: 16px 0 16px 78px; gap: 16px; }
+    .reel-frame { width: auto; height: 100%; aspect-ratio: 9 / 16; max-width: calc(100% - 80px); border-radius: 16px; }
+    .reel-rail { position: static; align-self: flex-end; margin-bottom: 4px; }
+    .rail-lbl { text-shadow: none; color: rgba(234,242,255,.85); }
+    .rail-ico, .reel-rail .action-pill { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); }
+    body.pz-app .pzv-dl { left: 50%; right: auto; width: 380px; transform: translateX(-50%); }
+  }
   @media (min-width: 1024px) {
     .feed { left: var(--pz-side-w, 228px); bottom: 0; top: var(--feed-top); }
-    .reel { padding: 16px 0; }
-    .reel video { width: auto; height: 100%; aspect-ratio: 9 / 16; border-radius: 16px; object-fit: cover; }
-    .reel-info { left: calc(50% - 26vh + 14px); right: auto; max-width: 30vh; }
-    .reel-rail { right: calc(50% - 26vh - 70px); }
-    .reel-sound { right: calc(50% - 26vh + 14px); top: 30px; }
-    .reel-shade, .reel-bar { display: none; }
+    body.pz-app .pz-vertical-toast { bottom: 24px; left: calc(50% + var(--pz-side-w, 228px) / 2); }
+    body.pz-app .pzv-dl { bottom: 60px; left: calc(50% + var(--pz-side-w, 228px) / 2); }   /* arriba de la barra de avance */
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reel-center, .reel-track, .reel-info, .reel-rail, .reel-sound { transition: none; }
   }
 </style>
 </head>
 <body class="pz-app">
 <div id="nav-root" data-nav-variant="app"></div>
-<script src="/assets/header.js?v=20260930"></script>
+<script src="/assets/header.js?v=20260930b"></script>
 
-<main class="feed" id="feed" aria-label="Verticales del club">
+<main class="feed" id="feed" aria-label="Clips en vertical">
   <section class="reel"><div class="sk"></div></section>
 </main>
 
-<script src="/assets/lib/firebase-9.23.0/firebase-app-compat.js" defer></script>
-<script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js" defer></script>
-<script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js" defer></script>
-<script src="/assets/firebase-core.js" defer></script>
-<script src="/assets/auth.js?v=20260930" defer></script>
-<script src="/assets/clubs-catalog.js" defer></script>
-<script src="/assets/vertical.js?v=20260923b" defer></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   "use strict";
   var C = window.PuntazoContext;
   var $feed = document.getElementById("feed");
-  var club = (C && C.club()) || "";
-  var muted = true;
 
+  // ── Parámetros (2026-09-30) ──
+  var P = new URLSearchParams(location.search);
+  var qLoc = (P.get("loc") || P.get("club") || "").trim();
+  var qCan = C.normCan ? C.normCan(P.get("can") || "") : (P.get("can") || "").trim();
+  var qVid = (P.get("v") || "").trim().replace(/\.mp4$/i, "");
+  var GUARDADOS = (P.get("fuente") || "").toLowerCase() === "guardados";
+  var club = qLoc || C.club() || "";
+
+  var HOLD_MS = 350;         // mantener presionado = 2x
+  var muted = true;          // sonido: estado global de todos los reels
+  var activo = null;         // <section> visible
+  var io = null;
+  var cargaN = 0;
+  var esperandoLogin = false;
+  var guardadoCache = {};    // nombre.mp4 -> bool
+  var idxCache = {};         // "club|cancha|lado" -> Promise<[clips horizontales]>
+  // (2026-09-30) Siempre del servidor: sin red, Firestore devuelve la consulta
+  // VACÍA desde caché (no falla) y el feed decía "no hay verticales" en vez
+  // de ofrecer Reintentar.
+  var SERVIDOR = { source: "server" };
+  var COPY_LOGIN = { title: "Guarda tus clips y encuéntralos después.", text: "Inicia sesión y tus clips guardados te esperan en Guardados, desde cualquier dispositivo.", cta: "Continuar con Google" };
+
+  function V() { return window.PuntazoVertical || null; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-  function msg(html) { $feed.innerHTML = '<section class="reel"><div class="feed-msg">' + html + "</div></section>"; }
   function track(n, p) { try { window.gtag && gtag("event", n, p || {}); } catch (_) {} }
-
-  var SOUND_ON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>';
-  var SOUND_OFF = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m23 9-6 6M17 9l6 6"/></svg>';
-  var FULL = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="m10 9 5 3-5 3z" fill="currentColor"/></svg>';
-
-  async function cargar() {
-    var db = null;
-    try { db = PuntazoFirebase.db(); } catch (_) {}
-    if (!db) return msg("<strong>No pudimos cargar los verticales</strong><span>Revisa tu conexión.</span><a href=''>Reintentar</a>");
-    var docs = [];
-    try {
-      // Los más nuevos primero. (Sin filtro por club en la consulta para no
-      // necesitar un índice compuesto: se filtra aquí.)
-      var snap = await Promise.race([
-        db.collection("clip_verticals").orderBy("creado", "desc").limit(80).get(),
-        new Promise(function (_, rej) { setTimeout(function () { rej(new Error("timeout")); }, 10000); })
-      ]);
-      snap.forEach(function (d) { var x = d.data() || {}; x.id = d.id; if (x.url || x.url_feed) docs.push(x); });
-    } catch (e) {
-      console.warn("[feed]", e);
-      return msg("<strong>No pudimos cargar los verticales</strong><span>Revisa tu conexión.</span><a href=''>Reintentar</a>");
-    }
-    var delClub = club ? docs.filter(function (x) { return x.club === club; }) : docs;
-    var otros = false;
-    if (!delClub.length && docs.length) { delClub = docs; otros = true; }
-    if (!delClub.length) return msg("<strong>Aún no hay verticales</strong><span>Cuando el club los publique, aparecen aquí.</span>");
-    pintar(delClub.slice(0, 40), otros);
+  function tope(pr, ms) { return Promise.race([pr, new Promise(function (_, rej) { setTimeout(function () { rej(new Error("timeout")); }, ms); })]); }
+  function getDb() { try { return PuntazoFirebase.db(); } catch (_) { return null; } }
+  function usuario() { try { return (window.PuntazoAuth && PuntazoAuth.currentUser) || null; } catch (_) { return null; } }
+  function aviso(t) {
+    var el = document.createElement("div");
+    el.className = "pz-vertical-toast"; el.textContent = t;
+    document.body.appendChild(el);
+    setTimeout(function () { el.remove(); }, 2200);
   }
+  function msg(html) {
+    if (io) { io.disconnect(); io = null; }
+    activo = null;
+    $feed.innerHTML = '<section class="reel"><div class="feed-msg">' + html + "</div></section>";
+  }
+  var ERROR_HTML = "<strong>No pudimos cargar los verticales</strong><span>Revisa tu conexión e inténtalo de nuevo.</span>" +
+    "<button type='button' class='feed-btn' data-accion='reintentar'>Reintentar</button>";
 
+  var ICO = {
+    ff: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M3 6.2v11.6a.8.8 0 0 0 1.25.66L12 13v4.8a.8.8 0 0 0 1.25.66l8.2-5.8a.8.8 0 0 0 0-1.32l-8.2-5.8A.8.8 0 0 0 12 6.2V11L4.25 5.54A.8.8 0 0 0 3 6.2z"/></svg>',
+    play: '<svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.2-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>',
+    soundOn: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>',
+    soundOff: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m23 9-6 6M17 9l6 6"/></svg>',
+    save: '<svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3h11A1.5 1.5 0 0 1 19 4.5V21l-7-4.6L5 21V4.5A1.5 1.5 0 0 1 6.5 3z"/></svg>',
+    // Descargar: flecha hacia abajo sobre una bandeja (inequívoco).
+    download: '<svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11.5M7 10l5 5 5-5"/><path d="M4 16.5v2A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-2"/></svg>',
+    // Ver en horizontal: pantalla acostada con "play".
+    horiz: '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2.5"/><path d="M10 9.4 14.6 12 10 14.6z" fill="currentColor"/></svg>'
+  };
+
+  // ── Datos del clip ──
   function nombreDe(x) { return x.nombre || (x.id + ".mp4"); }
+  function t0De(x) { return x.url_feed ? 0 : Math.max(0, Number(x.inicio_punto_s) || 0); }
   function srcDe(x) {
     if (x.url_feed) return C.directUrl(x.url_feed);   // versión ligera del punto (NUC)
     var s = C.directUrl(x.url);
-    var t = Number(x.inicio_punto_s);
+    var t = t0De(x);
     return t > 0 ? s + "#t=" + t.toFixed(1) : s;
   }
+  function msDe(x) {
+    var c = x.creado;
+    if (c && typeof c.toMillis === "function") return c.toMillis();
+    if (c && c.seconds) return c.seconds * 1000;
+    var d = C.dateFromName(nombreDe(x));
+    return d ? +d : 0;
+  }
+  function conId(d) { var x = d.data() || {}; x.id = d.id; return x; }
+  function ladoDe(x) { return x.lado || "LadoA"; }
+  function urlHorizontal(x) {
+    var e = encodeURIComponent;
+    return "/lado.html?loc=" + e(x.club || "") + "&can=" + e(x.cancha || "") + "&lado=" + e(ladoDe(x)) + "&video=" + e(nombreDe(x));
+  }
+  function fmt(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
 
-  function pintar(lista, otros) {
+  // ── Carga ──
+  async function cargar() {
+    var n = ++cargaN;
+    esperandoLogin = false;
+    if (io) { io.disconnect(); io = null; }
+    activo = null;
+    $feed.innerHTML = '<section class="reel"><div class="sk"></div></section>';
+    try {
+      var r = GUARDADOS ? await cargarGuardados() : await cargarClub();
+      if (n !== cargaN) return;
+      if (typeof r === "string") return msg(r);
+      pintar(r);
+    } catch (e) {
+      if (n !== cargaN) return;
+      console.warn("[feed]", e);
+      msg(ERROR_HTML);
+    }
+  }
+
+  async function cargarClub() {
+    var db = getDb();
+    if (!db) throw new Error("sin Firestore");
+    var col = db.collection("clip_verticals");
+    // ?v=: se lee directo (por si no está entre los del club / cancha).
+    var pV = qVid
+      ? tope(col.doc(qVid).get(SERVIDOR), 8000).then(function (d) { return d.exists ? conId(d) : null; }).catch(function () { return null; })
+      : Promise.resolve(null);
+    if (!club) { var d0 = await pV; if (d0 && d0.club) club = d0.club; }
+    if (!club) return "<strong>Elige un club</strong><span>Para ver sus clips en vertical.</span><a class='feed-btn' href='" + esc(C.url("selector")) + "'>Elegir club</a>";
+    // Sin índice compuesto: igualdades sin orderBy; se ordena aquí.
+    var q = col.where("club", "==", club);
+    if (qCan) q = q.where("cancha", "==", qCan);
+    var snap = await tope(q.limit(200).get(SERVIDOR), 12000);
+    var docs = [];
+    snap.forEach(function (d) { var x = conId(d); if (x.url || x.url_feed) docs.push(x); });
+    docs.sort(function (a, b) { return msDe(b) - msDe(a); });
+    var dv = await pV;
+    if (dv && (dv.url || dv.url_feed)) {
+      docs = docs.filter(function (x) { return x.id !== dv.id; });
+      docs.unshift(dv);
+    }
+    if (!docs.length) return vacioClub();
+    return docs;
+  }
+
+  function vacioClub() {
+    var link = C.url("clips", { loc: club, can: qCan || null, lado: "LadoA" });
+    return "<strong>" + (qCan ? "Esta cancha aún no tiene clips en vertical" : "Este club aún no tiene clips en vertical") + "</strong>" +
+      "<span>Sus clips en horizontal están aquí:</span>" +
+      "<a class='feed-btn' href='" + esc(link) + "'>Ver " + (qCan ? "clips de la cancha" : "clips del club") + "</a>";
+  }
+
+  // Sesión: espera la primera respuesta de Firebase Auth (con tope).
+  function esperarSesion() {
+    return new Promise(function (res) {
+      var u0 = usuario(); if (u0) return res(u0);
+      var hecho = false;
+      function fin(u) { if (hecho) return; hecho = true; res(u || null); }
+      try {
+        var quitar = PuntazoFirebase.auth().onAuthStateChanged(function (u) { try { quitar(); } catch (_) {} fin(u); });
+      } catch (_) {
+        window.addEventListener("puntazo:auth-changed", function (e) { fin(e.detail && e.detail.user); }, { once: true });
+      }
+      setTimeout(function () { fin(usuario()); }, 8000);
+    });
+  }
+  function pedirLogin() {
+    if (!window.PuntazoAuth || !PuntazoAuth.requireAuth) return;
+    PuntazoAuth.requireAuth(function () { if (esperandoLogin) cargar(); }, COPY_LOGIN);
+  }
+
+  async function cargarGuardados() {
+    var u = await esperarSesion();
+    if (!u) {
+      setTimeout(function () { esperandoLogin = true; pedirLogin(); }, 0);
+      return "<strong>Tus guardados en vertical</strong><span>Inicia sesión para verlos aquí.</span>" +
+        "<button type='button' class='feed-btn' data-accion='login'>Iniciar sesión</button>";
+    }
+    var db = getDb();
+    if (!db) throw new Error("sin Firestore");
+    var snap = await tope(db.collection("usuarios").doc(u.uid).collection("guardados").limit(300).get(SERVIDOR), 12000);
+    var gs = [];
+    snap.forEach(function (d) {
+      var g = d.data() || {};
+      var n = String(g.nombreArchivo || g.videoId || d.id || "");
+      if (!n) return;
+      var s = g.savedAt;
+      gs.push({ id: n.replace(/\.mp4$/i, ""), ms: s && s.toMillis ? s.toMillis() : (s && s.seconds ? s.seconds * 1000 : 0) });
+    });
+    gs.sort(function (a, b) { return b.ms - a.ms; });
+    var ids = [], vistos = {};
+    gs.forEach(function (g) { if (g.id && !vistos[g.id] && g.id.indexOf("/") < 0) { vistos[g.id] = 1; ids.push(g.id); } });
+    var mapa = await tope(leerVerticales(db, ids), 15000);
+    var docs = [];
+    ids.forEach(function (id) { var x = mapa[id]; if (x && (x.url || x.url_feed)) { docs.push(x); guardadoCache[nombreDe(x)] = true; } });
+    if (qVid) {
+      var k = docs.findIndex(function (x) { return x.id === qVid; });
+      if (k > 0) docs.unshift(docs.splice(k, 1)[0]);
+    }
+    if (!docs.length) {
+      return ids.length
+        ? "<strong>Tus clips guardados no tienen versión vertical</strong><span>Puedes verlos en horizontal en Guardados.</span><a class='feed-btn' href='/guardados.html'>Ir a Guardados</a>"
+        : "<strong>Aún no tienes clips guardados</strong><span>Toca Guardar en cualquier clip y lo encuentras después.</span><a class='feed-btn' href='" + esc(C.url("clips")) + "'>Ver clips</a>";
+    }
+    return docs;
+  }
+
+  // Lotes de 30 por id (documentId "in"); si un lote falla, falla todo (→ Reintentar).
+  function leerVerticales(db, ids) {
+    var FP = window.firebase && firebase.firestore && firebase.firestore.FieldPath;
+    if (!FP) return Promise.reject(new Error("sin FieldPath"));
+    var col = db.collection("clip_verticals"), lotes = [];
+    for (var i = 0; i < ids.length; i += 30) lotes.push(ids.slice(i, i + 30));
+    return Promise.all(lotes.map(function (lote) { return col.where(FP.documentId(), "in", lote).get(SERVIDOR); }))
+      .then(function (snaps) {
+        var m = {};
+        snaps.forEach(function (s) { s.forEach(function (d) { m[d.id] = conId(d); }); });
+        return m;
+      });
+  }
+
+  // ── Pintar ──
+  var nombresClub = {};
+  function nombreClub(loc) {
+    if (!nombresClub[loc]) nombresClub[loc] = C.names({ loc: loc, can: null, lado: "LadoA" }).then(function (o) { return o.club || loc; }).catch(function () { return loc; });
+    return nombresClub[loc];
+  }
+
+  function pintar(lista) {
     $feed.innerHTML = "";
     lista.forEach(function (x, i) {
-      var nombre = nombreDe(x);
-      var d = C.dateFromName(nombre);
-      var sec = document.createElement("section");
-      sec.className = "reel";
-      sec.dataset.i = i;
-      sec._x = x;
-      sec.innerHTML =
-        '<video playsinline muted preload="none"></video>' +
-        '<div class="reel-shade"></div>' +
-        '<div class="reel-sound">' + SOUND_OFF + "</div>" +
-        '<div class="reel-info"><div class="reel-when">' + (d ? esc(C.diaLabel(d)) + " · " + C.horaLabel(d) : "") + "</div>" +
-          '<div class="reel-where">' + esc([x.club === "BreakPoint" ? "BreakPoint" : (x.club || ""), x.cancha ? C.canchaLabel(x.cancha) : ""].filter(Boolean).join(" · ")) + "</div>" +
-          (Number(x.inicio_punto_s) > 0 || x.url_feed ? '<span class="reel-tag">EL PUNTO</span>' : "") + "</div>" +
-        '<div class="reel-rail"></div>' +
-        '<div class="reel-next">Siguiente…</div>' +
-        '<div class="reel-bar"><div></div></div>';
-      var rail = sec.querySelector(".reel-rail");
-      if (C.linkPill) rail.appendChild(C.linkPill(nombre));
-      if (window.PuntazoVertical) {
-        try { rail.appendChild(PuntazoVertical.crearPill({ nombre: nombre, loc: x.club, can: x.cancha, lado: x.lado || "LadoA" }, {})); } catch (_) {}
-      }
-      var full = document.createElement("a");
-      full.className = "rail-full"; full.href = "/clip.html?v=" + encodeURIComponent(nombre);
-      full.title = "Ver clip completo"; full.setAttribute("aria-label", "Ver clip completo"); full.innerHTML = FULL;
-      rail.appendChild(full);
-
-      var v = sec.querySelector("video");
-      var bar = sec.querySelector(".reel-bar div");
-      v.addEventListener("timeupdate", function () {
-        var t0 = x.url_feed ? 0 : (Number(x.inicio_punto_s) || 0);
-        var dur = (v.duration || Number(x.duracion_s) || 1) - t0;
-        bar.style.width = Math.min(100, Math.max(0, (v.currentTime - t0) / dur * 100)) + "%";
-      });
-      // Reproducción continua: al terminar, al siguiente.
-      v.addEventListener("ended", function () {
-        var sig = sec.nextElementSibling;
-        if (!sig) return;
-        var n = sec.querySelector(".reel-next"); n.style.display = "block";
-        setTimeout(function () { n.style.display = "none"; sig.scrollIntoView({ behavior: "smooth" }); }, 900);
-        track("feed_auto_siguiente", { video_name: nombre });
-      });
-      // Un toque: sonido sí / no (para todos).
-      v.addEventListener("click", function () {
-        muted = !muted;
-        document.querySelectorAll(".reel video").forEach(function (o) { o.muted = muted; });
-        document.querySelectorAll(".reel-sound").forEach(function (o) { o.innerHTML = muted ? SOUND_OFF : SOUND_ON; });
-        if (v.paused) v.play().catch(function () {});
-      });
-      $feed.appendChild(sec);
+      try { V() && V().registrar && V().registrar(x); } catch (_) {}
+      $feed.appendChild(crearReel(x, i));
     });
-    if (otros) {
-      var aviso = document.createElement("section");
-      aviso.className = "reel";
-      aviso.innerHTML = '<div class="feed-msg"><strong>Eso es todo por ahora</strong><span>Los verticales de tu club aparecerán aquí.</span></div>';
-      $feed.appendChild(aviso);
-    }
     observar();
   }
 
-  // Solo el video visible suena/corre; los cercanos precargan; los lejanos se sueltan.
+  function crearReel(x, i) {
+    var nombre = nombreDe(x);
+    var d = C.dateFromName(nombre);
+    var sec = document.createElement("section");
+    sec.className = "reel";
+    sec.dataset.i = i;
+    sec._x = x;
+    sec.setAttribute("aria-roledescription", "clip");
+    sec.innerHTML =
+      '<div class="reel-frame">' +
+        '<video playsinline webkit-playsinline muted preload="none" disablepictureinpicture disableremoteplayback></video>' +
+        '<div class="reel-tap" aria-hidden="true"></div>' +
+        '<div class="reel-shade"></div>' +
+        '<div class="reel-center" aria-hidden="true">' + ICO.play + "</div>" +
+        '<div class="reel-spin" aria-hidden="true"></div>' +
+        '<div class="reel-speed" aria-hidden="true"><b>2x</b>' + ICO.ff + "</div>" +
+        '<button type="button" class="reel-sound" aria-label="Activar sonido" aria-pressed="false">' + (muted ? ICO.soundOff : ICO.soundOn) + "</button>" +
+        '<div class="reel-info"><div class="reel-when">' + (d ? esc(C.diaLabel(d)) + " · " + esc(C.horaLabel(d)) : "") + "</div>" +
+          '<div class="reel-where">' + esc([x.club || "", x.cancha ? C.canchaLabel(x.cancha) : ""].filter(Boolean).join(" · ")) + "</div>" +
+          (t0De(x) > 0 || x.url_feed ? '<span class="reel-tag">EL PUNTO</span>' : "") + "</div>" +
+        '<div class="reel-next">Siguiente…</div>' +
+        '<div class="reel-bubble"></div>' +
+        '<div class="reel-scrub" role="slider" aria-label="Avance del video" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">' +
+          '<div class="reel-track"><div class="reel-fill"></div><div class="reel-knob"></div></div></div>' +
+      "</div>" +
+      '<div class="reel-rail"></div>';
+
+    sec._fill = sec.querySelector(".reel-fill");
+    sec._knob = sec.querySelector(".reel-knob");
+    sec._scrubEl = sec.querySelector(".reel-scrub");
+    if (x.club) {
+      nombreClub(x.club).then(function (nm) {
+        var w = sec.querySelector(".reel-where");
+        if (w) w.textContent = [nm, x.cancha ? C.canchaLabel(x.cancha) : ""].filter(Boolean).join(" · ");
+      });
+    }
+    armarRiel(sec);
+    armarVideo(sec);
+    armarGestos(sec);
+    armarBarra(sec);
+    sec.querySelector(".reel-sound").addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (e.detail) this.blur();
+      ponerSonido(muted);   // muted=true → activar sonido
+    });
+    return sec;
+  }
+
+  function video(sec) { return sec && sec.querySelector("video"); }
+  function todos() { return Array.prototype.filter.call($feed.querySelectorAll(".reel"), function (s) { return !!s._x; }); }
+  function siguiente(sec) { var s = sec.nextElementSibling; return s && s._x ? s : null; }
+  function anterior(sec) { var s = sec.previousElementSibling; return s && s._x ? s : null; }
+  function irA(sec) { if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  function duracion(sec) {
+    var v = video(sec);
+    if (v && isFinite(v.duration) && v.duration > 0) return v.duration;
+    return Number(sec._x.duracion_s) || 0;
+  }
+
+  // ── Riel: Guardar · Descargar · Compartir · Horizontal ──
+  function railBtn(ico, label, aria) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "rail-item";
+    b.setAttribute("aria-label", aria || label);
+    b.innerHTML = '<span class="rail-ico">' + ico + '</span><span class="rail-lbl">' + esc(label) + "</span>";
+    return b;
+  }
+  function armarRiel(sec) {
+    var x = sec._x, nombre = nombreDe(x), rail = sec.querySelector(".reel-rail");
+
+    var bSave = railBtn(ICO.save, "Guardar", "Guardar en tu perfil");
+    bSave.addEventListener("click", function (e) { if (e.detail) bSave.blur(); tocarGuardar(sec); });
+    sec._bSave = bSave;
+    rail.appendChild(bSave);
+    if (guardadoCache[nombre]) marcarGuardado(sec, true);
+
+    var bDl = railBtn(ICO.download, "Descargar", "Descargar clip");
+    bDl.addEventListener("click", function (e) { if (e.detail) bDl.blur(); descargar(sec, bDl); });
+    rail.appendChild(bDl);
+
+    if (C.linkPill) {
+      var w = document.createElement("div");
+      w.className = "rail-item";
+      var pill = C.linkPill(nombre);
+      pill.addEventListener("click", function (e) { if (e.detail) pill.blur(); track("feed_compartir", { video_name: nombre }); });
+      var lbl = document.createElement("span");
+      lbl.className = "rail-lbl"; lbl.textContent = "Compartir";
+      lbl.addEventListener("click", function () { pill.click(); });
+      w.appendChild(pill); w.appendChild(lbl);
+      rail.appendChild(w);
+    }
+
+    var aH = document.createElement("a");
+    aH.className = "rail-item"; aH.href = urlHorizontal(x);
+    aH.setAttribute("aria-label", "Ver en horizontal");
+    aH.innerHTML = '<span class="rail-ico">' + ICO.horiz + '</span><span class="rail-lbl">Horizontal</span>';
+    aH.addEventListener("click", function () { track("feed_horizontal", { video_name: nombre }); });
+    rail.appendChild(aH);
+  }
+
+  function marcarGuardado(sec, si) {
+    var b = sec._bSave; if (!b) return;
+    b.classList.toggle("is-on", !!si);
+    b.querySelector(".rail-lbl").textContent = si ? "Guardado" : "Guardar";
+    b.setAttribute("aria-label", si ? "Quitar de guardados" : "Guardar en tu perfil");
+    b.setAttribute("aria-pressed", si ? "true" : "false");
+  }
+  function revisarGuardado(sec) {
+    var u = usuario(), n = nombreDe(sec._x);
+    if (!u) { marcarGuardado(sec, false); return; }
+    if (n in guardadoCache) { marcarGuardado(sec, guardadoCache[n]); return; }
+    var db = getDb(); if (!db) return;
+    tope(db.collection("usuarios").doc(u.uid).collection("guardados").doc(n).get(SERVIDOR), 8000)
+      .then(function (d) { guardadoCache[n] = d.exists; marcarGuardado(sec, d.exists); })
+      .catch(function () {});
+  }
+  function tocarGuardar(sec) {
+    if (!window.PuntazoAuth || !PuntazoAuth.requireAuth) return;
+    PuntazoAuth.requireAuth(function () { hacerGuardar(sec); }, COPY_LOGIN);
+  }
+  async function hacerGuardar(sec) {
+    if (sec._guardando) return;
+    var x = sec._x, n = nombreDe(x), u = usuario(), db = getDb(), b = sec._bSave;
+    if (!u || !db) return;
+    sec._guardando = true;
+    b.classList.add("is-busy");
+    var ref = db.collection("usuarios").doc(u.uid).collection("guardados").doc(n);
+    try {
+      var ya = guardadoCache[n];
+      if (ya === undefined) {
+        // Recién inició sesión: si ya lo tenía, solo se marca.
+        ya = (await tope(ref.get(SERVIDOR), 8000)).exists;
+        if (ya) { guardadoCache[n] = true; marcarGuardado(sec, true); aviso("Ya está en tus guardados"); return; }
+      }
+      if (ya) {
+        marcarGuardado(sec, false);
+        await tope(ref.delete(), 10000);
+        guardadoCache[n] = false;
+        aviso("Quitado de guardados");
+        track("feed_quitar_guardado", { video_name: n });
+      } else {
+        marcarGuardado(sec, true);
+        var h = null;
+        try { h = await tope(horizontalDe(x), 6000); } catch (_) {}
+        await tope(ref.set({
+          videoId: n, videoUrl: (h && h.url) || "",
+          club: x.club || "", cancha: x.cancha || "", lado: ladoDe(x),
+          fecha: "", origin: "manual", matchId: null,
+          savedAt: firebase.firestore.FieldValue.serverTimestamp(), nombreArchivo: n
+        }, { merge: true }), 10000);
+        guardadoCache[n] = true;
+        aviso("¡Guardado en tu perfil!");
+        track("feed_guardar", { video_name: n });
+      }
+    } catch (e) {
+      console.warn("[feed guardar]", e);
+      marcarGuardado(sec, !!guardadoCache[n]);
+      aviso("No se pudo guardar. Intenta de nuevo.");
+    } finally {
+      b.classList.remove("is-busy");
+      sec._guardando = false;
+    }
+  }
+
+  // Clip horizontal del mismo nombre (índice de la cancha/lado), una vez por lado.
+  function horizontalDe(x) {
+    var n = nombreDe(x), key = [x.club, x.cancha, ladoDe(x)].join("|");
+    if (!idxCache[key]) {
+      idxCache[key] = tope(C.fetchClips({ loc: x.club, can: x.cancha, lado: ladoDe(x) }), 9000)
+        .then(function (l) { if (!l || !l.length) delete idxCache[key]; return l || []; })
+        .catch(function () { delete idxCache[key]; return []; });
+    }
+    return idxCache[key].then(function (l) {
+      for (var i = 0; i < l.length; i++) if (l[i].nombre === n && l[i].url) return l[i];
+      return null;
+    });
+  }
+
+  async function descargar(sec, btn) {
+    var PV = V(), x = sec._x, n = nombreDe(x), v = video(sec);
+    if (!PV || !PV.menuDescarga) { aviso("No se pudo abrir la descarga"); return; }
+    if (btn._busy) return;
+    btn._busy = true; btn.classList.add("is-busy");
+    // Normalmente ya está resuelto (se pide al ver el reel). Máx. 4 s de espera;
+    // si sigue en camino, la opción Horizontal espera al tocarla.
+    var h, listo = false, pH = horizontalDe(x).then(function (r) { listo = true; return r; });
+    try { h = await tope(pH, 4000); } catch (_) { h = undefined; }
+    btn._busy = false; btn.classList.remove("is-busy");
+    track("feed_descargar", { video_name: n });
+
+    function bajarH(hz) {
+      track("click_share_download", { video_name: n, origen: "feed" });
+      if (window.PZ && PZ.trackDownload) PZ.trackDownload(n, { club: x.club || null, cancha: x.cancha || null, lado: ladoDe(x), mode: "click" });
+      PV.descargarArchivo({ url: hz.url, nombreArchivo: n, titulo: "Descargando horizontal", video: v, nombre: n, modo: "horizontal" });
+    }
+    var fnH = null;
+    if (listo && h) fnH = function () { bajarH(h); };
+    else if (!listo) fnH = function () { pH.then(function (hz) { if (hz) bajarH(hz); else aviso("No encontramos el clip en horizontal"); }); };
+    PV.menuDescarga({ nombre: n, loc: x.club, can: x.cancha, lado: ladoDe(x) }, { video: v, descargarHorizontal: fnH });
+  }
+
+  // ── Reproducción ──
+  function ponerSonido(on) {
+    muted = !on;
+    todos().forEach(function (s) {
+      var v = video(s); if (v) v.muted = muted;
+      var b = s.querySelector(".reel-sound");
+      if (b) {
+        b.innerHTML = muted ? ICO.soundOff : ICO.soundOn;
+        b.setAttribute("aria-label", muted ? "Activar sonido" : "Silenciar");
+        b.setAttribute("aria-pressed", muted ? "false" : "true");
+      }
+    });
+    track("feed_sonido", { on: !muted });
+    if (!muted && activo && video(activo).paused && !activo.classList.contains("is-paused")) reproducir(activo);
+  }
+
+  function cargarSrc(sec) {
+    var v = video(sec);
+    if (v && !v.getAttribute("src") && sec._x) { v.src = srcDe(sec._x); v.preload = "metadata"; }
+  }
+  function soltar(sec) {
+    var v = video(sec);
+    if (v && v.getAttribute("src")) { pausarQuieto(sec); v.removeAttribute("src"); v.load(); }
+    sec.classList.remove("is-wait", "is-fast");
+  }
+  // Pausa del sistema (salió de pantalla): sin ícono de pausa.
+  function pausarQuieto(sec) {
+    var v = video(sec);
+    if (v && !v.paused) { sec._quieto = true; v.pause(); }
+  }
+  function reproducir(sec) {
+    var v = video(sec);
+    if (!v) return;
+    cargarSrc(sec);
+    v.muted = muted;
+    var p = v.play();
+    if (p && p.catch) p.catch(function (err) {
+      if (!err || err.name === "AbortError") return;
+      if (err.name === "NotAllowedError" && !v.muted) {
+        // El navegador no deja sonar sin un toque: sigue sin sonido.
+        ponerSonido(false);
+        v.muted = true;
+        v.play().catch(function () { sec.classList.add("is-paused"); });
+        return;
+      }
+      sec.classList.add("is-paused");
+    });
+  }
+  // ¿Ya terminó (el video o el punto marcado por la NUC)? → se repite desde el inicio del punto.
+  function yaTermino(sec) {
+    var v = video(sec), fin = Number(sec._x.fin_punto_s);
+    return !!v && (v.ended || (!sec._x.url_feed && fin > t0De(sec._x) && !sec._movido && v.currentTime >= fin - 0.05));
+  }
+  function alternar(sec) {
+    var v = video(sec);
+    if (!v) return;
+    if (!v.getAttribute("src")) cargarSrc(sec);
+    if (v.paused || v.ended) {
+      if (yaTermino(sec)) { try { v.currentTime = t0De(sec._x); } catch (_) {} }
+      sec._terminando = false;
+      reproducir(sec);
+      track("feed_play", { video_name: nombreDe(sec._x) });
+    } else {
+      v.pause();
+      track("feed_pausa", { video_name: nombreDe(sec._x) });
+    }
+  }
+  function saltar(sec, dt) {
+    var v = video(sec), d = duracion(sec);
+    if (!v || !d) return;
+    sec._movido = true;
+    try { v.currentTime = Math.min(Math.max(0, v.currentTime + dt), Math.max(0, d - 0.1)); } catch (_) {}
+    pintarBarra(sec, v.currentTime / d);
+  }
+  function alTerminar(sec) {
+    var sig = siguiente(sec);
+    if (!sig) { sec.classList.add("is-paused"); return; }   // el último: queda en pausa
+    if (sec._autoT) return;
+    sec._terminando = true;
+    var n = sec.querySelector(".reel-next"); n.style.display = "block";
+    sec._autoT = setTimeout(function () {
+      sec._autoT = 0; n.style.display = "none";
+      if (activo === sec) irA(sig);
+    }, 900);
+    track("feed_auto_siguiente", { video_name: nombreDe(sec._x) });
+  }
+
+  function pintarBarra(sec, r) {
+    r = Math.min(1, Math.max(0, r || 0));
+    sec._fill.style.transform = "scaleX(" + r + ")";
+    sec._knob.style.left = (r * 100) + "%";
+  }
+  // Barra fluida del video activo (timeupdate solo da ~4 cuadros por segundo).
+  var rafLoop = 0;
+  function loop() {
+    rafLoop = 0;
+    if (!activo) return;
+    var v = video(activo), d = duracion(activo);
+    if (!activo._scrub && d) pintarBarra(activo, v.currentTime / d);
+    if (!v.paused) rafLoop = requestAnimationFrame(loop);
+  }
+
+  function armarVideo(sec) {
+    var v = video(sec), x = sec._x;
+    v.addEventListener("play", function () {
+      sec.classList.remove("is-paused");
+      if (sec === activo && !rafLoop) rafLoop = requestAnimationFrame(loop);
+    });
+    v.addEventListener("pause", function () {
+      if (sec._quieto) { sec._quieto = false; return; }
+      // Al terminar, el navegador pausa antes de "ended": eso lo decide alTerminar.
+      if (sec._scrub || sec._terminando || v.ended) return;
+      sec.classList.add("is-paused");
+    });
+    v.addEventListener("timeupdate", function () {
+      var d = duracion(sec);
+      if (d && !sec._scrub && sec !== activo) pintarBarra(sec, v.currentTime / d);
+      // Fin del punto (si la NUC lo marca): al siguiente, salvo que el usuario se haya movido.
+      var fin = Number(x.fin_punto_s);
+      if (!x.url_feed && fin > t0De(x) && !sec._movido && !sec._scrub && !sec._terminando && v.currentTime >= fin) {
+        sec._terminando = true;   // la pausa de aquí no muestra el ícono
+        v.pause();
+        sec._autoT = 0;
+        alTerminar(sec);
+      }
+    });
+    v.addEventListener("loadedmetadata", function () {
+      var d = duracion(sec);
+      if (d) pintarBarra(sec, v.currentTime / d);
+      sec._scrubEl.setAttribute("aria-valuemax", String(Math.round(d)));
+    });
+    v.addEventListener("waiting", function () { if (sec === activo) sec.classList.add("is-wait"); });
+    ["playing", "canplay", "seeked", "pause"].forEach(function (t) { v.addEventListener(t, function () { sec.classList.remove("is-wait"); }); });
+    v.addEventListener("ended", function () { alTerminar(sec); });
+    v.addEventListener("error", function () { if (v.getAttribute("src")) mostrarError(sec); });
+  }
+
+  function mostrarError(sec) {
+    if (sec.querySelector(".reel-err")) return;
+    sec.classList.add("is-err"); sec.classList.remove("is-wait");
+    var e = document.createElement("div");
+    e.className = "reel-err";
+    e.innerHTML = "<strong>No pudimos cargar este video</strong><span>Revisa tu conexión.</span><div>" +
+      "<button type='button' class='feed-btn' data-a='re'>Reintentar</button>" +
+      (siguiente(sec) ? "<button type='button' class='feed-btn feed-btn--sec' data-a='sig'>Siguiente</button>" : "") + "</div>";
+    e.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-a]"); if (!b) return;
+      if (b.dataset.a === "sig") { irA(siguiente(sec)); return; }
+      e.remove(); sec.classList.remove("is-err");
+      var v = video(sec); v.removeAttribute("src"); v.load();
+      reproducir(sec);
+      vigilarCarga(sec);
+    });
+    sec.querySelector(".reel-frame").appendChild(e);
+  }
+  // Tope: si en 20 s no hay ni un cuadro, se ofrece Reintentar (nada de pantallas a medias).
+  function vigilarCarga(sec) {
+    clearTimeout(sec._vigia);
+    sec._vigia = setTimeout(function () {
+      var v = video(sec);
+      if (activo === sec && v && v.getAttribute("src") && v.readyState < 2 && !v.paused) mostrarError(sec);
+    }, 20000);
+  }
+
+  // ── Gestos: toque = pausa/play · mantener = 2x ──
+  function armarGestos(sec) {
+    var tap = sec.querySelector(".reel-tap"), g = null;
+    tap.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      g = { id: e.pointerId, x: e.clientX, y: e.clientY, hold: false, movido: false };
+      g.timer = setTimeout(function () {
+        if (!g || g.movido) return;
+        g.hold = true;
+        empezar2x(sec);
+      }, HOLD_MS);
+    });
+    tap.addEventListener("pointermove", function (e) {
+      if (!g || e.pointerId !== g.id || g.hold) return;
+      if (Math.abs(e.clientX - g.x) > 10 || Math.abs(e.clientY - g.y) > 10) { g.movido = true; clearTimeout(g.timer); }
+    });
+    function fin(e, cancelado) {
+      if (!g || (e && e.pointerId !== g.id)) return;
+      clearTimeout(g.timer);
+      var h = g; g = null;
+      if (h.hold) { terminar2x(sec); return; }   // soltar después de 2x NO pausa
+      if (cancelado || h.movido) return;
+      alternar(sec);
+    }
+    tap.addEventListener("pointerup", function (e) { fin(e, false); });
+    tap.addEventListener("pointercancel", function (e) { fin(e, true); });
+    sec.addEventListener("contextmenu", function (e) { if (!e.target.closest("a")) e.preventDefault(); });
+  }
+  function empezar2x(sec) {
+    var v = video(sec);
+    if (!v || !v.getAttribute("src")) return;
+    v.playbackRate = 2;
+    sec.classList.add("is-fast");
+    if (v.paused) reproducir(sec);
+    track("feed_2x", { video_name: nombreDe(sec._x) });
+  }
+  function terminar2x(sec) {
+    var v = video(sec);
+    if (v) v.playbackRate = 1;
+    sec.classList.remove("is-fast");
+  }
+
+  // ── Barra arrastrable ──
+  function armarBarra(sec) {
+    var z = sec.querySelector(".reel-scrub"), trackEl = sec.querySelector(".reel-track"), bub = sec.querySelector(".reel-bubble");
+    var s = null, raf = 0, tObj = 0;
+    function mover(clientX) {
+      var d = duracion(sec), v = video(sec);
+      if (!d) return;
+      var r = trackEl.getBoundingClientRect();
+      var ratio = r.width ? Math.min(1, Math.max(0, (clientX - r.left) / r.width)) : 0;
+      tObj = ratio * d;
+      pintarBarra(sec, ratio);
+      bub.innerHTML = "<b>" + fmt(tObj) + "</b> / " + fmt(d);
+      var bw = bub.offsetWidth || 110, fw = r.width;
+      bub.style.left = Math.min(Math.max(ratio * fw, bw / 2 + 8), fw - bw / 2 - 8) + "px";
+      z.setAttribute("aria-valuenow", String(Math.round(tObj)));
+      if (!raf) raf = requestAnimationFrame(function () { raf = 0; try { v.currentTime = tObj; } catch (_) {} });
+    }
+    z.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      e.preventDefault(); e.stopPropagation();
+      if (!video(sec).getAttribute("src")) cargarSrc(sec);
+      try { z.setPointerCapture(e.pointerId); } catch (_) {}
+      s = { id: e.pointerId };
+      sec._scrub = true; sec._movido = true;
+      sec.classList.add("is-scrub");
+      sec.classList.remove("is-paused");
+      terminar2x(sec);
+      video(sec).pause();
+      mover(e.clientX);
+      track("feed_scrub", { video_name: nombreDe(sec._x) });
+    });
+    z.addEventListener("pointermove", function (e) {
+      if (!s || e.pointerId !== s.id) return;
+      e.preventDefault(); e.stopPropagation();
+      mover(e.clientX);
+    });
+    function soltarBarra(e) {
+      if (!s || (e && e.pointerId !== s.id)) return;
+      s = null;
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      var v = video(sec);
+      try { v.currentTime = tObj; } catch (_) {}
+      sec._scrub = false;
+      sec._terminando = false;
+      sec.classList.remove("is-scrub");
+      reproducir(sec);   // al soltar reanuda desde ahí
+    }
+    z.addEventListener("pointerup", soltarBarra);
+    z.addEventListener("pointercancel", soltarBarra);
+    z.addEventListener("lostpointercapture", soltarBarra);
+    // Que el arrastre no mueva el feed ni dispare el toque del video.
+    ["touchstart", "touchmove", "click"].forEach(function (t) { z.addEventListener(t, function (e) { e.stopPropagation(); }, { passive: t === "click" }); });
+    z.addEventListener("touchmove", function (e) { if (e.cancelable) e.preventDefault(); }, { passive: false });
+  }
+
+  // ── Activación perezosa: solo el visible reproduce; el siguiente precarga; los lejanos se sueltan ──
+  function activar(sec) {
+    if (activo === sec) return;
+    var prev = activo;
+    activo = sec;
+    if (prev) { pausarQuieto(prev); terminar2x(prev); prev.classList.remove("is-scrub"); }
+    sec._terminando = false; sec._movido = false;
+    var v = video(sec);
+    cargarSrc(sec);
+    if (yaTermino(sec)) { try { v.currentTime = t0De(sec._x); } catch (_) {} }
+    sec.classList.remove("is-paused");
+    reproducir(sec);
+    vigilarCarga(sec);
+    track("feed_ver", { video_name: nombreDe(sec._x) });
+    revisarGuardado(sec);
+    // Deja listo el clip horizontal (Guardar / Descargar) si se queda viendo.
+    setTimeout(function () { if (activo === sec) horizontalDe(sec._x); }, 2500);
+    var reels = todos(), i = reels.indexOf(sec);
+    reels.forEach(function (o, j) {
+      if (o === sec) return;
+      if (j === i + 1) cargarSrc(o);                 // precarga el siguiente
+      else if (Math.abs(j - i) > 2) soltar(o);       // libera memoria / datos
+      else pausarQuieto(o);
+    });
+  }
   function observar() {
-    var reels = Array.prototype.slice.call($feed.querySelectorAll(".reel"));
-    function cargarSrc(sec) {
-      var v = sec.querySelector("video");
-      if (v && !v.getAttribute("src") && sec._x) { v.src = srcDe(sec._x); v.preload = "metadata"; }
-    }
-    function soltar(sec) {
-      var v = sec.querySelector("video");
-      if (v && v.getAttribute("src")) { v.pause(); v.removeAttribute("src"); v.load(); }
-    }
-    var io = new IntersectionObserver(function (entries) {
+    if (io) io.disconnect();
+    io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
-        var sec = en.target, v = sec.querySelector("video");
-        var i = +sec.dataset.i;
-        if (en.isIntersecting && en.intersectionRatio > 0.6) {
-          cargarSrc(sec);
-          v.muted = muted;
-          v.play().catch(function () {});
-          track("feed_ver", { video_name: sec._x && nombreDe(sec._x) });
-          reels.forEach(function (o) {
-            var j = +o.dataset.i;
-            if (isNaN(j)) return;
-            if (j === i + 1) cargarSrc(o);          // precarga el siguiente
-            else if (Math.abs(j - i) > 2) soltar(o); // libera memoria/datos
-          });
-        } else if (v && !v.paused) {
-          v.pause();
-        }
+        var sec = en.target;
+        if (en.isIntersecting && en.intersectionRatio >= 0.6) activar(sec);
+        else if (sec !== activo) pausarQuieto(sec);
       });
     }, { root: $feed, threshold: [0, 0.6] });
-    reels.forEach(function (r) { if (r.querySelector("video")) io.observe(r); });
+    todos().forEach(function (r) { io.observe(r); });
   }
+
+  // ── Teclado (compu) ──
+  document.addEventListener("keydown", function (e) {
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (document.querySelector(".pzv-overlay, .pz-auth-modal-backdrop.is-open, .pz-sheet.is-open")) return;
+    var t = e.target, tag = (t && t.tagName) || "";
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || (t && t.isContentEditable)) return;
+    var sec = activo; if (!sec) return;
+    switch (e.key) {
+      case " ": case "Spacebar": case "k": case "K":
+        if (e.key === " " && (tag === "BUTTON" || tag === "A")) return;   // Espacio activa el botón con foco
+        e.preventDefault(); alternar(sec); break;
+      case "ArrowLeft": e.preventDefault(); saltar(sec, -5); break;
+      case "ArrowRight": e.preventDefault(); saltar(sec, 5); break;
+      case "ArrowUp": e.preventDefault(); irA(anterior(sec)); break;
+      case "ArrowDown": e.preventDefault(); irA(siguiente(sec)); break;
+      case "m": case "M": e.preventDefault(); ponerSonido(muted); break;
+    }
+  });
+
+  // Botones de los mensajes (Reintentar / Iniciar sesión)
+  $feed.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-accion]");
+    if (!b) return;
+    if (b.dataset.accion === "reintentar") cargar();
+    else if (b.dataset.accion === "login") { esperandoLogin = true; pedirLogin(); }
+  });
+
+  // Cambió la sesión: guardados de otra persona (o ninguno).
+  window.addEventListener("puntazo:auth-changed", function (e) {
+    var u = e.detail && e.detail.user;
+    if (GUARDADOS && u && esperandoLogin) { cargar(); return; }
+    if (!GUARDADOS) guardadoCache = {};
+    if (activo) revisarGuardado(activo);
+  });
+
+  // Al volver a la pestaña, el activo sigue; al irse, se pausa.
+  document.addEventListener("visibilitychange", function () {
+    if (!activo) return;
+    if (document.hidden) pausarQuieto(activo);
+    else if (!activo.classList.contains("is-paused")) reproducir(activo);
+  });
 
   cargar();
 });

@@ -184,6 +184,28 @@ window.PuntazoCard = (function () {
     return new Blob(chunks, { type });
   }
 
+// (2026-09-30) "Ver en vertical": solo aparece si ese clip YA tiene su vertical
+// (clip_verticals). Abre el feed tipo Reels justo en ese clip. Reemplaza al
+// botón que descargaba el vertical (se confundía con "ver en vertical"); la
+// descarga ahora es un solo botón que pregunta horizontal o vertical.
+function pzPillVerVerticalCard(entry) {
+  const a = document.createElement("a");
+  a.className = "action-pill"; a.dataset.ico = "vertical";
+  a.style.setProperty("--ico", `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6.5' y='2.5' width='11' height='19' rx='2.6'/%3E%3Cpath d='M10.6 9.2v5.6l4.4-2.8z' fill='%23000' stroke-width='1.6'/%3E%3C/svg%3E")`);
+  a.title = "Ver en vertical"; a.setAttribute("aria-label", "Ver en vertical");
+  a.style.display = "none";
+  const V = window.PuntazoVertical;
+  if (V && V.buscar) {
+    V.buscar(entry.nombre).then(d => {
+      if (!d || !d.url) return;
+      a.href = (V.urlFeed ? V.urlFeed(entry) : "/feed.html?loc=" + encodeURIComponent(entry.loc || entry.club || "") +
+        "&can=" + encodeURIComponent(entry.can || entry.cancha || "") + "&v=" + encodeURIComponent(entry.nombre));
+      a.style.display = "";
+    }).catch(() => {});
+  }
+  return a;
+}
+
   function buildSharePill(entry, opts) {
     opts = opts || {};
     const btn = makePill('download', 'Descargar video');
@@ -235,6 +257,18 @@ window.PuntazoCard = (function () {
         btn.style.setProperty('--p', String(percent || 0));   // anillo de progreso (CSS)
       }
     };
+
+    // (2026-09-30) Descarga unificada: pregunta horizontal/vertical si hay vertical.
+    btn.addEventListener('click', (ev) => {
+      const V = window.PuntazoVertical;
+      if (btn._pzDirecto || state !== 'idle' || !V || !V.menuDescarga) return;
+      ev.stopImmediatePropagation();
+      const m = parseFromName(entry.nombre) || {};
+      V.menuDescarga({ nombre: entry.nombre, loc: m.loc || entry.club, can: m.can || entry.cancha, lado: m.lado || entry.lado || 'LadoA' }, {
+        video: opts.video,
+        descargarHorizontal: () => { btn._pzDirecto = true; try { btn.click(); } finally { btn._pzDirecto = false; } },
+      });
+    }, true);
 
     btn.addEventListener('click', async () => {
       // El share automático no se disparó tras la descarga (navegador sin
@@ -490,7 +524,10 @@ window.PuntazoCard = (function () {
     if (opts.showFullscreen) grupo.appendChild(buildFullscreenPill(video));
     // Vertical 9:16 (assets/vertical.js): aparece solo si la NUC ya lo generó.
     if (opts.showShare && window.PuntazoVertical) {
-      try { grupo.appendChild(window.PuntazoVertical.crearPill(entry, { video })); }
+      try {
+        const m = parseFromName(entry.nombre) || {};
+        grupo.appendChild(pzPillVerVerticalCard(Object.assign({ loc: m.loc, can: m.can, lado: m.lado }, entry)));
+      }
       catch (e) { console.warn('[PuntazoCard vertical]', e); }
     }
     pillsEl.appendChild(grupo);

@@ -68,7 +68,7 @@
 <script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
-<script src="/assets/auth.js?v=20260930"></script>
+<script src="/assets/auth.js?v=20260930b"></script>
 <script src="/assets/clubs-catalog.js"></script>
 <script src="/assets/pulses.js"></script>
 <!-- F129: heartbeat-watcher para banner pasivo "cámaras del club fuera
@@ -104,8 +104,6 @@
   body.pz-app .rec-hero h1 { font-size: clamp(1.45rem, 4.6vw, 1.9rem); letter-spacing: -.5px; margin-bottom: 4px; }
   body.pz-app .rec-hero p { font-size: .88rem; }
   body.pz-app .rec-form { padding: 16px 14px; border-radius: 18px; margin-top: 0; }
-  body.pz-app .rec-form-context { display: none; }
-  body.pz-app #recFormBack { display: none; }
   body.pz-app .rec-day-stepper { padding: 8px; margin-bottom: 12px; border-radius: 14px; }
   body.pz-app .rec-day-arrow { width: 42px; height: 42px; font-size: 1.1rem; }
   body.pz-app .rec-day-text { font-size: 1rem; }
@@ -124,18 +122,122 @@
 
   /* (2026-09-28) Shell de app */
   body.pz-app .rec-wrap { padding-top: calc(var(--pz-hdr-h, 60px) + var(--pz-safe-top, 0px) + 18px); }
-  .rec-hist { margin-top: 28px; }
-  .rec-hist-title { font-size: .78rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(234,242,255,.5); margin: 0 0 10px; }
+  .rec-wrap [hidden] { display: none !important; }
+
+  /* (2026-09-30) Para qué cancha se pide: "BreakPoint · Cancha 2 · Cambiar". */
+  .rec-where {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 2px 8px;
+    margin: 2px 0 6px; font-size: .92rem; font-weight: 800; color: #fff; line-height: 1.3;
+  }
+  .rec-where-txt { min-width: 0; }
+  .rec-where-change {
+    background: none; border: 0; padding: 6px 2px; margin: -6px 0;
+    color: #6fb2ff; font-family: inherit; font-size: .88rem; font-weight: 800; cursor: pointer;
+  }
+  .rec-where-change:hover { color: #9fcfff; text-decoration: underline; }
+  .rec-where-sep { color: rgba(234,242,255,.32); font-weight: 700; }
+
+  /* (2026-09-30) Recuperar requiere cuenta: tarjeta arriba del formulario. */
+  .rec-login {
+    margin: 0 0 14px; padding: 16px 15px; border-radius: 18px;
+    background: linear-gradient(180deg, rgba(11,124,255,.16), rgba(11,124,255,.05));
+    border: 1px solid rgba(11,124,255,.38);
+  }
+  .rec-login-title { margin: 0 0 10px; font-size: 1.04rem; font-weight: 900; color: #fff; line-height: 1.25; letter-spacing: -.2px; }
+  .rec-login-list { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+  .rec-login-list li { display: flex; align-items: center; gap: 9px; font-size: .86rem; font-weight: 700; color: rgba(234,242,255,.85); }
+  .rec-login-list svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .rec-google-btn {
+    width: 100%; min-height: 48px; border: none; border-radius: 999px; cursor: pointer;
+    font-family: inherit; font-weight: 800; font-size: .95rem; color: #09111f; background: #fff;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: 0 10px 28px rgba(0,0,0,.35); transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+  }
+  .rec-google-btn:hover:not([disabled]) { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(0,0,0,.40); }
+  .rec-google-btn[disabled] { opacity: .75; cursor: wait; }
+  .rec-google-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .rec-login-err { margin: 10px 0 0; font-size: .8rem; color: #ffd5d5; text-align: center; }
+
+  /* (2026-09-30) Mis pedidos: los activos arriba del formulario, los
+     terminados abajo ("Anteriores"). Estado real leído de pending_pulses. */
+  .rec-reqs { margin: 0 0 14px; scroll-margin-top: calc(var(--pz-hdr-h, 60px) + 16px); }
+  .rec-sec-title { font-size: .72rem; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; color: rgba(234,242,255,.5); margin: 0 0 8px; }
+  .rec-req-list { display: flex; flex-direction: column; gap: 8px; }
+  .rec-req {
+    padding: 13px 14px 12px; border-radius: 16px;
+    background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.11);
+    scroll-margin-top: calc(var(--pz-hdr-h, 60px) + 16px);
+  }
+  .rec-req.is-ready { background: rgba(34,197,94,.08); border-color: rgba(34,197,94,.45); }
+  .rec-req.is-failed, .rec-req.is-noanswer { background: rgba(239,68,68,.06); border-color: rgba(239,68,68,.32); }
+  .rec-req-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .rec-req-when { font-size: 1rem; font-weight: 900; color: #fff; line-height: 1.25; min-width: 0; }
+  .rec-req-ago { flex-shrink: 0; font-size: .72rem; font-weight: 600; color: rgba(234,242,255,.48); }
+  .rec-req-where { margin-top: 2px; font-size: .78rem; font-weight: 700; color: rgba(234,242,255,.62); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rec-req-tag { color: #cfe2ff; }
+  /* Indicador de fases: Enviado → El club lo tomó → Listo / No encontrado */
+  .rec-steps { list-style: none; display: flex; margin: 12px 0 9px; padding: 0; }
+  .rec-step { flex: 1; position: relative; text-align: center; font-size: .68rem; font-weight: 700; color: rgba(234,242,255,.42); line-height: 1.2; }
+  .rec-step::before {
+    content: ""; position: absolute; top: 5px; left: -50%; right: 50%; height: 2px;
+    background: rgba(255,255,255,.12);
+  }
+  .rec-step:first-child::before { display: none; }
+  .rec-step .dot {
+    position: relative; z-index: 1; display: block; width: 12px; height: 12px; margin: 0 auto 5px;
+    border-radius: 50%; background: #1a2233; border: 2px solid rgba(255,255,255,.18);
+  }
+  .rec-step.done, .rec-step.now { color: #cfe2ff; }
+  .rec-step.done .dot { background: #0B7CFF; border-color: #0B7CFF; }
+  .rec-step.done::before, .rec-step.now::before { background: #0B7CFF; }
+  .rec-step.now .dot { background: #050914; border-color: #3395FF; box-shadow: 0 0 0 0 rgba(51,149,255,.6); animation: recStepPulse 1.6s ease-out infinite; }
+  .rec-step.ok { color: #9af2c0; }
+  .rec-step.ok .dot { background: #22c55e; border-color: #22c55e; }
+  .rec-step.ok::before { background: #22c55e; }
+  .rec-step.bad { color: #ff9a9a; }
+  .rec-step.bad .dot { background: #ef4444; border-color: #ef4444; }
+  .rec-step.bad::before { background: rgba(239,68,68,.6); }
+  @keyframes recStepPulse { 0% { box-shadow: 0 0 0 0 rgba(51,149,255,.55); } 70% { box-shadow: 0 0 0 7px rgba(51,149,255,0); } 100% { box-shadow: 0 0 0 0 rgba(51,149,255,0); } }
+  .rec-req-msg { margin: 0; font-size: .8rem; line-height: 1.45; color: rgba(234,242,255,.74); }
+  .rec-req.is-ready .rec-req-msg { color: #c8f7dc; font-weight: 700; }
+  .rec-req-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .rec-req-actions:empty { display: none; }
+  .rec-req-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 42px; padding: 0 18px; border-radius: 999px; cursor: pointer;
+    font-family: inherit; font-weight: 900; font-size: .88rem; color: #fff; text-decoration: none;
+    background: linear-gradient(135deg, #0B7CFF, #004FC8); border: 1px solid rgba(11,124,255,.55);
+  }
+  .rec-req.is-ready .rec-req-btn { background: linear-gradient(135deg, #22c55e, #15803d); border-color: rgba(34,197,94,.6); }
+  .rec-req-btn.ghost { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.16); color: #eaf2ff; font-weight: 800; }
+  .rec-req-btn.ghost:hover { background: rgba(11,124,255,.16); border-color: rgba(11,124,255,.45); }
+  .rec-req-link { font-size: .82rem; font-weight: 700; color: #6fb2ff; text-decoration: none; padding: 4px 0; }
+  .rec-req-link:hover { color: #9fcfff; text-decoration: underline; }
+  .is-flash { animation: recFlash 1.1s ease 2; }
+  @keyframes recFlash { 0%,100% { box-shadow: 0 0 0 0 rgba(11,124,255,0); } 40% { box-shadow: 0 0 0 3px rgba(11,124,255,.55); } }
+
+  .rec-hist { margin-top: 26px; }
   .rec-hist-list { display: flex; flex-direction: column; gap: 8px; }
-  .rec-hist-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); color: #fff; text-decoration: none; }
+  .rec-hist-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); color: #fff; text-decoration: none; }
+  .rec-hist-item.is-col { flex-wrap: wrap; }
+  .rec-hist-item { scroll-margin-top: calc(var(--pz-hdr-h, 60px) + 16px); }
   a.rec-hist-item:hover { border-color: rgba(11,124,255,.4); background: rgba(11,124,255,.08); }
   .rec-hist-main { flex: 1; min-width: 0; }
-  .rec-hist-when { font-weight: 900; font-size: 1rem; }
-  .rec-hist-where { font-size: .78rem; color: rgba(234,242,255,.6); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rec-hist-when { font-weight: 900; font-size: .95rem; }
+  .rec-hist-where { font-size: .76rem; color: rgba(234,242,255,.6); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rec-hist-note { flex-basis: 100%; margin: -2px 0 0; font-size: .78rem; line-height: 1.4; color: rgba(234,242,255,.66); }
+  .rec-hist-note .rec-req-btn { min-height: 36px; padding: 0 14px; font-size: .8rem; margin-top: 8px; }
+  .rec-hist-go { color: #6fb2ff; }
   .rec-hist-st { flex-shrink: 0; font-size: .72rem; font-weight: 900; padding: 5px 10px; border-radius: 999px; }
-  .rec-hist-st.buscando { background: rgba(255,200,90,.12); color: #ffd497; border: 1px solid rgba(255,200,90,.35); }
   .rec-hist-st.listo { background: rgba(34,197,94,.14); color: #9af2c0; border: 1px solid rgba(34,197,94,.4); }
   .rec-hist-st.nada { background: rgba(239,68,68,.12); color: #ff9a9a; border: 1px solid rgba(239,68,68,.35); }
+  .rec-hist-st.neutral { background: rgba(255,255,255,.07); color: rgba(234,242,255,.78); border: 1px solid rgba(255,255,255,.16); }
+  .rec-hist-more {
+    display: block; width: 100%; margin-top: 8px; padding: 10px; border-radius: 12px; cursor: pointer;
+    background: none; border: 1px dashed rgba(255,255,255,.16); color: rgba(234,242,255,.72);
+    font-family: inherit; font-size: .82rem; font-weight: 700;
+  }
+  .rec-hist-more:hover { color: #fff; border-color: rgba(11,124,255,.45); }
 
   /* Header del card */
   .rec-hero {
@@ -251,14 +353,8 @@
        evita el efecto raro y sigue sirviendo de resguardo si algo interno
        se pasa de ancho. */
     overflow: hidden;
+    scroll-margin-top: calc(var(--pz-hdr-h, 60px) + 16px);
   }
-  .rec-form-context {
-    font-size: 0.86rem;
-    color: rgba(234,242,255,.72);
-    margin-bottom: 16px;
-    text-align: center;
-  }
-  .rec-form-context strong { color: #fff; font-weight: 800; }
 
   .rec-field { margin-bottom: 16px; }
   .rec-field label {
@@ -446,68 +542,6 @@
     line-height: 1.4;
   }
 
-  /* Seguimiento en vivo del pedido (en cola → procesando → listo). */
-  .rec-track {
-    margin-top: 16px;
-    padding: 16px 15px;
-    border-radius: 16px;
-    background: rgba(0,0,0,.22);
-    border: 1px solid rgba(255,255,255,.12);
-  }
-  .rec-track.is-ready {
-    background: rgba(34,197,94,.10);
-    border-color: rgba(34,197,94,.45);
-  }
-  .rec-track.is-error {
-    background: rgba(255,80,80,.08);
-    border-color: rgba(255,80,80,.35);
-  }
-  .rec-track-row { display: flex; align-items: flex-start; gap: 11px; }
-  .rec-track-icon { font-size: 1.5rem; line-height: 1.1; flex-shrink: 0; }
-  .rec-track-text { flex: 1; min-width: 0; }
-  .rec-track-text strong {
-    display: block; font-size: 1rem; font-weight: 900; color: #fff; line-height: 1.25;
-  }
-  .rec-track-text .meta {
-    display: block; font-size: .82rem; color: rgba(234,242,255,.70);
-    margin-top: 3px; line-height: 1.4;
-  }
-  .rec-track-bar {
-    margin-top: 12px; height: 6px; border-radius: 999px;
-    background: rgba(255,255,255,.09); overflow: hidden;
-  }
-  .rec-track-fill {
-    height: 100%; width: 8%; border-radius: 999px;
-    background: linear-gradient(90deg, #0B7CFF, #3395FF);
-    transition: width .6s ease, background .3s ease;
-  }
-  .rec-track.is-ready .rec-track-fill { width: 100%; background: linear-gradient(90deg,#22c55e,#4ade80); }
-  .rec-track.is-error .rec-track-fill { width: 100%; background: linear-gradient(90deg,#ef4444,#f87171); }
-  /* Pulso sutil mientras sigue en proceso (no en listo/error). */
-  .rec-track:not(.is-ready):not(.is-error) .rec-track-fill { animation: recTrackPulse 1.8s ease-in-out infinite; }
-  @keyframes recTrackPulse { 0%,100% { opacity:1 } 50% { opacity:.55 } }
-  .rec-track .rec-submit { margin-top: 14px; display: inline-flex; }
-  .rec-track-link {
-    display: block; margin-top: 12px; text-align: center;
-    font-size: .85rem; font-weight: 700; color: #6fb2ff; text-decoration: none;
-  }
-  .rec-track-link:hover { color: #9fcfff; text-decoration: underline; }
-
-  /* Compuerta de sesión real (no invitado) para pedir partido completo. */
-  .rec-auth-gate {
-    text-align: center;
-    padding: 26px 18px;
-    border-radius: 16px;
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.10);
-  }
-  .rec-auth-gate p {
-    color: rgba(234,242,255,.72);
-    font-size: 0.92rem;
-    line-height: 1.5;
-    margin: 0 0 16px;
-  }
-
   .rec-banner {
     margin-top: 8px;
     margin-bottom: 14px;
@@ -568,31 +602,13 @@
   .rec-feedback.is-visible { display: block; }
   .rec-feedback.ok  { background: rgba(34,197,94,.10);  border: 1px solid rgba(34,197,94,.30);  color: #c8f7dc; }
   .rec-feedback.bad { background: rgba(255,80,80,.10);  border: 1px solid rgba(255,80,80,.25);  color: #ffd5d5; }
+  .rec-feedback.warn { background: rgba(255,180,60,.10); border: 1px solid rgba(255,180,60,.30); color: #ffe6b8; }
+  .rec-feedback.busy { color: rgba(234,242,255,.78); }
 
-  /* Boton "pedir otro" tras success */
-  .rec-after {
-    margin-top: 14px;
-    text-align: center;
-  }
-  .rec-after button {
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.14);
-    color: #eaf2ff;
-    border-radius: 999px;
-    padding: 9px 16px;
-    font-family: inherit;
-    font-weight: 700;
-    font-size: 0.86rem;
-    cursor: pointer;
-  }
-  .rec-after button:hover {
-    background: rgba(11,124,255,.16);
-    border-color: rgba(11,124,255,.45);
-  }
 </style>
-<link rel="stylesheet" href="/assets/app-shell.css?v=20260930" />
-<script src="/assets/app-context.js?v=20260930"></script>
-<script src="/assets/app-shell.js?v=20260930" defer></script>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260930b" />
+<script src="/assets/app-context.js?v=20260930b"></script>
+<script src="/assets/app-shell.js?v=20260930b" defer></script>
 </head>
 
 <body class="pz-app">
@@ -614,14 +630,49 @@
   document.getElementById("nav-root").setAttribute("data-back-to", backTo);
 })();
 </script>
-<script src="/assets/header.js?v=20260930"></script>
+<script src="/assets/header.js?v=20260930b"></script>
 
 <main class="rec-wrap">
 
   <div class="rec-hero">
     <h1>Recuperar puntazo</h1>
-    <p id="recHeroSub">¿A qué hora ocurrió? Lo buscamos en la grabación.</p>
+    <!-- (2026-09-30) Para qué cancha se está pidiendo, además del chip del header. -->
+    <div id="recWhere" class="rec-where" hidden>
+      <span id="recWhereTxt" class="rec-where-txt"></span>
+      <span class="rec-where-sep" aria-hidden="true">·</span>
+      <button id="recWhereChange" type="button" class="rec-where-change">Cambiar</button>
+    </div>
+    <p id="recHeroSub">¿A qué hora ocurrió? Lo buscamos en la grabación del club, también de días anteriores.</p>
   </div>
+
+  <!-- (2026-09-30) Recuperar requiere cuenta (Isaac: sin acceso anónimo, para
+       promover que la gente se registre). El formulario se ve igual, pero
+       enviar pide iniciar sesión. -->
+  <section id="recLogin" class="rec-login" hidden>
+    <h2 class="rec-login-title">Inicia sesión para recuperar tu puntazo</h2>
+    <ul class="rec-login-list">
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="rgba(34,197,94,.18)"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#4ade80" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Sigue tu pedido en vivo</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="rgba(34,197,94,.18)"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#4ade80" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Te avisamos cuando esté listo</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="rgba(34,197,94,.18)"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#4ade80" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Queda en tus Guardados</li>
+    </ul>
+    <button id="recLoginBtn" class="rec-google-btn" type="button">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.239 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+        <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 16.108 19.003 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4c-7.682 0-14.347 4.337-17.694 10.691z"/>
+        <path fill="#4CAF50" d="M24 44c5.169 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.144 35.091 26.688 36 24 36c-5.218 0-9.62-3.329-11.283-7.946l-6.522 5.025C9.5 39.556 16.227 44 24 44z"/>
+        <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.084 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+      </svg>
+      <span>Continuar con Google</span>
+    </button>
+    <p id="recLoginErr" class="rec-login-err" role="status" hidden></p>
+  </section>
+
+  <!-- (2026-09-30) Pedidos en curso (y los que acaban de terminar), ARRIBA del
+       formulario. Estado real: consulta en vivo de pending_pulses del usuario. -->
+  <section id="recActive" class="rec-reqs" hidden aria-live="polite">
+    <div class="rec-sec-title">Tus pedidos</div>
+    <div id="recActiveList" class="rec-req-list"></div>
+  </section>
 
   <!-- Selector de club / cancha (reusa patron entrada.html) -->
   <div id="recSelector" class="selector-wrap">
@@ -635,10 +686,6 @@
 
   <!-- Form (solo visible cuando club+cancha elegidos) -->
   <div id="recForm" class="rec-form" style="display:none">
-    <button id="recFormBack" type="button" class="selector-back">← Cambiar cancha</button>
-    <div id="recFormContext" class="rec-form-context"></div>
-
-    <div id="recAuthBanner" class="rec-banner info" style="display:none"></div>
 
     <!-- (2026-08-23) Los DOS flujos (puntazo puntual y partido completo) usan
          EXACTAMENTE los mismos componentes: día + hora + cantidad. Solo cambian
@@ -666,7 +713,7 @@
       <div class="rec-time-grid">
         <div class="rec-duration-stepper">
           <label for="recFullStartTime" id="recTimeLabel">Hora de inicio</label>
-          <div class="rec-time-box">
+          <div class="rec-time-box" id="recTimeBox">
             <input id="recFullStartTime" type="time" />
           </div>
         </div>
@@ -685,54 +732,16 @@
       <div class="hint" id="recFullHint"></div>
     </div>
 
-    <!-- Compuerta de sesión real: pedir partido completo requiere haber
-         iniciado sesión de verdad (no invitado) — es una descarga más pesada
-         y el tope de 3/hora necesita una identidad que no se resetee sola. -->
-    <div id="recFullAuthGate" class="rec-auth-gate" style="display:none">
-      <p>Para pedir tu partido completo necesitas iniciar sesión.</p>
-      <button id="recFullLoginBtn" class="btn-google" type="button" style="width:auto;min-height:44px;padding:0 22px;margin:0 auto;">
-        <svg viewBox="0 0 48 48" aria-hidden="true" style="width:18px;height:18px;">
-          <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.239 36 24 36c-6.627 0-12-5.373-12-12S17.373 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
-          <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 16.108 19.003 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.272 4 24 4c-7.682 0-14.347 4.337-17.694 10.691z"/>
-          <path fill="#4CAF50" d="M24 44c5.169 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.144 35.091 26.688 36 24 36c-5.218 0-9.62-3.329-11.283-7.946l-6.522 5.025C9.5 39.556 16.227 44 24 44z"/>
-          <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.084 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
-        </svg>
-        <span>Iniciar sesión / crear cuenta</span>
-      </button>
-    </div>
-
     <button id="recSubmit" class="rec-submit" type="button">Buscar mi puntazo</button>
 
-    <div id="recFeedback" class="rec-feedback"></div>
-
-    <!-- (2026-08-23) Seguimiento EN VIVO tras pedir. Antes la página solo decía
-         "listo, quedó en cola" y ahí moría: el watcher global está suprimido en
-         /recuperar.html, así que el usuario no se enteraba de nada sin salir y
-         volver. Ahora se escucha el doc de pending_pulses en tiempo real y se
-         muestra el estado real hasta que el video existe de verdad. -->
-    <div id="recTrack" class="rec-track" style="display:none">
-      <div class="rec-track-row">
-        <span id="recTrackIcon" class="rec-track-icon">⏳</span>
-        <div class="rec-track-text">
-          <strong id="recTrackTitle">En cola</strong>
-          <span id="recTrackMeta" class="meta"></span>
-        </div>
-      </div>
-      <div class="rec-track-bar"><div id="recTrackFill" class="rec-track-fill"></div></div>
-      <a id="recTrackWatch" class="rec-submit" style="display:none;text-decoration:none;align-items:center;justify-content:center;">▶ Ver mi video</a>
-      <a id="recTrackBrowse" class="rec-track-link" style="display:none">Ver los clips de esta cancha →</a>
-    </div>
-
-    <div id="recAfter" class="rec-after" style="display:none">
-      <button id="recAnother" type="button">Pedir otro</button>
-    </div>
+    <div id="recFeedback" class="rec-feedback" role="status"></div>
   </div>
 
-  <!-- (2026-09-28) Historial de este teléfono: cada solicitud con su club,
-       cancha, hora aproximada y estado real (se lee el doc de pending_pulses). -->
-  <section id="recHist" class="rec-hist" style="display:none">
-    <div class="rec-hist-title">Mis recuperaciones</div>
+  <!-- Pedidos terminados (de cualquier club/cancha): los últimos 14 días. -->
+  <section id="recHist" class="rec-hist" hidden>
+    <div class="rec-sec-title">Anteriores</div>
     <div id="recHistList" class="rec-hist-list"></div>
+    <button id="recHistMore" type="button" class="rec-hist-more" hidden></button>
   </section>
 
 </main>
@@ -747,17 +756,20 @@
   const $selGrid  = document.getElementById("recSelGrid");
   const $selBack  = document.getElementById("recSelBack");
 
+  const $heroSub     = document.getElementById("recHeroSub");
+  const $where       = document.getElementById("recWhere");
+  const $whereTxt    = document.getElementById("recWhereTxt");
+  const $whereChange = document.getElementById("recWhereChange");
+
+  const $login     = document.getElementById("recLogin");
+  const $loginBtn  = document.getElementById("recLoginBtn");
+  const $loginErr  = document.getElementById("recLoginErr");
+
   const $form      = document.getElementById("recForm");
-  const $formBack  = document.getElementById("recFormBack");
-  const $formCtx   = document.getElementById("recFormContext");
-  const $authBanner= document.getElementById("recAuthBanner");
   const $submit    = document.getElementById("recSubmit");
   const $feedback  = document.getElementById("recFeedback");
-  const $after     = document.getElementById("recAfter");
-  const $another   = document.getElementById("recAnother");
 
   // Componentes COMPARTIDOS por los dos flujos (puntual y partido completo).
-  const $fieldsCommon   = document.getElementById("recFieldsCommon");
   const $fullBanner     = document.getElementById("recFullBanner");
   const $fullMaxMinEl   = document.getElementById("recFullMaxMin");
   const $fullHint       = document.getElementById("recFullHint");
@@ -766,6 +778,7 @@
   const $dayText        = document.getElementById("recDayText");
   const $daySub         = document.getElementById("recDaySub");
   const $timeLabel      = document.getElementById("recTimeLabel");
+  const $timeBox        = document.getElementById("recTimeBox");
   const $fullStartTime  = document.getElementById("recFullStartTime");
   const $amountLabel    = document.getElementById("recAmountLabel");
   const $amountUnit     = document.getElementById("recAmountUnit");
@@ -773,17 +786,13 @@
   const $durPlus        = document.getElementById("recDurPlus");
   const $durValue       = document.getElementById("recDurValue");
   const $computedRange  = document.getElementById("recComputedRange");
-  const $authGate       = document.getElementById("recFullAuthGate");
-  const $fullLoginBtn   = document.getElementById("recFullLoginBtn");
 
-  // Seguimiento en vivo del pedido
-  const $track        = document.getElementById("recTrack");
-  const $trackIcon    = document.getElementById("recTrackIcon");
-  const $trackTitle   = document.getElementById("recTrackTitle");
-  const $trackMeta    = document.getElementById("recTrackMeta");
-  const $trackFill    = document.getElementById("recTrackFill");
-  const $trackWatch   = document.getElementById("recTrackWatch");
-  const $trackBrowse  = document.getElementById("recTrackBrowse");
+  // Mis pedidos (activos arriba, terminados abajo)
+  const $active     = document.getElementById("recActive");
+  const $activeList = document.getElementById("recActiveList");
+  const $hist       = document.getElementById("recHist");
+  const $histList   = document.getElementById("recHistList");
+  const $histMore   = document.getElementById("recHistMore");
 
   const FULL_MATCH_DAY_MIN_BACK = 7; // días atrás — igual a la retención del NVR que consume match_full
   const FULL_MATCH_DEFAULT_MIN = 5;  // duración por defecto del stepper (se clampa a [min,max])
@@ -795,6 +804,17 @@
   const POINT_MARGIN_MAX_MIN     = 3;   // ±3 = 6 min totales, el máximo pedido
   const POINT_MARGIN_MIN_MIN     = 1;
 
+  // ── Estado ─────────────────────────────────────────────────────
+  const state = {
+    step: "clubs",            // 'clubs' | 'canchas' | 'form'
+    catalog: null,
+    selectedClub: null,
+    selectedCancha: null,
+    user: null,               // usuario con cuenta (nunca anónimo) o null
+    authSettled: false,       // ya sabemos si hay sesión (evita parpadeo de la tarjeta)
+    sending: false,
+  };
+
   function isRealUser(user) {
     return !!(user && !user.isAnonymous);
   }
@@ -802,6 +822,8 @@
   function sameYMD(a, b) {
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   }
+
+  function pad2(n) { return String(n).padStart(2, "0"); }
 
   const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
   const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -839,7 +861,6 @@
 
   function defaultStartForDay() {
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    const pad = (n) => String(n).padStart(2, "0");
     if (sameYMD(state.selectedDay, today)) {
       const now = new Date();
       // Partido completo: la hora es el INICIO → retrocede la duración entera.
@@ -847,7 +868,7 @@
       const backMin = state.fullMatchMode ? state.amountMin : 5;
       const t = new Date(now.getTime() - backMin * 60 * 1000);
       if (t.getDate() !== now.getDate()) { t.setHours(0, 0, 0, 0); } // no cruzar a ayer
-      $fullStartTime.value = pad(t.getHours()) + ":" + pad(t.getMinutes());
+      $fullStartTime.value = pad2(t.getHours()) + ":" + pad2(t.getMinutes());
     } else {
       // Día pasado: sin "ahora" de referencia — hora de noche típica como default.
       $fullStartTime.value = "20:40";
@@ -921,88 +942,10 @@
     defaultStartForDay();
   });
 
-  function refreshFullMatchGate() {
-    // Con un pedido ya enviado el panel de seguimiento manda: no reaparecer
-    // el form ni el botón por un cambio de auth de fondo.
-    if (state.tracking) return;
-    // La compuerta de sesión real SOLO aplica al partido completo; el flujo
-    // puntual sigue permitiendo invitado (con su throttle de 1/24h).
-    if (!state.fullMatchMode) {
-      $authGate.style.display = "none";
-      $fieldsCommon.style.display = "block";
-      $submit.style.display = "";
-      return;
-    }
-    const user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
-    const ok = isRealUser(user);
-    $authGate.style.display = ok ? "none" : "block";
-    $fieldsCommon.style.display = ok ? "block" : "none";
-    $submit.style.display = ok ? "" : "none";
-  }
-  $fullLoginBtn.addEventListener("click", async function () {
-    if (!window.PuntazoAuth || typeof PuntazoAuth.signIn !== "function") return;
-    $fullLoginBtn.disabled = true;
-    try { await PuntazoAuth.signIn(); } catch (e) { console.warn("[recuperar] signIn falló", e); }
-    $fullLoginBtn.disabled = false;
-  });
-
   function escapeHtml(s) {
-    return String(s || "").replace(/[&<>"']/g, c => ({
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
     }[c]));
-  }
-
-  // ── Estado ─────────────────────────────────────────────────────
-  const state = {
-    step: "clubs",            // 'clubs' | 'canchas' | 'form'
-    catalog: null,
-    selectedClub: null,
-    selectedCancha: null,
-  };
-
-  // ── Throttle anónimo: 1 recuperación / 24h ────────────────────
-  const ANON_THROTTLE_KEY = "pz_recovery_last_anon_ts";
-  const ANON_THROTTLE_MS  = 24 * 60 * 60 * 1000;
-
-  function isAnonUser(user) {
-    return !!(user && user.isAnonymous);
-  }
-
-  function canSendAnon() {
-    try {
-      const last = Number(localStorage.getItem(ANON_THROTTLE_KEY) || 0);
-      if (!last) return { allowed: true };
-      const elapsed = Date.now() - last;
-      if (elapsed >= ANON_THROTTLE_MS) return { allowed: true };
-      const remainingMs = ANON_THROTTLE_MS - elapsed;
-      const hours = Math.ceil(remainingMs / (60 * 60 * 1000));
-      return { allowed: false, hoursLeft: hours };
-    } catch (_) {
-      return { allowed: true };
-    }
-  }
-
-  function markAnonSent() {
-    try { localStorage.setItem(ANON_THROTTLE_KEY, String(Date.now())); } catch (_) {}
-  }
-
-  // ── Auth: garantizar al menos sesión anónima ──────────────────
-  async function ensureAuthReady() {
-    if (!window.firebase || !firebase.auth) return null;
-    const auth = firebase.auth();
-    if (auth.currentUser) return auth.currentUser;
-    return new Promise((resolve) => {
-      const unsub = auth.onAuthStateChanged((u) => {
-        unsub();
-        if (u) { resolve(u); return; }
-        auth.signInAnonymously()
-          .then(cred => resolve(cred.user))
-          .catch(err => {
-            console.error("[recuperar] signInAnonymously falló", err);
-            resolve(null);
-          });
-      });
-    });
   }
 
   // ── Catálogo de clubs (mismo que entrada.html) ────────────────
@@ -1028,6 +971,7 @@
     $form.style.display = "none";
     $selGrid.innerHTML = "";
     $selGrid.classList.remove("one-col");
+    renderWhere();
 
     if (state.step === "clubs") {
       $selBack.style.display = "none";
@@ -1109,18 +1053,28 @@
     }
   });
 
-  $formBack.addEventListener("click", function () {
-    // (2026-09-28) En el shell de app, cambiar de cancha es el mismo selector
-    // global (chip del header); al elegir, la página recarga en esa cancha.
-    if (window.PuntazoAppShell && window.PuntazoContext) { window.PuntazoAppShell.openLocation(); return; }
-    state.step = "canchas";
+  // ── (2026-09-30) "BreakPoint · Cancha 2 · Cambiar" bajo el título ──
+  function canchaNombre(cancha) {
+    if (!cancha) return "";
+    if (cancha.nombre && cancha.nombre !== cancha.id) return cancha.nombre;
+    const m = String(cancha.id || "").match(/(\d+)/);
+    return m ? "Cancha " + m[1] : String(cancha.id || "");
+  }
+  function renderWhere() {
+    const club = state.selectedClub, cancha = state.selectedCancha;
+    if (state.step !== "form" || !club || !cancha) { $where.hidden = true; return; }
+    $whereTxt.textContent = club.nombre + " · " + canchaNombre(cancha);
+    $where.hidden = false;
+  }
+  $whereChange.addEventListener("click", function () {
+    // En el shell de app, cambiar de cancha es el mismo selector global (chip
+    // del header); al elegir, la página recarga en esa cancha.
+    if (window.PuntazoAppShell && typeof window.PuntazoAppShell.openLocation === "function") {
+      window.PuntazoAppShell.openLocation();
+      return;
+    }
     clearFeedback();
-    $after.style.display = "none";
-    stopTracking();
-    state.tracking = false;
-    $track.style.display = "none";
-    $submit.style.display = "";
-    $submit.disabled = false;
+    state.step = state.selectedClub ? "canchas" : "clubs";
     renderSelector();
   });
 
@@ -1129,14 +1083,7 @@
     state.step = "form";
     $selector.style.display = "none";
     $form.style.display = "block";
-
-    // Entrar al form siempre arranca limpio (sin panel de un pedido anterior).
-    stopTracking();
-    state.tracking = false;
-    $track.style.display = "none";
-    $submit.style.display = "";
-    $submit.disabled = false;
-    $after.style.display = "none";
+    clearFeedback();
 
     const club = state.selectedClub;
     const cancha = state.selectedCancha;
@@ -1147,14 +1094,10 @@
       && typeof window.PuntazoPulses.canRequestFullMatchRecovery === "function"
       && window.PuntazoPulses.canRequestFullMatchRecovery(club.id));
 
-    if (state.fullMatchMode) {
-      $formCtx.innerHTML = "Partido completo en <strong>" + escapeHtml(club.nombre) +
-        "</strong> · <strong>" + escapeHtml(cancha.nombre) + "</strong>";
-    } else {
-      $formCtx.innerHTML = "Recuperar puntazo en <strong>" + escapeHtml(club.nombre) +
-        "</strong> · <strong>" + escapeHtml(cancha.nombre) + "</strong>";
-    }
-    $authGate.style.display = "none"; // refreshFullMatchGate() decide si aplica
+    renderWhere();
+    $heroSub.textContent = state.fullMatchMode
+      ? "Elige el tramo de tu partido y lo sacamos de la grabación del club."
+      : "¿A qué hora ocurrió? Lo buscamos en la grabación del club, también de días anteriores.";
     $submit.textContent = state.fullMatchMode ? "Pedir partido completo" : "Buscar mi puntazo";
 
     // F129: si las cámaras del club están temporalmente fuera de línea,
@@ -1205,175 +1148,69 @@
     renderDayStepper();
     renderDuration();
     defaultStartForDay();
-    refreshFullMatchGate();
-    refreshAuthBanner();
-  }
-
-  function toLocalDateTimeInputValue(d) {
-    const pad = (n) => String(n).padStart(2, "0");
-    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate())
-      + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
-  }
-
-  // ── Banner según estado de auth ───────────────────────────────
-  function refreshAuthBanner() {
-    // Partido completo tiene su propia compuerta de sesión (refreshFullMatchGate,
-    // más estricta: exige sesión REAL, no invitado). El banner de aquí es del
-    // flujo puntual (invitado permitido con throttle) — no aplica ahí.
-    if (state.fullMatchMode) { $authBanner.style.display = "none"; return; }
-    const user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
-    if (!user) {
-      $authBanner.style.display = "none";
-      return;
-    }
-    if (isAnonUser(user)) {
-      const status = canSendAnon();
-      if (status.allowed) {
-        $authBanner.className = "rec-banner info";
-        $authBanner.style.display = "block";
-        $authBanner.innerHTML = "Como invitado puedes pedir <strong>1 recuperación cada 24h</strong>. <a href=\"#\" id=\"recSignInLink\">Inicia sesión</a> para pedir más.";
-      } else {
-        $authBanner.className = "rec-banner warn";
-        $authBanner.style.display = "block";
-        $authBanner.innerHTML = "Ya pediste una recuperación como invitado. Vuelve en <strong>~" + status.hoursLeft + "h</strong> o <a href=\"#\" id=\"recSignInLink\">inicia sesión</a> para pedir más.";
-        $submit.disabled = true;
-      }
-      const link = document.getElementById("recSignInLink");
-      if (link) link.addEventListener("click", function (e) {
-        e.preventDefault();
-        if (window.PuntazoAuth && typeof PuntazoAuth.signIn === "function") {
-          PuntazoAuth.signIn();
-        }
-      });
-    } else {
-      $authBanner.style.display = "none";
-      $submit.disabled = false;
-    }
-  }
-
-  // ── Seguimiento EN VIVO del pedido ─────────────────────────────
-  //
-  // Criterio de "listo": NO basta con consumed_at. Ese campo solo significa
-  // "la NUC recogió el pedido" — de hecho la NUC de WellStreet lo sella en
-  // menos de un segundo, mucho antes de que exista video. La prueba real de
-  // que el clip existe es `resolved_video` (el nombre del archivo que la NUC
-  // estampa al publicarlo). Hasta entonces, esto dice "procesando", no
-  // "listo".
-  let _trackUnsub = null;
-  let _trackSlowTimer = null;
-  const TRACK_SLOW_MS = 10 * 60 * 1000; // a los 10 min avisamos que va lento
-
-  function stopTracking() {
-    if (_trackUnsub) { try { _trackUnsub(); } catch (_) {} _trackUnsub = null; }
-    if (_trackSlowTimer) { clearTimeout(_trackSlowTimer); _trackSlowTimer = null; }
+    refreshAuthUI();
   }
 
   function ladoIdOf(cancha) {
     return (cancha && cancha.lados && cancha.lados[0] && cancha.lados[0].id) || "LadoA";
   }
-  function ladoUrl(club, cancha, extra) {
-    return "/lado.html?loc=" + encodeURIComponent(club.id) +
-           "&can=" + encodeURIComponent(cancha.id) +
-           "&lado=" + encodeURIComponent(ladoIdOf(cancha)) + (extra || "");
+
+  // ── Sesión (2026-09-30): recuperar requiere cuenta ────────────
+  // Sin acceso anónimo ni "respaldo sin sesión": Isaac quiere que la gente
+  // haga cuenta. Sin sesión la página se ve completa, pero enviar pide login
+  // y, al iniciar sesión, todo sigue sin recargar (auth.js re-ejecuta el envío).
+  function authUser() {
+    let u = null;
+    try { u = (window.PuntazoAuth && window.PuntazoAuth.currentUser) || null; } catch (_) {}
+    if (!u) {
+      try {
+        if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.auth === "function") {
+          u = firebase.auth().currentUser;
+        }
+      } catch (_) {}
+    }
+    return isRealUser(u) ? u : null;
   }
 
-  function setTrack(kind, icon, title, meta, pct) {
-    $track.style.display = "block";
-    $track.className = "rec-track" + (kind ? " is-" + kind : "");
-    $trackIcon.textContent = icon;
-    $trackTitle.textContent = title;
-    $trackMeta.textContent = meta || "";
-    if (pct != null) $trackFill.style.width = pct + "%";
+  function refreshAuthUI() {
+    $login.hidden = !(state.authSettled && !state.user);
+    if (state.user) $loginErr.hidden = true;
   }
 
-  // anchorDate: momento al que apunta el pedido (para el fallback ?pt= si el
-  // doc se borra antes de que veamos resolved_video).
-  function startTracking(docId, club, cancha, anchorDate, isFull) {
-    stopTracking();
-    state.tracking = true;
-    $trackWatch.style.display = "none";
-    $trackBrowse.style.display = "none";
-    setTrack("", "⏳", "En cola",
-      "Tu pedido llegó. En cuanto la cámara del club lo procese, aquí mismo te aviso.", 12);
+  function onAuthChange() {
+    state.user = authUser();
+    state.authSettled = true;
+    refreshAuthUI();
+    startRequestsWatch(state.user);
+  }
 
-    // Sin sesión no se puede leer el pedido (reglas: solo su creador). En vez
-    // de un seguimiento que va a fallar, se dice qué esperar y dónde buscarlo.
-    const _u = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
-    if (!_u || !docId) {
-      stopTracking();
-      setTrack("", "✅", "Listo, lo estamos buscando",
-        "En unos minutos aparece en los clips de esta cancha, cerca de la hora que elegiste.", 40);
-      $trackBrowse.href = ladoUrl(club, cancha, anchorDate ? ("&pt=" + anchorDate.getTime()) : "");
-      $trackBrowse.style.display = "block";
+  const LOGIN_COPY = {
+    title: "Inicia sesión para recuperar tu puntazo",
+    text: "Así sigues tu pedido en vivo y te avisamos cuando esté listo.",
+    cta: "Continuar con Google",
+  };
+  function askLogin() {
+    const A = window.PuntazoAuth;
+    if (A && typeof A.requireAuth === "function" && !A.currentUser) {
+      // Al iniciar sesión, auth.js corre el envío pendiente (sin recargar).
+      A.requireAuth(function () { submitRequest(); }, LOGIN_COPY);
       return;
     }
-    if (!window.PuntazoFirebase || typeof window.PuntazoFirebase.db !== "function") return;
-    const db = window.PuntazoFirebase.db();
-    const ref = db.collection("pending_pulses").doc(docId);
-
-    let sawReady = false;
-
-    _trackSlowTimer = setTimeout(function () {
-      if (sawReady) return;
-      $trackBrowse.href = ladoUrl(club, cancha,
-        anchorDate ? ("&pt=" + anchorDate.getTime()) : "");
-      $trackBrowse.style.display = "block";
-      $trackMeta.textContent = "Está tardando más de lo normal. Puedes cerrar esta página — "
-        + "cuando esté, te llega la notificación. También puedes revisar los clips de la cancha.";
-    }, TRACK_SLOW_MS);
-
-    _trackUnsub = ref.onSnapshot(function (snap) {
-      if (!snap.exists) {
-        // El doc se limpió. Si nunca vimos resolved_video no podemos afirmar
-        // que exista el video → mandamos a los clips de la cancha en vez de
-        // prometer algo que no podemos comprobar.
-        if (sawReady) return;
-        stopTracking();
-        setTrack("", "📁", "Tu pedido ya se procesó",
-          "Búscalo en los clips de esta cancha. Si no aparece, vuelve a pedirlo.", 100);
-        $trackBrowse.href = ladoUrl(club, cancha,
-          anchorDate ? ("&pt=" + anchorDate.getTime()) : "");
-        $trackBrowse.style.display = "block";
-        return;
-      }
-      const d = snap.data() || {};
-
-      if (d.error_reason) {
-        stopTracking();
-        setTrack("error", "⚠️", "No se pudo generar tu video",
-          "El club no pudo recuperar ese tramo. Intenta con otro horario o pídelo de nuevo.", 100);
-        $trackBrowse.href = ladoUrl(club, cancha, "");
-        $trackBrowse.style.display = "block";
-        return;
-      }
-
-      if (d.resolved_video) {
-        sawReady = true;
-        stopTracking();
-        setTrack("ready", "✅", isFull ? "¡Tu partido está listo!" : "¡Tu puntazo está listo!",
-          "Ya puedes verlo y compartirlo.", 100);
-        $trackWatch.href = ladoUrl(club, cancha, "&video=" + encodeURIComponent(d.resolved_video));
-        $trackWatch.style.display = "inline-flex";
-        $trackBrowse.style.display = "none";
-        return;
-      }
-
-      if (d.consumed_at) {
-        setTrack("", "🎬", isFull ? "Armando tu partido" : "Procesando tu video",
-          isFull
-            ? "El club ya lo está cortando del video de la cancha. Al ser un video largo puede tardar varios minutos."
-            : "El club ya lo está recortando. Normalmente tarda unos minutos.", 55);
-      }
-    }, function (err) {
-      console.warn("[recuperar] seguimiento falló", err && err.code);
-      stopTracking();
-      // Sin seguimiento en vivo, al menos dejamos una salida útil.
-      setTrack("", "📁", "Tu pedido quedó en cola",
-        "No pudimos seguirlo en vivo aquí, pero cuando esté te llega la notificación.", 40);
-      $trackBrowse.href = ladoUrl(club, cancha, "");
-      $trackBrowse.style.display = "block";
-    });
+    if (A && typeof A.signIn === "function") A.signIn();
   }
+
+  $loginBtn.addEventListener("click", async function () {
+    if (!window.PuntazoAuth || typeof PuntazoAuth.signIn !== "function") return;
+    $loginBtn.disabled = true;
+    $loginErr.hidden = true;
+    let res = null;
+    try { res = await PuntazoAuth.signIn(); } catch (e) { console.warn("[recuperar] signIn falló", e); }
+    $loginBtn.disabled = false;
+    if (!res && !authUser()) {
+      $loginErr.textContent = "No se completó el inicio de sesión. Intenta de nuevo.";
+      $loginErr.hidden = false;
+    }
+  });
 
   // ── Submit ─────────────────────────────────────────────────────
   function setFeedback(msg, cls) {
@@ -1385,87 +1222,71 @@
     $feedback.textContent = "";
   }
 
-  $submit.addEventListener("click", async function () {
+  // Valida el formulario y devuelve { eventAt, start, end } o null (con el
+  // motivo ya mostrado). Las restricciones técnicas se mantienen aunque no se
+  // anuncien en la página.
+  function readForm() {
+    const now = new Date();
+    if (!$fullStartTime.value) {
+      setFeedback(state.fullMatchMode ? "Selecciona la hora de inicio." : "Selecciona la hora del puntazo.", "bad");
+      return null;
+    }
+    const range = computeFullRange();
+    if (state.fullMatchMode) {
+      if (!range || isNaN(range.start.getTime()) || isNaN(range.end.getTime())) {
+        setFeedback("Hora inválida.", "bad");
+        return null;
+      }
+      if (range.end.getTime() > now.getTime() + 60 * 1000) {
+        setFeedback("Con esa hora de inicio y duración, el partido terminaría en el futuro. Ajusta la hora o la duración.", "bad");
+        return null;
+      }
+      return { eventAt: null, start: range.start, end: range.end };
+    }
+    if (!range || isNaN(range.anchor.getTime())) {
+      setFeedback("Hora inválida.", "bad");
+      return null;
+    }
+    if (range.anchor.getTime() > now.getTime() + 60 * 1000) {
+      setFeedback("La hora no puede ser en el futuro.", "bad");
+      return null;
+    }
+    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+    if (now.getTime() - range.anchor.getTime() > thirtyDays) {
+      setFeedback("Ese momento ya es muy antiguo para recuperarlo.", "bad");
+      return null;
+    }
+    // eventAt = el momento del puntazo (contrato actual); start/end = ± margen.
+    return { eventAt: range.anchor, start: range.start, end: range.end };
+  }
+
+  async function submitRequest() {
+    if (state.sending) return;
     clearFeedback();
-    $after.style.display = "none";
 
     const club = state.selectedClub;
     const cancha = state.selectedCancha;
-    if (!club || !cancha) {
+    if (state.step !== "form" || !club || !cancha) {
       setFeedback("Falta seleccionar club o cancha.", "bad");
       return;
     }
+    const v = readForm();
+    if (!v) return;
 
-    let eventAt = null, rangeStart = null, rangeEnd = null;
-    const now = new Date();
+    const user = authUser();
+    if (!user) { askLogin(); return; }
 
-    if (state.fullMatchMode) {
-      const authUser = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
-      if (!isRealUser(authUser)) {
-        setFeedback("Necesitas iniciar sesión para pedir tu partido completo.", "bad");
-        refreshFullMatchGate();
-        return;
-      }
-      if (!$fullStartTime.value) {
-        setFeedback("Selecciona la hora de inicio.", "bad");
-        return;
-      }
-      const range = computeFullRange();
-      if (!range || isNaN(range.start.getTime()) || isNaN(range.end.getTime())) {
-        setFeedback("Hora inválida.", "bad");
-        return;
-      }
-      rangeStart = range.start;
-      rangeEnd = range.end;
-      if (rangeEnd.getTime() > now.getTime() + 60 * 1000) {
-        setFeedback("Con esa hora de inicio y duración, el partido terminaría en el futuro. Ajusta la hora o la duración.", "bad");
-        return;
-      }
-    } else {
-      if (!$fullStartTime.value) {
-        setFeedback("Selecciona la hora del puntazo.", "bad");
-        return;
-      }
-      const range = computeFullRange();
-      if (!range || isNaN(range.anchor.getTime())) {
-        setFeedback("Hora inválida.", "bad");
-        return;
-      }
-      eventAt = range.anchor;          // el momento del puntazo (contrato actual)
-      rangeStart = range.start;        // anchor − margen \
-      rangeEnd = range.end;            // anchor + margen  } → ver brief NUC
-      if (eventAt.getTime() > now.getTime() + 60 * 1000) {
-        setFeedback("La hora no puede ser en el futuro.", "bad");
-        return;
-      }
-      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-      if (now.getTime() - eventAt.getTime() > thirtyDays) {
-        setFeedback("Solo se pueden recuperar puntazos de los últimos 30 días.", "bad");
-        return;
-      }
-    }
-
-    // Re-check auth + throttle justo antes de enviar
-    const user = (window.firebase && firebase.auth) ? firebase.auth().currentUser : null;
-    // (2026-09-29) Sin sesión (p. ej. si el acceso de invitado de Firebase está
-    // apagado) también se puede pedir: las reglas permiten crear el pulso sin
-    // auth. Se trata como invitado (mismo límite de 1 cada 24 h en el teléfono).
-    if (!user && state.fullMatchMode) {
-      setFeedback("Inicia sesión para pedir tu partido completo.", "bad");
+    // Mismo momento que un pedido que sigue en curso → no se duplica.
+    const dup = findActiveOverlap(club.id, cancha.id, v.start.getTime(), v.end.getTime());
+    if (dup) {
+      setFeedback("Ya estamos buscando ese momento. Lo ves arriba, en «Tus pedidos».", "warn");
+      flashRequest(dup.id);
       return;
     }
-    if (!user || isAnonUser(user)) {
-      const status = canSendAnon();
-      if (!status.allowed) {
-        setFeedback("Como invitado ya pediste una recuperación. Vuelve en ~" + status.hoursLeft + "h o inicia sesión.", "bad");
-        return;
-      }
-    }
 
+    state.sending = true;
     $submit.disabled = true;
-    setFeedback("Enviando…", "");
-    $feedback.className = "rec-feedback is-visible";
-    $feedback.style.color = "rgba(234,242,255,.78)";
+    setFeedback("Enviando…", "busy");
 
     try {
       let res;
@@ -1473,8 +1294,8 @@
         res = await window.PuntazoPulses.requestFullMatchRecovery({
           loc: club.id,
           can: cancha.id,
-          startAt: rangeStart,
-          endAt: rangeEnd,
+          startAt: v.start,
+          endAt: v.end,
         });
       } else {
         res = await window.PuntazoPulses.requestPulse({
@@ -1482,54 +1303,39 @@
           can: cancha.id,
           // lado: undefined → pulses.js manda null para recovery; la NUC decide
           source: "recovery",
-          event_at: eventAt,
+          event_at: v.eventAt,
           // Margen elegido por el usuario. Campos ADITIVOS: la NUC que aún no
           // los conoce sigue aplicando su ±90s fijo sobre event_at sin romperse.
           margin_sec: state.amountMin * 60,
-          start_at: rangeStart,
-          end_at: rangeEnd,
+          start_at: v.start,
+          end_at: v.end,
         });
-        if (!user || isAnonUser(user)) markAnonSent();
       }
 
-      // El estado real lo cuenta el panel de seguimiento, no un texto fijo:
-      // el mensaje viejo ("estará disponible en ~7 minutos") era una promesa
-      // que nadie verificaba.
-      clearFeedback();
-      $feedback.style.color = "";
-      $after.style.display = "block";
-      // El form queda visible pero ya no se puede re-enviar sin tocar "Pedir otro".
-      $submit.style.display = "none";
-      $fieldsCommon.style.display = "none";
-      recHistAdd({ id: res && res.docId, loc: club.id, can: cancha.id, club: club.nombre, cancha: cancha.nombre,
-        lado: ladoIdOf(cancha), at: (eventAt || rangeStart || new Date()).getTime(), start: rangeStart ? rangeStart.getTime() : null,
-        full: !!state.fullMatchMode, ts: Date.now() });
-      startTracking(res && res.docId, club, cancha,
-        // Ancla = INICIO de la ventana, que es lo que codifica el HHMMSS del
-        // nombre del archivo en ambos modos. Antes se mandaba eventAt en el
-        // flujo puntual: con margen ±3 el clip arranca 180s antes del evento y
-        // el fallback ?pt= (que matchea con tolerancia ±90s) no lo encontraba.
-        rangeStart, state.fullMatchMode);
+      const id = res && res.docId;
+      if (id) {
+        req.seenActive.add(id);
+        // `start` = INICIO de la ventana: es lo que codifica el HHMMSS del
+        // nombre del archivo en ambos modos (fallback ?pt= si el doc se limpia).
+        recHistAdd({
+          id: id, uid: user.uid, loc: club.id, can: cancha.id, club: club.nombre, cancha: canchaNombre(cancha),
+          lado: ladoIdOf(cancha), at: (v.eventAt || v.start).getTime(), start: v.start.getTime(), end: v.end.getTime(),
+          full: !!state.fullMatchMode, ts: Date.now(),
+        });
+      }
+      setFeedback("Listo, ya lo estamos buscando. Síguelo arriba, en «Tus pedidos».", "ok");
+      if (id) flashRequest(id);
     } catch (err) {
       console.error("[recuperar] solicitud falló", err);
-      $feedback.style.color = "";
       const msg = (err && err.message) ? err.message : "Error desconocido";
-      setFeedback("No se pudo enviar: " + msg + ". Intenta de nuevo.", "bad");
+      const known = err && /^(throttled|range_too_short|range_too_long|range_in_future)$/.test(String(err.code || ""));
+      setFeedback(known ? msg : ("No se pudo enviar: " + msg + ". Intenta de nuevo."), "bad");
+    } finally {
+      state.sending = false;
       $submit.disabled = false;
     }
-  });
-
-  $another.addEventListener("click", function () {
-    $after.style.display = "none";
-    stopTracking();
-    state.tracking = false;
-    $track.style.display = "none";
-    $submit.style.display = "";
-    $submit.disabled = false;
-    clearFeedback();
-    state.step = "canchas";
-    renderSelector();
-  });
+  }
+  $submit.addEventListener("click", function () { submitRequest(); });
 
   // ── Prefill ?loc=&can= (entrada.html → "Recuperar puntazo" / CTA roja) ──
   // Sin esto, el link de entrada.html sirve de poco: manda al usuario de
@@ -1544,13 +1350,15 @@
     return params;
   }
 
-  // ── (2026-09-28) Mis recuperaciones (historial en este teléfono) ──
+  // ── Historial local (este teléfono) ───────────────────────────
+  // Solo sirve de respaldo: la fuente de verdad es la consulta en vivo de
+  // pending_pulses. Lo local cubre los pedidos cuyo doc ya se limpió (borró).
   const REC_HIST_KEY = "pz_recuperaciones_v1";
-  const REC_HIST_TTL = 7 * 24 * 3600 * 1000;
+  const REC_HIST_TTL = 14 * 24 * 3600 * 1000;
   function recHistLoad() {
     try {
       const arr = JSON.parse(localStorage.getItem(REC_HIST_KEY) || "[]");
-      return Array.isArray(arr) ? arr.filter(function (x) { return x && x.ts > Date.now() - REC_HIST_TTL; }) : [];
+      return Array.isArray(arr) ? arr.filter(function (x) { return x && x.id && x.ts > Date.now() - REC_HIST_TTL; }) : [];
     } catch (_) { return []; }
   }
   function recHistAdd(item) {
@@ -1558,74 +1366,471 @@
     try {
       const arr = recHistLoad().filter(function (x) { return x.id !== item.id; });
       arr.unshift(item);
-      localStorage.setItem(REC_HIST_KEY, JSON.stringify(arr.slice(0, 15)));
+      localStorage.setItem(REC_HIST_KEY, JSON.stringify(arr.slice(0, 30)));
     } catch (_) {}
-    recHistRender();
+    syncDirectWatches();
+    renderRequests();
   }
-  let _recHistUnsubs = [];
-  function recHistRender() {
-    const box = document.getElementById("recHist");
-    const list = document.getElementById("recHistList");
-    if (!box || !list) return;
-    _recHistUnsubs.forEach(function (u) { try { u(); } catch (_) {} });
-    _recHistUnsubs = [];
-    const items = recHistLoad();
-    if (!items.length) { box.style.display = "none"; return; }
-    box.style.display = "block";
-    function hora(ms) { const d = new Date(ms); const h = d.getHours(); return (h % 12 || 12) + ":" + String(d.getMinutes()).padStart(2, "0") + " " + (h >= 12 ? "PM" : "AM"); }
-    function dia(ms) {
-      const t = new Date(); t.setHours(0, 0, 0, 0);
-      const x = new Date(ms); x.setHours(0, 0, 0, 0);
-      const diff = Math.round((t - x) / 864e5);
-      return diff === 0 ? "Hoy" : diff === 1 ? "Ayer" : x.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
-    }
-    list.innerHTML = items.map(function (it, i) {
-      return '<div class="rec-hist-item" data-i="' + i + '"><div class="rec-hist-main">' +
-        '<div class="rec-hist-when">' + (it.full ? "Partido · " : "") + dia(it.at) + " · ~" + hora(it.at) + "</div>" +
-        '<div class="rec-hist-where">' + escapeHtml(it.club || it.loc) + " · " + escapeHtml(it.cancha || it.can) + "</div></div>" +
-        '<span class="rec-hist-st buscando">Buscando</span></div>';
-    }).join("");
-    let db = null;
-    try { db = window.PuntazoFirebase && PuntazoFirebase.db(); } catch (_) {}
-    items.forEach(function (it, i) {
-      const row = list.querySelector('[data-i="' + i + '"]');
-      const st = row && row.querySelector(".rec-hist-st");
-      if (!row || !st || !db) return;
-      const base = "/lado.html?loc=" + encodeURIComponent(it.loc) + "&can=" + encodeURIComponent(it.can) + "&lado=" + encodeURIComponent(it.lado || "LadoA");
-      function listo(href, txt) {
-        st.className = "rec-hist-st listo"; st.textContent = txt || "Listo";
-        const a = document.createElement("a");
-        a.className = row.className; a.innerHTML = row.innerHTML; a.href = href;
-        row.replaceWith(a);
-      }
-      try {
-        const unsub = db.collection("pending_pulses").doc(it.id).onSnapshot(function (snap) {
-          if (!snap.exists) {
-            // El doc ya se limpió: se procesó, pero sin nombre exacto → a la cancha, cerca de esa hora.
-            if (Date.now() - it.ts > 3 * 60 * 1000) listo(base + (it.start ? "&pt=" + it.start : ""));
-            return;
-          }
-          const d = snap.data() || {};
-          if (d.error_reason) { st.className = "rec-hist-st nada"; st.textContent = "No encontrado"; return; }
-          if (d.resolved_video) listo(base + "&video=" + encodeURIComponent(d.resolved_video));
-        }, function () {
-          // Sin permiso de lectura (sesión expirada/otro dispositivo): no
-          // podemos confirmar el estado; llevamos a la cancha cerca de esa hora.
-          if (Date.now() - it.ts > 3 * 60 * 1000) listo(base + (it.start ? "&pt=" + it.start : ""), "Ver clips");
-        });
-        _recHistUnsubs.push(unsub);
-      } catch (_) {}
+
+  // ── (2026-09-30) Mis pedidos: estado real, en vivo ─────────────
+  //
+  // Fuente de verdad: pending_pulses.where(uid_creator == uid) (solo esa
+  // igualdad y sin orderBy → no requiere índices; limit 50). Se filtra en el
+  // cliente por source y por los últimos 14 días. Los pedidos de este
+  // teléfono que la consulta no trae (doc limpiado, o fuera de los 50) se
+  // leen uno por uno; si ya no existen → "Procesado · búscalo en la cancha".
+  //
+  // Fases (el criterio de "listo" es resolved_video, NO consumed_at: la NUC
+  // sella consumed_at en cuanto toma el pedido, mucho antes de que exista
+  // el video):
+  //   queued      → Enviado, el club aún no lo toma
+  //   taken       → consumed_at: el club lo está recortando
+  //   ready       → resolved_video: el clip existe
+  //   failed      → error_reason: no se pudo (motivo legible)
+  //   gone        → el doc ya no existe: se procesó, sin nombre exacto
+  //   unconfirmed → tomado hace mucho y nunca confirmó el video
+  //   noanswer    → el club nunca lo tomó
+  const REQ_SOURCES = ["recovery", "match_full_recovery"];
+  const REQ_WINDOW_MS = 14 * 24 * 3600 * 1000;
+  const REQ_SLOW_MS = 10 * 60 * 1000;           // sin tomar → "puede estar desconectado"
+  const REQ_TAKEN_STALE_MS = 60 * 60 * 1000;    // tomado sin video tanto tiempo → sin confirmar
+  const REQ_QUEUED_STALE_MS = 12 * 3600 * 1000; // sin tomar tanto tiempo → sin respuesta
+  const REQ_FRESH_TOP_MS = 30 * 60 * 1000;      // recién terminados se quedan arriba un rato
+  const REQ_LOCAL_GRACE_MS = 2 * 60 * 1000;     // recién enviado que la consulta aún no trae
+  const HIST_VISIBLE = 5;
+
+  const req = {
+    uid: null,
+    unsub: null,
+    live: null,          // { id: data } de la consulta; null = aún no llega
+    direct: {},          // { id: data | null } pedidos locales leídos uno por uno
+    directUnsubs: {},
+    seenActive: new Set(), // en curso durante esta visita → al terminar se quedan arriba
+    flashId: null,
+    showAll: false,
+    lastTop: null,
+    lastPast: null,
+  };
+
+  function tsMs(v) {
+    if (!v) return null;
+    if (typeof v === "number") return v;
+    if (v instanceof Date) return v.getTime();
+    if (typeof v.toMillis === "function") { try { return v.toMillis(); } catch (_) { return null; } }
+    if (typeof v.seconds === "number") return v.seconds * 1000;
+    return null;
+  }
+  function canDigit(can) {
+    const m = String(can == null ? "" : can).match(/(\d+)/);
+    return m ? m[1] : String(can == null ? "" : can);
+  }
+  function findClub(loc) {
+    return ((state.catalog && state.catalog.clubs) || []).find(function (c) { return c.id === loc; }) || null;
+  }
+  function findCancha(club, can) {
+    if (!club) return null;
+    const dg = canDigit(can);
+    return (club.canchas || []).find(function (c) { return c.id === can || canDigit(c.id) === dg; }) || null;
+  }
+  function ownsLocal(it) {
+    // Pedidos viejos (sin uid guardado) se intentan leer igual; los de otra
+    // cuenta en este mismo teléfono no se muestran.
+    return !!req.uid && (!it.uid || it.uid === req.uid);
+  }
+
+  function decorate(r) {
+    const local = r.local || {};
+    const club = findClub(r.loc);
+    const cancha = findCancha(club, local.can || r.dg);
+    r.clubName = (club && club.nombre) || local.club || String(r.loc || "").replace(/-/g, " ");
+    r.canchaName = cancha ? canchaNombre(cancha) : (local.cancha || ("Cancha " + r.dg));
+    r.canId = (cancha && cancha.id) || local.can || ("Cancha" + r.dg);
+    r.lado = cancha ? ladoIdOf(cancha) : (local.lado || "LadoA");
+    return r;
+  }
+
+  function reqFromDoc(id, d, local) {
+    local = local || {};
+    const loc = d.club || local.loc;
+    if (!loc) return null;
+    const full = d.source ? d.source === "match_full_recovery" : !!local.full;
+    const eventMs = tsMs(d.event_at);
+    const marginMs = (Number(d.margin_sec) > 0 ? Number(d.margin_sec) : 90) * 1000;
+    const startMs = tsMs(d.start_at) || (eventMs ? eventMs - marginMs : null) || local.start || null;
+    const endMs = tsMs(d.end_at) || (eventMs ? eventMs + marginMs : null) || local.end || null;
+    const createdMs = tsMs(d.created_at) || local.ts || Date.now();
+    const consumedMs = tsMs(d.consumed_at);
+    const now = Date.now();
+    let phase;
+    if (d.error_reason) phase = "failed";
+    else if (d.resolved_video) phase = "ready";
+    else if (d.consumed_at) phase = (now - (consumedMs || createdMs) > REQ_TAKEN_STALE_MS) ? "unconfirmed" : "taken";
+    else phase = (now - createdMs > REQ_QUEUED_STALE_MS) ? "noanswer" : "queued";
+    return decorate({
+      id: id, loc: loc, dg: canDigit(d.cancha != null && d.cancha !== "" ? d.cancha : local.can),
+      full: full, startMs: startMs, endMs: endMs,
+      anchorMs: full ? startMs : (eventMs || local.at || startMs),
+      createdMs: createdMs, phase: phase,
+      reason: d.error_reason || null, video: d.resolved_video || null, local: local,
     });
   }
 
+  function reqFromLocal(it, phase) {
+    return decorate({
+      id: it.id, loc: it.loc, dg: canDigit(it.can), full: !!it.full,
+      startMs: it.start || it.at || null, endMs: it.end || null,
+      anchorMs: it.full ? (it.start || it.at) : (it.at || it.start),
+      createdMs: it.ts, phase: phase, reason: null, video: null, local: it,
+    });
+  }
+
+  function buildRequests() {
+    if (!req.uid) return [];
+    const now = Date.now();
+    const out = {};
+    const locals = recHistLoad().filter(ownsLocal);
+    const localById = {};
+    locals.forEach(function (it) { localById[it.id] = it; });
+    const live = req.live || {};
+    Object.keys(live).forEach(function (id) {
+      const r = reqFromDoc(id, live[id], localById[id]);
+      if (r && now - r.createdMs <= REQ_WINDOW_MS) out[id] = r;
+    });
+    locals.forEach(function (it) {
+      if (out[it.id]) return;
+      const d = req.direct[it.id];
+      let r = null;
+      if (d) r = reqFromDoc(it.id, d, it);
+      else if (d === null) r = reqFromLocal(it, "gone");
+      else if (now - it.ts < REQ_LOCAL_GRACE_MS) r = reqFromLocal(it, "queued"); // recién enviado
+      // Si no: aún no sabemos su estado → no se pinta hasta saberlo.
+      if (r && now - r.createdMs <= REQ_WINDOW_MS) out[it.id] = r;
+    });
+    return Object.keys(out).map(function (k) { return out[k]; })
+      .sort(function (a, b) { return b.createdMs - a.createdMs; });
+  }
+
+  function isActivePhase(p) { return p === "queued" || p === "taken"; }
+
+  function findActiveOverlap(loc, can, startMs, endMs) {
+    const dg = canDigit(can);
+    return buildRequests().find(function (r) {
+      if (!isActivePhase(r.phase) || r.loc !== loc || r.dg !== dg || !r.startMs) return false;
+      const rEnd = r.endMs || (r.startMs + 6 * 60 * 1000);
+      return r.startMs < endMs && startMs < rEnd;
+    }) || null;
+  }
+
+  function syncDirectWatches() {
+    if (!req.uid || req.live === null) return;
+    let db = null;
+    try { db = window.PuntazoFirebase && PuntazoFirebase.db(); } catch (_) {}
+    recHistLoad().forEach(function (it) {
+      if (!ownsLocal(it)) return;
+      if (req.live[it.id]) {
+        // Ya lo trae la consulta: se suelta la lectura directa y su dato (si
+        // luego desaparece de la consulta, se vuelve a leer para saber por qué).
+        if (req.directUnsubs[it.id]) { try { req.directUnsubs[it.id](); } catch (_) {} delete req.directUnsubs[it.id]; }
+        delete req.direct[it.id];
+        return;
+      }
+      if (req.directUnsubs[it.id] || Object.prototype.hasOwnProperty.call(req.direct, it.id)) return;
+      if (!db) { req.direct[it.id] = null; return; }
+      const uid = req.uid;
+      let alive = true; // ninguna respuesta tardía después de soltar la lectura
+      try {
+        const unsub = db.collection("pending_pulses").doc(it.id).onSnapshot(function (snap) {
+          if (!alive || req.uid !== uid) return;
+          let d = null;
+          if (snap.exists) { try { d = snap.data({ serverTimestamps: "estimate" }); } catch (_) { d = snap.data(); } }
+          req.direct[it.id] = d || null;
+          renderRequests();
+        }, function () {
+          // Las reglas no dejan leer un doc que ya no existe → se limpió.
+          if (!alive || req.uid !== uid) return;
+          alive = false;
+          req.direct[it.id] = null;
+          delete req.directUnsubs[it.id];
+          renderRequests();
+        });
+        req.directUnsubs[it.id] = function () { alive = false; try { unsub(); } catch (_) {} };
+      } catch (_) { req.direct[it.id] = null; }
+    });
+  }
+
+  function stopRequestsWatch() {
+    if (req.unsub) { try { req.unsub(); } catch (_) {} req.unsub = null; }
+    Object.keys(req.directUnsubs).forEach(function (k) { try { req.directUnsubs[k](); } catch (_) {} });
+    req.directUnsubs = {};
+    req.direct = {};
+    req.live = null;
+  }
+
+  function startRequestsWatch(user) {
+    const uid = user ? user.uid : null;
+    if (uid === req.uid && (!uid || req.unsub || req.live !== null)) { renderRequests(); return; }
+    stopRequestsWatch();
+    req.uid = uid;
+    req.seenActive = new Set();
+    req.lastTop = req.lastPast = null;
+    if (!uid) { renderRequests(); return; }
+
+    let db = null;
+    try { db = window.PuntazoFirebase && PuntazoFirebase.db(); } catch (_) {}
+    if (!db) { req.live = {}; syncDirectWatches(); renderRequests(); return; }
+    try {
+      req.unsub = db.collection("pending_pulses")
+        .where("uid_creator", "==", uid)
+        .limit(50)
+        .onSnapshot(function (qs) {
+          if (req.uid !== uid) return;
+          const m = {};
+          qs.forEach(function (doc) {
+            let d = null;
+            try { d = doc.data({ serverTimestamps: "estimate" }); } catch (_) { d = doc.data(); }
+            if (d && REQ_SOURCES.indexOf(d.source) >= 0) m[doc.id] = d;
+          });
+          req.live = m;
+          syncDirectWatches();
+          renderRequests();
+        }, function (err) {
+          console.warn("[recuperar] no se pudieron leer mis pedidos", err && err.code);
+          if (req.uid !== uid) return;
+          req.unsub = null;
+          req.live = {};
+          syncDirectWatches();
+          renderRequests();
+        });
+    } catch (e) {
+      console.warn("[recuperar] consulta de pedidos falló", e);
+      req.live = {};
+      syncDirectWatches();
+    }
+    renderRequests();
+  }
+
+  // ── Textos ──
+  function dayLabel(ms) {
+    const t = new Date(); t.setHours(0, 0, 0, 0);
+    const x = new Date(ms); x.setHours(0, 0, 0, 0);
+    const diff = Math.round((t - x) / 864e5);
+    if (diff === 0) return "Hoy";
+    if (diff === 1) return "Ayer";
+    return x.toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" });
+  }
+  function windowLabel(r) {
+    if (!r.startMs) return r.full ? "Partido" : "Puntazo";
+    const pre = r.full ? "Partido · " : "";
+    if (!r.endMs) return pre + dayLabel(r.startMs) + " · ~" + fmtHora12(new Date(r.startMs));
+    const a = new Date(r.startMs), b = new Date(r.endMs);
+    const sameHalf = (a.getHours() >= 12) === (b.getHours() >= 12) && sameYMD(a, b);
+    const left = sameHalf ? fmtHora12(a).replace(/ (AM|PM)$/, "") : fmtHora12(a);
+    return pre + dayLabel(r.startMs) + " · " + left + "–" + fmtHora12(b);
+  }
+  function agoLabel(ms) {
+    const diff = Date.now() - ms;
+    if (diff < 60 * 1000) return "Pedido hace un momento";
+    if (diff < 60 * 60 * 1000) return "Pedido hace " + Math.floor(diff / 60000) + " min";
+    const d = dayLabel(ms);
+    if (d === "Hoy" || d === "Ayer") return "Pedido " + d.toLowerCase() + ", " + fmtHora12(new Date(ms));
+    return "Pedido el " + d;
+  }
+  function reasonText(reason) {
+    const r = String(reason || "").toLowerCase();
+    if (r.indexOf("nvr_window") === 0) return "Ese momento ya no está en la grabación del club.";
+    if (r === "already_processed") return "Ese momento ya se había recuperado. Búscalo en los clips de la cancha.";
+    if (r === "unknown_camera") return "No encontramos la cámara de esa cancha.";
+    if (r === "invalid_anchor") return "La hora pedida no es válida para la grabación.";
+    return "No pudimos sacar ese momento de la grabación.";
+  }
+  function ladoHref(r, extra) {
+    return "/lado.html?loc=" + encodeURIComponent(r.loc) + "&can=" + encodeURIComponent(r.canId) +
+      "&lado=" + encodeURIComponent(r.lado || "LadoA") + (extra || "");
+  }
+  function videoHref(r) { return ladoHref(r, "&video=" + encodeURIComponent(r.video)); }
+  function courtHref(r) { return ladoHref(r, r.startMs ? "&pt=" + r.startMs : ""); }
+
+  function stepsHtml(r) {
+    const s = [
+      { t: "Enviado", c: "done" },
+      { t: "El club lo tomó", c: "" },
+      { t: r.phase === "failed" ? "No encontrado" : "Listo", c: "" },
+    ];
+    if (r.phase === "queued") s[1].c = "now";
+    else if (r.phase === "taken") { s[1].c = "done"; s[2].c = "now"; }
+    else if (r.phase === "ready") { s[0].c = s[1].c = s[2].c = "ok"; }
+    else if (r.phase === "failed") { s[1].c = "done"; s[2].c = "bad"; }
+    else if (r.phase === "noanswer") { /* nunca lo tomó */ }
+    else { s[1].c = "done"; s[2].c = "done"; } // gone / unconfirmed
+    return '<ol class="rec-steps" aria-label="Estado del pedido">' + s.map(function (x) {
+      return '<li class="rec-step ' + x.c + '"' + (x.c === "now" ? ' aria-current="step"' : "") + '><span class="dot"></span>' + x.t + "</li>";
+    }).join("") + "</ol>";
+  }
+
+  function cardMsg(r) {
+    switch (r.phase) {
+      case "queued":
+        if (Date.now() - r.createdMs > REQ_SLOW_MS) {
+          return "El club no lo ha tomado todavía (puede estar desconectado). Te avisamos cuando esté.";
+        }
+        return r.full
+          ? "Normalmente unos minutos; un partido completo tarda más. Te avisamos cuando esté."
+          : "Normalmente 2–5 min. Puedes salir de aquí: te avisamos cuando esté.";
+      case "taken":
+        return r.full
+          ? "El club ya está cortando tu partido. Al ser un video largo puede tardar varios minutos."
+          : "El club ya lo está recortando. Normalmente 2–5 min en total.";
+      case "ready": return r.full ? "¡Tu partido está listo!" : "¡Tu puntazo está listo!";
+      case "failed": return reasonText(r.reason);
+      case "gone": return "Procesado. Búscalo en los clips de la cancha, cerca de esa hora.";
+      case "unconfirmed": return "El club lo procesó pero no nos confirmó el video. Búscalo en los clips de la cancha, cerca de esa hora.";
+      case "noanswer": return "El club no tomó este pedido. Puedes pedirlo de nuevo.";
+    }
+    return "";
+  }
+
+  function cardHtml(r) {
+    let actions = "";
+    if (r.phase === "ready") actions = '<a class="rec-req-btn" href="' + escapeHtml(videoHref(r)) + '">▶ Ver mi video</a>';
+    else if (r.phase === "failed" || r.phase === "noanswer") actions = '<button type="button" class="rec-req-btn ghost" data-retry="' + escapeHtml(r.id) + '">Probar otra hora</button>';
+    else if (r.phase === "gone" || r.phase === "unconfirmed") actions = '<a class="rec-req-link" href="' + escapeHtml(courtHref(r)) + '">Ver los clips de la cancha →</a>';
+    return '<article class="rec-req is-' + r.phase + '" data-req="' + escapeHtml(r.id) + '">' +
+      '<div class="rec-req-top"><div class="rec-req-when">' + escapeHtml(windowLabel(r)) + "</div>" +
+      '<div class="rec-req-ago">' + escapeHtml(agoLabel(r.createdMs)) + "</div></div>" +
+      '<div class="rec-req-where">' + escapeHtml(r.clubName + " · " + r.canchaName) + "</div>" +
+      stepsHtml(r) +
+      '<p class="rec-req-msg">' + escapeHtml(cardMsg(r)) + "</p>" +
+      '<div class="rec-req-actions">' + actions + "</div>" +
+      "</article>";
+  }
+
+  function rowHtml(r) {
+    function main(go) {
+      return '<div class="rec-hist-main"><div class="rec-hist-when">' + escapeHtml(windowLabel(r)) + "</div>" +
+        '<div class="rec-hist-where">' + escapeHtml(r.clubName + " · " + r.canchaName) + "</div>" +
+        (go ? '<div class="rec-hist-where rec-hist-go">' + escapeHtml(go) + "</div>" : "") + "</div>";
+    }
+    if (r.phase === "ready") {
+      return '<a class="rec-hist-item" data-req="' + escapeHtml(r.id) + '" href="' + escapeHtml(videoHref(r)) + '">' + main("Ver video ›") +
+        '<span class="rec-hist-st listo">Listo</span></a>';
+    }
+    if (r.phase === "gone" || r.phase === "unconfirmed") {
+      return '<a class="rec-hist-item" data-req="' + escapeHtml(r.id) + '" href="' + escapeHtml(courtHref(r)) + '">' + main("Búscalo en la cancha ›") +
+        '<span class="rec-hist-st neutral">' + (r.phase === "gone" ? "Procesado" : "Sin confirmar") + "</span></a>";
+    }
+    const main0 = main("");
+    const pill = r.phase === "failed" ? "No encontrado" : "Sin respuesta";
+    return '<div class="rec-hist-item is-col" data-req="' + escapeHtml(r.id) + '">' + main0 +
+      '<span class="rec-hist-st nada">' + pill + "</span>" +
+      '<p class="rec-hist-note">' + escapeHtml(cardMsg(r)) +
+      '<br><button type="button" class="rec-req-btn ghost" data-retry="' + escapeHtml(r.id) + '">Probar otra hora</button></p></div>';
+  }
+
+  function renderRequests() {
+    if (!req.uid) {
+      $active.hidden = true; $hist.hidden = true;
+      $activeList.innerHTML = ""; $histList.innerHTML = "";
+      req.lastTop = req.lastPast = null;
+      return;
+    }
+    const now = Date.now();
+    const top = [], past = [];
+    buildRequests().forEach(function (r) {
+      const active = isActivePhase(r.phase);
+      if (active) req.seenActive.add(r.id);
+      const fresh = (r.phase === "ready" || r.phase === "failed") && now - r.createdMs < REQ_FRESH_TOP_MS;
+      (active || fresh || req.seenActive.has(r.id) ? top : past).push(r);
+    });
+    const topHtml = top.map(cardHtml).join("");
+    if (topHtml !== req.lastTop) { $activeList.innerHTML = topHtml; req.lastTop = topHtml; }
+    $active.hidden = !top.length;
+
+    const shown = req.showAll ? past : past.slice(0, HIST_VISIBLE);
+    const pastHtml = shown.map(rowHtml).join("");
+    if (pastHtml !== req.lastPast) { $histList.innerHTML = pastHtml; req.lastPast = pastHtml; }
+    $hist.hidden = !past.length;
+    $histMore.hidden = req.showAll || past.length <= HIST_VISIBLE;
+    $histMore.textContent = "Ver todos (" + past.length + ")";
+    applyFlash();
+  }
+
+  // Resalta (y lleva a la vista) un pedido: el recién enviado o el duplicado.
+  function flashRequest(id) {
+    req.flashId = id;
+    renderRequests();
+  }
+  function applyFlash() {
+    if (!req.flashId) return;
+    const el = document.querySelector('[data-req="' + (window.CSS && CSS.escape ? CSS.escape(req.flashId) : req.flashId) + '"]');
+    if (!el) return;
+    req.flashId = null;
+    el.classList.remove("is-flash");
+    void el.offsetWidth;
+    el.classList.add("is-flash");
+    setTimeout(function () { el.classList.remove("is-flash"); }, 2400);
+    try { el.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (_) { el.scrollIntoView(); }
+  }
+
+  // "Probar otra hora": abre esa cancha con el día/hora del pedido para ajustarla.
+  function retryFrom(id) {
+    const r = buildRequests().find(function (x) { return x.id === id; });
+    if (!r) return;
+    const club = findClub(r.loc);
+    const cancha = findCancha(club, r.canId);
+    if (!club || !cancha) return;
+    const same = state.step === "form" && state.selectedClub && state.selectedClub.id === club.id &&
+      state.selectedCancha && canDigit(state.selectedCancha.id) === canDigit(cancha.id);
+    if (!same) {
+      state.selectedClub = club;
+      state.selectedCancha = cancha;
+      enterFormStep();
+    }
+    clearFeedback();
+    const anchor = new Date(r.anchorMs || r.startMs || Date.now());
+    const day = new Date(anchor); day.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const minDay = new Date(today); minDay.setDate(minDay.getDate() - FULL_MATCH_DAY_MIN_BACK);
+    if (day.getTime() >= minDay.getTime() && day.getTime() <= today.getTime()) {
+      state.selectedDay = day;
+      renderDayStepper();
+      $fullStartTime.value = pad2(anchor.getHours()) + ":" + pad2(anchor.getMinutes());
+      updateComputedRange();
+    }
+    try { $form.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (_) { $form.scrollIntoView(); }
+    $timeBox.classList.remove("is-flash");
+    void $timeBox.offsetWidth;
+    $timeBox.classList.add("is-flash");
+    setTimeout(function () { $timeBox.classList.remove("is-flash"); }, 2400);
+  }
+
+  function onListClick(e) {
+    const b = e.target && e.target.closest ? e.target.closest("[data-retry]") : null;
+    if (!b) return;
+    e.preventDefault();
+    retryFrom(b.getAttribute("data-retry"));
+  }
+  $activeList.addEventListener("click", onListClick);
+  $histList.addEventListener("click", onListClick);
+  $histMore.addEventListener("click", function () { req.showAll = true; renderRequests(); });
+
+  // Textos relativos ("hace 3 min") y avisos por tiempo ("puede estar desconectado").
+  setInterval(function () { if (req.uid) renderRequests(); }, 30 * 1000);
+
+  // ── Auth: escuchar cambios (login/logout) sin recargar ─────────
+  window.addEventListener("puntazo:auth-changed", onAuthChange);
+  try {
+    if (window.firebase && firebase.apps && firebase.apps.length && typeof firebase.auth === "function") {
+      firebase.auth().onAuthStateChanged(function () { onAuthChange(); });
+    }
+  } catch (_) {}
+  if (authUser()) onAuthChange();
+  // Si Auth nunca responde (red que filtra), igual se muestra qué hacer.
+  setTimeout(function () { if (!state.authSettled) onAuthChange(); }, 5000);
+
   // ── Init ───────────────────────────────────────────────────────
   (async function init() {
-    await Promise.all([
-      loadCatalogSafe(),
-      ensureAuthReady(),
-    ]);
+    await loadCatalogSafe();
 
-    recHistRender();
     const qp = getQueryParams();
     // (2026-09-28) Sin ?loc&can en la URL → club/cancha del contexto global de
     // la app (no volver a preguntar lo que el jugador ya eligió).
@@ -1642,38 +1847,22 @@
       ? (preClub.canchas || []).find(function (c) { return c.id === qp.can; })
       : null;
 
-    if (preClub && !preCancha) {
-      // (2026-09-28) Club conocido, cancha no (o no es de hoy): directo a
-      // canchas. Sin return: cae al final, que pinta y registra el listener de auth.
-      state.selectedClub = preClub;
-      state.step = "canchas";
-    }
     if (preClub && preCancha) {
       state.selectedClub = preClub;
       state.selectedCancha = preCancha;
       enterFormStep();
-      refreshAuthBanner();
-      if (window.firebase && firebase.auth) {
-        firebase.auth().onAuthStateChanged(function () {
-          if (state.step !== "form") return;
-          refreshAuthBanner();
-          if (state.fullMatchMode) refreshFullMatchGate();
-        });
+    } else {
+      if (preClub) {
+        // (2026-09-28) Club conocido, cancha no (o no es de hoy): directo a canchas.
+        state.selectedClub = preClub;
+        state.step = "canchas";
       }
-      return;
+      renderSelector();
     }
-
-    renderSelector();
-    refreshAuthBanner();
-
-    // Re-evaluar banner cuando cambia auth (login/logout)
-    if (window.firebase && firebase.auth) {
-      firebase.auth().onAuthStateChanged(function () {
-        if (state.step !== "form") return;
-        refreshAuthBanner();
-        if (state.fullMatchMode) refreshFullMatchGate();
-      });
-    }
+    refreshAuthUI();
+    // Con el catálogo ya cargado, los pedidos muestran nombres de club/cancha.
+    req.lastTop = req.lastPast = null;
+    renderRequests();
   })();
 })();
 </script>

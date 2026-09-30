@@ -71,7 +71,7 @@
 
 <!-- Módulos Puntazo -->
 <script src="/assets/firebase-core.js"></script>
-<script src="/assets/auth.js?v=20260930"></script>
+<script src="/assets/auth.js?v=20260930b"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/match-expiration.js"></script>
 <!-- F122: aviso "tu puntazo ya está listo" cuando uno o más pulsos del
@@ -706,9 +706,9 @@
     .entrada-header { padding: 22px 18px 20px; }
   }
 </style>
-<link rel="stylesheet" href="/assets/app-shell.css?v=20260930" />
-<script src="/assets/app-context.js?v=20260930"></script>
-<script src="/assets/app-shell.js?v=20260930" defer></script>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260930b" />
+<script src="/assets/app-context.js?v=20260930b"></script>
+<script src="/assets/app-shell.js?v=20260930b" defer></script>
 </head>
 <body class="pz-app">
 
@@ -720,7 +720,7 @@
 
 <!-- Etapa 16.4 F49: header consistente con mi-partido (header.js variant internal) -->
 <div id="nav-root" data-nav-variant="app"></div>
-<script src="/assets/header.js?v=20260930"></script>
+<script src="/assets/header.js?v=20260930b"></script>
 
 <main class="entrada-wrap">
 
@@ -1008,6 +1008,11 @@
     $selGrid.innerHTML = "";
     $selGrid.classList.remove("one-col");
 
+    // (2026-09-30) El header no repite lo que esta pantalla ya pregunta.
+    try {
+      document.body.dataset.pzSelector = selectorState.step === "clubs" ? "club" : "cancha";
+      if (window.PuntazoAppShell) PuntazoAppShell.refresh();
+    } catch (_) {}
     if (selectorState.step === "clubs") {
       $selBack.style.display = "none";
       // Copy distinto según modo
@@ -1079,23 +1084,8 @@
       // Orden de las extras restantes (pedido por Isaac):
       //   1) "¿Sin Puntazo en tu cancha?" → ARRIBA (modos juego standalone).
       //   2) "¿Se te escapó un puntazo?" → abajo (con 🔍 en lugar de flecha).
-      if (!modoBoton) {
-        const extras = document.createElement("div");
-        extras.style.cssText = "grid-column: 1 / -1; display:flex; flex-direction:column; gap:8px; margin-top:8px;";
-        extras.innerHTML =
-          // (2026-08-24) Se retiró la card "¿Sin Puntazo en tu cancha?" que
-          // llevaba a /herramientas.html (Torneo, Americano, King, Marcador).
-          // Esos modos quedaron fuera de uso; la card mandaba a pantallas muertas.
-          // ② ¿Se te escapó un puntazo? — abajo con 🔍 (buscar)
-          '<a href="/recuperar.html" class="sel-card" style="text-decoration:none; min-height:auto; padding:14px 16px; flex-direction:row; align-items:center; justify-content:space-between; gap:12px;">' +
-            '<span style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:2px; flex:1; min-width:0;">' +
-              '<span class="name" style="font-size:.92rem;">¿Se te escapó un puntazo?</span>' +
-              '<span class="meta" style="margin-top:0;">Recupéralo de las últimas 24h</span>' +
-            '</span>' +
-            '<span class="pz-i pz-i--buscar" aria-hidden="true" style="width:26px;height:26px;opacity:.9"></span>' +
-          '</a>';
-        $selGrid.appendChild(extras);
-      }
+      // (2026-09-30) Se quitó "¿Se te escapó un puntazo?" de esta pantalla (Isaac):
+      // aquí solo se elige el club; Recuperar vive en su pestaña.
       return;
     }
 
@@ -1468,7 +1458,7 @@
         const d = snap.exists ? snap.data() : null;
         const on = !!(d && d.live === true &&
                       (d.youtube_url || d.youtube_id || d.channel_id));
-        const hayAnteriores = !!(d && Array.isArray(d.past_streams) && d.past_streams.length);
+        const hayAnteriores = !!(d && Array.isArray(d.past_streams) && d.past_streams.some(function (p) { return p && p.disponible !== false; }));
 
         if (box) {
           if (on) {

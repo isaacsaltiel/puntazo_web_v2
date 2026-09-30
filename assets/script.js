@@ -580,7 +580,7 @@ function renderHourFilterIn(container, videos) {
     const btn = document.createElement("button"); btn.type = "button";
     btn.textContent = `${formatAmPm(h)} - ${formatAmPm((+h+1)%24)}`; btn.className = "btn-filtro";
     if (filtroHoraActivo === h) btn.classList.add("activo");
-    btn.addEventListener("click", () => { trackEvent("filter_hour", gaCtx({ hour: h })); setQueryParams({ filtro: h, pg: 0, video: "" }); populateVideos(); scrollToTop(); });
+    btn.addEventListener("click", () => { try { window.dispatchEvent(new Event("pz:filtro-aplicado")); } catch {} trackEvent("filter_hour", gaCtx({ hour: h })); setQueryParams({ filtro: h, pg: 0, video: "" }); populateVideos(); scrollToTop(); });
     container.appendChild(btn);
   });
   const qBtn = document.createElement("button"); qBtn.textContent = "✕ Quitar filtro"; qBtn.className = "btn-filtro quitar";
@@ -741,6 +741,28 @@ async function downloadWithProgress(url, { onProgress, signal } = {}) {
   return new Blob(chunks, { type });
 }
 
+// (2026-09-30) "Ver en vertical": solo aparece si ese clip YA tiene su vertical
+// (clip_verticals). Abre el feed tipo Reels justo en ese clip. Reemplaza al
+// botón que descargaba el vertical (se confundía con "ver en vertical"); la
+// descarga ahora es un solo botón que pregunta horizontal o vertical.
+function pzPillVerVertical(entry) {
+  const a = document.createElement("a");
+  a.className = "action-pill"; a.dataset.ico = "vertical";
+  a.style.setProperty("--ico", `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6.5' y='2.5' width='11' height='19' rx='2.6'/%3E%3Cpath d='M10.6 9.2v5.6l4.4-2.8z' fill='%23000' stroke-width='1.6'/%3E%3C/svg%3E")`);
+  a.title = "Ver en vertical"; a.setAttribute("aria-label", "Ver en vertical");
+  a.style.display = "none";
+  const V = window.PuntazoVertical;
+  if (V && V.buscar) {
+    V.buscar(entry.nombre).then(d => {
+      if (!d || !d.url) return;
+      a.href = (V.urlFeed ? V.urlFeed(entry) : "/feed.html?loc=" + encodeURIComponent(entry.loc || entry.club || "") +
+        "&can=" + encodeURIComponent(entry.can || entry.cancha || "") + "&v=" + encodeURIComponent(entry.nombre));
+      a.style.display = "";
+    }).catch(() => {});
+  }
+  return a;
+}
+
 function crearSharePill(entry, video) {
   const btn = document.createElement("button");
   btn.type = "button"; btn.className = "action-pill"; btn.dataset.ico = "download"; btn.title = "Descargar video"; btn.setAttribute("aria-label", "Descargar video");
@@ -791,6 +813,19 @@ function crearSharePill(entry, video) {
       btn.style.setProperty("--p", String(percent || 0));   // anillo de progreso (CSS)
     }
   };
+
+  // (2026-09-30) Un solo botón de descarga: si el clip tiene vertical, primero
+  // pregunta cuál (PuntazoVertical.menuDescarga); si no, descarga directo.
+  btn.addEventListener("click", (ev) => {
+    const V = window.PuntazoVertical;
+    if (btn._pzDirecto || state !== "idle" || !V || !V.menuDescarga) return;
+    ev.stopImmediatePropagation();
+    const p = getQueryParams();
+    V.menuDescarga({ nombre: entry.nombre, loc: p.loc, can: p.can, lado: p.lado }, {
+      video,
+      descargarHorizontal: () => { btn._pzDirecto = true; try { btn.click(); } finally { btn._pzDirecto = false; } },
+    });
+  }, true);
 
   btn.addEventListener("click", async () => {
     if (state === "ready" && pendingFile) {
@@ -1049,7 +1084,7 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     accionesClip.appendChild(crearFullscreenPill(real, card, entry));
     // Vertical 9:16 (assets/vertical.js): aparece solo si la NUC ya lo generó.
     if (window.PuntazoVertical) {
-      try { accionesClip.appendChild(window.PuntazoVertical.crearPill(Object.assign({ loc, can, lado }, entry), { video: real })); }
+      try { accionesClip.appendChild(pzPillVerVertical(Object.assign({ loc, can, lado }, entry))); }
       catch (e) { console.warn("[vertical]", e); }
     }
     actionPills.appendChild(accionesClip);
@@ -1315,7 +1350,16 @@ function renderDayFilter(videos, dia) {
       `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>` +
       `<input type="date" aria-label="Elegir fecha"${sorted.length ? ` min="${toIso(sorted[0])}" max="${toIso(sorted[sorted.length-1])}"` : ""}${esFecha ? ` value="${toIso(activo)}"` : ""}>` +
     `</label>`;
+  // (2026-09-30) Filtro activo junto al título (los filtros viven plegados).
+  const etiqueta = document.getElementById("pzFiltroActivo");
+  if (etiqueta) {
+    const t = activo === "hoy" ? "Hoy" : activo === "ayer" ? "Ayer"
+      : esFecha ? new Date(+activo.slice(0,4), +activo.slice(4,6)-1, +activo.slice(6,8)).toLocaleDateString("es-MX",{day:"numeric",month:"short"}) : "";
+    etiqueta.textContent = t; etiqueta.hidden = !t;
+  }
+  document.getElementById("pzFiltroBtn")?.classList.toggle("has-filter", !!activo || !!getQueryParams().filtro);
   const aplicar = (val) => {
+    try { window.dispatchEvent(new Event("pz:filtro-aplicado")); } catch {}
     trackEvent("filter_day", gaCtx({ dia: val || "todos" }));
     setQueryParams({ dia: val, filtro: "", pg: 0, video: "", pt: "" });
     populateVideos(); scrollToTop();

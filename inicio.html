@@ -60,7 +60,7 @@
   Sin club guardado (ni en la URL) → al selector de club (/entrada.html), que
   es lo mismo que hacía la redirección vieja.
 -->
-<script src="/assets/app-context.js?v=20260930"></script>
+<script src="/assets/app-context.js?v=20260930b"></script>
 <script>
   (function () {
     if (!window.PuntazoContext || !PuntazoContext.get()) {
@@ -102,7 +102,7 @@
   .act--reels{grid-column:1 / -1;min-height:auto;flex-direction:row;align-items:center;justify-content:flex-start;background:linear-gradient(135deg,rgba(200,232,53,.16),rgba(200,232,53,.04));border-color:rgba(200,232,53,.45);}
   .act--reels .act-ico{background:rgba(200,232,53,.18);color:#c8e835;}
   .act--reels .act-go{margin-left:auto;font-size:1.4rem;opacity:.9;}
-  .act--reels[hidden]{display:none;}
+  .act--reels[hidden],.act--live[hidden]{display:none;}
   .act--live{grid-column:1 / -1;min-height:auto;flex-direction:row;align-items:center;justify-content:flex-start;}
   .act--full{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.08);}
   .act--full .act-ico{background:rgba(239,68,68,.2);color:#ff6b6b;}
@@ -148,13 +148,23 @@
     .recent .rc:nth-child(n+9){display:none;}
   }
 </style>
-<link rel="stylesheet" href="/assets/app-shell.css?v=20260930" />
-<script src="/assets/app-shell.js?v=20260930" defer></script>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260930b" />
+<script src="/assets/app-shell.js?v=20260930b" defer></script>
+<!-- (2026-09-30) Firebase y compañía en <head> con defer: header.js (arriba del
+     body) los encuentra ya declarados y no los vuelve a inyectar. -->
+<script src="/assets/lib/firebase-9.23.0/firebase-app-compat.js" defer></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js" defer></script>
+<script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js" defer></script>
+<script src="/assets/firebase-core.js" defer></script>
+<script src="/assets/auth.js?v=20260930b" defer></script>
+<script src="/assets/clubs-catalog.js" defer></script>
+<script src="/assets/pulses.js" defer></script>
+<script src="/assets/heartbeat-watcher.js" defer></script>
 </head>
 <body class="pz-app">
 <div class="page-bg"></div>
 <div id="nav-root" data-nav-variant="app"></div>
-<script src="/assets/header.js?v=20260930"></script>
+<script src="/assets/header.js?v=20260930b"></script>
 
 <main class="site-content home">
   <div class="home-hi">
@@ -185,7 +195,7 @@
       <span class="act-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></svg></span>
       <span><span class="act-t">Botón en tu celular</span><span class="act-d" style="display:block">Guarda la jugada desde aquí</span></span>
     </a>
-    <a class="act act--live" id="actLive" href="#">
+    <a class="act act--live" id="actLive" href="#" hidden>
       <span class="live-badge">EN VIVO</span>
       <span class="act-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.4" fill="currentColor"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg></span>
       <span><span class="act-t">Transmisión en vivo</span><span class="act-d" id="actLiveD" style="display:block">Partidos del club</span></span>
@@ -209,14 +219,6 @@
   </div>
 </main>
 
-<script src="/assets/lib/firebase-9.23.0/firebase-app-compat.js" defer></script>
-<script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js" defer></script>
-<script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js" defer></script>
-<script src="/assets/firebase-core.js" defer></script>
-<script src="/assets/auth.js?v=20260930" defer></script>
-<script src="/assets/clubs-catalog.js" defer></script>
-<script src="/assets/pulses.js" defer></script>
-<script src="/assets/heartbeat-watcher.js" defer></script>
 <script>
 (function () {
   "use strict";
@@ -261,12 +263,19 @@
     document.getElementById("actRecoverD").textContent = "Hasta 20 min de lo que ya jugaste";
   }
 
-  // ── ¿El club tiene verticales? → acceso al feed ──
-  try {
-    PuntazoFirebase.db().collection("clip_verticals").where("club", "==", ctx.loc).limit(1).get()
-      .then(function (s) { if (!s.empty) document.getElementById("actReels").hidden = false; })
-      .catch(function () {});
-  } catch (_) {}
+  // ── (2026-09-30) Solo lo que este club SÍ tiene (PuntazoContext.capacidades):
+  // verticales → acceso al feed; transmisiones → tarjeta de En vivo. ──
+  C.capacidades(ctx.loc).then(function (cap) {
+    if (cap.verticales) {
+      var r = document.getElementById("actReels");
+      r.href = "/feed.html?loc=" + e(ctx.loc);
+      r.hidden = false;
+    }
+    if (cap.vivo) {
+      document.getElementById("actLive").hidden = false;
+      if (!cap.vivoAhora) document.getElementById("actLiveD").textContent = "Transmisiones anteriores";
+    }
+  });
 
   // ── Estado de las cámaras del club ──
   try {
@@ -283,7 +292,10 @@
       var on = !!(d && d.live === true && (d.youtube_url || d.youtube_id || d.channel_id));
       var $l = document.getElementById("actLive");
       $l.classList.toggle("is-live", on);
-      document.getElementById("actLiveD").textContent = on ? (d.titulo || "Transmitiendo ahora") : "Partidos del club";
+      if (on) {
+        $l.hidden = false;
+        document.getElementById("actLiveD").textContent = d.titulo || "Transmitiendo ahora";
+      }
     }, function () {});
   } catch (_) {}
   });

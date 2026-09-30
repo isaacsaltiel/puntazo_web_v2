@@ -74,7 +74,7 @@
 <script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/lib/firebase-9.23.0/firebase-auth-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
-<script src="/assets/auth.js?v=20260930"></script>
+<script src="/assets/auth.js?v=20260930b"></script>
 
 <style>
   body {
@@ -228,9 +228,9 @@
   /* (2026-09-28) Shell de app: header fijo de 60px. */
   body.pz-app .live-wrap { padding-top: calc(var(--pz-hdr-h, 60px) + 20px) !important; }
 </style>
-<link rel="stylesheet" href="/assets/app-shell.css?v=20260930" />
-<script src="/assets/app-context.js?v=20260930"></script>
-<script src="/assets/app-shell.js?v=20260930" defer></script>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260930b" />
+<script src="/assets/app-context.js?v=20260930b"></script>
+<script src="/assets/app-shell.js?v=20260930b" defer></script>
 </head>
 <body class="pz-app">
 <div class="page-bg"></div>
@@ -288,7 +288,7 @@
 
 </main>
 
-<script src="/assets/header.js?v=20260930"></script>
+<script src="/assets/header.js?v=20260930b"></script>
 <script>
 (function () {
   "use strict";
@@ -488,7 +488,11 @@
     if (d.organizador_logo) el("logoOrg").src = d.organizador_logo;
 
     el("btnClips").href = "/entrada.html?loc=" + encodeURIComponent(CLUB);
-    renderPastStreams(d.past_streams, { organizador: d.organizador });
+    // (2026-09-30) Solo las que YouTube sí deja ver (tools/stream_check.py marca
+    // `disponible:false` en las que no, p. ej. transmisiones de más de 12 h).
+    var pasadas = (Array.isArray(d.past_streams) ? d.past_streams : []).filter(function (p) { return p && p.disponible !== false; });
+    d.past_streams = pasadas;
+    renderPastStreams(pasadas, { organizador: d.organizador });
 
     if (!live) {
       el("liveBadge").classList.add("hidden");
@@ -501,7 +505,7 @@
         ? "No hay transmisión ahora"
         : "Ahorita no hay transmisión";
       el("offMsg").textContent = hayEscaparate
-        ? "Pero puedes revivir el torneo completo aquí abajo ⬇"
+        ? "Pero puedes ver las transmisiones anteriores aquí abajo."
         : "Cuando el torneo esté al aire, aparece aquí solito. Mientras tanto puedes ver los clips del club.";
       applied = sig;
       return;
