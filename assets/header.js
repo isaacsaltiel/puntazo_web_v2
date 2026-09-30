@@ -274,7 +274,7 @@
     // menú de cuenta los pinta app-shell.js. Sin ☰: los destinos viven en la
     // barra y lo secundario (vivo, herramientas, ayuda…) en el menú de cuenta.
     if (variant === "app") {
-      ensureStyle("/assets/app-shell.css?v=20260929");
+      ensureStyle("/assets/app-shell.css?v=20260930");
       root.innerHTML = `
         <header class="site-header site-header--app">
           <a href="/inicio.html" class="logo-link" aria-label="Puntazo — Inicio">
@@ -294,8 +294,8 @@
           .then(() => { try { window.PuntazoAppShell && window.PuntazoAppShell.refresh(); } catch (_) {} })
           .catch((e) => console.warn("[Puntazo Header] clubs-catalog:", e));
         try {
-          await ensureScript("/assets/app-context.js?v=20260929", () => !!window.PuntazoContext);
-          await ensureScript("/assets/app-shell.js?v=20260929", () => !!window.PuntazoAppShell);
+          await ensureScript("/assets/app-context.js?v=20260930", () => !!window.PuntazoContext);
+          await ensureScript("/assets/app-shell.js?v=20260930", () => !!window.PuntazoAppShell);
         } catch (e) {
           console.error("[Puntazo Header] app shell:", e);
           // Sin shell: el chip al menos lleva al selector (nunca un botón muerto).

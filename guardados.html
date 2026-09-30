@@ -62,12 +62,12 @@
 <script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/util.js"></script>
-<script src="/assets/auth.js?v=20260929"></script>
+<script src="/assets/auth.js?v=20260930"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/metricas.js"></script>
 <script src="/assets/musica.js"></script>
 <script src="/assets/vertical.js?v=20260923b"></script>
-<script src="/assets/card.js?v=20260929"></script>
+<script src="/assets/card.js?v=20260930"></script>
 <style>
   .gd-wrap { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
   .gd-head { margin-bottom:18px; }
@@ -188,14 +188,14 @@
     .gd-open { grid-column:1 / -1; }
   }
 </style>
-<link rel="stylesheet" href="/assets/app-shell.css?v=20260929" />
-<script src="/assets/app-context.js?v=20260929"></script>
-<script src="/assets/app-shell.js?v=20260929" defer></script>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260930" />
+<script src="/assets/app-context.js?v=20260930"></script>
+<script src="/assets/app-shell.js?v=20260930" defer></script>
 </head>
 <body class="pz-app">
 <div class="page-bg"></div>
 <div id="nav-root" data-nav-variant="app"></div>
-<script src="/assets/header.js?v=20260929"></script>
+<script src="/assets/header.js?v=20260930"></script>
 
 <main class="site-content fade-in">
   <div class="gd-wrap">
@@ -220,16 +220,16 @@
     </div>
 
     <div id="gdLogin" class="gd-state" style="display:none">
-      <div class="icon">🔖</div>
+      <div class="icon"><span class="pz-i pz-i--mis-clips" style="width:52px;height:52px;color:rgba(234,242,255,.85)" aria-hidden="true"></span></div>
       <h3>Guarda tus clips y encuéntralos después.</h3>
       <p>Aquí se juntan los clips que guardas y los que pides con el botón digital.</p>
       <button id="gdLoginBtn" class="gd-google"><svg viewBox="0 0 48 48" width="20" height="20"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continuar con Google</button>
     </div>
 
     <div id="gdEmpty" class="gd-state" style="display:none">
-      <div class="icon">📂</div>
+      <div class="icon"><span class="pz-i pz-i--mis-clips" style="width:52px;height:52px;color:rgba(234,242,255,.85)" aria-hidden="true"></span></div>
       <h3>Todavía no tienes clips</h3>
-      <p>Guarda un clip con 🔖 desde la cancha o pide uno con el botón digital, y aparecerá aquí.</p>
+      <p>Guarda un clip con el botón de guardar desde la cancha o pide uno con el botón digital, y aparecerá aquí.</p>
       <a class="btn" id="gdEmptyGo" href="/entrada.html">Ver clips de mi cancha →</a>
     </div>
 
@@ -598,8 +598,8 @@
     const row = document.createElement('button');
     row.type = 'button';
     row.className = 'gd-row';
-    const tag = c._match ? '<span class="gd-tag match">🎾 De tu partido</span>'
-      : (c.origin === 'boton' ? '<span class="gd-tag">📲 Botón digital</span>' : '');
+    const tag = c._match ? '<span class="gd-tag match">De tu partido</span>'
+      : (c.origin === 'boton' ? '<span class="gd-tag">Botón digital</span>' : '');
     row.innerHTML =
       '<span class="gd-thumb"></span>' +
       '<span class="gd-row-main"><span class="gd-time">' + esc(c._hora || c._fecha || 'Clip') + '</span>' +

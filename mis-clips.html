@@ -61,10 +61,10 @@
 <script src="/assets/lib/firebase-9.23.0/firebase-firestore-compat.js"></script>
 <script src="/assets/firebase-core.js"></script>
 <script src="/assets/util.js"></script>
-<script src="/assets/auth.js?v=20260929"></script>
+<script src="/assets/auth.js?v=20260930"></script>
 <script src="/assets/matches.js"></script>
 <script src="/assets/clubs-catalog.js"></script>
-<script src="/assets/header.js?v=20260929"></script>
+<script src="/assets/header.js?v=20260930"></script>
 
 <style>
   html, body {
@@ -269,9 +269,9 @@
     flex-shrink: 0; color: rgba(11,124,255,0.85); font-size: 1.1rem;
   }
 </style>
-<link rel="stylesheet" href="/assets/app-shell.css?v=20260929" />
-<script src="/assets/app-context.js?v=20260929"></script>
-<script src="/assets/app-shell.js?v=20260929" defer></script>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260930" />
+<script src="/assets/app-context.js?v=20260930"></script>
+<script src="/assets/app-shell.js?v=20260930" defer></script>
 </head>
 <body class="pz-app">
 <div class="page-bg"></div>
@@ -289,7 +289,7 @@
          Los del botón aún no entran a la lista de partidos (eso es F136 lado
          NUC); aquí al menos se ven su estado y dónde encontrarlos. -->
     <div id="pulsesSection" style="display:none">
-      <div style="font-size:.9rem;font-weight:800;color:rgba(234,242,255,.85);margin:2px 0 10px;text-transform:uppercase;letter-spacing:.5px">🎯 Tus puntazos de botón</div>
+      <div style="font-size:.9rem;font-weight:800;color:rgba(234,242,255,.85);margin:2px 0 10px;text-transform:uppercase;letter-spacing:.5px">Tus puntazos de botón</div>
       <div id="pulsesList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:26px"></div>
     </div>
 
@@ -300,14 +300,14 @@
     </div>
 
     <div id="loginRequired" class="pz-clips-state" style="display:none">
-      <div class="icon">🔐</div>
+      <div class="icon"><span class="pz-i pz-i--solicitudes" style="width:52px;height:52px;color:rgba(234,242,255,.85)" aria-hidden="true"></span></div>
       <h3>Inicia sesión para ver tus clips</h3>
       <p>Necesitas tu cuenta para ver los clips de tus partidos.</p>
       <button id="loginBtn" class="pz-clips-cta">Iniciar sesión</button>
     </div>
 
     <div id="emptyState" class="pz-clips-state" style="display:none">
-      <div class="icon">🎾</div>
+      <div class="icon"><span class="pz-i pz-i--solicitudes" style="width:52px;height:52px;color:rgba(234,242,255,.85)" aria-hidden="true"></span></div>
       <h3>Aún no tienes clips</h3>
       <p>Inicia un partido y captura tus puntazos. Cuando termine, todos los clips aparecerán aquí agrupados.</p>
       <a href="/entrada.html" class="pz-clips-cta">▶ Jugar</a>

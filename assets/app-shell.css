@@ -217,7 +217,7 @@ body.pz-app .site-content{padding-top:calc(var(--pz-hdr-h) + var(--pz-safe-top) 
   color:#eaf2ff;text-decoration:none;font-size:.94rem;font-weight:700;text-align:left;border-radius:10px;
 }
 .pz-acct-list a:hover,.pz-acct-list button:hover{background:rgba(255,255,255,.05);}
-.pz-acct-list .pz-ico{width:22px;text-align:center;opacity:.85;}
+.pz-acct-list .pz-ico{width:22px;display:inline-flex;justify-content:center;opacity:.85;}
 .pz-acct-sep{height:1px;background:var(--pz-line);margin:6px 0;}
 .pz-acct-list .pz-muted{color:rgba(234,242,255,.6);font-weight:600;font-size:.86rem;min-height:42px;}
 
@@ -242,3 +242,24 @@ body.pz-app{overflow-x:hidden;}
 
 /* Botón "compartir link" de los clips (PuntazoContext.linkPill): ícono de cadena. */
 .action-pill[data-ico="link"]{ --ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1'/%3E%3Cpath d='M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1'/%3E%3C/svg%3E"); }
+
+
+/* (2026-09-29) Íconos de la app (assets/img/iconos/app/*.png, blancos con alfa).
+   Se usan como máscara: toman el color del texto (currentColor). */
+.pz-i{display:inline-block;width:22px;height:22px;flex-shrink:0;background:currentColor;
+  -webkit-mask:var(--i) center/contain no-repeat;mask:var(--i) center/contain no-repeat;vertical-align:middle;}
+.pz-i--marcador{--i:url("/assets/img/iconos/app/marcador.png");}
+.pz-i--sortear{--i:url("/assets/img/iconos/app/sortear.png");}
+.pz-i--torneo5{--i:url("/assets/img/iconos/app/torneo5.png");}
+.pz-i--americano{--i:url("/assets/img/iconos/app/americano.png");}
+.pz-i--king{--i:url("/assets/img/iconos/app/king.png");}
+.pz-i--mis-clips{--i:url("/assets/img/iconos/app/mis-clips.png");}
+.pz-i--solicitudes{--i:url("/assets/img/iconos/app/solicitudes.png");}
+.pz-i--club-cancha{--i:url("/assets/img/iconos/app/club-cancha.png");}
+.pz-i--vivo{--i:url("/assets/img/iconos/app/vivo.png");}
+.pz-i--ayuda{--i:url("/assets/img/iconos/app/ayuda.png");}
+.pz-i--privacidad{--i:url("/assets/img/iconos/app/privacidad.png");}
+.pz-i--para-clubes{--i:url("/assets/img/iconos/app/para-clubes.png");}
+.pz-i--cerrar-sesion{--i:url("/assets/img/iconos/app/cerrar-sesion.png");}
+.pz-i--sin-transmision{--i:url("/assets/img/iconos/app/sin-transmision.png");}
+.pz-i--buscar{--i:url("/assets/img/iconos/app/buscar.png");}

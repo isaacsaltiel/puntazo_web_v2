@@ -98,7 +98,7 @@
 <!-- F122: watcher "puntazo listo" cuando un pending del user pasa a ready.
      Requiere PuntazoAuth (no cargado en lado por default) — pero el módulo
      auto-skipea si no hay PuntazoAuth/PuntazoFirebase disponibles. -->
-<script src="/assets/auth.js?v=20260929"></script>
+<script src="/assets/auth.js?v=20260930"></script>
 <script src="/assets/pending-pulse-watcher.js"></script>
 <script src="/assets/match-confirm-watcher.js"></script>
 <!-- F126: refresh-bar reutilizable. La inicialización vive más abajo en
@@ -503,9 +503,9 @@ body:not(.pz-app) .lado-h1 { display: none; }
   .card-time { font-size: 1.4rem; }
 }
 </style>
-<link rel="stylesheet" href="/assets/app-shell.css?v=20260929" />
-<script src="/assets/app-context.js?v=20260929"></script>
-<script src="/assets/app-shell.js?v=20260929" defer></script>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20260930" />
+<script src="/assets/app-context.js?v=20260930"></script>
+<script src="/assets/app-shell.js?v=20260930" defer></script>
 </head>
 <body class="pz-app">
 
@@ -546,7 +546,7 @@ body:not(.pz-app) .lado-h1 { display: none; }
 
 <!-- ── NAV ── -->
 <div id="nav-root" data-nav-variant="app"></div>
-<script src="/assets/header.js?v=20260929"></script>
+<script src="/assets/header.js?v=20260930"></script>
 
 <!-- ── Banner CTA de partido (Etapa 4) — totalmente aditivo, render desde IIFE al final del body ── -->
 <div id="pz-match-banner"></div>
@@ -658,7 +658,7 @@ body:not(.pz-app) .lado-h1 { display: none; }
 <!-- Botón de Spotify en los clips con música (va antes de script.js, que lo usa al pintar). -->
 <script src="assets/musica.js?v=20260911"></script>
 <script src="assets/vertical.js?v=20260923b"></script>
-<script src="assets/script.js?v=20260929"></script>
+<script src="assets/script.js?v=20260930"></script>
 <!-- Clips en vivo: la NUC publica cada clip en Firestore (clip_states) en cuanto
      lo sube a Dropbox; este módulo lo suma al feed sin esperar al índice del CI. -->
 <script src="assets/clips-en-vivo.js?v=20260911"></script>

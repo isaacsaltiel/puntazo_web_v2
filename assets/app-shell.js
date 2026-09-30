@@ -317,17 +317,17 @@
       : '<div class="pz-acct-head"><span class="pz-acct-ini">' + ICON.user + '</span><div><div class="pz-acct-name">Invitado</div><div class="pz-acct-mail">Guarda tus clips y encuéntralos después.</div></div></div>' +
         '<button type="button" class="pz-acct-login" data-acct-login>' + ICON.google + "Iniciar sesión / crear cuenta</button>";
     var items = [
-      u ? '<a href="/guardados.html"><span class="pz-ico">🔖</span>Mis clips</a>' : "",
-      u ? '<a href="/mis-clips.html"><span class="pz-ico">📲</span>Mis solicitudes del botón</a>' : "",
-      '<button type="button" data-acct-ctx><span class="pz-ico">📍</span>Mi club y cancha' + (c ? "" : "") + "</button>",
-      '<a href="' + esc(toolsUrl()) + '"><span class="pz-ico">🧰</span>Herramientas de juego</a>',
-      '<a href="/vivo.html' + (c ? "?club=" + encodeURIComponent(c.loc) : "") + '"><span class="pz-ico">📡</span>Transmisión en vivo</a>',
+      u ? '<a href="/guardados.html"><span class="pz-ico"><span class="pz-i pz-i--mis-clips" aria-hidden="true"></span></span>Mis clips</a>' : "",
+      u ? '<a href="/mis-clips.html"><span class="pz-ico"><span class="pz-i pz-i--solicitudes" aria-hidden="true"></span></span>Mis solicitudes del botón</a>' : "",
+      '<button type="button" data-acct-ctx><span class="pz-ico"><span class="pz-i pz-i--club-cancha" aria-hidden="true"></span></span>Mi club y cancha' + (c ? "" : "") + "</button>",
+      '<a href="' + esc(toolsUrl()) + '"><span class="pz-ico"><span class="pz-i pz-i--marcador" aria-hidden="true"></span></span>Herramientas de juego</a>',
+      '<a href="/vivo.html' + (c ? "?club=" + encodeURIComponent(c.loc) : "") + '"><span class="pz-ico"><span class="pz-i pz-i--vivo" aria-hidden="true"></span></span>Transmisión en vivo</a>',
       '<div class="pz-acct-sep"></div>',
-      '<a class="pz-muted" href="/preguntas-frecuentes/"><span class="pz-ico">❓</span>Ayuda</a>',
-      '<a class="pz-muted" href="/privacidad.html"><span class="pz-ico">🔒</span>Privacidad</a>',
-      '<a class="pz-muted" href="/para-clubes/"><span class="pz-ico">🏢</span>Para clubes</a>',
-      isAdmin ? '<a class="pz-muted" href="/admin.html"><span class="pz-ico">📊</span>Dashboard admin</a>' : "",
-      u ? '<div class="pz-acct-sep"></div><button type="button" data-acct-logout><span class="pz-ico">↩</span>Cerrar sesión</button>' : ""
+      '<a class="pz-muted" href="/preguntas-frecuentes/"><span class="pz-ico"><span class="pz-i pz-i--ayuda" aria-hidden="true"></span></span>Ayuda</a>',
+      '<a class="pz-muted" href="/privacidad.html"><span class="pz-ico"><span class="pz-i pz-i--privacidad" aria-hidden="true"></span></span>Privacidad</a>',
+      '<a class="pz-muted" href="/para-clubes/"><span class="pz-ico"><span class="pz-i pz-i--para-clubes" aria-hidden="true"></span></span>Para clubes</a>',
+      isAdmin ? '<a class="pz-muted" href="/admin.html"><span class="pz-ico"><span class="pz-i pz-i--para-clubes" aria-hidden="true"></span></span>Dashboard admin</a>' : "",
+      u ? '<div class="pz-acct-sep"></div><button type="button" data-acct-logout><span class="pz-ico"><span class="pz-i pz-i--cerrar-sesion" aria-hidden="true"></span></span>Cerrar sesión</button>' : ""
     ].join("");
     openSheet("acct", sheetHead(u ? "Mi cuenta" : "Cuenta", "") + head + '<div class="pz-acct-list">' + items + "</div>");
     bindSheet();
