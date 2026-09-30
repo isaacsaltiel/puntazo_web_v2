@@ -147,7 +147,11 @@
     var q = ctx.can ? L + "&can=" + e(ctx.can) : null;
     switch (dest) {
       case "inicio":    return "/inicio.html" + L;
-      case "clips":     return q ? "/lado.html" + q + "&lado=" + e(ctx.lado || "LadoA") + "&pg=0" : "/entrada.html?modo=clips&loc=" + e(ctx.loc);
+      case "clips":
+        if (!q) return "/entrada.html?modo=clips&loc=" + e(ctx.loc);
+        // Cancha con verticales (ya sabido): directo al feed vertical.
+        if (canchaVerticalCache(ctx.loc, ctx.can) === true) return "/feed.html" + q;
+        return "/lado.html" + q + "&lado=" + e(ctx.lado || "LadoA") + "&pg=0";
       case "boton":     return q ? "/boton.html" + q : "/entrada.html?modo=boton&loc=" + e(ctx.loc);
       case "recuperar": return "/recuperar.html" + (q || L);
       case "canchas":   return "/entrada.html?modo=clips&loc=" + e(ctx.loc);
@@ -315,6 +319,30 @@
     return _capsP[loc];
   }
 
+  // (2026-09-30) Isaac: en las canchas con verticales, Clips abre en VERTICAL.
+  // canchaVertical(loc, can) → Promise<bool> (consulta clip_verticals) y lo
+  // recuerda 10 min; canchaVerticalCache → lectura síncrona (true/false/null).
+  function vKey(loc, can) { return "pz_vcan_v1_" + loc + "_" + can; }
+  function canchaVerticalCache(loc, can) {
+    try {
+      var c = JSON.parse(sessionStorage.getItem(vKey(loc, can)) || "null");
+      return (c && Date.now() - c.ts < CAPS_TTL) ? !!c.v : null;
+    } catch (e) { return null; }
+  }
+  function canchaVertical(loc, can) {
+    var c = canchaVerticalCache(loc, can);
+    if (c !== null) return Promise.resolve(c);
+    return esperarDb(8000).then(function (db) {
+      if (!db) return false;
+      return conTope(db.collection("clip_verticals").where("club", "==", loc).where("cancha", "==", can).limit(1).get()
+        .then(function (s) { return !s.empty; }).catch(function () { return null; }), 6000, null);
+    }).then(function (v) {
+      if (v === null) return false;   // sin respuesta: no se guarda, se reintenta luego
+      try { sessionStorage.setItem(vKey(loc, can), JSON.stringify({ ts: Date.now(), v: v })); } catch (e) {}
+      return v;
+    });
+  }
+
   // Botón "compartir link" de un clip: comparte clip.html?v= (con vista previa
   // en WhatsApp) en vez del archivo; así quien lo recibe llega a Puntazo.
   function linkPill(nombre) {
@@ -341,5 +369,5 @@
   }
 
   window.PuntazoContext = { get: get, club: club, lastCan: lastCan, set: set, setClub: setClub, clear: clear, names: names, url: url,
-    normCan: normCan, canchaLabel: canchaLabel, fetchClips: fetchClips, fetchClubClips: fetchClubClips, isLocked: isLocked, directUrl: directUrl, linkPill: linkPill, capacidades: capacidades, dateFromName: dateFromName, horaLabel: horaLabel, diaLabel: diaLabel };
+    normCan: normCan, canchaLabel: canchaLabel, fetchClips: fetchClips, fetchClubClips: fetchClubClips, isLocked: isLocked, directUrl: directUrl, linkPill: linkPill, capacidades: capacidades, canchaVertical: canchaVertical, canchaVerticalCache: canchaVerticalCache, dateFromName: dateFromName, horaLabel: horaLabel, diaLabel: diaLabel };
 })();

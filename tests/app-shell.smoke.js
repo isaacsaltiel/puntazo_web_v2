@@ -58,9 +58,13 @@ const noHScroll = (page) => page.evaluate(() => document.documentElement.scrollW
   ok((await p.textContent("#selTitle")).includes("cancha"), "2. Clips sin cancha de hoy → selector de cancha a pantalla completa");
   ok((await p.$$(".sel-card--cancha img.court-icon")).length > 0, "   Selector de cancha con íconos");
   await p.click(".sel-card:has-text('Cancha 2')");
-  await p.waitForURL(/lado\.html/, { timeout: 10000 }).catch(() => {});
+  await p.waitForURL(/(lado|feed)\.html/, { timeout: 10000 }).catch(() => {});
+  await p.waitForTimeout(5000);
+  ok(/feed\.html\?loc=BreakPoint&can=Cancha2/.test(p.url()), "3. Elegir cancha con verticales → Clips abre en VERTICAL");
+  ok(await p.isVisible("#feedVista"), "   Cambio a horizontal visible en el feed");
+  await go(p, "/lado.html?loc=BreakPoint&can=Cancha2&lado=LadoA&vista=h");
   await p.waitForTimeout(2500);
-  ok(/lado\.html\?loc=BreakPoint&can=Cancha2/.test(p.url()), "3. Elegir cancha → clips de esa cancha");
+  ok(/lado\.html/.test(p.url()), "   ?vista=h se queda en horizontal");
   ok(!(await p.isVisible("#filtro-dia .dia-chip")), "   Filtros plegados de inicio (primer clip a la vista)");
   await p.click("#pzFiltroBtn");
   ok(await p.isVisible("#filtro-dia .dia-chip"), "   Botón de filtros despliega Todos/Hoy/Ayer/Fecha");
@@ -73,7 +77,7 @@ const noHScroll = (page) => page.evaluate(() => document.documentElement.scrollW
   ok(true, "   Hoja de canchas con íconos");
   await p.click(".pz-sheet.is-open .pz-court-btn:has-text('Cancha 3')");
   await p.waitForURL(/can=Cancha3/, { timeout: 10000 }).catch(() => {});
-  ok(/lado\.html\?loc=BreakPoint&can=Cancha3/.test(p.url()), "4. Cambiar cancha desde el chip → recarga Clips en Cancha 3");
+  ok(/(lado|feed)\.html\?loc=BreakPoint&can=Cancha3/.test(p.url()), "4. Cambiar cancha desde el chip → Clips de Cancha 3");
 
   await go(p, "/inicio.html");
   ok(/can=Cancha3/.test(await p.getAttribute(".pz-tab[data-tab=clips]", "href")), "   El contexto persiste sin parámetros (localStorage)");
@@ -128,11 +132,12 @@ const noHScroll = (page) => page.evaluate(() => document.documentElement.scrollW
   ok(/lado\.html\?loc=Interpadel&can=Cancha4/.test(p.url()), "QR de cancha (entrada?loc&can&lado) → Clips de esa cancha, sin selección");
   ok(/lado\.html\?loc=Interpadel&can=Cancha4/.test(await p.getAttribute(".pz-tab[data-tab=clips]", "href")), "   …y la cancha del QR queda como la de hoy");
   await go(p, "/lado.html?loc=BreakPoint&can=Cancha1&lado=LadoA");
-  ok(/lado\.html/.test(p.url()) && (await p.textContent("[data-ctx-chip]")).includes("Cancha 1"), "QR viejo a lado.html sigue funcionando y fija el contexto");
+  await p.waitForTimeout(3000);
+  ok(/(lado|feed)\.html/.test(p.url()) && (await p.textContent("[data-ctx-chip]")).includes("Cancha 1"), "QR viejo a lado.html sigue funcionando (vertical si la cancha tiene) y fija el contexto");
   await go(p, "/boton.html?loc=BreakPoint&can=Cancha2");
   ok(/boton\.html\?loc=BreakPoint&can=Cancha2/.test(p.url()), "boton.html?loc&can sigue funcionando");
   await go(p, "/cancha.html?loc=BreakPoint&can=Cancha2");
-  ok(/lado\.html/.test(p.url()), "cancha.html (legacy) sigue redirigiendo a clips");
+  ok(/(lado|feed)\.html/.test(p.url()), "cancha.html (legacy) sigue redirigiendo a clips");
   await go(p, "/entrada.html?qr=INTERPADEL");
   ok(/inicio\.html\?loc=Interpadel/.test(p.url()), "entrada.html?qr=CLUB → Inicio del club");
   await go(p, "/entrada.html?modo=boton");

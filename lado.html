@@ -516,8 +516,25 @@ body.pz-app .lado-head-row .btn-volver-container:empty, body.pz-app .lado-head-r
 }
 </style>
 <link rel="stylesheet" href="/assets/app-shell.css?v=20260930b" />
-<script src="/assets/app-context.js?v=20260930b"></script>
+<script src="/assets/app-context.js?v=20261001"></script>
 <script src="/assets/app-shell.js?v=20260930b" defer></script>
+<script>
+/* (2026-09-30) Isaac: en canchas con verticales, Clips abre en VERTICAL.
+   Se queda en horizontal si se pidió (?vista=h), si viene a un clip concreto
+   (?video= / ?pt=) o a un partido (?matchId=). */
+window.PZ_LADO_A_VERTICAL = function (loc, can) {
+  location.replace("/feed.html?loc=" + encodeURIComponent(loc) + "&can=" + encodeURIComponent(can));
+};
+window.PZ_LADO_QUEDARSE = (function () {
+  var p = new URLSearchParams(location.search);
+  return p.get("vista") === "h" || !!(p.get("video") || p.get("pt") || p.get("matchId"));
+})();
+(function () {
+  var p = new URLSearchParams(location.search), loc = p.get("loc"), can = p.get("can");
+  if (window.PZ_LADO_QUEDARSE || !loc || !can || !window.PuntazoContext) return;
+  if (PuntazoContext.canchaVerticalCache(loc, can) === true) PZ_LADO_A_VERTICAL(loc, can);
+})();
+</script>
 </head>
 <body class="pz-app">
 
@@ -558,7 +575,7 @@ body.pz-app .lado-head-row .btn-volver-container:empty, body.pz-app .lado-head-r
 
 <!-- ── NAV ── -->
 <div id="nav-root" data-nav-variant="app"></div>
-<script src="/assets/header.js?v=20260930b"></script>
+<script src="/assets/header.js?v=20261001"></script>
 
 <!-- ── Banner CTA de partido (Etapa 4) — totalmente aditivo, render desde IIFE al final del body ── -->
 <div id="pz-match-banner"></div>
@@ -1342,14 +1359,16 @@ body.pz-app .lado-head-row .btn-volver-container:empty, body.pz-app .lado-head-r
     if (etiqueta) etiqueta.addEventListener("click", function () { abrir(true); });
     window.addEventListener("pz:filtro-aplicado", function () { abrir(false); });
 
-    // Vista vertical: solo si este club tiene verticales (no prometer lo que no hay).
+    // Vista vertical: solo si ESTA cancha tiene verticales (no prometer lo que
+    // no hay). Si los tiene y no se pidió horizontal, se abre en vertical.
     try {
-      if (window.PuntazoContext && PuntazoContext.capacidades) {
-        PuntazoContext.capacidades(p.loc).then(function (cap) {
-          if (!cap.verticales) return;
+      if (window.PuntazoContext && PuntazoContext.canchaVertical && p.can) {
+        PuntazoContext.canchaVertical(p.loc, p.can).then(function (tiene) {
+          if (!tiene) return;
+          if (!window.PZ_LADO_QUEDARSE) return PZ_LADO_A_VERTICAL(p.loc, p.can);
           var v = document.getElementById("pzVista");
           var a = document.getElementById("pzVistaVertical");
-          a.href = "/feed.html?loc=" + encodeURIComponent(p.loc) + "&can=" + encodeURIComponent(p.can || "");
+          a.href = "/feed.html?loc=" + encodeURIComponent(p.loc) + "&can=" + encodeURIComponent(p.can);
           v.hidden = false;
         });
       }

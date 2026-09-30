@@ -294,7 +294,7 @@
           .then(() => { try { window.PuntazoAppShell && window.PuntazoAppShell.refresh(); } catch (_) {} })
           .catch((e) => console.warn("[Puntazo Header] clubs-catalog:", e));
         try {
-          await ensureScript("/assets/app-context.js?v=20260930b", () => !!window.PuntazoContext);
+          await ensureScript("/assets/app-context.js?v=20261001", () => !!window.PuntazoContext);
           await ensureScript("/assets/app-shell.js?v=20260930b", () => !!window.PuntazoAppShell);
         } catch (e) {
           console.error("[Puntazo Header] app shell:", e);

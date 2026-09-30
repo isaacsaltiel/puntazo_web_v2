@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="/assets/fonts.css" />
 <link rel="stylesheet" href="/assets/estilo.css?v=20260923b" />
 <link rel="stylesheet" href="/assets/app-shell.css?v=20260930b" />
-<script src="/assets/app-context.js?v=20260930b"></script>
+<script src="/assets/app-context.js?v=20261001"></script>
 <script src="/assets/app-shell.js?v=20260930b" defer></script>
 <!-- (2026-09-30) Firebase ANTES de header.js: si header.js no ve estas etiquetas
      inyecta otra copia de firebase-app-compat, que a veces llega tarde, pisa
@@ -191,12 +191,29 @@
   @media (prefers-reduced-motion: reduce) {
     .reel-center, .reel-track, .reel-info, .reel-rail, .reel-sound { transition: none; }
   }
+  .feed-vista { position: fixed; z-index: 20; top: calc(var(--feed-top) + 10px); left: 12px; display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.2); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .feed-vista[hidden] { display: none; }
+  .feed-vista-op { width: 34px; height: 34px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: rgba(255,255,255,.8); text-decoration: none; }
+  .feed-vista-op.is-on { background: #fff; color: #0b1018; }
+  .feed-nuevo { position: fixed; z-index: 20; top: calc(var(--feed-top) + 10px); left: 104px; right: 64px; min-height: 40px; display: flex; align-items: center; padding: 6px 12px; border-radius: 14px; background: rgba(11,124,255,.92); color: #fff; font-size: .74rem; font-weight: 800; line-height: 1.25; text-decoration: none; box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+  .feed-nuevo[hidden] { display: none; }
+  @media (min-width: 1024px) {
+    .feed-vista { left: calc(var(--pz-side-w, 228px) + 16px); }
+    .feed-nuevo { left: calc(var(--pz-side-w, 228px) + 110px); right: auto; max-width: 420px; }
+  }
 </style>
 </head>
 <body class="pz-app">
 <div id="nav-root" data-nav-variant="app"></div>
-<script src="/assets/header.js?v=20260930b"></script>
+<script src="/assets/header.js?v=20261001"></script>
 
+<!-- (2026-09-30) Vertical es la vista predeterminada de Clips en canchas con
+     verticales: este cambio lleva a la lista horizontal (?vista=h). -->
+<div class="feed-vista" id="feedVista" role="group" aria-label="Vista" hidden>
+  <a class="feed-vista-op" id="feedVistaH" href="#" title="Ver en horizontal" aria-label="Ver en horizontal"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="2.5" y="6.5" width="19" height="11" rx="2.5"/></svg></a>
+  <span class="feed-vista-op is-on" title="Vertical" aria-current="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/></svg></span>
+</div>
+<a class="feed-nuevo" id="feedNuevo" href="#" hidden></a>
 <main class="feed" id="feed" aria-label="Clips en vertical">
   <section class="reel"><div class="sk"></div></section>
 </main>
@@ -204,6 +221,46 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   "use strict";
+  // (2026-09-30) Cambio a horizontal y aviso de clip reciente sin vertical.
+  (function vistaYAviso() {
+    try {
+      var q = new URLSearchParams(location.search);
+      var loc = q.get("loc") || (window.PuntazoContext && PuntazoContext.club()) || "";
+      var can = q.get("can") || "";
+      if (q.get("fuente") === "guardados") {
+        document.getElementById("feedVistaH").href = "/guardados.html";
+        document.getElementById("feedVista").hidden = false;
+        return;
+      }
+      if (!loc || !can) return;
+      var e = encodeURIComponent, base = "/lado.html?loc=" + e(loc) + "&can=" + e(can) + "&lado=LadoA";
+      document.getElementById("feedVistaH").href = base + "&pg=0&vista=h";
+      document.getElementById("feedVista").hidden = false;
+      // El vertical sale ~1–3 min después del clip: si el más nuevo de la
+      // cancha aún no está en vertical, se avisa y se ofrece verlo ya.
+      var C = window.PuntazoContext;
+      if (!C || !C.fetchClips) return;
+      Promise.all([
+        C.fetchClips({ loc: loc, can: can, lado: "LadoA" }, 1),
+        (function () {
+          try {
+            return PuntazoFirebase.db().collection("clip_verticals").where("club", "==", loc).where("cancha", "==", can).limit(200).get()
+              .then(function (s) { var m = 0; s.forEach(function (d) { var x = d.data() || {}; var t = x.creado && x.creado.toMillis ? x.creado.toMillis() : 0; var dn = C.dateFromName(x.nombre || (d.id + ".mp4")); if (dn && dn.getTime() > m) m = dn.getTime(); }); return m; });
+          } catch (_) { return Promise.resolve(0); }
+        })()
+      ]).then(function (r) {
+        var h = r[0] && r[0][0];
+        if (!h || !h.date) return;
+        var hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+        if (h.date < hoy || h.date.getTime() <= r[1] + 1000) return;
+        var a = document.getElementById("feedNuevo");
+        a.href = base + "&video=" + e(h.nombre);
+        a.textContent = "Tu clip de las " + C.horaLabel(h.date) + " aún se está pasando a vertical · Verlo en horizontal ›";
+        a.hidden = false;
+      }).catch(function () {});
+    } catch (_) {}
+  })();
+
   var C = window.PuntazoContext;
   var $feed = document.getElementById("feed");
 
@@ -332,6 +389,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function vacioClub() {
     var link = C.url("clips", { loc: club, can: qCan || null, lado: "LadoA" });
+    if (link.indexOf("/lado.html") === 0) link += "&vista=h";   // sin volver a mandar al feed
     return "<strong>" + (qCan ? "Esta cancha aún no tiene clips en vertical" : "Este club aún no tiene clips en vertical") + "</strong>" +
       "<span>Sus clips en horizontal están aquí:</span>" +
       "<a class='feed-btn' href='" + esc(link) + "'>Ver " + (qCan ? "clips de la cancha" : "clips del club") + "</a>";
