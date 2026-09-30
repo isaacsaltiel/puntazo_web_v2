@@ -220,6 +220,52 @@ service cloud.firestore {
     }
 
     // ════════════════════════════════════════════════════
+    // (2026-09-30) Me gusta + conteo de guardados por clip (assets/reacciones.js).
+    // clip_likes/{nombre}/likers/{uid}: el me gusta de cada quien (solo él lo
+    // crea / borra). clip_stats/{nombre}: contadores PÚBLICOS que solo suben o
+    // bajan de 1 en 1 y SOLO en el mismo lote en que se crea / borra el me
+    // gusta o el guardado (usuarios/{uid}/guardados/{nombre}) de quien escribe:
+    // nadie puede inflarlos. Base para el feed de "virales".
+    // ════════════════════════════════════════════════════
+    match /clip_likes/{videoId}/likers/{likerUid} {
+      allow read: if isMe(likerUid);
+      allow create: if isMe(likerUid)
+                    && request.resource.data.keys().hasOnly(['uid', 'at'])
+                    && request.resource.data.uid == likerUid
+                    && request.resource.data.at == request.time;
+      allow delete: if isMe(likerUid);
+      allow update: if false;
+    }
+
+    match /clip_stats/{videoId} {
+      function likePath() {
+        return /databases/$(database)/documents/clip_likes/$(videoId)/likers/$(request.auth.uid);
+      }
+      function savePath() {
+        return /databases/$(database)/documents/usuarios/$(request.auth.uid)/guardados/$(videoId);
+      }
+      function antes(k) { return resource == null ? 0 : resource.data.get(k, 0); }
+      function despues(k) { return request.resource.data.get(k, 0); }
+      function mueve(k, pathFn) {
+        return despues(k) is int
+          && ((despues(k) == antes(k) + 1 && !exists(pathFn) && existsAfter(pathFn))
+           || (despues(k) == antes(k) - 1 && despues(k) >= 0 && exists(pathFn) && !existsAfter(pathFn)));
+      }
+      allow read: if true;
+      allow create: if signedIn()
+                    && ((request.resource.data.keys().hasOnly(['likes']) && despues('likes') == 1
+                          && !exists(likePath()) && existsAfter(likePath()))
+                     || (request.resource.data.keys().hasOnly(['guardados']) && despues('guardados') == 1
+                          && !exists(savePath()) && existsAfter(savePath())));
+      allow update: if signedIn()
+                    && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+                          && mueve('likes', likePath()))
+                     || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['guardados'])
+                          && mueve('guardados', savePath())));
+      allow delete: if false;
+    }
+
+    // ════════════════════════════════════════════════════
     // EXISTENTE — Pulsos pendientes desde web (R4)
     // ════════════════════════════════════════════════════
     match /pending_pulses/{pulseId} {

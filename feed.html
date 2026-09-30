@@ -24,6 +24,7 @@
 <script src="/assets/clubs-catalog.js" defer></script>
 <script src="/assets/util.js" defer></script>
 <script src="/assets/vertical.js?v=20260930b" defer></script>
+<script src="/assets/reacciones.js?v=20260930c" defer></script>
 <!--
   (2026-09-29) Feed de VERTICALES estilo Reels, a pedido de Isaac.
   Fuente: Firestore clip_verticals (lo escribe la NUC, hoy solo BreakPoint).
@@ -42,7 +43,13 @@
   - Toque = pausa / reproduce · mantener presionado = 2x · barra de avance
     arrastrable · botón de sonido (para todos) · teclado en compu
     (espacio, ←/→ ±5 s, ↑/↓ reel anterior / siguiente, M sonido).
-  - Riel: Guardar · Descargar (Horizontal / Vertical) · Compartir · Horizontal.
+  - Riel: Me gusta · Guardar · Descargar (Horizontal / Vertical) · Compartir · Horizontal.
+
+  (2026-09-30) Isaac: lo bueno de un clip normal (~1:15) pasa en los últimos
+  35 s → la PRIMERA vez arranca ahí (ARRANQUE_ULTIMOS_S). Si termina y se
+  vuelve a ver, empieza desde el principio; la barra deja regresar siempre.
+  Me gusta (botón o doble toque) y conteo de me gusta / guardados:
+  assets/reacciones.js (clip_likes + clip_stats).
   Consultas sin índices compuestos: where(club) [+ where(cancha)] y se
   ordena aquí por `creado`.
 -->
@@ -147,6 +154,16 @@
   @media (hover: hover) {
     .rail-item:hover .rail-ico, .reel-rail .action-pill:hover { background: rgba(255,255,255,.16); }
   }
+
+  /* (2026-09-30) Me gusta: corazón rojo + corazón grande al doble toque */
+  .rail-item.is-liked .rail-ico { color: #ff3b5c; }
+  .rail-item.is-liked .rail-ico svg path { fill: currentColor; }
+  .rail-item.is-pop .rail-ico svg { animation: pz-like-pop .38s ease; }
+  @keyframes pz-like-pop { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+  .reel-heart { position: absolute; z-index: 6; width: 110px; height: 110px; margin: -55px 0 0 -55px; pointer-events: none; color: #ff3b5c;
+    filter: drop-shadow(0 6px 18px rgba(0,0,0,.45)); animation: pz-heart .8s ease forwards; }
+  @keyframes pz-heart { 0% { opacity: 0; transform: scale(.4) rotate(-12deg); } 18% { opacity: 1; transform: scale(1.15) rotate(-8deg); } 32% { transform: scale(.95) rotate(-8deg); } 70% { opacity: 1; transform: scale(1) rotate(-8deg); } 100% { opacity: 0; transform: scale(1.1) translateY(-40px) rotate(-8deg); } }
+  @media (prefers-reduced-motion: reduce) { .reel-heart { animation-duration: .01s; } .rail-item.is-pop .rail-ico svg { animation: none; } }
 
   /* Error de un video (link caído, sin red) */
   .reel-err {
@@ -273,6 +290,7 @@ document.addEventListener("DOMContentLoaded", function () {
   var club = qLoc || C.club() || "";
 
   var HOLD_MS = 350;         // mantener presionado = 2x
+  var DOBLE_MS = 260;        // dos toques en menos de esto = me gusta
   var muted = true;          // sonido: estado global de todos los reels
   var activo = null;         // <section> visible
   var io = null;
@@ -311,6 +329,8 @@ document.addEventListener("DOMContentLoaded", function () {
     play: '<svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.2-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>',
     soundOn: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>',
     soundOff: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m23 9-6 6M17 9l6 6"/></svg>',
+    heart: '<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.7 4.5c2.1 0 3.6 1.1 5.3 3 1.7-1.9 3.2-3 5.3-3 3.7 0 5.8 3.8 4.3 7.2C19.5 16.4 12 21 12 21z"/></svg>',
+    heartBig: '<svg viewBox="0 0 24 24" width="110" height="110" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.7 4.5c2.1 0 3.6 1.1 5.3 3 1.7-1.9 3.2-3 5.3-3 3.7 0 5.8 3.8 4.3 7.2C19.5 16.4 12 21 12 21z"/></svg>',
     save: '<svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3h11A1.5 1.5 0 0 1 19 4.5V21l-7-4.6L5 21V4.5A1.5 1.5 0 0 1 6.5 3z"/></svg>',
     // Descargar: flecha hacia abajo sobre una bandeja (inequívoco).
     download: '<svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v11.5M7 10l5 5 5-5"/><path d="M4 16.5v2A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-2"/></svg>',
@@ -321,10 +341,22 @@ document.addEventListener("DOMContentLoaded", function () {
   // ── Datos del clip ──
   function nombreDe(x) { return x.nombre || (x.id + ".mp4"); }
   function t0De(x) { return x.url_feed ? 0 : Math.max(0, Number(x.inicio_punto_s) || 0); }
-  function srcDe(x) {
+  // (2026-09-30) Dónde arranca la PRIMERA vez: el inicio del punto si la NUC
+  // lo marca; si no, en un clip de duración normal (~1:15) los últimos 35 s,
+  // que es donde pasa lo bueno. Clips largos (recuperar, partido) desde 0.
+  var ARRANQUE_ULTIMOS_S = 35, NORMAL_MIN_S = 55, NORMAL_MAX_S = 100;
+  function arranqueDe(x, dur) {
+    var t = t0De(x);
+    if (t > 0 || x.url_feed) return t;
+    var d = Number(dur) || Number(x.duracion_s) || 0;
+    return d >= NORMAL_MIN_S && d <= NORMAL_MAX_S ? Math.max(0, Math.floor(d - ARRANQUE_ULTIMOS_S)) : 0;
+  }
+  // Ya se vio completo una vez → las siguientes empiezan desde el principio.
+  function inicioDe(sec) { return sec._visto ? 0 : arranqueDe(sec._x, duracion(sec)); }
+  function srcDe(x, visto) {
     if (x.url_feed) return C.directUrl(x.url_feed);   // versión ligera del punto (NUC)
     var s = C.directUrl(x.url);
-    var t = t0De(x);
+    var t = visto ? 0 : arranqueDe(x);
     return t > 0 ? s + "#t=" + t.toFixed(1) : s;
   }
   function msDe(x) {
@@ -550,6 +582,14 @@ document.addEventListener("DOMContentLoaded", function () {
   function armarRiel(sec) {
     var x = sec._x, nombre = nombreDe(x), rail = sec.querySelector(".reel-rail");
 
+    if (R()) {
+      var bLike = railBtn(ICO.heart, "Me gusta", "Me gusta");
+      bLike.setAttribute("aria-pressed", "false");
+      bLike.addEventListener("click", function (e) { if (e.detail) bLike.blur(); tocarLike(sec, false); });
+      sec._bLike = bLike;
+      rail.appendChild(bLike);
+    }
+
     var bSave = railBtn(ICO.save, "Guardar", "Guardar en tu perfil");
     bSave.addEventListener("click", function (e) { if (e.detail) bSave.blur(); tocarGuardar(sec); });
     sec._bSave = bSave;
@@ -580,12 +620,66 @@ document.addEventListener("DOMContentLoaded", function () {
     rail.appendChild(aH);
   }
 
+  // ── (2026-09-30) Me gusta y conteos ──
+  function R() { return window.PuntazoReacciones || null; }
+  function lblConteo(n, vacio) { return n > 0 ? R().corto(n) : vacio; }
+  function pintarLike(sec, liked, likes) {
+    var b = sec._bLike; if (!b) return;
+    if (liked !== undefined) {
+      sec._liked = !!liked;
+      b.classList.toggle("is-liked", !!liked);
+      b.setAttribute("aria-pressed", liked ? "true" : "false");
+      b.setAttribute("aria-label", liked ? "Quitar me gusta" : "Me gusta");
+    }
+    if (likes !== undefined) { sec._likes = likes; b.querySelector(".rail-lbl").textContent = lblConteo(likes, "Me gusta"); }
+  }
+  function pintarConteos(sec) {
+    if (!R()) return;
+    var n = nombreDe(sec._x);
+    R().stats(n).then(function (st) {
+      pintarLike(sec, undefined, st.likes);
+      sec._guardados = st.guardados;
+      marcarGuardado(sec, sec._bSave && sec._bSave.classList.contains("is-on"));
+    });
+    R().meGusta(n).then(function (l) { pintarLike(sec, l); });
+  }
+  function tocarLike(sec, doble) {
+    if (!R() || sec._likeando) return;
+    if (doble && sec._liked) return;   // doble toque solo da me gusta (como Instagram)
+    var b = sec._bLike;
+    sec._likeando = true;
+    if (b) b.classList.add("is-busy");
+    R().pedirLike(nombreDe(sec._x), function (err, r) {
+      sec._likeando = false;
+      if (b) b.classList.remove("is-busy");
+      if (err) { if (usuario()) aviso("No se pudo. Intenta de nuevo."); return; }
+      pintarLike(sec, r.liked, r.likes);
+      if (r.liked && b) { b.classList.remove("is-pop"); void b.offsetWidth; b.classList.add("is-pop"); }
+      track(r.liked ? "feed_like" : "feed_quitar_like", { video_name: nombreDe(sec._x), doble: !!doble });
+    });
+    // Sin sesión se abre el login: el botón queda libre.
+    if (!usuario()) { sec._likeando = false; if (b) b.classList.remove("is-busy"); }
+  }
+  function corazon(sec, e) {
+    var f = sec.querySelector(".reel-frame"), r = f.getBoundingClientRect();
+    var h = document.createElement("div");
+    h.className = "reel-heart"; h.innerHTML = ICO.heartBig;
+    h.style.left = ((e && e.clientX ? e.clientX : r.left + r.width / 2) - r.left) + "px";
+    h.style.top = ((e && e.clientY ? e.clientY : r.top + r.height / 2) - r.top) + "px";
+    f.appendChild(h);
+    setTimeout(function () { h.remove(); }, 850);
+  }
+
   function marcarGuardado(sec, si) {
     var b = sec._bSave; if (!b) return;
     b.classList.toggle("is-on", !!si);
-    b.querySelector(".rail-lbl").textContent = si ? "Guardado" : "Guardar";
+    b.querySelector(".rail-lbl").textContent = lblConteoGuardado(sec, si);
     b.setAttribute("aria-label", si ? "Quitar de guardados" : "Guardar en tu perfil");
     b.setAttribute("aria-pressed", si ? "true" : "false");
+  }
+  function lblConteoGuardado(sec, si) {
+    var n = sec._guardados || 0;
+    return R() && n > 0 ? R().corto(n) : (si ? "Guardado" : "Guardar");
   }
   function revisarGuardado(sec) {
     var u = usuario(), n = nombreDe(sec._x);
@@ -616,7 +710,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       if (ya) {
         marcarGuardado(sec, false);
-        await tope(ref.delete(), 10000);
+        await tope(R() ? R().quitarGuardado(ref, n) : ref.delete(), 10000);
         guardadoCache[n] = false;
         aviso("Quitado de guardados");
         track("feed_quitar_guardado", { video_name: n });
@@ -624,12 +718,13 @@ document.addEventListener("DOMContentLoaded", function () {
         marcarGuardado(sec, true);
         var h = null;
         try { h = await tope(horizontalDe(x), 6000); } catch (_) {}
-        await tope(ref.set({
+        var datos = {
           videoId: n, videoUrl: (h && h.url) || "",
           club: x.club || "", cancha: x.cancha || "", lado: ladoDe(x),
           fecha: "", origin: "manual", matchId: null,
           savedAt: firebase.firestore.FieldValue.serverTimestamp(), nombreArchivo: n
-        }, { merge: true }), 10000);
+        };
+        await tope(R() ? R().guardar(ref, datos, n) : ref.set(datos, { merge: true }), 10000);
         guardadoCache[n] = true;
         aviso("¡Guardado en tu perfil!");
         track("feed_guardar", { video_name: n });
@@ -699,7 +794,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function cargarSrc(sec) {
     var v = video(sec);
-    if (v && !v.getAttribute("src") && sec._x) { v.src = srcDe(sec._x); v.preload = "metadata"; }
+    if (v && !v.getAttribute("src") && sec._x) { v.src = srcDe(sec._x, sec._visto); v.preload = "metadata"; sec._arranco = false; }
   }
   function soltar(sec) {
     var v = video(sec);
@@ -739,7 +834,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!v) return;
     if (!v.getAttribute("src")) cargarSrc(sec);
     if (v.paused || v.ended) {
-      if (yaTermino(sec)) { try { v.currentTime = t0De(sec._x); } catch (_) {} }
+      if (yaTermino(sec)) { sec._visto = true; try { v.currentTime = 0; } catch (_) {} }
       sec._terminando = false;
       reproducir(sec);
       track("feed_play", { video_name: nombreDe(sec._x) });
@@ -756,8 +851,15 @@ document.addEventListener("DOMContentLoaded", function () {
     pintarBarra(sec, v.currentTime / d);
   }
   function alTerminar(sec) {
+    sec._visto = true;
     var sig = siguiente(sec);
-    if (!sig) { sec.classList.add("is-paused"); return; }   // el último: queda en pausa
+    if (!sig) {   // el último: se repite desde el principio
+      var v0 = video(sec);
+      sec._terminando = false;
+      try { v0.currentTime = 0; } catch (_) {}
+      if (activo === sec) reproducir(sec); else sec.classList.add("is-paused");
+      return;
+    }
     if (sec._autoT) return;
     sec._terminando = true;
     var n = sec.querySelector(".reel-next"); n.style.display = "block";
@@ -808,6 +910,11 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
     v.addEventListener("loadedmetadata", function () {
+      if (!sec._arranco) {
+        sec._arranco = true;
+        var t = inicioDe(sec);
+        if (t > 0 && !sec._movido && !sec._scrub && v.currentTime < t - 1) { try { v.currentTime = t; } catch (_) {} }
+      }
       var d = duracion(sec);
       if (d) pintarBarra(sec, v.currentTime / d);
       sec._scrubEl.setAttribute("aria-valuemax", String(Math.round(d)));
@@ -867,7 +974,17 @@ document.addEventListener("DOMContentLoaded", function () {
       var h = g; g = null;
       if (h.hold) { terminar2x(sec); return; }   // soltar después de 2x NO pausa
       if (cancelado || h.movido) return;
-      alternar(sec);
+      // (2026-09-30) Doble toque = me gusta (corazón grande donde tocó).
+      var ahora = Date.now();
+      if (R() && sec._tapT && ahora - sec._tapUlt < DOBLE_MS) {
+        clearTimeout(sec._tapT); sec._tapT = 0;
+        corazon(sec, e);
+        tocarLike(sec, true);
+        return;
+      }
+      sec._tapUlt = ahora;
+      if (!R()) { alternar(sec); return; }
+      sec._tapT = setTimeout(function () { sec._tapT = 0; alternar(sec); }, DOBLE_MS);
     }
     tap.addEventListener("pointerup", function (e) { fin(e, false); });
     tap.addEventListener("pointercancel", function (e) { fin(e, true); });
@@ -951,12 +1068,13 @@ document.addEventListener("DOMContentLoaded", function () {
     sec._terminando = false; sec._movido = false;
     var v = video(sec);
     cargarSrc(sec);
-    if (yaTermino(sec)) { try { v.currentTime = t0De(sec._x); } catch (_) {} }
+    if (yaTermino(sec)) { sec._visto = true; try { v.currentTime = 0; } catch (_) {} }
     sec.classList.remove("is-paused");
     reproducir(sec);
     vigilarCarga(sec);
     track("feed_ver", { video_name: nombreDe(sec._x) });
     revisarGuardado(sec);
+    pintarConteos(sec);
     // Deja listo el clip horizontal (Guardar / Descargar) si se queda viendo.
     setTimeout(function () { if (activo === sec) horizontalDe(sec._x); }, 2500);
     var reels = todos(), i = reels.indexOf(sec);
@@ -995,6 +1113,7 @@ document.addEventListener("DOMContentLoaded", function () {
       case "ArrowUp": e.preventDefault(); irA(anterior(sec)); break;
       case "ArrowDown": e.preventDefault(); irA(siguiente(sec)); break;
       case "m": case "M": e.preventDefault(); ponerSonido(muted); break;
+      case "l": case "L": e.preventDefault(); if (!sec._liked) corazon(sec, null); tocarLike(sec, false); break;
     }
   });
 
@@ -1011,7 +1130,16 @@ document.addEventListener("DOMContentLoaded", function () {
     var u = e.detail && e.detail.user;
     if (GUARDADOS && u && esperandoLogin) { cargar(); return; }
     if (!GUARDADOS) guardadoCache = {};
-    if (activo) revisarGuardado(activo);
+    if (activo) { revisarGuardado(activo); pintarConteos(activo); }
+  });
+  window.addEventListener("pz:reaccion", function (e) {
+    var dt = e.detail || {};
+    todos().forEach(function (sec) {
+      if (nombreDe(sec._x) !== dt.nombre) return;
+      pintarLike(sec, dt.liked, dt.likes);
+      sec._guardados = dt.guardados;
+      marcarGuardado(sec, sec._bSave && sec._bSave.classList.contains("is-on"));
+    });
   });
 
   // Al volver a la pestaña, el activo sigue; al irse, se pausa.

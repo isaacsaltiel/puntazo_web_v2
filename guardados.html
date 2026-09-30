@@ -67,7 +67,8 @@
 <script src="/assets/metricas.js"></script>
 <script src="/assets/musica.js"></script>
 <script src="/assets/vertical.js?v=20260930b"></script>
-<script src="/assets/card.js?v=20260930b"></script>
+<script src="/assets/reacciones.js?v=20260930c"></script>
+<script src="/assets/card.js?v=20260930c"></script>
 <style>
   .gd-wrap { max-width:860px; margin:0 auto; padding:24px 16px 60px; }
   .gd-head { margin-bottom:18px; }
@@ -714,13 +715,16 @@
             club: c.club, cancha: c.cancha, lado: c.lado, fecha: c.fecha,
             origin: 'boton', matchId: c.matchId || null, ts: c.ts || tsFromNombre(c.nombre),
           });
-          // persistir best-effort (durable más allá de la ventana del JSON)
-          db.collection('usuarios').doc(uid).collection('guardados').doc(c.nombre).set({
+          // persistir best-effort (durable más allá de la ventana del JSON);
+          // (2026-09-30) cuenta en clip_stats.guardados como cualquier guardado.
+          const refG = db.collection('usuarios').doc(uid).collection('guardados').doc(c.nombre);
+          const datosG = {
             videoId: c.nombre, videoUrl: c.url, club: c.club, cancha: c.cancha, lado: c.lado,
             fecha: c.fecha, origin: 'boton', matchId: c.matchId || null,
             savedAt: (firebase && firebase.firestore ? firebase.firestore.FieldValue.serverTimestamp() : new Date()),
             nombreArchivo: c.nombre,
-          }, { merge: true }).catch(function () {});
+          };
+          (window.PuntazoReacciones ? window.PuntazoReacciones.guardar(refG, datosG, c.nombre) : refG.set(datosG, { merge: true })).catch(function () {});
         });
       } catch (_) {}
 

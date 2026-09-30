@@ -90,13 +90,18 @@ window.PuntazoCard = (function () {
       matchId: entry.matchId || null,
       savedAt:getTs(), nombreArchivo:entry.nombre,
     };
-    await db.collection('usuarios').doc(user.uid).collection('guardados').doc(entry.nombre).set(meta,{merge:true});
+    const ref = db.collection('usuarios').doc(user.uid).collection('guardados').doc(entry.nombre);
+    // (2026-09-30) Con conteo de guardados (assets/reacciones.js).
+    if (window.PuntazoReacciones) await window.PuntazoReacciones.guardar(ref, meta, entry.nombre);
+    else await ref.set(meta,{merge:true});
   }
 
   async function unsaveVideo(videoId) {
     const user=getUser(), db=getDb();
     if (!user||!db) throw new Error('Sin auth/DB');
-    await db.collection('usuarios').doc(user.uid).collection('guardados').doc(videoId).delete();
+    const ref = db.collection('usuarios').doc(user.uid).collection('guardados').doc(videoId);
+    if (window.PuntazoReacciones) await window.PuntazoReacciones.quitarGuardado(ref, videoId);
+    else await ref.delete();
   }
 
   // ── Fullscreen ─────────────────────────────────────────────
@@ -518,6 +523,8 @@ function pzPillVerVerticalCard(entry) {
     pillsEl.className = 'action-pills';
     const grupo = document.createElement('div');
     grupo.className = 'acciones-clip';
+    // (2026-09-30) Me gusta con su conteo (assets/reacciones.js).
+    if (opts.showShare && window.PuntazoReacciones) { try { grupo.appendChild(window.PuntazoReacciones.crearPillLike(entry.nombre)); } catch (e) { console.warn('[like]', e); } }
     if (opts.showShare) grupo.appendChild(buildSharePill(entry, { shareMessage: opts.shareMessage, video }));
     if (opts.showShare && window.PuntazoContext && PuntazoContext.linkPill) grupo.appendChild(PuntazoContext.linkPill(entry.nombre));
     if (opts.showSave)  grupo.appendChild(buildSavePill(entry, { onUnsave: opts.onUnsave }));

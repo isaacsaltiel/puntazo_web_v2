@@ -687,11 +687,16 @@ async function isVideoSavedForCurrentUser(videoId) {
 }
 async function saveVideoForCurrentUser(meta) {
   const user = getAuthUser(), db = getFirestoreDb(); if (!user || !db) throw new Error("Sin usuario/DB");
-  await db.collection("usuarios").doc(user.uid).collection("guardados").doc(meta.videoId).set(meta, { merge: true });
+  const ref = db.collection("usuarios").doc(user.uid).collection("guardados").doc(meta.videoId);
+  // (2026-09-30) Con conteo de guardados (assets/reacciones.js).
+  if (window.PuntazoReacciones) await window.PuntazoReacciones.guardar(ref, meta, meta.videoId);
+  else await ref.set(meta, { merge: true });
 }
 async function unsaveVideoForCurrentUser(videoId) {
   const user = getAuthUser(), db = getFirestoreDb(); if (!user || !db) throw new Error("Sin usuario/DB");
-  await db.collection("usuarios").doc(user.uid).collection("guardados").doc(videoId).delete();
+  const ref = db.collection("usuarios").doc(user.uid).collection("guardados").doc(videoId);
+  if (window.PuntazoReacciones) await window.PuntazoReacciones.quitarGuardado(ref, videoId);
+  else await ref.delete();
 }
 
 // ----------------------- Botones pill -----------------------
@@ -1078,6 +1083,8 @@ async function renderPaginaActual({ fueCambioDePagina = false } = {}) {
     // abajo": el anuncio va pegado a CADA clip, donde se busca.
     const actionPills = document.createElement("div"); actionPills.className = "action-pills";
     const accionesClip = document.createElement("div"); accionesClip.className = "acciones-clip";
+    // (2026-09-30) Me gusta con su conteo (assets/reacciones.js), primero como en el feed.
+    if (window.PuntazoReacciones) { try { accionesClip.appendChild(window.PuntazoReacciones.crearPillLike(entry.nombre)); } catch (e) { console.warn("[like]", e); } }
     accionesClip.appendChild(crearSharePill(entry, real));
     if (window.PuntazoContext && PuntazoContext.linkPill) accionesClip.appendChild(PuntazoContext.linkPill(entry.nombre));
     accionesClip.appendChild(crearSavePill(entry, loc, can, lado));
