@@ -2407,6 +2407,18 @@
       "count": 6
     },
     {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "date": "2026-10-03",
+      "count": 6
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "date": "2026-10-03",
+      "count": 6
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-10-13",
@@ -4528,12 +4540,6 @@
       "loc": "interpadel",
       "can": "cancha5",
       "date": "2026-10-01",
-      "count": 3
-    },
-    {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha2",
-      "date": "2026-10-03",
       "count": 3
     },
     {
@@ -8233,8 +8239,8 @@
       "count": 1
     },
     {
-      "loc": "breakpoint",
-      "can": "cancha2",
+      "loc": "wellstreet-padel",
+      "can": "cancha3",
       "date": "2026-10-03",
       "count": 1
     }
@@ -8512,6 +8518,12 @@
     },
     {
       "loc": "breakpoint",
+      "can": "cancha2",
+      "hour": "16",
+      "count": 46
+    },
+    {
+      "loc": "breakpoint",
       "can": "cancha1",
       "hour": "07",
       "count": 46
@@ -8538,12 +8550,6 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "11",
-      "count": 44
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha2",
-      "hour": "16",
       "count": 44
     },
     {
@@ -8691,6 +8697,12 @@
       "count": 31
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "hour": "15",
+      "count": 30
+    },
+    {
       "loc": "wellstreet-pickleball",
       "can": "cancha1",
       "hour": "01",
@@ -8721,12 +8733,6 @@
       "count": 28
     },
     {
-      "loc": "breakpoint",
-      "can": "cancha2",
-      "hour": "15",
-      "count": 28
-    },
-    {
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "08",
@@ -8754,6 +8760,12 @@
       "loc": "interpadel",
       "can": "cancha3",
       "hour": "18",
+      "count": 25
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "hour": "14",
       "count": 25
     },
     {
@@ -8790,12 +8802,6 @@
       "loc": "interpadel",
       "can": "cancha3",
       "hour": "19",
-      "count": 24
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha2",
-      "hour": "14",
       "count": 24
     },
     {
@@ -9525,6 +9531,12 @@
       "count": 10
     },
     {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "hour": "13",
+      "count": 10
+    },
+    {
       "loc": "wellstreet-padel",
       "can": "cancha1",
       "hour": "13",
@@ -9617,6 +9629,12 @@
     {
       "loc": "wellstreet-pickleball",
       "can": "cancha2",
+      "hour": "14",
+      "count": 9
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
       "hour": "12",
       "count": 9
     },
@@ -9672,18 +9690,6 @@
       "loc": "wellstreet-padel",
       "can": "cancha2",
       "hour": "22",
-      "count": 8
-    },
-    {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha2",
-      "hour": "13",
-      "count": 8
-    },
-    {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha2",
-      "hour": "14",
       "count": 8
     },
     {
@@ -10836,6 +10842,12 @@
       "loc": "wellstreet-pickleball",
       "can": "cancha6",
       "hour": "02",
+      "count": 1
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha3",
+      "hour": "20",
       "count": 1
     }
   ],
@@ -23276,7 +23288,7 @@
       "can": "cancha2",
       "date": "2026-10-03",
       "counts_por_lado": {
-        "ladoa": 3
+        "ladoa": 6
       },
       "diff": 0
     },
@@ -23285,7 +23297,7 @@
       "can": "cancha2",
       "date": "2026-10-03",
       "counts_por_lado": {
-        "ladoa": 1
+        "ladoa": 6
       },
       "diff": 0
     },
@@ -23297,7 +23309,16 @@
         "ladoa": 5
       },
       "diff": 0
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha3",
+      "date": "2026-10-03",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-10-03T18:51:49.749279+00:00"
+  "generated_at_utc": "2026-10-04T03:06:40.659359+00:00"
 }
