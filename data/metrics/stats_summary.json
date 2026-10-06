@@ -1,16 +1,44 @@
 {
-  "generado_el": "2026-10-06T14:13:44.994812+00:00",
+  "generado_el": "2026-10-06T14:40:47.811250+00:00",
   "totales": {
-    "videos_historico": 7715,
-    "dias_con_videos": 328,
+    "videos_historico": 7726,
+    "dias_con_videos": 329,
     "clubs_activos": 10,
     "clubs": 5,
     "canchas": 21,
     "lados": 23,
-    "videos_activos": 21,
+    "videos_activos": 22,
     "videos_vitrina": 305
   },
   "historial": [
+    {
+      "fecha": "2026-10-06",
+      "loc": "breakpoint",
+      "can": "cancha5",
+      "lado": "ladoa",
+      "count": 2
+    },
+    {
+      "fecha": "2026-10-06",
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "lado": "ladoa",
+      "count": 2
+    },
+    {
+      "fecha": "2026-10-06",
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "lado": "ladoa",
+      "count": 2
+    },
+    {
+      "fecha": "2026-10-06",
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "lado": "ladoa",
+      "count": 1
+    },
     {
       "fecha": "2026-10-05",
       "loc": "wellstreet-pickleball",
@@ -43,6 +71,13 @@
       "fecha": "2026-10-05",
       "loc": "interpadel",
       "can": "cancha5",
+      "lado": "ladoa",
+      "count": 4
+    },
+    {
+      "fecha": "2026-10-05",
+      "loc": "breakpoint",
+      "can": "cancha1",
       "lado": "ladoa",
       "count": 4
     },
@@ -10552,7 +10587,7 @@
     {
       "id": "BreakPoint",
       "nombre": "BreakPoint",
-      "total_videos_activos": 14,
+      "total_videos_activos": 15,
       "canchas": [
         {
           "id": "Cancha1",
@@ -10781,15 +10816,16 @@
         {
           "id": "Cancha5",
           "nombre": "Cancha 5",
-          "total_videos_activos": 2,
+          "total_videos_activos": 3,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 2,
+              "count_activos": 3,
               "count_vitrina": 8,
-              "generado_el": "2026-10-06T14:13:12.572308+00:00",
+              "generado_el": "2026-10-06T14:40:15.728846+00:00",
               "videos": [
+                "BreakPoint_Cancha5_LadoA_05102026_214200.mp4",
                 "BreakPoint_Cancha5_LadoA_05102026_214000.mp4",
                 "BreakPoint_Cancha5_LadoA_05102026_212700.mp4"
               ],
