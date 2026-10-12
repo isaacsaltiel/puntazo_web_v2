@@ -4687,6 +4687,12 @@
       "count": 3
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "date": "2026-10-12",
+      "count": 3
+    },
+    {
       "loc": "vistahorizonte",
       "can": "vistadelaslomas",
       "date": "2025-06-23",
@@ -8739,15 +8745,15 @@
       "count": 58
     },
     {
-      "loc": "scorpion",
-      "can": "cancha2",
-      "hour": "20",
-      "count": 56
-    },
-    {
       "loc": "breakpoint",
       "can": "cancha4",
       "hour": "10",
+      "count": 58
+    },
+    {
+      "loc": "scorpion",
+      "can": "cancha2",
+      "hour": "20",
       "count": 56
     },
     {
@@ -11172,6 +11178,12 @@
       "loc": "wellstreet-pickleball",
       "can": "cancha6",
       "hour": "19",
+      "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "hour": "02",
       "count": 1
     }
   ],
@@ -24110,7 +24122,16 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha4",
+      "date": "2026-10-12",
+      "counts_por_lado": {
+        "ladoa": 3
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-10-12T02:55:25.691537+00:00"
+  "generated_at_utc": "2026-10-12T17:04:43.659063+00:00"
 }
