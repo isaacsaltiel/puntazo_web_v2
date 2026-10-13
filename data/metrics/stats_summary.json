@@ -1,13 +1,13 @@
 {
-  "generado_el": "2026-10-13T03:56:05.289952+00:00",
+  "generado_el": "2026-10-13T04:56:51.898078+00:00",
   "totales": {
-    "videos_historico": 7855,
+    "videos_historico": 7863,
     "dias_con_videos": 335,
     "clubs_activos": 10,
     "clubs": 5,
     "canchas": 21,
     "lados": 23,
-    "videos_activos": 13,
+    "videos_activos": 14,
     "videos_vitrina": 290
   },
   "historial": [
@@ -16,7 +16,35 @@
       "loc": "breakpoint",
       "can": "cancha4",
       "lado": "ladoa",
+      "count": 5
+    },
+    {
+      "fecha": "2026-10-12",
+      "loc": "interpadel",
+      "can": "cancha5",
+      "lado": "ladoa",
+      "count": 1
+    },
+    {
+      "fecha": "2026-10-12",
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "lado": "ladoa",
+      "count": 1
+    },
+    {
+      "fecha": "2026-10-12",
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "lado": "ladoa",
       "count": 3
+    },
+    {
+      "fecha": "2026-10-12",
+      "loc": "interpadel",
+      "can": "cancha3",
+      "lado": "ladoa",
+      "count": 1
     },
     {
       "fecha": "2026-10-11",
@@ -10840,7 +10868,7 @@
     {
       "id": "BreakPoint",
       "nombre": "BreakPoint",
-      "total_videos_activos": 11,
+      "total_videos_activos": 12,
       "canchas": [
         {
           "id": "Cancha1",
@@ -10931,15 +10959,16 @@
         {
           "id": "Cancha2",
           "nombre": "Cancha 2",
-          "total_videos_activos": 1,
+          "total_videos_activos": 2,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 1,
+              "count_activos": 2,
               "count_vitrina": 31,
-              "generado_el": "2026-10-13T01:03:03.137162+00:00",
+              "generado_el": "2026-10-13T04:55:41.141394+00:00",
               "videos": [
+                "BreakPoint_Cancha2_LadoA_12102026_225305.mp4",
                 "BreakPoint_Cancha2_LadoA_12102026_190025.mp4"
               ],
               "videos_vitrina": [
