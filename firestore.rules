@@ -486,14 +486,11 @@ service cloud.firestore {
     // NUEVO R8 — Cola de ediciones de clip (render en la nube)
     // ════════════════════════════════════════════════════
     match /clip_edits/{editId} {
-      // SEC-P0 (2026-06-09): create exige sesión y uid_creator propio — antes
-      // cualquier anónimo podía encolar renders (gasto de Actions/Dropbox).
-      allow create: if request.auth != null
-                    && request.resource.data.uid_creator == request.auth.uid
-                    && request.resource.data.kind in ['edit', 'puntazo']
-                    && request.resource.data.source_video_id is string
-                    && request.resource.data.status == 'pending'
-                    && request.resource.data.created_at == request.time;
+      // (2026-10-14) CERRADO: el editor nuevo (editor.html + Mediabunny) recorta
+      // en el teléfono y ya no usa esta cola. Antes cualquier cuenta podía
+      // mandar un source_url arbitrario que el CI bajaba y PUBLICABA en la
+      // cancha de un club. Los docs viejos se pueden seguir leyendo.
+      allow create: if false;
       allow read: if request.auth != null
                   && resource.data.uid_creator == request.auth.uid;
       allow update, delete: if false;
