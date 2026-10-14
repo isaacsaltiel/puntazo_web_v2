@@ -2,8 +2,9 @@
 gestion_indice_ci.py
 Por cada loc/can/lado:
   - videos_recientes.json  → últimas 24 h (lógica original, sin cambios)
-  - videos_vitrina.json    → videos más viejos para completar a MIN_VITRINA=5
-                             Solo se generan links si recientes < MIN_VITRINA.
+  - videos_vitrina.json    → ventana completa de 14 días; si con eso no se
+                             llega a MIN_VITRINA (10) se suman DÍAS COMPLETOS
+                             anteriores hasta llegar (ver MIN_VITRINA abajo).
 """
 
 import os
@@ -28,7 +29,12 @@ GITHUB_TOKEN          = os.environ.get("PAT_GITHUB")
 VALID_SUFFIX         = ".mp4"
 RETENTION_HOURS      = 24          # ventana para videos_recientes.json
 VITRINA_LOOKBACK_DAYS = 14         # hasta cuántos días hacia atrás buscar para vitrina
-MIN_VITRINA          = 5           # mínimo de videos que siempre debe haber
+MIN_VITRINA          = 10          # mínimo de videos que siempre debe haber
+# 14-oct-2026 (Isaac): la regla del mínimo vuelve a aplicar ENCIMA de la ventana
+# de 14 días. Si recientes + 14 días no llegan a MIN_VITRINA, se suman días
+# anteriores COMPLETOS (por la fecha del nombre del clip, del más nuevo al más
+# viejo) hasta tener al menos MIN_VITRINA. Nunca se parte un día: si el último
+# día agregado se pasa de 10, se publica completo.
 # 19-ago-2026 (Isaac): la vitrina deja de ser "relleno hasta 5" y pasa a publicar la
 # VENTANA COMPLETA de VITRINA_LOOKBACK_DAYS. Antes, con >=5 videos en 24 h la vitrina
 # salía VACÍA y el jugador perdía de vista todo lo de días anteriores aunque siguiera
@@ -164,6 +170,16 @@ def parse_fecha_from_nombre(nombre: str) -> str:
     return ""
 
 
+def dia_del_clip(entry) -> str:
+    """Día del clip (AAAA-MM-DD) para agrupar en días completos. Los nombres
+    llevan _DDMMAAAA_hhmmss (hora del club); si no, la fecha de Dropbox en hora
+    de México (UTC-6)."""
+    m = re.search(r"_(\d{2})(\d{2})(\d{4})_\d{6}", entry.name)
+    if m:
+        return f"{m.group(3)}-{m.group(2)}-{m.group(1)}"
+    return (get_mod_time_utc(entry) - timedelta(hours=6)).strftime("%Y-%m-%d")
+
+
 # ──────────────────────────────────────────
 # Main
 # ──────────────────────────────────────────
@@ -209,6 +225,7 @@ def main():
     nombres_base_vistos: set = set()
     recientes_entries  = []   # mod_time > cutoff_recientes
     vitrina_candidates = []   # cutoff_vitrina < mod_time <= cutoff_recientes
+    antiguos_entries   = []   # mod_time <= cutoff_vitrina (relleno por MIN_VITRINA)
 
     for entry in entries:
         if not (isinstance(entry, dropbox.files.FileMetadata)
@@ -233,11 +250,30 @@ def main():
             recientes_entries.append(entry)
         elif mod_utc > cutoff_vitrina:
             vitrina_candidates.append(entry)
-        # Si es más viejo que VITRINA_LOOKBACK_DAYS → ignorar
+        else:
+            # Más viejo que VITRINA_LOOKBACK_DAYS: solo entra si hace falta
+            # completar MIN_VITRINA (días completos, ver abajo).
+            antiguos_entries.append(entry)
 
     # ── Ordenar: más reciente primero ─────────────────────────
     recientes_entries.sort(key=get_mod_time_utc, reverse=True)
     vitrina_candidates.sort(key=get_mod_time_utc, reverse=True)
+
+    # ── MIN_VITRINA: completar con días anteriores COMPLETOS ──
+    faltan = MIN_VITRINA - len(recientes_entries) - min(len(vitrina_candidates), VITRINA_MAX)
+    if faltan > 0 and antiguos_entries:
+        por_dia = {}
+        for e in antiguos_entries:
+            por_dia.setdefault(dia_del_clip(e), []).append(e)
+        agregados = 0
+        for dia in sorted(por_dia, reverse=True):
+            if agregados >= faltan:
+                break
+            vitrina_candidates.extend(por_dia[dia])
+            agregados += len(por_dia[dia])
+        vitrina_candidates.sort(key=get_mod_time_utc, reverse=True)
+        print(f"[DEBUG] MIN_VITRINA={MIN_VITRINA}: faltaban {faltan}; se agregaron "
+              f"{agregados} videos de días completos anteriores a {VITRINA_LOOKBACK_DAYS} días")
 
     # ── Generar videos_recientes.json (lógica original) ───────
     videos_recientes = []
