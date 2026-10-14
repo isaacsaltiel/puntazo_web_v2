@@ -57,24 +57,9 @@
      Solo los usuarios con sesión Firebase activa (los que vuelven) saltan
      directo al app. Crawlers y visitantes nuevos ven la landing completa.
      El check corre síncrono ANTES de pintar para evitar flash. -->
-<script>
-  (function () {
-    try {
-      for (var i = 0; i < localStorage.length; i++) {
-        var k = localStorage.key(i);
-        if (k && k.indexOf("firebase:authUser:") === 0) {
-          var qs = window.location.search || "";
-          var hash = window.location.hash || "";
-          // (2026-09-28) Con cancha ya elegida → Inicio de la app; si no, al selector.
-          var hasCtx = false;
-          try { hasCtx = !!JSON.parse(localStorage.getItem("pz_ctx_v1") || "null"); } catch (e2) {}
-          window.location.replace((hasCtx && !qs ? "/inicio.html" : "/entrada.html") + qs + hash);
-          return;
-        }
-      }
-    } catch (e) {}
-  })();
-</script>
+<!-- (2026-10-13) Socio de Isaac: la portada informativa se ve SIEMPRE (también
+     con sesión); de aquí "Encuentra tus clips" entra a la zona de puntos. Ya no
+     se salta al Inicio del club. -->
 
 <title>Puntazo Clips: el botón que graba tus jugadas de pádel</title>
 

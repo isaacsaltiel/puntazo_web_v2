@@ -33,6 +33,8 @@
     home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>',
     clips: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z" fill="currentColor"/></svg>',
     saved: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg>',
+    // (2026-10-13) Scroll: feed vertical (dos pantallas apiladas = deslizar).
+    scroll: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="m10 9.5 4 2.5-4 2.5z" fill="currentColor"/></svg>',
     recover: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>',
     user: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
     caret: '<svg class="pz-ctx-caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
@@ -46,13 +48,14 @@
   function activeTab() {
     var p = (location.pathname || "").toLowerCase();
     if (/inicio\.html/.test(p)) return "inicio";
-    if (/lado\.html|clip\.html|cancha\.html|feed\.html/.test(p)) return "clips";
+    if (/feed\.html/.test(p)) return new URLSearchParams(location.search).get("fuente") === "guardados" ? "guardados" : "scroll";
+    if (/lado\.html|clip\.html|cancha\.html/.test(p)) return "clips";
     if (/boton\.html/.test(p)) return "puntazo";
     if (/guardados\.html|mis-clips\.html/.test(p)) return "guardados";
     if (/recuperar\.html/.test(p)) return "recuperar";
     if (/entrada\.html/.test(p)) {
       var m = (new URLSearchParams(location.search).get("modo") || "").toLowerCase();
-      return m === "boton" ? "puntazo" : (m === "clips" || m === "canchas") ? "clips" : "inicio";
+      return m === "boton" ? "puntazo" : "clips";
     }
     return "";
   }
@@ -72,28 +75,37 @@
 
   // (2026-09-30) Enlaces que dependen de lo que el club tiene (data-cap="vivo"):
   // nacen ocultos y se muestran solo si PuntazoContext.capacidades lo confirma.
+  // (2026-10-13) data-cap-sin="x": se muestra solo si el club NO tiene x.
   function aplicarCaps(root) {
-    var els = (root || document).querySelectorAll("[data-cap]");
+    var els = (root || document).querySelectorAll("[data-cap],[data-cap-sin]");
     if (!els.length || !Ctx.capacidades) return;
     Ctx.capacidades(Ctx.club()).then(function (cap) {
-      els.forEach(function (el) { el.hidden = !cap[el.dataset.cap]; });
+      els.forEach(function (el) {
+        el.hidden = el.dataset.cap ? !cap[el.dataset.cap] : !!cap[el.dataset.capSin];
+      });
     });
   }
+  function scrollUrl() { var c = Ctx.club(); return "/feed.html" + (c ? "?loc=" + encodeURIComponent(c) : ""); }
 
   // ── Barra de navegación ──
   function tabsHTML() {
     var cur = activeTab();
-    function tab(key, href, label, icon, extra) {
+    function tab(key, href, label, icon, extra, attrs) {
       return '<a class="pz-tab' + (extra || "") + (cur === key ? " is-active" : "") + '" data-tab="' + key + '" href="' + esc(href) + '"' +
-        (cur === key ? ' aria-current="page"' : "") + ">" + icon + '<span class="pz-tab-lbl">' + label + "</span></a>";
+        (cur === key ? ' aria-current="page"' : "") + (attrs || "") + ">" + icon + '<span class="pz-tab-lbl">' + label + "</span></a>";
     }
+    // (2026-10-13) Socio de Isaac: Inicio = portada informativa; Clips =
+    // horizontal; el scroll vertical va aparte en su pestaña. En clubes sin
+    // verticales ese lugar lo ocupa Recuperar (Puntazo sigue al centro).
     return (
-      tab("inicio", Ctx.url("inicio"), "Inicio", ICON.home) +
+      tab("inicio", "/", "Inicio", ICON.home) +
       tab("clips", Ctx.url("clips"), "Clips", ICON.clips) +
       tab("puntazo", Ctx.url("boton"), "Puntazo", '<span class="pz-tab-p" aria-hidden="true"></span>', " pz-tab--puntazo") +
+      tab("scroll", scrollUrl(), "Scroll", ICON.scroll, "", ' data-cap="verticales" hidden') +
+      tab("recuperar", Ctx.url("recuperar"), "Recuperar", ICON.recover, "", ' data-cap-sin="verticales"') +
       tab("guardados", "/guardados.html", "Guardados", ICON.saved) +
-      tab("recuperar", Ctx.url("recuperar"), "Recuperar", ICON.recover) +
       '<div class="pz-side-foot">' +
+        '<a href="' + esc(Ctx.url("recuperar")) + '" data-cap="verticales" hidden>Recuperar un clip</a>' +
         '<a href="/vivo.html' + (Ctx.club() ? "?club=" + encodeURIComponent(Ctx.club()) : "") + '" data-cap="vivo" hidden>Transmisión en vivo</a>' +
         '<a href="' + esc(toolsUrl()) + '">Herramientas de juego</a>' +
         '<a href="/preguntas-frecuentes/">Ayuda</a>' +
@@ -283,7 +295,8 @@
     var p = (location.pathname || "").toLowerCase();
     if (/vivo\.html/.test(p)) { location.href = "/vivo.html?club=" + encodeURIComponent(clubId); return; }
     if (/herramientas\.html/.test(p)) { location.href = toolsUrl(); return; }
-    go("inicio");
+    if (/feed\.html/.test(p)) { location.href = scrollUrl(); return; }
+    go("clips");
   }
 
   function choose(club, canId) {
@@ -299,7 +312,8 @@
     if (t === "clips") return go("clips");
     if (t === "puntazo") return go("boton");
     if (t === "recuperar") return go("recuperar");
-    if (/inicio\.html|entrada\.html/.test(p)) return go("inicio");
+    if (t === "scroll") { location.href = "/feed.html?loc=" + encodeURIComponent(club.id) + "&can=" + encodeURIComponent(canId); return; }
+    if (/inicio\.html|entrada\.html/.test(p)) return go("clips");
     if (/herramientas\.html/.test(p)) { location.href = toolsUrl(); return; }
     if (/vivo\.html/.test(p)) { location.href = "/vivo.html?club=" + encodeURIComponent(club.id); return; }
     refresh();
@@ -339,6 +353,7 @@
     var items = [
       u ? '<a href="/guardados.html"><span class="pz-ico"><span class="pz-i pz-i--mis-clips" aria-hidden="true"></span></span>Mis clips</a>' : "",
       u ? '<a href="/mis-clips.html"><span class="pz-ico"><span class="pz-i pz-i--solicitudes" aria-hidden="true"></span></span>Mis solicitudes del botón</a>' : "",
+      '<a href="' + esc(Ctx.url("recuperar")) + '"><span class="pz-ico"><span class="pz-i pz-i--recuperar" aria-hidden="true"></span></span>Recuperar un clip</a>',
       '<button type="button" data-acct-ctx><span class="pz-ico"><span class="pz-i pz-i--club-cancha" aria-hidden="true"></span></span>Mi club y cancha' + (c ? "" : "") + "</button>",
       '<a href="' + esc(toolsUrl()) + '"><span class="pz-ico"><span class="pz-i pz-i--marcador" aria-hidden="true"></span></span>Herramientas de juego</a>',
       '<a href="/vivo.html' + (c ? "?club=" + encodeURIComponent(c.loc) : "") + '" data-cap="vivo" hidden><span class="pz-ico"><span class="pz-i pz-i--vivo" aria-hidden="true"></span></span>Transmisión en vivo</a>',

@@ -60,12 +60,16 @@
   Sin club guardado (ni en la URL) → al selector de club (/entrada.html), que
   es lo mismo que hacía la redirección vieja.
 -->
-<script src="/assets/app-context.js?v=20261001"></script>
+<script src="/assets/app-context.js?v=20261013"></script>
 <script>
+  // (2026-10-13) Socio de Isaac: portada informativa → zona de puntos. El
+  // Inicio del club ya no es paso; los enlaces viejos a esta página van a la
+  // zona de puntos del club (o a la portada si no hay club).
   (function () {
-    if (!window.PuntazoContext || !PuntazoContext.get()) {
-      location.replace("/entrada.html" + location.search);
-    }
+    var q = new URLSearchParams(location.search), loc = q.get("loc"), can = q.get("can");
+    if (loc && can) return location.replace("/lado.html?loc=" + encodeURIComponent(loc) + "&can=" + encodeURIComponent(can) + "&lado=" + encodeURIComponent(q.get("lado") || "LadoA") + "&pg=0");
+    if (loc) return location.replace("/entrada.html?modo=clips&loc=" + encodeURIComponent(loc));
+    location.replace("/");
   })();
 </script>
 <style>
@@ -148,8 +152,8 @@
     .recent .rc:nth-child(n+9){display:none;}
   }
 </style>
-<link rel="stylesheet" href="/assets/app-shell.css?v=20260930b" />
-<script src="/assets/app-shell.js?v=20260930b" defer></script>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20261013" />
+<script src="/assets/app-shell.js?v=20261013" defer></script>
 <!-- (2026-09-30) Firebase y compañía en <head> con defer: header.js (arriba del
      body) los encuentra ya declarados y no los vuelve a inyectar. -->
 <script src="/assets/lib/firebase-9.23.0/firebase-app-compat.js" defer></script>
@@ -164,7 +168,7 @@
 <body class="pz-app">
 <div class="page-bg"></div>
 <div id="nav-root" data-nav-variant="app"></div>
-<script src="/assets/header.js?v=20261001"></script>
+<script src="/assets/header.js?v=20261013"></script>
 
 <main class="site-content home">
   <div class="home-hi">

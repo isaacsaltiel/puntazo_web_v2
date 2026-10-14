@@ -146,16 +146,15 @@
     var L = "?loc=" + e(ctx.loc);
     var q = ctx.can ? L + "&can=" + e(ctx.can) : null;
     switch (dest) {
-      case "inicio":    return "/inicio.html" + L;
+      case "inicio":    return "/";   // (2026-10-13) la portada informativa
       case "clips":
         if (!q) return "/entrada.html?modo=clips&loc=" + e(ctx.loc);
-        // Cancha con verticales (ya sabido): directo al feed vertical.
-        if (canchaVerticalCache(ctx.loc, ctx.can) === true) return "/feed.html" + q;
+        // (2026-10-13) Clips = horizontal siempre; el vertical es opción.
         return "/lado.html" + q + "&lado=" + e(ctx.lado || "LadoA") + "&pg=0";
       case "boton":     return q ? "/boton.html" + q : "/entrada.html?modo=boton&loc=" + e(ctx.loc);
       case "recuperar": return "/recuperar.html" + (q || L);
       case "canchas":   return "/entrada.html?modo=clips&loc=" + e(ctx.loc);
-      default:          return "/inicio.html" + L;
+      default:          return "/";
     }
   }
 

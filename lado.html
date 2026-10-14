@@ -422,10 +422,14 @@ body.pz-app #pz-match-banner:empty, body.pz-app #pz-match-filter-banner:empty { 
 body.pz-app main.site-content { padding-top: calc(var(--pz-hdr-h, 60px) + var(--pz-safe-top, 0px) + 12px); }
 /* (2026-09-30) Encabezado compacto de Clips */
 body.pz-app .lado-head-row { flex-direction: row !important; align-items: center !important; justify-content: space-between; gap: 8px !important; margin: 0 0 12px !important; flex-wrap: nowrap; }
-.lado-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lado-title { display: flex; align-items: center; gap: 8px; min-width: 0; flex-shrink: 0; }
 .lado-filtro-activo { appearance: none; border: 0; cursor: pointer; font-family: inherit; min-height: 30px; padding: 0 10px; border-radius: 999px; background: #fff; color: #0b1018; font-size: .74rem; font-weight: 900; }
 .lado-filtro-activo[hidden] { display: none; }
-.lado-tools { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto; }
+.lado-tools { display: flex; align-items: center; gap: 6px; flex-shrink: 1; min-width: 0; margin-left: auto; }
+/* (2026-10-13) El pill de cámaras se recorta antes de encimarse con «Clips». */
+.lado-hb { min-width: 0; overflow: hidden; }
+.lado-hb .pz-hb-pill { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lado-vista, .lado-filtro-btn { flex-shrink: 0; }
 body.pz-app .lado-head-row .btn-volver-container:empty, body.pz-app .lado-head-row .btn-volver-container { flex: 0 0 auto; }
 .esperar-btn { justify-self: start; }
 .lado-hb .pz-hb-pill { margin: 0; font-size: .68rem; padding: 5px 9px; }
@@ -515,26 +519,12 @@ body.pz-app .lado-head-row .btn-volver-container:empty, body.pz-app .lado-head-r
   .card-time { font-size: 1.4rem; }
 }
 </style>
-<link rel="stylesheet" href="/assets/app-shell.css?v=20260930b" />
-<script src="/assets/app-context.js?v=20261001"></script>
-<script src="/assets/app-shell.js?v=20260930b" defer></script>
-<script>
-/* (2026-09-30) Isaac: en canchas con verticales, Clips abre en VERTICAL.
-   Se queda en horizontal si se pidió (?vista=h), si viene a un clip concreto
-   (?video= / ?pt=) o a un partido (?matchId=). */
-window.PZ_LADO_A_VERTICAL = function (loc, can) {
-  location.replace("/feed.html?loc=" + encodeURIComponent(loc) + "&can=" + encodeURIComponent(can));
-};
-window.PZ_LADO_QUEDARSE = (function () {
-  var p = new URLSearchParams(location.search);
-  return p.get("vista") === "h" || !!(p.get("video") || p.get("pt") || p.get("matchId"));
-})();
-(function () {
-  var p = new URLSearchParams(location.search), loc = p.get("loc"), can = p.get("can");
-  if (window.PZ_LADO_QUEDARSE || !loc || !can || !window.PuntazoContext) return;
-  if (PuntazoContext.canchaVerticalCache(loc, can) === true) PZ_LADO_A_VERTICAL(loc, can);
-})();
-</script>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20261013" />
+<script src="/assets/app-context.js?v=20261013"></script>
+<script src="/assets/app-shell.js?v=20261013" defer></script>
+<!-- (2026-10-13) Socio de Isaac: lo principal es encontrar tus puntos en
+     HORIZONTAL; el vertical es una opción (botón V) y el scroll va aparte.
+     Se quitó la redirección automática al feed del 30-sep. -->
 </head>
 <body class="pz-app">
 
@@ -575,7 +565,7 @@ window.PZ_LADO_QUEDARSE = (function () {
 
 <!-- ── NAV ── -->
 <div id="nav-root" data-nav-variant="app"></div>
-<script src="/assets/header.js?v=20261001"></script>
+<script src="/assets/header.js?v=20261013"></script>
 
 <!-- ── Banner CTA de partido (Etapa 4) — totalmente aditivo, render desde IIFE al final del body ── -->
 <div id="pz-match-banner"></div>
@@ -1343,7 +1333,7 @@ window.PZ_LADO_QUEDARSE = (function () {
       if (hbHost && window.PuntazoHeartbeatWatcher) window.PuntazoHeartbeatWatcher.watch(p.loc, hbHost);
       var pill = document.getElementById("pzHbPill");
       if (pill && window.PuntazoHeartbeatWatcher && window.PuntazoHeartbeatWatcher.statusPill) {
-        window.PuntazoHeartbeatWatcher.statusPill(p.loc, pill, { onlineText: "Cámaras en línea", offlineText: "Cámaras fuera de línea" });
+        window.PuntazoHeartbeatWatcher.statusPill(p.loc, pill, { onlineText: "Cámaras en línea", offlineText: "Cámaras sin señal" });
       }
     } catch (_) {}
 
@@ -1360,13 +1350,12 @@ window.PZ_LADO_QUEDARSE = (function () {
     if (etiqueta) etiqueta.addEventListener("click", function () { abrir(true); });
     window.addEventListener("pz:filtro-aplicado", function () { abrir(false); });
 
-    // Vista vertical: solo si ESTA cancha tiene verticales (no prometer lo que
-    // no hay). Si los tiene y no se pidió horizontal, se abre en vertical.
+    // Vista vertical: opción, solo si ESTA cancha tiene verticales (no
+    // prometer lo que no hay). Horizontal es la vista principal (2026-10-13).
     try {
       if (window.PuntazoContext && PuntazoContext.canchaVertical && p.can) {
         PuntazoContext.canchaVertical(p.loc, p.can).then(function (tiene) {
           if (!tiene) return;
-          if (!window.PZ_LADO_QUEDARSE) return PZ_LADO_A_VERTICAL(p.loc, p.can);
           var v = document.getElementById("pzVista");
           var a = document.getElementById("pzVistaVertical");
           a.href = "/feed.html?loc=" + encodeURIComponent(p.loc) + "&can=" + encodeURIComponent(p.can);

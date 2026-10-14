@@ -274,10 +274,10 @@
     // menú de cuenta los pinta app-shell.js. Sin ☰: los destinos viven en la
     // barra y lo secundario (vivo, herramientas, ayuda…) en el menú de cuenta.
     if (variant === "app") {
-      ensureStyle("/assets/app-shell.css?v=20260930b");
+      ensureStyle("/assets/app-shell.css?v=20261013");
       root.innerHTML = `
         <header class="site-header site-header--app">
-          <a href="/inicio.html" class="logo-link" aria-label="Puntazo — Inicio">
+          <a href="/" class="logo-link" aria-label="Puntazo — Inicio">
             <img src="/assets/img/P_blanca_transparente.png" alt="Puntazo" onerror="this.style.display='none'">
           </a>
           <button type="button" class="pz-ctx-chip" data-ctx-chip aria-haspopup="dialog" aria-expanded="false">
@@ -294,8 +294,8 @@
           .then(() => { try { window.PuntazoAppShell && window.PuntazoAppShell.refresh(); } catch (_) {} })
           .catch((e) => console.warn("[Puntazo Header] clubs-catalog:", e));
         try {
-          await ensureScript("/assets/app-context.js?v=20261001", () => !!window.PuntazoContext);
-          await ensureScript("/assets/app-shell.js?v=20260930b", () => !!window.PuntazoAppShell);
+          await ensureScript("/assets/app-context.js?v=20261013", () => !!window.PuntazoContext);
+          await ensureScript("/assets/app-shell.js?v=20261013", () => !!window.PuntazoAppShell);
         } catch (e) {
           console.error("[Puntazo Header] app shell:", e);
           // Sin shell: el chip al menos lleva al selector (nunca un botón muerto).

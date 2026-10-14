@@ -706,9 +706,9 @@
     .entrada-header { padding: 22px 18px 20px; }
   }
 </style>
-<link rel="stylesheet" href="/assets/app-shell.css?v=20260930b" />
-<script src="/assets/app-context.js?v=20261001"></script>
-<script src="/assets/app-shell.js?v=20260930b" defer></script>
+<link rel="stylesheet" href="/assets/app-shell.css?v=20261013" />
+<script src="/assets/app-context.js?v=20261013"></script>
+<script src="/assets/app-shell.js?v=20261013" defer></script>
 </head>
 <body class="pz-app">
 
@@ -720,7 +720,7 @@
 
 <!-- Etapa 16.4 F49: header consistente con mi-partido (header.js variant internal) -->
 <div id="nav-root" data-nav-variant="app"></div>
-<script src="/assets/header.js?v=20261001"></script>
+<script src="/assets/header.js?v=20261013"></script>
 
 <main class="entrada-wrap">
 
@@ -1217,15 +1217,18 @@
     window.location.href = inicioUrl(club.id, cancha.id, ld.id);
   }
 
+  // (2026-10-13) Socio de Isaac: portada informativa → zona de puntos. El
+  // Inicio del club ya no es paso: elegir club lleva a sus canchas y de ahí
+  // a los clips en horizontal.
   function goInicioClub(locId) {
     try { if (window.PuntazoContext) PuntazoContext.setClub(locId); } catch (_) {}
-    window.location.href = "/inicio.html?loc=" + encodeURIComponent(locId);
+    window.location.href = "/entrada.html?modo=clips&loc=" + encodeURIComponent(locId);
   }
 
   function inicioUrl(locId, canId, ladoId) {
-    return "/inicio.html?loc=" + encodeURIComponent(locId) +
+    return "/lado.html?loc=" + encodeURIComponent(locId) +
            "&can=" + encodeURIComponent(canId) +
-           "&lado=" + encodeURIComponent(ladoId || "LadoA");
+           "&lado=" + encodeURIComponent(ladoId || "LadoA") + "&pg=0";
   }
 
   $selBack.addEventListener("click", function () {
@@ -1667,6 +1670,10 @@
     } else if ((modoCanchas || modoClips || modoBoton) && loc) {
       // F135 (Fix 4): "cambiar cancha" → directo al paso de canchas del club.
       startSelectorFlow({ directLoc: loc });
+    } else if ((modoClips || modoBoton) && window.PuntazoContext && PuntazoContext.club()) {
+      // (2026-10-13) "Encuentra tus clips" de la portada con club ya elegido en
+      // este teléfono: a sus canchas (o directo a los clips si ya eligió hoy).
+      window.location.replace(PuntazoContext.url(modoBoton ? "boton" : "clips"));
     } else if (qrCode) {
       startSelectorFlow({ qrCode: qrCode });
     } else {
