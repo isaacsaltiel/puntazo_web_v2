@@ -1,14 +1,14 @@
 {
-  "generado_el": "2026-10-15T01:30:21.475109+00:00",
+  "generado_el": "2026-10-15T02:07:42.677899+00:00",
   "totales": {
-    "videos_historico": 7904,
+    "videos_historico": 7915,
     "dias_con_videos": 337,
     "clubs_activos": 10,
     "clubs": 5,
     "canchas": 21,
     "lados": 23,
-    "videos_activos": 34,
-    "videos_vitrina": 443
+    "videos_activos": 35,
+    "videos_vitrina": 442
   },
   "historial": [
     {
@@ -30,7 +30,21 @@
       "loc": "interpadel",
       "can": "cancha4",
       "lado": "ladoa",
-      "count": 1
+      "count": 5
+    },
+    {
+      "fecha": "2026-10-14",
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "lado": "ladoa",
+      "count": 4
+    },
+    {
+      "fecha": "2026-10-14",
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "lado": "ladoa",
+      "count": 3
     },
     {
       "fecha": "2026-10-13",
@@ -11360,7 +11374,7 @@
     {
       "id": "WellStreet-Pickleball",
       "nombre": "WellStreet - Pickleball",
-      "total_videos_activos": 7,
+      "total_videos_activos": 8,
       "canchas": [
         {
           "id": "Cancha1",
@@ -11484,15 +11498,17 @@
         {
           "id": "Cancha5",
           "nombre": "Cancha 5",
-          "total_videos_activos": 0,
+          "total_videos_activos": 1,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 0,
-              "count_vitrina": 10,
-              "generado_el": "2026-10-14T20:15:10.873499+00:00",
-              "videos": [],
+              "count_activos": 1,
+              "count_vitrina": 9,
+              "generado_el": "2026-10-15T02:07:10.960298+00:00",
+              "videos": [
+                "WellStreet-Pickleball_Cancha5_LadoA_PARTIDO_PLSW2632_13102026_201000.mp4"
+              ],
               "videos_vitrina": [
                 "WellStreet-Pickleball_Cancha5_LadoA_PARTIDO_PLSW76dd_06102026_185000.mp4",
                 "WellStreet-Pickleball_Cancha5_LadoA_PARTIDO_PLSWa315_06102026_183500.mp4",
@@ -11502,8 +11518,7 @@
                 "WellStreet-Pickleball_Cancha5_LadoA_PARTIDO_PLSW93b0_29092026_193000.mp4",
                 "WellStreet-Pickleball_Cancha5_LadoA_PARTIDO_PLSWd97a_29092026_191000.mp4",
                 "WellStreet-Pickleball_Cancha5_LadoA_PARTIDO_PLSWf7da_29092026_185000.mp4",
-                "WellStreet-Pickleball_Cancha5_LadoA_PARTIDO_PLSW3bb5_29092026_183000.mp4",
-                "WellStreet-Pickleball_Cancha5_LadoA_PARTIDO_PLSWaae7_05092026_195000.mp4"
+                "WellStreet-Pickleball_Cancha5_LadoA_PARTIDO_PLSW3bb5_29092026_183000.mp4"
               ]
             }
           ]
