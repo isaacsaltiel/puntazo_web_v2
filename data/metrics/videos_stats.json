@@ -6247,6 +6247,12 @@
       "count": 2
     },
     {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "date": "2026-10-19",
+      "count": 2
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-09-10",
@@ -8807,6 +8813,12 @@
       "can": "cancha5",
       "date": "2026-10-16",
       "count": 1
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "date": "2026-10-18",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -9665,6 +9677,12 @@
     {
       "loc": "wellstreet-pickleball",
       "can": "cancha2",
+      "hour": "00",
+      "count": 17
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
       "hour": "21",
       "count": 17
     },
@@ -9719,12 +9737,6 @@
     {
       "loc": "interpadel",
       "can": "cancha6",
-      "hour": "00",
-      "count": 16
-    },
-    {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha2",
       "hour": "00",
       "count": 16
     },
@@ -9825,6 +9837,12 @@
       "count": 14
     },
     {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "hour": "01",
+      "count": 14
+    },
+    {
       "loc": "wellstreet-padel",
       "can": "cancha1",
       "hour": "14",
@@ -9881,7 +9899,7 @@
     {
       "loc": "wellstreet-pickleball",
       "can": "cancha2",
-      "hour": "01",
+      "hour": "23",
       "count": 13
     },
     {
@@ -9906,12 +9924,6 @@
       "loc": "wellstreet-pickleball",
       "can": "cancha1",
       "hour": "10",
-      "count": 12
-    },
-    {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha2",
-      "hour": "23",
       "count": 12
     },
     {
@@ -24776,7 +24788,25 @@
         "ladoa": 3
       },
       "diff": 0
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "date": "2026-10-18",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "date": "2026-10-19",
+      "counts_por_lado": {
+        "ladoa": 2
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-10-19T02:04:50.991821+00:00"
+  "generated_at_utc": "2026-10-19T15:04:13.040905+00:00"
 }
