@@ -1,5 +1,5 @@
 {
-  "generado_el": "2026-10-20T01:09:42.195280+00:00",
+  "generado_el": "2026-10-20T01:30:16.278037+00:00",
   "totales": {
     "videos_historico": 8010,
     "dias_con_videos": 342,
@@ -7,8 +7,8 @@
     "clubs": 5,
     "canchas": 21,
     "lados": 23,
-    "videos_activos": 5,
-    "videos_vitrina": 480
+    "videos_activos": 6,
+    "videos_vitrina": 479
   },
   "historial": [
     {
@@ -11162,7 +11162,7 @@
     {
       "id": "BreakPoint",
       "nombre": "BreakPoint",
-      "total_videos_activos": 1,
+      "total_videos_activos": 2,
       "canchas": [
         {
           "id": "Cancha1",
@@ -11263,15 +11263,17 @@
         {
           "id": "Cancha2",
           "nombre": "Cancha 2",
-          "total_videos_activos": 0,
+          "total_videos_activos": 1,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 0,
-              "count_vitrina": 39,
-              "generado_el": "2026-10-19T20:58:08.316205+00:00",
-              "videos": [],
+              "count_activos": 1,
+              "count_vitrina": 38,
+              "generado_el": "2026-10-20T01:28:25.336055+00:00",
+              "videos": [
+                "BreakPoint_Cancha2_LadoA_19102026_192538.mp4"
+              ],
               "videos_vitrina": [
                 "BreakPoint_Cancha2_LadoA_17102026_111700.mp4",
                 "BreakPoint_Cancha2_LadoA_17102026_121617.mp4",
@@ -11310,8 +11312,7 @@
                 "BreakPoint_Cancha2_LadoA_06102026_065114.mp4",
                 "BreakPoint_Cancha2_LadoA_06102026_064115.mp4",
                 "BreakPoint_Cancha2_LadoA_05102026_195010.mp4",
-                "BreakPoint_Cancha2_LadoA_05102026_190815.mp4",
-                "BreakPoint_Cancha2_LadoA_05102026_172415.mp4"
+                "BreakPoint_Cancha2_LadoA_05102026_190815.mp4"
               ]
             }
           ]
