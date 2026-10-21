@@ -1,5 +1,5 @@
 {
-  "generado_el": "2026-10-21T04:08:01.662332+00:00",
+  "generado_el": "2026-10-21T04:51:43.527784+00:00",
   "totales": {
     "videos_historico": 8030,
     "dias_con_videos": 343,
@@ -7,8 +7,8 @@
     "clubs": 5,
     "canchas": 21,
     "lados": 23,
-    "videos_activos": 16,
-    "videos_vitrina": 439
+    "videos_activos": 17,
+    "videos_vitrina": 434
   },
   "historial": [
     {
@@ -11783,7 +11783,7 @@
     {
       "id": "WellStreet-Padel",
       "nombre": "WellStreet - Pádel",
-      "total_videos_activos": 0,
+      "total_videos_activos": 1,
       "canchas": [
         {
           "id": "Cancha1",
@@ -11870,15 +11870,17 @@
         {
           "id": "Cancha2",
           "nombre": "Cancha 2",
-          "total_videos_activos": 0,
+          "total_videos_activos": 1,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 0,
-              "count_vitrina": 14,
-              "generado_el": "2026-10-21T03:27:11.749195+00:00",
-              "videos": [],
+              "count_activos": 1,
+              "count_vitrina": 9,
+              "generado_el": "2026-10-21T04:51:12.260066+00:00",
+              "videos": [
+                "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSW4c71_20102026_200000.mp4"
+              ],
               "videos_vitrina": [
                 "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSW1bb9_13102026_214000.mp4",
                 "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSW5a6b_13102026_212000.mp4",
@@ -11888,12 +11890,7 @@
                 "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSW173d_13102026_200000.mp4",
                 "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSW30c7_13102026_194500.mp4",
                 "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSWdeb8_13102026_185000.mp4",
-                "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSWd504_13102026_183000.mp4",
-                "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSW5521_23092026_214000.mp4",
-                "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSW8b2f_23092026_214000.mp4",
-                "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSWb041_23092026_214000.mp4",
-                "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSWf360_23092026_214700.mp4",
-                "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSW0710_23092026_213000.mp4"
+                "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSWd504_13102026_183000.mp4"
               ]
             }
           ]
