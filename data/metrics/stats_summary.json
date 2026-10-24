@@ -1,14 +1,14 @@
 {
-  "generado_el": "2026-10-24T01:44:41.714481+00:00",
+  "generado_el": "2026-10-24T02:20:55.642512+00:00",
   "totales": {
-    "videos_historico": 8095,
+    "videos_historico": 8100,
     "dias_con_videos": 346,
     "clubs_activos": 10,
     "clubs": 5,
     "canchas": 21,
     "lados": 23,
-    "videos_activos": 26,
-    "videos_vitrina": 440
+    "videos_activos": 22,
+    "videos_vitrina": 445
   },
   "historial": [
     {
@@ -30,12 +30,19 @@
       "loc": "interpadel",
       "can": "cancha3",
       "lado": "ladoa",
-      "count": 1
+      "count": 2
     },
     {
       "fecha": "2026-10-23",
       "loc": "breakpoint",
       "can": "cancha1",
+      "lado": "ladoa",
+      "count": 4
+    },
+    {
+      "fecha": "2026-10-23",
+      "loc": "interpadel",
+      "can": "cancha6",
       "lado": "ladoa",
       "count": 2
     },
@@ -11366,7 +11373,7 @@
     {
       "id": "BreakPoint",
       "nombre": "BreakPoint",
-      "total_videos_activos": 22,
+      "total_videos_activos": 18,
       "canchas": [
         {
           "id": "Cancha1",
@@ -11445,22 +11452,23 @@
         {
           "id": "Cancha2",
           "nombre": "Cancha 2",
-          "total_videos_activos": 5,
+          "total_videos_activos": 1,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 5,
-              "count_vitrina": 31,
-              "generado_el": "2026-10-23T19:50:46.137881+00:00",
+              "count_activos": 1,
+              "count_vitrina": 36,
+              "generado_el": "2026-10-24T02:19:18.918919+00:00",
               "videos": [
+                "BreakPoint_Cancha2_LadoA_23102026_201642.mp4"
+              ],
+              "videos_vitrina": [
                 "BreakPoint_Cancha2_LadoA_22102026_185130.mp4",
                 "BreakPoint_Cancha2_LadoA_22102026_183905.mp4",
                 "BreakPoint_Cancha2_LadoA_22102026_175636.mp4",
                 "BreakPoint_Cancha2_LadoA_22102026_173427.mp4",
-                "BreakPoint_Cancha2_LadoA_22102026_172758.mp4"
-              ],
-              "videos_vitrina": [
+                "BreakPoint_Cancha2_LadoA_22102026_172758.mp4",
                 "BreakPoint_Cancha2_LadoA_22102026_070022.mp4",
                 "BreakPoint_Cancha2_LadoA_21102026_230750.mp4",
                 "BreakPoint_Cancha2_LadoA_21102026_065955.mp4",
