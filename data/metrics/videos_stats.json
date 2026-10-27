@@ -9107,6 +9107,12 @@
       "can": "cancha3",
       "date": "2026-10-26",
       "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "date": "2026-10-27",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -9156,7 +9162,7 @@
       "loc": "breakpoint",
       "can": "cancha3",
       "hour": "07",
-      "count": 99
+      "count": 100
     },
     {
       "loc": "breakpoint",
@@ -25538,7 +25544,16 @@
         "ladoa": 2
       },
       "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "date": "2026-10-27",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-10-27T13:41:32.591125+00:00"
+  "generated_at_utc": "2026-10-27T20:16:41.432275+00:00"
 }
