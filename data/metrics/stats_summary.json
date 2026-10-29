@@ -1,13 +1,13 @@
 {
-  "generado_el": "2026-10-29T03:07:28.305652+00:00",
+  "generado_el": "2026-10-29T03:22:13.952665+00:00",
   "totales": {
-    "videos_historico": 8182,
+    "videos_historico": 8195,
     "dias_con_videos": 351,
     "clubs_activos": 10,
     "clubs": 5,
     "canchas": 21,
     "lados": 23,
-    "videos_activos": 50,
+    "videos_activos": 51,
     "videos_vitrina": 434
   },
   "historial": [
@@ -16,7 +16,7 @@
       "loc": "breakpoint",
       "can": "cancha3",
       "lado": "ladoa",
-      "count": 3
+      "count": 6
     },
     {
       "fecha": "2026-10-28",
@@ -51,14 +51,14 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "lado": "ladoa",
-      "count": 1
+      "count": 3
     },
     {
       "fecha": "2026-10-28",
       "loc": "wellstreet-pickleball",
       "can": "cancha2",
       "lado": "ladoa",
-      "count": 1
+      "count": 2
     },
     {
       "fecha": "2026-10-28",
@@ -72,12 +72,33 @@
       "loc": "breakpoint",
       "can": "cancha4",
       "lado": "ladoa",
-      "count": 1
+      "count": 2
     },
     {
       "fecha": "2026-10-28",
       "loc": "wellstreet-padel",
       "can": "cancha2",
+      "lado": "ladoa",
+      "count": 3
+    },
+    {
+      "fecha": "2026-10-28",
+      "loc": "wellstreet-pickleball",
+      "can": "cancha3",
+      "lado": "ladoa",
+      "count": 1
+    },
+    {
+      "fecha": "2026-10-28",
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "lado": "ladoa",
+      "count": 2
+    },
+    {
+      "fecha": "2026-10-28",
+      "loc": "breakpoint",
+      "can": "cancha5",
       "lado": "ladoa",
       "count": 1
     },
@@ -11589,7 +11610,7 @@
     {
       "id": "BreakPoint",
       "nombre": "BreakPoint",
-      "total_videos_activos": 27,
+      "total_videos_activos": 28,
       "canchas": [
         {
           "id": "Cancha1",
@@ -11789,15 +11810,16 @@
         {
           "id": "Cancha4",
           "nombre": "Cancha 4",
-          "total_videos_activos": 3,
+          "total_videos_activos": 4,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 3,
+              "count_activos": 4,
               "count_vitrina": 13,
-              "generado_el": "2026-10-29T01:25:56.828577+00:00",
+              "generado_el": "2026-10-29T03:21:28.309216+00:00",
               "videos": [
+                "BreakPoint_Cancha4_LadoA_28102026_081600.mp4",
                 "BreakPoint_Cancha4_LadoA_28102026_081200.mp4",
                 "BreakPoint_Cancha4_LadoA_28102026_103700.mp4",
                 "BreakPoint_Cancha4_LadoA_26102026_224300.mp4"
