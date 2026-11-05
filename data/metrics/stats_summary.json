@@ -1,13 +1,13 @@
 {
-  "generado_el": "2026-11-05T03:39:09.449589+00:00",
+  "generado_el": "2026-11-05T04:00:39.344947+00:00",
   "totales": {
-    "videos_historico": 8320,
+    "videos_historico": 8332,
     "dias_con_videos": 358,
     "clubs_activos": 10,
     "clubs": 5,
     "canchas": 21,
     "lados": 23,
-    "videos_activos": 34,
+    "videos_activos": 35,
     "videos_vitrina": 455
   },
   "historial": [
@@ -23,14 +23,42 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "lado": "ladoa",
-      "count": 3
+      "count": 4
     },
     {
       "fecha": "2026-11-04",
       "loc": "breakpoint",
       "can": "cancha4",
       "lado": "ladoa",
-      "count": 3
+      "count": 6
+    },
+    {
+      "fecha": "2026-11-04",
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "lado": "ladoa",
+      "count": 4
+    },
+    {
+      "fecha": "2026-11-04",
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "lado": "ladoa",
+      "count": 2
+    },
+    {
+      "fecha": "2026-11-04",
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "lado": "ladoa",
+      "count": 1
+    },
+    {
+      "fecha": "2026-11-04",
+      "loc": "interpadel",
+      "can": "cancha3",
+      "lado": "ladoa",
+      "count": 1
     },
     {
       "fecha": "2026-11-03",
@@ -12264,7 +12292,7 @@
     {
       "id": "WellStreet-Pickleball",
       "nombre": "WellStreet - Pickleball",
-      "total_videos_activos": 3,
+      "total_videos_activos": 4,
       "canchas": [
         {
           "id": "Cancha1",
@@ -12304,15 +12332,17 @@
         {
           "id": "Cancha2",
           "nombre": "Cancha 2",
-          "total_videos_activos": 0,
+          "total_videos_activos": 1,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 0,
+              "count_activos": 1,
               "count_vitrina": 12,
-              "generado_el": "2026-11-04T21:58:33.012684+00:00",
-              "videos": [],
+              "generado_el": "2026-11-05T04:00:03.735054+00:00",
+              "videos": [
+                "WellStreet-Pickleball_Cancha2_LadoA_PARTIDO_PLSW6f1e_03112026_183500.mp4"
+              ],
               "videos_vitrina": [
                 "WellStreet-Pickleball_Cancha2_LadoA_29102026_200353.mp4",
                 "WellStreet-Pickleball_Cancha2_LadoA_PARTIDO_PLSWdf14_28102026_201500.mp4",
