@@ -6835,6 +6835,12 @@
       "count": 2
     },
     {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "date": "2026-11-09",
+      "count": 2
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "date": "2025-09-10",
@@ -9629,6 +9635,12 @@
       "can": "cancha5",
       "date": "2026-11-08",
       "count": 1
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-11-09",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -9977,6 +9989,12 @@
     {
       "loc": "breakpoint",
       "can": "cancha1",
+      "hour": "08",
+      "count": 46
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
       "hour": "14",
       "count": 46
     },
@@ -9990,12 +10008,6 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "19",
-      "count": 45
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "08",
       "count": 45
     },
     {
@@ -10749,6 +10761,12 @@
       "count": 13
     },
     {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "hour": "09",
+      "count": 13
+    },
+    {
       "loc": "wellstreet-pickleball",
       "can": "cancha2",
       "hour": "08",
@@ -10782,12 +10800,6 @@
       "loc": "interpadel",
       "can": "cancha4",
       "hour": "22",
-      "count": 12
-    },
-    {
-      "loc": "interpadel",
-      "can": "cancha6",
-      "hour": "09",
       "count": 12
     },
     {
@@ -12304,6 +12316,12 @@
     },
     {
       "loc": "wellstreet-pickleball",
+      "can": "cancha6",
+      "hour": "08",
+      "count": 1
+    },
+    {
+      "loc": "interpadel",
       "can": "cancha6",
       "hour": "08",
       "count": 1
@@ -26855,7 +26873,25 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "interpadel",
+      "can": "cancha6",
+      "date": "2026-11-09",
+      "counts_por_lado": {
+        "ladoa": 2
+      },
+      "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-11-09",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-11-09T03:18:10.373523+00:00"
+  "generated_at_utc": "2026-11-09T17:53:51.637816+00:00"
 }
