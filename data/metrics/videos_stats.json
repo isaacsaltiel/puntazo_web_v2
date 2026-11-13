@@ -493,6 +493,12 @@
       "count": 20
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-11-13",
+      "count": 20
+    },
+    {
       "loc": "scorpion",
       "can": "cancha2",
       "date": "2025-10-29",
@@ -508,12 +514,6 @@
       "loc": "interpadel",
       "can": "cancha3",
       "date": "2026-03-18",
-      "count": 19
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "date": "2026-11-13",
       "count": 19
     },
     {
@@ -9755,6 +9755,12 @@
       "can": "cancha6",
       "date": "2026-11-12",
       "count": 1
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "date": "2026-11-13",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -9892,6 +9898,12 @@
     },
     {
       "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "09",
+      "count": 68
+    },
+    {
+      "loc": "breakpoint",
       "can": "cancha3",
       "hour": "21",
       "count": 68
@@ -9906,12 +9918,6 @@
       "loc": "breakpoint",
       "can": "cancha4",
       "hour": "11",
-      "count": 67
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "09",
       "count": 67
     },
     {
@@ -10677,6 +10683,12 @@
       "count": 17
     },
     {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "hour": "15",
+      "count": 17
+    },
+    {
       "loc": "interpadel",
       "can": "cancha3",
       "hour": "22",
@@ -10728,12 +10740,6 @@
       "loc": "wellstreet-pickleball",
       "can": "cancha2",
       "hour": "20",
-      "count": 16
-    },
-    {
-      "loc": "wellstreet-pickleball",
-      "can": "cancha1",
-      "hour": "15",
       "count": 16
     },
     {
@@ -27161,7 +27167,7 @@
       "can": "cancha1",
       "date": "2026-11-13",
       "counts_por_lado": {
-        "ladoa": 19
+        "ladoa": 20
       },
       "diff": 0
     },
@@ -27182,7 +27188,16 @@
         "ladoa": 7
       },
       "diff": 0
+    },
+    {
+      "loc": "wellstreet-pickleball",
+      "can": "cancha1",
+      "date": "2026-11-13",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-11-13T15:45:11.685045+00:00"
+  "generated_at_utc": "2026-11-13T21:42:35.749996+00:00"
 }
