@@ -1,20 +1,34 @@
 {
-  "generado_el": "2026-11-13T02:02:27.557802+00:00",
+  "generado_el": "2026-11-13T04:53:49.981497+00:00",
   "totales": {
-    "videos_historico": 8512,
+    "videos_historico": 8519,
     "dias_con_videos": 366,
     "clubs_activos": 10,
     "clubs": 5,
     "canchas": 21,
     "lados": 23,
-    "videos_activos": 17,
-    "videos_vitrina": 507
+    "videos_activos": 11,
+    "videos_vitrina": 508
   },
   "historial": [
     {
       "fecha": "2026-11-12",
       "loc": "interpadel",
       "can": "cancha3",
+      "lado": "ladoa",
+      "count": 6
+    },
+    {
+      "fecha": "2026-11-12",
+      "loc": "interpadel",
+      "can": "cancha4",
+      "lado": "ladoa",
+      "count": 1
+    },
+    {
+      "fecha": "2026-11-12",
+      "loc": "interpadel",
+      "can": "cancha6",
       "lado": "ladoa",
       "count": 1
     },
@@ -12070,32 +12084,26 @@
     {
       "id": "Interpadel",
       "nombre": "Interpadel",
-      "total_videos_activos": 17,
+      "total_videos_activos": 11,
       "canchas": [
         {
           "id": "Cancha3",
           "nombre": "Cancha 3",
-          "total_videos_activos": 12,
+          "total_videos_activos": 6,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 12,
+              "count_activos": 6,
               "count_vitrina": 33,
-              "generado_el": "2026-11-13T01:00:18.563332+00:00",
+              "generado_el": "2026-11-13T04:52:58.320983+00:00",
               "videos": [
                 "Interpadel_Cancha3_LadoA_12112026_185431.mp4",
                 "Interpadel_Cancha3_LadoA_12112026_173939.mp4",
                 "Interpadel_Cancha3_LadoA_12112026_173927.mp4",
                 "Interpadel_Cancha3_LadoA_12112026_164116.mp4",
                 "Interpadel_Cancha3_LadoA_12112026_163606.mp4",
-                "Interpadel_Cancha3_LadoA_12112026_090148.mp4",
-                "Interpadel_Cancha3_LadoA_11112026_215021.mp4",
-                "Interpadel_Cancha3_LadoA_11112026_214927.mp4",
-                "Interpadel_Cancha3_LadoA_11112026_214326.mp4",
-                "Interpadel_Cancha3_LadoA_10112026_171346.mp4",
-                "Interpadel_Cancha3_LadoA_10112026_165430.mp4",
-                "Interpadel_Cancha3_LadoA_11112026_201126.mp4"
+                "Interpadel_Cancha3_LadoA_12112026_090148.mp4"
               ],
               "videos_vitrina": [
                 "Interpadel_Cancha3_LadoA_11112026_165057.mp4",
@@ -12144,13 +12152,14 @@
               "id": "LadoA",
               "nombre": "Lado A",
               "count_activos": 2,
-              "count_vitrina": 10,
-              "generado_el": "2026-11-12T20:19:44.467206+00:00",
+              "count_vitrina": 11,
+              "generado_el": "2026-11-13T04:53:17.176273+00:00",
               "videos": [
-                "Interpadel_Cancha4_LadoA_12112026_141358.mp4",
-                "Interpadel_Cancha4_LadoA_11112026_200950.mp4"
+                "Interpadel_Cancha4_LadoA_12112026_224734.mp4",
+                "Interpadel_Cancha4_LadoA_12112026_141358.mp4"
               ],
               "videos_vitrina": [
+                "Interpadel_Cancha4_LadoA_11112026_200950.mp4",
                 "Interpadel_Cancha4_LadoA_06112026_175002.mp4",
                 "Interpadel_Cancha4_LadoA_03112026_213151.mp4",
                 "Interpadel_Cancha4_LadoA_03112026_114728.mp4",
