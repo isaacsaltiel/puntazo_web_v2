@@ -1,13 +1,13 @@
 {
-  "generado_el": "2026-11-14T03:11:18.899993+00:00",
+  "generado_el": "2026-11-14T04:00:51.475578+00:00",
   "totales": {
-    "videos_historico": 8558,
+    "videos_historico": 8569,
     "dias_con_videos": 367,
     "clubs_activos": 10,
     "clubs": 5,
     "canchas": 21,
     "lados": 23,
-    "videos_activos": 56,
+    "videos_activos": 57,
     "videos_vitrina": 494
   },
   "historial": [
@@ -23,7 +23,7 @@
       "loc": "breakpoint",
       "can": "cancha3",
       "lado": "ladoa",
-      "count": 10
+      "count": 13
     },
     {
       "fecha": "2026-11-13",
@@ -36,6 +36,27 @@
       "fecha": "2026-11-13",
       "loc": "wellstreet-pickleball",
       "can": "cancha1",
+      "lado": "ladoa",
+      "count": 2
+    },
+    {
+      "fecha": "2026-11-13",
+      "loc": "interpadel",
+      "can": "cancha3",
+      "lado": "ladoa",
+      "count": 3
+    },
+    {
+      "fecha": "2026-11-13",
+      "loc": "wellstreet-pickleball",
+      "can": "cancha2",
+      "lado": "ladoa",
+      "count": 3
+    },
+    {
+      "fecha": "2026-11-13",
+      "loc": "wellstreet-pickleball",
+      "can": "cancha5",
       "lado": "ladoa",
       "count": 1
     },
@@ -12288,7 +12309,7 @@
     {
       "id": "BreakPoint",
       "nombre": "BreakPoint",
-      "total_videos_activos": 40,
+      "total_videos_activos": 41,
       "canchas": [
         {
           "id": "Cancha1",
@@ -12487,15 +12508,16 @@
         {
           "id": "Cancha3",
           "nombre": "Cancha 3",
-          "total_videos_activos": 13,
+          "total_videos_activos": 14,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 13,
+              "count_activos": 14,
               "count_vitrina": 22,
-              "generado_el": "2026-11-14T03:09:45.313588+00:00",
+              "generado_el": "2026-11-14T03:59:23.687878+00:00",
               "videos": [
+                "BreakPoint_Cancha3_LadoA_13112026_215640.mp4",
                 "BreakPoint_Cancha3_LadoA_13112026_210702.mp4",
                 "BreakPoint_Cancha3_LadoA_13112026_205749.mp4",
                 "BreakPoint_Cancha3_LadoA_13112026_203937.mp4",
