@@ -1,16 +1,37 @@
 {
-  "generado_el": "2026-11-17T16:48:40.198181+00:00",
+  "generado_el": "2026-11-17T17:44:32.815453+00:00",
   "totales": {
-    "videos_historico": 8614,
-    "dias_con_videos": 370,
+    "videos_historico": 8619,
+    "dias_con_videos": 371,
     "clubs_activos": 10,
     "clubs": 5,
     "canchas": 21,
     "lados": 23,
-    "videos_activos": 21,
-    "videos_vitrina": 516
+    "videos_activos": 13,
+    "videos_vitrina": 520
   },
   "historial": [
+    {
+      "fecha": "2026-11-17",
+      "loc": "breakpoint",
+      "can": "cancha3",
+      "lado": "ladoa",
+      "count": 2
+    },
+    {
+      "fecha": "2026-11-17",
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "lado": "ladoa",
+      "count": 2
+    },
+    {
+      "fecha": "2026-11-17",
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "lado": "ladoa",
+      "count": 1
+    },
     {
       "fecha": "2026-11-16",
       "loc": "breakpoint",
@@ -12252,24 +12273,23 @@
     {
       "id": "Interpadel",
       "nombre": "Interpadel",
-      "total_videos_activos": 9,
+      "total_videos_activos": 3,
       "canchas": [
         {
           "id": "Cancha3",
           "nombre": "Cancha 3",
-          "total_videos_activos": 2,
+          "total_videos_activos": 0,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 2,
+              "count_activos": 0,
               "count_vitrina": 52,
-              "generado_el": "2026-11-17T06:20:15.111700+00:00",
-              "videos": [
-                "Interpadel_Cancha3_LadoA_15112026_094100.mp4",
-                "Interpadel_Cancha3_LadoA_15112026_093500.mp4"
-              ],
+              "generado_el": "2026-11-17T17:19:38.757759+00:00",
+              "videos": [],
               "videos_vitrina": [
+                "Interpadel_Cancha3_LadoA_15112026_094100.mp4",
+                "Interpadel_Cancha3_LadoA_15112026_093500.mp4",
                 "Interpadel_Cancha3_LadoA_15112026_091200.mp4",
                 "Interpadel_Cancha3_LadoA_15112026_090600.mp4",
                 "Interpadel_Cancha3_LadoA_15112026_090300.mp4",
@@ -12319,9 +12339,7 @@
                 "Interpadel_Cancha3_LadoA_03112026_164847.mp4",
                 "Interpadel_Cancha3_LadoA_03112026_164251.mp4",
                 "Interpadel_Cancha3_LadoA_03112026_164726.mp4",
-                "Interpadel_Cancha3_LadoA_03112026_164630.mp4",
-                "Interpadel_Cancha3_LadoA_03112026_091920.mp4",
-                "Interpadel_Cancha3_LadoA_03112026_091219.mp4"
+                "Interpadel_Cancha3_LadoA_03112026_164630.mp4"
               ]
             }
           ]
@@ -12329,23 +12347,23 @@
         {
           "id": "Cancha4",
           "nombre": "Cancha 4",
-          "total_videos_activos": 6,
+          "total_videos_activos": 3,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 6,
-              "count_vitrina": 6,
-              "generado_el": "2026-11-17T06:22:21.455303+00:00",
+              "count_activos": 3,
+              "count_vitrina": 9,
+              "generado_el": "2026-11-17T17:21:59.536891+00:00",
               "videos": [
                 "Interpadel_Cancha4_LadoA_16112026_114305.mp4",
                 "Interpadel_Cancha4_LadoA_16112026_115456.mp4",
-                "Interpadel_Cancha4_LadoA_16112026_114518.mp4",
-                "Interpadel_Cancha4_LadoA_16112026_105301.mp4",
-                "Interpadel_Cancha4_LadoA_16112026_103626.mp4",
-                "Interpadel_Cancha4_LadoA_16112026_105227.mp4"
+                "Interpadel_Cancha4_LadoA_16112026_114518.mp4"
               ],
               "videos_vitrina": [
+                "Interpadel_Cancha4_LadoA_16112026_105301.mp4",
+                "Interpadel_Cancha4_LadoA_16112026_103626.mp4",
+                "Interpadel_Cancha4_LadoA_16112026_105227.mp4",
                 "Interpadel_Cancha4_LadoA_12112026_224734.mp4",
                 "Interpadel_Cancha4_LadoA_12112026_141358.mp4",
                 "Interpadel_Cancha4_LadoA_11112026_200950.mp4",
@@ -12366,7 +12384,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 13,
-              "generado_el": "2026-11-17T06:22:54.147535+00:00",
+              "generado_el": "2026-11-17T17:22:35.410193+00:00",
               "videos": [],
               "videos_vitrina": [
                 "Interpadel_Cancha5_LadoA_15112026_105600.mp4",
@@ -12389,18 +12407,17 @@
         {
           "id": "Cancha6",
           "nombre": "Cancha 6",
-          "total_videos_activos": 1,
+          "total_videos_activos": 0,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 1,
-              "count_vitrina": 10,
-              "generado_el": "2026-11-17T06:23:28.921993+00:00",
-              "videos": [
-                "Interpadel_Cancha6_LadoA_16112026_093848.mp4"
-              ],
+              "count_activos": 0,
+              "count_vitrina": 11,
+              "generado_el": "2026-11-17T17:23:13.731316+00:00",
+              "videos": [],
               "videos_vitrina": [
+                "Interpadel_Cancha6_LadoA_16112026_093848.mp4",
                 "Interpadel_Cancha6_LadoA_15112026_095619.mp4",
                 "Interpadel_Cancha6_LadoA_12112026_195600.mp4",
                 "Interpadel_Cancha6_LadoA_09112026_091915.mp4",
@@ -12420,7 +12437,7 @@
     {
       "id": "BreakPoint",
       "nombre": "BreakPoint",
-      "total_videos_activos": 12,
+      "total_videos_activos": 10,
       "canchas": [
         {
           "id": "Cancha1",
@@ -12431,8 +12448,8 @@
               "id": "LadoA",
               "nombre": "Lado A",
               "count_activos": 5,
-              "count_vitrina": 85,
-              "generado_el": "2026-11-17T15:22:31.073745+00:00",
+              "count_vitrina": 83,
+              "generado_el": "2026-11-17T17:23:47.222441+00:00",
               "videos": [
                 "BreakPoint_Cancha1_LadoA_17112026_091940.mp4",
                 "BreakPoint_Cancha1_LadoA_16112026_212050.mp4",
@@ -12523,9 +12540,7 @@
                 "BreakPoint_Cancha1_LadoA_03112026_213404.mp4",
                 "BreakPoint_Cancha1_LadoA_03112026_195952.mp4",
                 "BreakPoint_Cancha1_LadoA_03112026_195921.mp4",
-                "BreakPoint_Cancha1_LadoA_03112026_193526.mp4",
-                "BreakPoint_Cancha1_LadoA_03112026_104112.mp4",
-                "BreakPoint_Cancha1_LadoA_03112026_095812.mp4"
+                "BreakPoint_Cancha1_LadoA_03112026_193526.mp4"
               ]
             }
           ]
@@ -12540,7 +12555,7 @@
               "nombre": "Lado A",
               "count_activos": 3,
               "count_vitrina": 48,
-              "generado_el": "2026-11-17T16:46:30.003964+00:00",
+              "generado_el": "2026-11-17T17:27:36.283366+00:00",
               "videos": [
                 "BreakPoint_Cancha2_LadoA_17112026_104345.mp4",
                 "BreakPoint_Cancha2_LadoA_17112026_075352.mp4",
@@ -12602,21 +12617,21 @@
         {
           "id": "Cancha3",
           "nombre": "Cancha 3",
-          "total_videos_activos": 4,
+          "total_videos_activos": 2,
           "lados": [
             {
               "id": "LadoA",
               "nombre": "Lado A",
-              "count_activos": 4,
-              "count_vitrina": 35,
-              "generado_el": "2026-11-17T14:04:53.589947+00:00",
+              "count_activos": 2,
+              "count_vitrina": 37,
+              "generado_el": "2026-11-17T17:29:47.562421+00:00",
               "videos": [
                 "BreakPoint_Cancha3_LadoA_17112026_080210.mp4",
-                "BreakPoint_Cancha3_LadoA_17112026_071217.mp4",
-                "BreakPoint_Cancha3_LadoA_16112026_093613.mp4",
-                "BreakPoint_Cancha3_LadoA_16112026_093212.mp4"
+                "BreakPoint_Cancha3_LadoA_17112026_071217.mp4"
               ],
               "videos_vitrina": [
+                "BreakPoint_Cancha3_LadoA_16112026_093613.mp4",
+                "BreakPoint_Cancha3_LadoA_16112026_093212.mp4",
                 "BreakPoint_Cancha3_LadoA_15112026_111029.mp4",
                 "BreakPoint_Cancha3_LadoA_15112026_110947.mp4",
                 "BreakPoint_Cancha3_LadoA_14112026_085945.mp4",
@@ -12666,7 +12681,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 14,
-              "generado_el": "2026-11-17T06:30:56.459969+00:00",
+              "generado_el": "2026-11-17T17:31:34.461009+00:00",
               "videos": [],
               "videos_vitrina": [
                 "BreakPoint_Cancha4_LadoA_08112026_113900.mp4",
@@ -12697,7 +12712,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 12,
-              "generado_el": "2026-11-17T06:31:33.189099+00:00",
+              "generado_el": "2026-11-17T17:32:16.765545+00:00",
               "videos": [],
               "videos_vitrina": [
                 "BreakPoint_Cancha5_LadoA_08112026_163200.mp4",
@@ -12733,7 +12748,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 10,
-              "generado_el": "2026-11-17T06:32:04.739329+00:00",
+              "generado_el": "2026-11-17T17:32:51.938375+00:00",
               "videos": [],
               "videos_vitrina": [
                 "BreakPoint_Cancha5_LadoA_19012026_155715.mp4",
@@ -12753,7 +12768,7 @@
               "nombre": "Lado B",
               "count_activos": 0,
               "count_vitrina": 12,
-              "generado_el": "2026-11-17T06:32:32.219445+00:00",
+              "generado_el": "2026-11-17T17:33:22.807640+00:00",
               "videos": [],
               "videos_vitrina": [
                 "Scorpion_Cancha1_LadoB_20251212_105408.mp4",
@@ -12782,7 +12797,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 21,
-              "generado_el": "2026-11-17T06:33:04.108390+00:00",
+              "generado_el": "2026-11-17T17:33:59.800786+00:00",
               "videos": [],
               "videos_vitrina": [
                 "Scorpion_Cancha2_LadoA_20251229_220250.mp4",
@@ -12813,7 +12828,7 @@
               "nombre": "Lado B",
               "count_activos": 0,
               "count_vitrina": 21,
-              "generado_el": "2026-11-17T06:33:54.824397+00:00",
+              "generado_el": "2026-11-17T17:35:05.170499+00:00",
               "videos": [],
               "videos_vitrina": [
                 "Scorpion_Cancha2_LadoB_20251229_220250.mp4",
@@ -12858,7 +12873,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 23,
-              "generado_el": "2026-11-17T06:34:51.570825+00:00",
+              "generado_el": "2026-11-17T17:36:08.103448+00:00",
               "videos": [],
               "videos_vitrina": [
                 "WellStreet-Pickleball_Cancha1_LadoA_PARTIDO_PLSWe5f2_13112026_185000.mp4",
@@ -12898,7 +12913,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 11,
-              "generado_el": "2026-11-17T06:35:49.368296+00:00",
+              "generado_el": "2026-11-17T17:37:14.654647+00:00",
               "videos": [],
               "videos_vitrina": [
                 "WellStreet-Pickleball_Cancha2_LadoA_PARTIDO_PLSW80eb_12112026_200000.mp4",
@@ -12926,7 +12941,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 11,
-              "generado_el": "2026-11-17T06:36:19.154826+00:00",
+              "generado_el": "2026-11-17T17:37:48.627405+00:00",
               "videos": [],
               "videos_vitrina": [
                 "WellStreet-Pickleball_Cancha3_LadoA_PARTIDO_PLSW3801_04112026_192200.mp4",
@@ -12954,7 +12969,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 10,
-              "generado_el": "2026-11-17T06:36:48.082473+00:00",
+              "generado_el": "2026-11-17T17:38:22.714907+00:00",
               "videos": [],
               "videos_vitrina": [
                 "WellStreet-Pickleball_Cancha4_LadoA_PARTIDO_PLSW1066_06102026_184500.mp4",
@@ -12981,7 +12996,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 11,
-              "generado_el": "2026-11-17T06:37:16.060076+00:00",
+              "generado_el": "2026-11-17T17:38:53.490948+00:00",
               "videos": [],
               "videos_vitrina": [
                 "WellStreet-Pickleball_Cancha5_LadoA_PARTIDO_PLSW2252_12112026_193000.mp4",
@@ -13009,7 +13024,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 13,
-              "generado_el": "2026-11-17T06:37:44.504942+00:00",
+              "generado_el": "2026-11-17T17:39:26.818126+00:00",
               "videos": [],
               "videos_vitrina": [
                 "WellStreet-Pickleball_Cancha6_LadoA_PARTIDO_PLSW06ea_05112026_221000.mp4",
@@ -13046,7 +13061,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 65,
-              "generado_el": "2026-11-17T06:38:18.233142+00:00",
+              "generado_el": "2026-11-17T17:40:04.944308+00:00",
               "videos": [],
               "videos_vitrina": [
                 "WellStreet-Padel_Cancha1_LadoA_11092026_233521.mp4",
@@ -13128,7 +13143,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 14,
-              "generado_el": "2026-11-17T06:40:47.744682+00:00",
+              "generado_el": "2026-11-17T17:42:52.521749+00:00",
               "videos": [],
               "videos_vitrina": [
                 "WellStreet-Padel_Cancha2_LadoA_PARTIDO_PLSWd5ae_10112026_195000.mp4",
@@ -13159,7 +13174,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 10,
-              "generado_el": "2026-11-17T06:41:22.873260+00:00",
+              "generado_el": "2026-11-17T17:43:33.815329+00:00",
               "videos": [],
               "videos_vitrina": [
                 "WellStreet-Padel_Cancha3_LadoA_PARTIDO_PLSW0a12_14102026_223000.mp4",
@@ -13186,7 +13201,7 @@
               "nombre": "Lado A",
               "count_activos": 0,
               "count_vitrina": 9,
-              "generado_el": "2026-11-17T06:41:50.131141+00:00",
+              "generado_el": "2026-11-17T17:44:04.216987+00:00",
               "videos": [],
               "videos_vitrina": [
                 "WellStreet-Padel_Cancha4_LadoA_PARTIDO_PLSW29d5_23092026_224000.mp4",
