@@ -2209,6 +2209,12 @@
       "count": 7
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "date": "2026-11-18",
+      "count": 7
+    },
+    {
       "loc": "testclub",
       "can": "testcancha",
       "date": "2025-07-16",
@@ -2714,12 +2720,6 @@
     },
     {
       "loc": "wellstreet-padel",
-      "can": "cancha2",
-      "date": "2026-11-18",
-      "count": 6
-    },
-    {
-      "loc": "breakpoint",
       "can": "cancha2",
       "date": "2026-11-18",
       "count": 6
@@ -5380,6 +5380,12 @@
       "loc": "wellstreet-padel",
       "can": "cancha1",
       "date": "2026-11-18",
+      "count": 3
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha2",
+      "date": "2026-11-19",
       "count": 3
     },
     {
@@ -10659,6 +10665,12 @@
       "count": 24
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha2",
+      "hour": "23",
+      "count": 23
+    },
+    {
       "loc": "wellstreet-pickleball",
       "can": "cancha1",
       "hour": "17",
@@ -10673,12 +10685,6 @@
     {
       "loc": "breakpoint",
       "can": "cancha3",
-      "hour": "23",
-      "count": 22
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha2",
       "hour": "23",
       "count": 22
     },
@@ -11124,6 +11130,12 @@
       "loc": "wellstreet-padel",
       "can": "cancha2",
       "hour": "01",
+      "count": 13
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha2",
+      "hour": "09",
       "count": 13
     },
     {
@@ -11284,6 +11296,12 @@
     },
     {
       "loc": "wellstreet-padel",
+      "can": "cancha2",
+      "hour": "10",
+      "count": 11
+    },
+    {
+      "loc": "wellstreet-padel",
       "can": "cancha1",
       "hour": "12",
       "count": 11
@@ -11292,12 +11310,6 @@
       "loc": "wellstreet-padel",
       "can": "cancha1",
       "hour": "22",
-      "count": 11
-    },
-    {
-      "loc": "wellstreet-padel",
-      "can": "cancha2",
-      "hour": "09",
       "count": 11
     },
     {
@@ -11376,12 +11388,6 @@
       "loc": "breakpoint",
       "can": "cancha5",
       "hour": "15",
-      "count": 10
-    },
-    {
-      "loc": "wellstreet-padel",
-      "can": "cancha2",
-      "hour": "10",
       "count": 10
     },
     {
@@ -27671,7 +27677,7 @@
       "can": "cancha2",
       "date": "2026-11-18",
       "counts_por_lado": {
-        "ladoa": 6
+        "ladoa": 7
       },
       "diff": 0
     },
@@ -27737,7 +27743,16 @@
         "ladoa": 1
       },
       "diff": 0
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha2",
+      "date": "2026-11-19",
+      "counts_por_lado": {
+        "ladoa": 3
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-11-19T04:46:04.414384+00:00"
+  "generated_at_utc": "2026-11-19T16:52:54.110639+00:00"
 }
