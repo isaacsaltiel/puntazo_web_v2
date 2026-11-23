@@ -4063,6 +4063,12 @@
       "count": 4
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-11-23",
+      "count": 4
+    },
+    {
       "loc": "Scorpion",
       "can": "Cancha1",
       "date": "2025-08-25",
@@ -10103,6 +10109,12 @@
       "can": "cancha2",
       "date": "2026-11-22",
       "count": 1
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha1",
+      "date": "2026-11-23",
+      "count": 1
     }
   ],
   "by_hour_per_cancha": [
@@ -10395,6 +10407,12 @@
       "count": 51
     },
     {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "hour": "08",
+      "count": 51
+    },
+    {
       "loc": "scorpion",
       "can": "cancha1",
       "hour": "14",
@@ -10441,12 +10459,6 @@
       "can": "cancha2",
       "hour": "12",
       "count": 48
-    },
-    {
-      "loc": "breakpoint",
-      "can": "cancha1",
-      "hour": "08",
-      "count": 47
     },
     {
       "loc": "breakpoint",
@@ -12798,6 +12810,12 @@
       "loc": "breakpoint",
       "can": "cancha1",
       "hour": "01",
+      "count": 1
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha1",
+      "hour": "07",
       "count": 1
     }
   ],
@@ -28058,7 +28076,25 @@
         "ladoa": 2
       },
       "diff": 0
+    },
+    {
+      "loc": "wellstreet-padel",
+      "can": "cancha1",
+      "date": "2026-11-23",
+      "counts_por_lado": {
+        "ladoa": 1
+      },
+      "diff": 0
+    },
+    {
+      "loc": "breakpoint",
+      "can": "cancha1",
+      "date": "2026-11-23",
+      "counts_por_lado": {
+        "ladoa": 4
+      },
+      "diff": 0
     }
   ],
-  "generated_at_utc": "2026-11-23T04:22:10.498502+00:00"
+  "generated_at_utc": "2026-11-23T19:34:27.509175+00:00"
 }
